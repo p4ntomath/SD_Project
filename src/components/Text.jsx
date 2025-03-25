@@ -1,6 +1,6 @@
 import React from 'react';
 
-export function Text(){
+export default function Text(){
     return (
         <div>
             <p>Text</p>
