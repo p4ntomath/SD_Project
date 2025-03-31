@@ -12,6 +12,7 @@ const NavBar = () => {
           <img src={appLogo} className="h-8" alt="app Logo" />
           <span className="self-center text-2xl font-semibold whitespace-nowrap">Re:Search</span>
         </a>
+
         <div className="flex md:order-2 space-x-3 md:space-x-2 rtl:space-x-reverse">
           <Link to="/login">
             <button type="button" className="text-white bg-blue-700 hover:bg-blue-800 font-bold rounded-lg text-sm px-6 py-2 text-center">
@@ -31,6 +32,7 @@ const NavBar = () => {
             </svg>
           </button>
         </div>
+        
         <div className={`items-center justify-between ${isOpen ? "block" : "hidden"} w-full md:flex md:w-auto md:order-1`} id="navbar-sticky">
           <ul className="flex flex-col p-4 md:p-0 mt-4 font-medium border border-gray-100 rounded-lg bg-gray-50 md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 md:bg-white">
             <li>
