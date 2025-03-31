@@ -1,5 +1,6 @@
 import { useState } from "react";
 import appLogo from '../assets/appLogo.png';
+import { Link } from 'react-router-dom';
 
 const NavBar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -12,9 +13,11 @@ const NavBar = () => {
           <span className="self-center text-2xl font-semibold whitespace-nowrap">Re:Search</span>
         </a>
         <div className="flex md:order-2 space-x-3 md:space-x-2 rtl:space-x-reverse">
-          <button type="button" className="text-white bg-blue-700 hover:bg-blue-800 font-bold rounded-lg text-sm px-6 py-2 text-center">
-            Sign In
-          </button>
+          <Link to="/login">
+            <button type="button" className="text-white bg-blue-700 hover:bg-blue-800 font-bold rounded-lg text-sm px-6 py-2 text-center">
+              Sign In
+            </button>
+          </Link>
           <button 
             onClick={() => setIsOpen(!isOpen)}
             type="button"
