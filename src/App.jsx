@@ -5,9 +5,6 @@ import WelcomePage from './pages/welcomePage.jsx';
 import LoginPage from './pages/loginPage.jsx';
 import ForgotPasswordPage from './pages/forgotpasswordPage.jsx';
 import SignUpPage from './pages/signUpPage.jsx';
-
-
-
 function App() {
 
   return (
