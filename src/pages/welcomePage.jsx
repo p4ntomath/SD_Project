@@ -1,8 +1,10 @@
 import React from "react";
 import NavBar from '../components/navigationBar.jsx';
 import welcomeDisplay from '../assets/welcomeDisplayImage.jpg';
+import { useNavigate } from "react-router-dom";
 
 export default function WelcomePage() {
+    const navigate = useNavigate();
     return (
         <div className="min-h-screen flex flex-col">
             <NavBar />
@@ -21,7 +23,7 @@ export default function WelcomePage() {
                         Everything you need is in one place. Stay connected, stay organized, 
                         and bring your research to life with clarity and confidence.
                     </p>
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg text-lg  md:w-auto">
+                    <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg text-lg  md:w-auto"  onClick={() => navigate("/signUpPage")}>
                         Sign Up!
                     </button>
                 </div>
