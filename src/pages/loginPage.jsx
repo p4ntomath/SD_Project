@@ -12,7 +12,7 @@ export default function LoginPage() {
     <img
       src={loginDisplay}
       alt="Creative workspace illustration"
-      className="max-w-full max-h-[50vh] object-contain rounded-lg shadow-md rounded-tr-2xl rounded-br-2xl rounded-tl-2xl rounded-bl-2xl"
+      className="h-auto object-contain rounded-lg shadow-md"
     />
   </figure>
 
