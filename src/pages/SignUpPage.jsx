@@ -7,10 +7,9 @@ const SignUpPage = () => (
   <img
     src={welcomeImage}
     alt="Welcome"
-    className="max-w-full h-auto max-h-[50vh] object-contain rounded-lg shadow-md"
+    className="h-auto object-contain rounded-lg shadow-md"
   />
 </div>
-    
     <div className="md:w-1/2 flex items-center justify-center p-8 bg-white">
       <SignUpForm />
     </div>
