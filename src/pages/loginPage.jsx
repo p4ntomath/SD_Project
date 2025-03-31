@@ -1,7 +1,8 @@
 import React from "react";
-import welcomeDisplay from '../assets/welcomeDisplayImage.jpg';
+import loginDisplay from '../assets/Screenshot 2025-03-31 194547.png';
 import googleLogo from '../assets/googleLogo.png'
 import facebookLogo from '../assets/facebookLogo.png'
+import { Link } from "react-router-dom";
 
 export default function LoginPage() {
     return (
@@ -9,9 +10,9 @@ export default function LoginPage() {
   
   <figure className="w-1/2 bg-gray-100 flex items-center justify-center p-8">
     <img
-      src={welcomeDisplay}
+      src={loginDisplay}
       alt="Creative workspace illustration"
-      className="max-w-full h-auto"
+      className="max-w-full max-h-[50vh] object-contain rounded-lg shadow-md rounded-tr-2xl rounded-br-2xl rounded-tl-2xl rounded-bl-2xl"
     />
   </figure>
 
@@ -39,7 +40,7 @@ export default function LoginPage() {
           <input type="checkbox" className="mr-1" />
           Remember me
         </label>
-        <a href="/forgot-password" className="text-green-600 hover:underline">Forgot Password?</a>
+        <Link to="/forgotpassword" className="text-green-600 hover:underline">Forgot Password?</Link>
       </div>
 
       <button
