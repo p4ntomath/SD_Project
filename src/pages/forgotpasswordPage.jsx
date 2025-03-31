@@ -30,12 +30,12 @@ const ForgotPasswordPage = () => {
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* Image Section - Hidden on mobile */}
-      <div className="hidden md:block md:w-1/2 bg-gray-100 flex items-center justify-center p-8 rounded-tr-2xl rounded-br-2xl">
+      <div className="hidden md:flex md:w-1/2 bg-gray-100  items-center justify-center p-8 rounded-tr-2xl rounded-br-2xl">
         <div className="h-full w-full flex items-center justify-center"> {/* New wrapper div */}
             <img
             src={welcomeImage}
             alt="Welcome"
-            className="max-w-full max-h-[50vh] object-contain rounded-lg shadow-md rounded-tr-2xl rounded-br-2xl rounded-tl-2xl rounded-bl-2xl"
+            className="h-auto object-contain rounded-lg shadow-md"
             />
         </div>
         </div>
@@ -81,7 +81,6 @@ const ForgotPasswordPage = () => {
                   />
                   {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
                 </div>
-                
                 <button
                   type="submit"
                   className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition"
@@ -89,7 +88,6 @@ const ForgotPasswordPage = () => {
                   Send Reset Link
                 </button>
               </form>
-              
               <div className="mt-6 text-center text-sm text-gray-600">
                 Remember your password?{' '}
                 <Link 
