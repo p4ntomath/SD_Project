@@ -6,9 +6,9 @@ import { Link } from "react-router-dom";
 
 export default function LoginPage() {
     return (
-<main className="min-h-screen flex">
+<main className="min-h-screen flex md:flex-row flex-col justify-center items-center">
   
-  <figure className="w-1/2 bg-gray-100 flex items-center justify-center p-8">
+  <figure className="w-full h-screen bg-gray-100 md:w-1/2 flex  items-center justify-center p-8">
     <img
       src={loginDisplay}
       alt="Creative workspace illustration"
@@ -17,13 +17,13 @@ export default function LoginPage() {
   </figure>
 
 
-  <section className="w-1/2 flex flex-col justify-center p-10 bg-white">
+  <section className="w-full md:w-1/2 flex flex-col items-center justify-center p-10 bg-white">
     <header className="text-center mb-6">
       <h1 className="text-4xl font-bold">Welcome!</h1>
       <p className="text-lg font-semibold text-gray-600 mt-1">Login.</p>
     </header>
 
-    <form className="space-y-4">
+    <form className="space-y-4 max-w-md">
       <input
         type="email"
         placeholder="Email"
@@ -51,13 +51,13 @@ export default function LoginPage() {
       </button>
     </form>
 
-    <div className="flex items-center my-6">
+    <div className="flex items-center my-6 max-w-md">
       <hr className="flex-grow border-gray-300" />
       <span className="mx-2 text-sm text-gray-500">OR</span>
       <hr className="flex-grow border-gray-300" />
     </div>
 
-    <div className="space-y-3">
+    <div className="space-y-3 max-w-md">
       <button className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-md py-2 px-4 text-sm font-medium text-gray-700 hover:bg-gray-100 transition">
         <img src={googleLogo} alt="Google" className="w-5 h-5" />
         <span>Continue with Google</span>
@@ -68,8 +68,8 @@ export default function LoginPage() {
       </button>
     </div>
 
-    <p className="text-center text-sm text-gray-500 mt-6">
-      Don't have an account? <a href="/register" className="text-green-600 hover:underline">Register</a>
+    <p className="text-center text-sm text-gray-500 mt-6 max-w-md">
+      Don't have an account? <a href="/signup" className="text-green-600 hover:underline">Sign Up</a>
     </p>
   </section>
 </main>
