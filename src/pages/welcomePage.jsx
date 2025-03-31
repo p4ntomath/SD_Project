@@ -23,7 +23,7 @@ export default function WelcomePage() {
                         Everything you need is in one place. Stay connected, stay organized, 
                         and bring your research to life with clarity and confidence.
                     </p>
-                    <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg text-lg  md:w-auto"  onClick={() => navigate("/signUpPage")}>
+                    <button className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-6 rounded-lg text-lg  md:w-auto"  onClick={() => navigate("/signup")}>
                         Sign Up!
                     </button>
                 </div>
