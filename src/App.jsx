@@ -4,6 +4,7 @@ import './App.css'
 import WelcomePage from './pages/welcomePage.jsx';
 import LoginPage from './pages/loginPage.jsx';
 import ForgotPasswordPage from './pages/forgotpasswordPage.jsx';
+import SignUpPage from './pages/signUpPage.jsx';
 
 
 
@@ -15,6 +16,7 @@ function App() {
         <Route path="/" element={<WelcomePage />} /> 
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
+        <Route path="/SignUpPage" element={<SignUpPage />} />
       </Routes>
     </Router>
   );
