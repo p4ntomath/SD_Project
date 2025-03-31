@@ -11,7 +11,7 @@ export default function LoginPage() {
     <img
       src={welcomeDisplay}
       alt="Creative workspace illustration"
-      className="max-w-full h-auto"
+      className="h-auto object-contain rounded-lg shadow-md "
     />
   </figure>
 
