@@ -64,7 +64,7 @@ const SignUpForm = () => {
   return (
     <div className="w-full max-w-md">
       <h2 className="text-5xl font-bold text-gray-800 mb-2">Create Account</h2>
-      <p className="text-gray-600 mb-6 text-sm">Do you have an Account already? <a href="/login" className=" text-sm text-green-600 hover:underlin">
+      <p className="text-gray-600 mb-6 text-sm">Do you have an Account already? <a href="/login" className=" text-sm text-green-600 hover:underline">
           Log in
         </a></p>
 
