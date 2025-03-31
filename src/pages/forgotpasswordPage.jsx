@@ -7,8 +7,7 @@ const ForgotPasswordPage = () => {
   const [error, setError] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
 
-  //PLEASE EDIT THIS FUNCTION TO HANDLE SUBMISSIONS
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     
     // Simple validation
