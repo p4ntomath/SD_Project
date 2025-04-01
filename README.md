@@ -65,5 +65,4 @@ Make sure you have the following installed:
 ### Setup  
 1. Clone the repository:  
    ```sh
-   git clone https://github.com/your-username/university-research-platform.git
-   cd university-research-platform
+   git clone https://github.com/p4ntomath/SD_Project
