@@ -28,17 +28,34 @@ const SignUpForm = () => {
 
   const validateForm = () => {
     const newErrors = {};
-    if (!formData.name.trim()) newErrors.name = 'Name is required'; // check if the name has been filled
+    
+    // Name validation
+    if (!formData.name.trim()) newErrors.name = 'Name is required';
+    
+    // Email validation
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';                            // check if the email has been filled
+      newErrors.email = 'Email is required';
     } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';                             // check if the filled email is valid
+      newErrors.email = 'Email is invalid';
     }
-    if (!formData.password) newErrors.password = 'Password is required';  // check if the email has been filled
+    
+    // Enhanced Password validation
+    if (!formData.password) {
+      newErrors.password = 'Password is required';
+    } else {
+      if (formData.password.length < 8 || !/[A-Za-z]/.test(formData.password) || !/[0-9]/.test(formData.password) || !/[^A-Za-z0-9]/.test(formData.password)) {
+        newErrors.password = 'Password must be at least 8 characters, contain at least one letter, number and special character (@,#,!)';
+      } 
+    }
+    
+    // Confirm password validation
     if (formData.password !== formData.confirmPassword) {
       newErrors.confirmPassword = 'Passwords must match';
     }
+    
+    // Role validation
     if (!formData.role) newErrors.role = 'Please select a role';
+    
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -124,7 +141,14 @@ const SignUpForm = () => {
           onChange={handleChange}
           error={errors.password}
         />
-        
+            {!errors.password && (
+             <p className="mt-1 text-xs text-gray-500">
+             Make it strong! Include:
+             <br />• At least 8 characters
+             <br />• Both letters and numbers
+             <br />• Symbols like (@,!,#)
+           </p>
+        )}
         <FormInput
           label="Confirm Password"
           type="password"

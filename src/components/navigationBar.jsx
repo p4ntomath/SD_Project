@@ -16,7 +16,7 @@ const NavBar = () => {
         <div className="flex md:order-2 space-x-3 md:space-x-2 rtl:space-x-reverse">
           <Link to="/login">
             <button type="button" className="text-white bg-blue-700 hover:bg-blue-800 font-bold rounded-lg text-sm px-6 py-2 text-center">
-              Sign In
+              Login
             </button>
           </Link>
           <button 
