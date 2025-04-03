@@ -1,93 +1,161 @@
-import { useState } from 'react';
-import FormInput from './FormInput';
-import { FaGoogle, FaFacebook } from 'react-icons/fa';
-
+import React, { useState } from "react";
+import FormInput from "./FormInput";
+import { FaGoogle, FaFacebook } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
+import {
+  createUserWithEmailAndPassword,
+  fetchSignInMethodsForEmail,
+  sendEmailVerification,
+  signInWithPopup,
+} from "firebase/auth";
+import { auth, db, provider } from "../firebase";
+import { setDoc, doc, getDoc } from "firebase/firestore";
+import googleLogo from "../assets/googleLogo.png";
+import facebookLogo from "../assets/facebookLogo.png";
 
 const SignUpForm = () => {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
-    role: '' // No default, will force selection
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
+    role: "",
   });
 
   const [errors, setErrors] = useState({});
+  const navigate = useNavigate();
 
   const roles = [
-    { value: '', label: 'Select your role', disabled: true },
-    { value: 'researcher', label: 'Researcher' },
-    { value: 'admin', label: 'Administrator' },
-    { value: 'reviewer', label: 'Reviewer' }
+    { value: "", label: "Select your role", disabled: true },
+    { value: "researcher", label: "Researcher" },
+    { value: "reviewer", label: "Reviewer" },
   ];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const validateForm = () => {
     const newErrors = {};
-    
-    // Name validation
-    if (!formData.name.trim()) newErrors.name = 'Name is required';
-    
-    // Email validation
+    if (!formData.name.trim()) newErrors.name = "Name is required";
     if (!formData.email.trim()) {
-      newErrors.email = 'Email is required';
-    } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-      newErrors.email = 'Email is invalid';
+      newErrors.email = "Email is required";
+    } else if (!/^[\w-.]+@([\w-]+\.)+[\w-]{2,4}$/.test(formData.email)) {
+      newErrors.email = "Email is invalid";
     }
-    
-    // Enhanced Password validation
-    if (!formData.password) {
-      newErrors.password = 'Password is required';
-    } else {
-      if (formData.password.length < 8 || !/[A-Za-z]/.test(formData.password) || !/[0-9]/.test(formData.password) || !/[^A-Za-z0-9]/.test(formData.password)) {
-        newErrors.password = 'Password must be at least 8 characters, contain at least one letter, number and special character (@,#,!)';
-      } 
+    if (!formData.password || formData.password.length < 8) {
+      newErrors.password = "Password must be at least 8 characters long";
     }
-    
-    // Confirm password validation
     if (formData.password !== formData.confirmPassword) {
-      newErrors.confirmPassword = 'Passwords must match';
+      newErrors.confirmPassword = "Passwords must match";
     }
-    
-    // Role validation
-    if (!formData.role) newErrors.role = 'Please select a role';
-    
+    if (!formData.role.trim()) newErrors.role = "Please select a role";
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const checkIfEmailExists = async (email) => {
+    const userRef = doc(db, "users", email);
+    const userSnap = await getDoc(userRef);
+    return userSnap.exists();
+  };
+
+  const handleSignup = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      console.log('Form data with role:', formData);
-      alert(`Account created as ${formData.role}! (Auth is not yet implemented)`);
+    if (!validateForm()) return;
+
+    const emailExists = await checkIfEmailExists(formData.email);
+    if (emailExists) {
+      try {
+        // If email exists, log the user in
+        const userCredential = await signInWithEmailAndPassword(
+          auth,
+          formData.email,
+          formData.password
+        );
+        const user = userCredential.user;
+        console.log("Login successful:", user);
+        navigate("/home");
+      } catch (error) {
+        setErrors({ firebase: "Login failed. " + error.message });
+      }
+    } else {
+      try {
+        // If email doesn't exist, create new account
+        const userCredential = await createUserWithEmailAndPassword(
+          auth,
+          formData.email,
+          formData.password
+        );
+        const user = userCredential.user;
+
+        // Save user data to Firestore
+        await setDoc(doc(db, "users", user.uid), {
+          name: formData.name,
+          email: formData.email,
+          role: formData.role,
+          createdAt: new Date(),
+        });
+
+        // Send email verification
+        await sendEmailVerification(user);
+        alert("Verification email sent. Please check your inbox.");
+
+        navigate("/profile-completion");
+      } catch (error) {
+        setErrors({ firebase: error.message });
+      }
     }
   };
 
-  const handleGoogleAuth = () => {
-    console.log('Google authentication initiated');
-    // Add your Google auth logic here
+  const handleGoogleSignup = async () => {
+    try {
+      // Authenticate user with Google
+      const result = await signInWithPopup(auth, provider);
+      const user = result.user;
+  
+      // Reference Firestore user document
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+  
+      if (userSnap.exists()) {
+        // If user exists, log them in (navigate to the profile completion or home)
+        console.log("User already exists, logging in:", user);
+        navigate("/"); // Redirect after login
+      } else {
+        // If user does not exist, create a new Firestore document
+        await setDoc(userRef, {
+          uid: user.uid,
+          name: user.displayName,
+          email: user.email,
+          profileQuestions: {
+            profession: "Not set",
+            role: "Not set",
+          },
+          createdAt: new Date(),
+        });
+        console.log("Google Sign-up Successful:", user);
+        navigate("/profile-completion"); // Redirect after signup
+      }
+    } catch (error) {
+      console.error("Error during Google sign-up:", error);
+      alert(error.message);
+    }
   };
-
-  const handleFacebookAuth = () => {
-    console.log('Facebook authentication initiated');
-    // Add your Facebook auth logic here
-  };
+  
 
   return (
     <div className="w-full max-w-md">
       <h2 className="text-5xl font-bold text-gray-800 mb-2">Create Account</h2>
-      <p className="text-gray-600 mb-6 text-sm">Do you have an Account already? <a href="/login" className=" text-sm text-green-600 hover:underline">
+      <p className="text-gray-600 mb-6 text-sm">
+        Already have an account?{" "}
+        <a href="/login" className="text-green-600 hover:underline">
           Log in
-        </a></p>
-
-
-    
-      <form onSubmit={handleSubmit} className="space-y-4">
+        </a>
+      </p>
+      {errors.firebase && <p className="text-red-500">{errors.firebase}</p>}
+      <form onSubmit={handleSignup} className="space-y-4">
         <FormInput
           label="Full Name"
           name="name"
@@ -95,44 +163,36 @@ const SignUpForm = () => {
           onChange={handleChange}
           error={errors.name}
         />
-        
         <FormInput
-          label="Email Address"
+          label="Email"
           type="email"
           name="email"
           value={formData.email}
           onChange={handleChange}
           error={errors.email}
         />
-        
-        {/* Role Dropdown Field */}
         <div className="mb-4">
-          <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-            Role
-          </label>
+          <label className="block text-sm font-medium">Role</label>
           <select
-            id="role"
             name="role"
             value={formData.role}
             onChange={handleChange}
             className={`w-full px-3 py-2 border rounded-md ${
-              errors.role ? 'border-red-500' : 'border-gray-300'
+              errors.role ? "border-red-500" : "border-gray-300"
             }`}
           >
             {roles.map((role) => (
-              <option 
-                key={role.value} 
+              <option
+                key={role.value}
                 value={role.value}
                 disabled={role.disabled}
-                className={role.disabled ? 'text-gray-400' : ''}
               >
                 {role.label}
               </option>
             ))}
           </select>
-          {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role}</p>}
+          {errors.role && <p className="text-red-600 text-sm">{errors.role}</p>}
         </div>
-        
         <FormInput
           label="Password"
           type="password"
@@ -141,14 +201,6 @@ const SignUpForm = () => {
           onChange={handleChange}
           error={errors.password}
         />
-            {!errors.password && (
-             <p className="mt-1 text-xs text-gray-500">
-             Make it strong! Include:
-             <br />• At least 8 characters
-             <br />• Both letters and numbers
-             <br />• Symbols like (@,!,#)
-           </p>
-        )}
         <FormInput
           label="Confirm Password"
           type="password"
@@ -157,47 +209,32 @@ const SignUpForm = () => {
           onChange={handleChange}
           error={errors.confirmPassword}
         />
-
-                
         <button
-            type="submit"
-            className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition"
-            >
-            Sign Up
-            </button>  
-
-       {/* Divider */}
-        <div className="relative mb-6">
-            <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-300"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">Or continue with </span>
-            </div>
-        </div>
-
-        <div className="flex flex-col space-y-3 mb-6">
-                <button
-                onClick={handleGoogleAuth}
-                type="button"
-                className="w-full flex items-center justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                >
-                <FaGoogle className="mr-3 text-red-500" />
-                Continue with Google
-                </button>
-                
-                <button
-                onClick={handleFacebookAuth}
-                type="button"
-                className="w-full flex items-center justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                >
-                <FaFacebook className="mr-3 text-blue-600" />
-                Continue with Facebook
-                </button>
-            </div>
-        
+          type="submit"
+          className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition"
+        >
+          Sign Up
+        </button>
       </form>
-      
+      <div className="flex items-center my-6 max-w-md">
+        <hr className="flex-grow border-gray-300" />
+        <span className="mx-2 text-sm text-gray-500">OR</span>
+        <hr className="flex-grow border-gray-300" />
+      </div>
+
+      <div className="space-y-3 max-w-md">
+        <button
+          className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-md py-2 px-4 text-sm font-medium text-gray-700 hover:bg-gray-100 transition"
+          onClick={handleGoogleSignup}
+        >
+          <img src={googleLogo} alt="Google" className="w-5 h-5" />
+          <span>Continue with Google</span>
+        </button>
+        <button className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-md py-2 px-4 text-sm font-medium text-gray-700 hover:bg-gray-100 transition">
+          <img src={facebookLogo} alt="Facebook" className="w-5 h-5" />
+          <span>Continue with Facebook</span>
+        </button>
+      </div>
     </div>
   );
 };
