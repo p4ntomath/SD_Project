@@ -1,18 +1,25 @@
-import React, { useState } from "react";
+import React, { use, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import googleLogo from '../assets/googleLogo.png';
-import FormInput from './FormInput'; // Reuse your existing FormInput component
+import FormInput from './FormInput';
+import { signIn, googleSignIn } from "../backend/firebase/authFirebase";
+import { ClipLoader } from "react-spinners";// Import the AuthContext
 
 const LoginForm = () => {
+
+  const paths = {
+    success: "/authHomeTest",
+    completeProfile: "/complete-profile",
+  };
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
     rememberMe: false
   });
 
-  const [errors, setErrors] = useState({
-    email: '',
-    password: ''
-  });
+  const [errors, setErrors] = useState({});
+  const [loading, setLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -50,18 +57,49 @@ const LoginForm = () => {
     return isValid;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      console.log('Form submitted:', formData);
-      // Add your login logic here
-      alert('Login successful!');
+    if (!validateForm()) return;
+    setLoading(true);
+    try {
+      await signIn(formData.email, formData.password);
+      navigate(paths.success);
+    } catch (error) {
+      if (error.code === 'auth/user-not-found') {
+        setErrors({ form: 'User not found. Please sign up.' });
+      }
+      else if (error.code === 'auth/wrong-password') {
+        setErrors({ form: 'Incorrect password. Please try again.' });
+      }
+      else if (error.code === 'auth/network-request-failed') {
+        setErrors({ form: 'Network error. Please check your connection.' });
+      }
+      else if (error.code === 'auth/invalid-email') {
+        setErrors({ form: 'Invalid email format.' });
+      }
+      else if (error.code === 'auth/invalid-credential') {
+        setErrors({ form: 'Invalid credentials. Please try again.' });
+      }
+      setErrors({ form: error.message });
     }
+    setLoading(false);
   };
 
-  const handleGoogleAuth = () => {
-    console.log('Google authentication initiated');
-    // Add Google auth logic
+
+
+  const handleGoogleAuth = async () => {
+    setLoading(true);
+    try {
+      const { isNewUser } = await googleSignIn();
+      if (isNewUser) {
+        navigate(paths.completeProfile);
+      } else {
+        navigate(paths.success);
+      }
+    } catch (error) {
+      setErrors({ form: error.message });
+    }
+    setLoading(false);
   };
 
   return (
@@ -70,6 +108,8 @@ const LoginForm = () => {
         <h1 className="text-4xl font-bold">Welcome!</h1>
         <p className="text-lg font-semibold text-gray-600 mt-1">Login.</p>
       </header>
+
+      {errors.form && <p className="text-red-600 mb-4">{errors.form}</p>}
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <FormInput
@@ -108,9 +148,14 @@ const LoginForm = () => {
 
         <button
           type="submit"
+          disabled={loading}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md"
         >
-          Login
+          {loading ? (
+            <ClipLoader color="#ffffff" loading={loading} size={20} />
+          ) : (
+            "Login"
+          )}
         </button>
       </form>
 
@@ -122,12 +167,19 @@ const LoginForm = () => {
 
       <div className="space-y-3 w-full">
         <button 
-          type="button" // Important to prevent form submission
+          type="button"
           onClick={handleGoogleAuth}
+          disabled={loading}
           className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-md py-2 px-4 text-sm font-medium text-gray-700 hover:bg-gray-100 transition"
         >
-          <img src={googleLogo} alt="Google" className="w-5 h-5" />
-          <span>Continue with Google</span>
+          {loading ? (
+            <ClipLoader color="#4B5563" loading={loading} size={20} />
+          ) : (
+            <>
+              <img src={googleLogo} alt="Google" className="w-5 h-5" />
+              <span>Continue with Google</span>
+            </>
+          )}
         </button>
       </div>
 
