@@ -1,24 +1,42 @@
-import React from 'react'
-import { BrowserRouter as Router, Route, Routes } from "react-router-dom";
-import './App.css'
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import './App.css';
 import WelcomePage from './pages/welcomePage.jsx';
 import LoginPage from './pages/loginPage.jsx';
 import ForgotPasswordPage from './pages/forgotpasswordPage.jsx';
 import SignUpPage from './pages/SignUpPage.jsx';
 import AuthHomeTest from './pages/authHomeTest.jsx';
-function App() {
+import CompleteProfile from './pages/roleSelectionPage.jsx';
+import { AuthProvider } from './context/AuthContext'; // Import AuthProvider
+import ProtectedRoute from './components/ProtectedRoute'; // Import the ProtectedRoute component
 
+function App() {
   return (
     <Router>
-      <Routes>
-        <Route path="/" element={<WelcomePage />} />
-        <Route path="/login" element={<LoginPage />} />
-        <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
-        <Route path="/signup" element={<SignUpPage />} />
-        <Route path="/authHomeTest" element={<AuthHomeTest />} />
-      </Routes>
+      <AuthProvider>
+        <Routes>
+          <Route path="/" element={<WelcomePage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+          
+          {/* Complete-profile is protected but available to users without role */}
+          <Route path="/complete-profile" element={
+            <ProtectedRoute>
+              <CompleteProfile />
+            </ProtectedRoute>
+          } />
+          
+          {/* AuthHomeTest requires both authentication and completed profile */}
+          <Route path="/authHomeTest" element={
+            <ProtectedRoute>
+              <AuthHomeTest />
+            </ProtectedRoute>
+          } />
+        </Routes>
+      </AuthProvider>
     </Router>
   );
 }
 
-export default App
+export default App;
