@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import FormInput from './FormInput';
-import { FaGoogle, FaFacebook } from 'react-icons/fa';
+import googleLogo from '../assets/googleLogo.png';
 
 
 const SignUpForm = () => {
@@ -73,10 +73,6 @@ const SignUpForm = () => {
     // Add your Google auth logic here
   };
 
-  const handleFacebookAuth = () => {
-    console.log('Facebook authentication initiated');
-    // Add your Facebook auth logic here
-  };
 
   return (
     <div className="w-full max-w-md">
@@ -172,29 +168,21 @@ const SignUpForm = () => {
             <div className="w-full border-t border-gray-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-            <span className="px-2 bg-white text-gray-500">Or continue with </span>
+            <span className="px-2 bg-white text-gray-500">OR</span>
             </div>
         </div>
 
-        <div className="flex flex-col space-y-3 mb-6">
-                <button
-                onClick={handleGoogleAuth}
-                type="button"
-                className="w-full flex items-center justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                >
-                <FaGoogle className="mr-3 text-red-500" />
-                Continue with Google
-                </button>
-                
-                <button
-                onClick={handleFacebookAuth}
-                type="button"
-                className="w-full flex items-center justify-center py-2 px-4 border border-gray-300 rounded-md shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50"
-                >
-                <FaFacebook className="mr-3 text-blue-600" />
-                Continue with Facebook
-                </button>
-            </div>
+        <div className="space-y-3 w-full max-w-md">
+          <button 
+          type="button"
+            onClick={handleGoogleAuth}
+            className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-md py-2 px-4 text-sm font-medium text-gray-700 hover:bg-gray-100 transition"
+          >
+            <img src={googleLogo} alt="Google" className="w-5 h-5" />
+            <span>Continue with Google</span>
+          </button>
+          
+        </div>
         
       </form>
       
@@ -202,4 +190,4 @@ const SignUpForm = () => {
   );
 };
 
-export default SignUpForm;
+export default SignUpForm; 
