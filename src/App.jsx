@@ -4,7 +4,8 @@ import './App.css'
 import WelcomePage from './pages/welcomePage.jsx';
 import LoginPage from './pages/loginPage.jsx';
 import ForgotPasswordPage from './pages/forgotpasswordPage.jsx';
-import SignUpPage from './pages/signUpPage.jsx';
+import SignUpPage from './pages/SignUpPage.jsx';
+import AuthHomeTest from './pages/authHomeTest.jsx';
 function App() {
 
   return (
@@ -14,6 +15,7 @@ function App() {
         <Route path="/login" element={<LoginPage />} />
         <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
         <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/authHomeTest" element={<AuthHomeTest />} />
       </Routes>
     </Router>
   );
