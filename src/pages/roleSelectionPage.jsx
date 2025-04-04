@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { completeProfile } from '../backend/firebase/authFirebase';
-import RoleSelectionForm from '../components/RoleSelctionForm';
+import RoleSelectionForm from '../components/RoleSelectionForm';
 import { ClipLoader } from 'react-spinners';
 import { useNavigate } from 'react-router-dom'; 
 import { useAuth } from '../context/AuthContext';// Importing useNavigate for redirection
