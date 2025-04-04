@@ -68,19 +68,14 @@ const LoginForm = () => {
       if (error.code === 'auth/user-not-found') {
         setErrors({ form: 'User not found. Please sign up.' });
       }
-      else if (error.code === 'auth/wrong-password') {
-        setErrors({ form: 'Incorrect password. Please try again.' });
-      }
-      else if (error.code === 'auth/network-request-failed') {
-        setErrors({ form: 'Network error. Please check your connection.' });
-      }
-      else if (error.code === 'auth/invalid-email') {
-        setErrors({ form: 'Invalid email format.' });
-      }
       else if (error.code === 'auth/invalid-credential') {
-        setErrors({ form: 'Invalid credentials. Please try again.' });
+        setErrors({ form: 'Invalid Credentials' });
       }
-      setErrors({ form: error.message });
+      else if (error.code === 'auth/wrong-password') {
+        setErrors({ form: 'Wrong Password' });
+      }
+      else{
+        setErrors({ form: error.code });}
     }
     setLoading(false);
   };
