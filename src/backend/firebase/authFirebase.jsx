@@ -8,6 +8,7 @@ import {
   signOut,
   onAuthStateChanged,
 } from "firebase/auth";
+import {collection, query, where, getDocs } from "firebase/firestore";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 
 // 🔹 Handle Firebase Auth Error
@@ -81,7 +82,7 @@ const signIn = async (email, password) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return userCredential.user;
   } catch (error) {
-    console.error("Sign-in error:", error.message);
+    throw error; // Re-throw the error for handling in the calling function
   }
 };
 
@@ -89,10 +90,19 @@ const signIn = async (email, password) => {
 // 🔹 Password Reset
 const resetPassword = async (email) => {
   try {
+    // Check if email exists in Firestore "users" collection
+    const usersRef = collection(db, "users");
+    const q = query(usersRef, where("email", "==", email));
+    const querySnapshot = await getDocs(q);
+
+    if (querySnapshot.empty) {
+      throw new Error("No account found with this email.");
+    }
+
+    // If email exists, send password reset email
     await sendPasswordResetEmail(auth, email);
-    return "Password reset email sent!";
   } catch (error) {
-    console.error("Password reset error:", error.message);
+    throw error;
   }
 };
 
