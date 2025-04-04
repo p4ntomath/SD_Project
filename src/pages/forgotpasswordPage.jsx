@@ -1,16 +1,20 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { resetPassword } from '../backend/firebase/authFirebase';
+import { ClipLoader } from 'react-spinners';
 import welcomeImage from '../assets/welcomeDisplayImage.jpg';
 
 const ForgotPasswordPage = () => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [isSubmitted, setIsSubmitted] = useState(false);
+  const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     
-    // Simple validation
+    // Validation
     if (!email.trim()) {
       setError('Email is required');
       return;
@@ -21,26 +25,30 @@ const ForgotPasswordPage = () => {
       return;
     }
     
-    // call the password reset API here
-    console.log('Password reset requested for:', email);
-    setIsSubmitted(true);
-    setError('');
+    try {
+      setLoading(true);
+      await resetPassword(email);
+      setIsSubmitted(true);
+    } catch (err) {
+      setError(err.message || 'Failed to send reset email');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
     <div className="min-h-screen flex flex-col md:flex-row">
       {/* Image Section - Hidden on mobile */}
-      <div className="hidden md:flex md:w-1/2 bg-gray-100  items-center justify-center p-8 rounded-tr-2xl rounded-br-2xl">
-        <div className="h-full w-full flex items-center justify-center"> {/* New wrapper div */}
-            <img
+      <div className="hidden md:flex md:w-1/2 bg-gray-100 items-center justify-center p-8 rounded-tr-2xl rounded-br-2xl">
+        <div className="h-full w-full flex items-center justify-center">
+          <img
             src={welcomeImage}
             alt="Welcome"
             className="h-auto object-contain rounded-lg shadow-md"
-            />
+          />
         </div>
-        </div>
-        
-
+      </div>
+      
       {/* Form Section */}
       <div className="w-full md:w-1/2 flex items-center justify-center p-8 bg-white">
         <div className="w-full max-w-md">
@@ -64,6 +72,12 @@ const ForgotPasswordPage = () => {
                 Enter your email and we'll send you a link to reset your password.
               </p>
               
+              {error && (
+                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
+                  {error}
+                </div>
+              )}
+
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="mb-4">
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
@@ -73,21 +87,30 @@ const ForgotPasswordPage = () => {
                     type="email"
                     id="email"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (error) setError('');
+                    }}
                     className={`w-full px-3 py-2 border rounded-md ${
                       error ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder="your@email.com"
                   />
-                  {error && <p className="mt-1 text-sm text-red-600">{error}</p>}
                 </div>
+                
                 <button
                   type="submit"
-                  className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition"
+                  disabled={loading}
+                  className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition flex justify-center items-center"
                 >
-                  Send Reset Link
+                  {loading ? (
+                    <ClipLoader color="#ffffff" size={20} />
+                  ) : (
+                    'Send Reset Link'
+                  )}
                 </button>
               </form>
+              
               <div className="mt-6 text-center text-sm text-gray-600">
                 Remember your password?{' '}
                 <Link 

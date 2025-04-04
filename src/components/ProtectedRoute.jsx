@@ -9,29 +9,26 @@ const ProtectedRoute = ({ children }) => {
     const location = useLocation();
 
     useEffect(() => {
-        if (loading) return; // Wait until auth state is loaded
-
-        // If not logged in, redirect to login
+        if (loading) return; // Wait until auth state and role are both loaded
+    
         if (!user) {
             navigate('/login');
             return;
         }
-
-        // Special handling for complete-profile route
-        if (location.pathname === '/complete-profile') {
-            // If user already has role, redirect to home
-            if (role) {
-                navigate('/authHomeTest');
-            }
-            // Else stay on complete-profile
+    
+        // Wait for role state to be fully determined before making navigation decisions
+        if (role === null) return;
+    
+        if (location.pathname === '/complete-profile' && role) {
+            navigate('/authHomeTest');
             return;
         }
-
-        // For all other protected routes, check if role exists
+    
         if (!role) {
             navigate('/complete-profile');
         }
     }, [user, role, loading, navigate, location.pathname]);
+    
 
     if (loading) {
         return (

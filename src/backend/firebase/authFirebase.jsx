@@ -10,23 +10,7 @@ import {
 } from "firebase/auth";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 
-// 🔹 Handle Firebase Auth Errors
-const handleAuthError = (error) => {
-  switch (error.code) {
-    case "auth/email-already-in-use":
-      throw new Error("Email is already in use.");
-    case "auth/weak-password":
-      throw new Error("Password should be at least 6 characters.");
-    case "auth/user-not-found":
-      throw new Error("No user found with this email.");
-    case "auth/wrong-password":
-      throw new Error("Incorrect password.");
-    case "auth/network-request-failed":
-      throw new Error("Network error. Check your connection.");
-    default:
-      throw new Error(error.message);
-  }
-};
+// 🔹 Handle Firebase Auth Error
 
 // 🔹 Email/Password Sign-Up
 const signUp = async (fullName, email, password, role) => {
@@ -45,7 +29,7 @@ const signUp = async (fullName, email, password, role) => {
 
     return user;
   } catch (error) {
-    handleAuthError(error);
+    console.error("Sign-up error:", error.message);
   }
 };
 
@@ -73,7 +57,7 @@ const googleSignIn = async () => {
       return { isNewUser: false, user };
     }
   } catch (error) {
-    handleAuthError(error);
+    console.error("Google sign-in error:", error.message);
   }
 };
 
@@ -85,7 +69,7 @@ const completeProfile = async (fullName, role) => {
       role,
     }, { merge: true });
   } catch (error) {
-    handleAuthError(error);
+    console.error("Error completing profile:", error.message);
   }
 }
 
@@ -97,7 +81,7 @@ const signIn = async (email, password) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return userCredential.user;
   } catch (error) {
-    handleAuthError(error);
+    console.error("Sign-in error:", error.message);
   }
 };
 
@@ -108,7 +92,7 @@ const resetPassword = async (email) => {
     await sendPasswordResetEmail(auth, email);
     return "Password reset email sent!";
   } catch (error) {
-    handleAuthError(error);
+    console.error("Password reset error:", error.message);
   }
 };
 

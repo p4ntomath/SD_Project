@@ -19,7 +19,7 @@ export const AuthProvider = ({ children }) => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       if (user) {
         setUser(user);
-        // Check if role and fullName exist in Firestore
+        // Fetch user role from Firestore
         fetchRoleFromDatabase(user.uid);
       } else {
         setUser(null);
@@ -32,24 +32,25 @@ export const AuthProvider = ({ children }) => {
   }, []);
 
   // In your AuthProvider component
-const fetchRoleFromDatabase = async (uid) => {
-  try {
-    const docRef = doc(db, 'users', uid);
-    const docSnap = await getDoc(docRef);
-    
-    if (docSnap.exists()) {
-      const userData = docSnap.data();
-      setRole(userData.role || null); // Ensure role is set to null if undefined
-    } else {
+  const fetchRoleFromDatabase = async (uid) => {
+    try {
+      const docRef = doc(db, 'users', uid);
+      const docSnap = await getDoc(docRef);
+  
+      if (docSnap.exists()) {
+        const userData = docSnap.data();
+        setRole(userData.role || null);
+      } else {
+        setRole(null);
+      }
+    } catch (error) {
+      console.error('Error fetching role:', error);
       setRole(null);
+    } finally {
+      setLoading(false); // Only set loading to false AFTER fetching role
     }
-  } catch (error) {
-    console.error('Error fetching role:', error);
-    setRole(null);
-  } finally {
-    setLoading(false); // Always set loading to false when done
-  }
-};
+  };
+  
 
 
   if (loading) {
