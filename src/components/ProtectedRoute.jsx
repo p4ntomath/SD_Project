@@ -17,15 +17,16 @@ const ProtectedRoute = ({ children }) => {
         }
     
         // Wait for role state to be fully determined before making navigation decisions
-        if (role === null) return;
+        if (role === null) 
+            {
+                navigate('/complete-profile');
+                return;
+            }
+
     
         if (location.pathname === '/complete-profile' && role) {
             navigate('/authHomeTest');
             return;
-        }
-    
-        if (!role) {
-            navigate('/complete-profile');
         }
     }, [user, role, loading, navigate, location.pathname]);
     
