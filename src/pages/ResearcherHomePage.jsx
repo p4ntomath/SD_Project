@@ -1,6 +1,8 @@
 import { useState } from 'react';
 import CreateProjectForm from '../components/CreateProjectForm';
 import { logOut } from "../backend/firebase/authFirebase";
+import { updateProject } from "../backend/firebase/projectDB";
+import { deleteProject } from "../backend/firebase/projectDB";
 
 export default function ResearcherHomePage() {
   const [projects, setProjects] = useState([]);
@@ -16,6 +18,7 @@ export default function ResearcherHomePage() {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
+
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
@@ -87,6 +90,27 @@ export default function ResearcherHomePage() {
                         </ul>
                       </div>
                     )}
+
+                    <span className="flex space-x-4"> {/*these two buttons call the update and delete function imported from the projectDB file*/}
+                      <button 
+                        onClick={() => {
+                          updateProject();
+                        }}
+                        className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-2 md:px-6 rounded-lg text-sm md:text-base transition-colors"
+                        >
+                        Update Project
+                      </button>
+
+                      <button 
+                        onClick={() => {
+                          deleteProject();
+                        }}
+                        className="bg-red-600 hover:bg-red-500 text-white font-medium py-2 px-4 md:px-6 rounded-lg text-sm md:text-base transition-colors"
+                        >
+                        Delete project
+                      </button>
+                    </span>
+
                   </div>
                 ))}
               </div>
