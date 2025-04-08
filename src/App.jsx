@@ -10,6 +10,8 @@ import CompleteProfile from './pages/roleSelectionPage.jsx';
 import { AuthProvider } from './context/AuthContext'; // Import AuthProvider
 import ProtectedRoute from './components/ProtectedRoute'; // Import the ProtectedRoute component
 
+//import CreateProject from './backend/createProject' // Update path if different
+import  CreateProject  from "./backend/firebase/createProject";
 function App() {
   return (
     <Router>
@@ -33,6 +35,9 @@ function App() {
               <AuthHomeTest />
             </ProtectedRoute>
           } />
+          {/* Create Project route */}
+          <Route path="/create-project" element={<CreateProject />} />
+
         </Routes>
       </AuthProvider>
     </Router>
