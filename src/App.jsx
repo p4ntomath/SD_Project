@@ -9,6 +9,7 @@ import AuthHomeTest from './pages/authHomeTest.jsx';
 import CompleteProfile from './pages/roleSelectionPage.jsx';
 import { AuthProvider } from './context/AuthContext'; // Import AuthProvider
 import ProtectedRoute from './components/ProtectedRoute'; // Import the ProtectedRoute component
+import ResearcherHomePage from './pages/ResearcherHomePage.jsx';
 
 function App() {
   return (
@@ -19,6 +20,7 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
           <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/ResearcherHomePage" element={<ResearcherHomePage />} />
           
           {/* Complete-profile is protected but available to users without role */}
           <Route path="/complete-profile" element={
