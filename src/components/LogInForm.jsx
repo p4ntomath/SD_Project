@@ -51,8 +51,8 @@ const LoginForm = () => {
     if (!formData.password) {
       newErrors.password = 'Password is required';
       isValid = false;
-    } else if (formData.password.length < 6) {
-      newErrors.password = 'Password must be at least 6 characters';
+    } else if (formData.password.length < 8) {
+      newErrors.password = 'Password must be at least 8 characters';
       isValid = false;
     }
 
@@ -114,7 +114,6 @@ const LoginForm = () => {
       <form onSubmit={handleSubmit} className="space-y-4">
         <FormInput
           label="Email Address"
-          type="email"
           name="email"
           value={formData.email}
           onChange={handleChange}

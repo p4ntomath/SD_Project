@@ -42,7 +42,7 @@ const SignUpForm = () => {
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-      newErrors.email = "Email is invalid";
+      newErrors.email = "Please enter a valid email";
     }
 
     if (!formData.password) {
@@ -117,7 +117,6 @@ const SignUpForm = () => {
         <FormInput label="Full Name" name="name" value={formData.name} onChange={handleChange} error={errors.name} />
         <FormInput
           label="Email Address"
-          type="email"
           name="email"
           value={formData.email}
           onChange={handleChange}
