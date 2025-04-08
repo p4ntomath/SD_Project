@@ -1,12 +1,15 @@
-import React, { use, useState } from "react";
+import React, { use, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import googleLogo from '../assets/googleLogo.png';
 import FormInput from './FormInput';
-import { signIn, googleSignIn } from "../backend/firebase/authFirebase";
-import { ClipLoader } from "react-spinners";// Import the AuthContext
+import { signIn, googleSignIn ,getUserRole} from "../backend/firebase/authFirebase";
+import { ClipLoader } from "react-spinners";
+import AuthContext from "../context/AuthContext";
+
 
 const LoginForm = () => {
 
+  const { setRole } = useContext(AuthContext);
   const paths = {
     success: "/authHomeTest",
     completeProfile: "/complete-profile",
@@ -62,7 +65,9 @@ const LoginForm = () => {
     if (!validateForm()) return;
     setLoading(true);
     try {
-      await signIn(formData.email, formData.password);
+      const user = await signIn(formData.email, formData.password);
+      const role = await getUserRole(user.uid);
+      setRole(role);
       navigate(paths.success);
     } catch (error) {
       if (error.code === 'auth/user-not-found') {

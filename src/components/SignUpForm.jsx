@@ -30,6 +30,7 @@ const SignUpForm = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    setErrors((prev) => ({ ...prev, [name]: "" })); // Clear error for the field being changed
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -76,9 +77,8 @@ const SignUpForm = () => {
       await signUp(formData.name, formData.email, formData.password, formData.role);
       navigate(paths.sucess);
     } catch (error) {
-      if (error.message === "Email is already in use.") {
-        alert("Email already in use. Please log in.");
-        navigate("/login");
+      if (error.code === "auth/email-already-in-use") {
+        setErrors({ email: "Email already in use" });
       } else {
         setErrors({ form: error.message });
       }
