@@ -11,8 +11,11 @@ import { AuthProvider } from './context/AuthContext'; // Import AuthProvider
 import ProtectedRoute from './components/ProtectedRoute'; // Import the ProtectedRoute component
 
 //import CreateProject from './backend/createProject' // Update path if different
-import  CreateProject  from "./backend/firebase/createProject";
+import  CreateProject  from "./backend/firebase/projectDB";
+
+//mport { fetchProjects, updateProject, deleteProject } from './backend/firebase/projectDB'; was just for testing
 function App() {
+  
   return (
     <Router>
       <AuthProvider>

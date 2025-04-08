@@ -1,6 +1,18 @@
 import React, { useState } from 'react';
 import { db } from "./firebaseConfig";  
-import { addDoc, collection } from 'firebase/firestore';  
+//import { addDoc, collection } from 'firebase/firestore';  
+//import { getDocs, collection } from 'firebase/firestore';
+//import { doc, updateDoc } from 'firebase/firestore';
+//import { doc, deleteDoc } from 'firebase/firestore';
+import {
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  updateDoc,
+  deleteDoc
+} from 'firebase/firestore';
+
 function CreateProject() {
   // State hooks for form input values
   const [title, setTitle] = useState("");
@@ -46,7 +58,7 @@ function CreateProject() {
     }
   };
 
-  return (
+ /* return (
     <div>
       <h2>Create a New Project</h2>
       <form onSubmit={handleSubmit}>
@@ -104,7 +116,25 @@ function CreateProject() {
         <button type="submit">Create Project</button>
       </form>
     </div>
-  );
-}
+  );*/
+}// commented out the UI PART, can completely erase if you want to
+
+// Read all projects
+export const fetchProjects = async () => {
+  const snapshot = await getDocs(collection(db, "projects"));
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+};
+
+// Update a project
+export const updateProject = async (id, updatedData) => {
+  const projectRef = doc(db, "projects", id);
+  await updateDoc(projectRef, updatedData);
+};
+
+// Delete a project
+export const deleteProject = async (id) => {
+  const projectRef = doc(db, "projects", id);
+  await deleteDoc(projectRef);
+};
 
 export default CreateProject;
