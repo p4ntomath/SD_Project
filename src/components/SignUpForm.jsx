@@ -78,7 +78,7 @@ const SignUpForm = () => {
       navigate(paths.sucess);
     } catch (error) {
       if (error.code === "auth/email-already-in-use") {
-        setErrors({ email: "Email already in use" });
+        setErrors({ email: "Email already exists,try logging in or use a different email" });
       } else {
         setErrors({ form: error.message });
       }
