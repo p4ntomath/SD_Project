@@ -5,13 +5,14 @@ import FormInput from './FormInput';
 import { signIn, googleSignIn ,getUserRole} from "../backend/firebase/authFirebase";
 import { ClipLoader } from "react-spinners";
 import AuthContext from "../context/AuthContext";
+import ResearcherHomePage from "../pages/ResearcherHomePage";
 
 
 const LoginForm = () => {
 
   const { setRole } = useContext(AuthContext);
   const paths = {
-    success: "/authHomeTest",
+    success: "/ResearcherHomePage",
     completeProfile: "/complete-profile",
   };
   const navigate = useNavigate();

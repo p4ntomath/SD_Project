@@ -55,8 +55,6 @@ export const fetchProjects = async (uid) => {
     throw error;
   }
 };
-
-
 export const updateProject = async (id, updatedData) => {
   const projectRef = doc(db, "projects", id);
   await updateDoc(projectRef, updatedData);
@@ -69,5 +67,3 @@ export const deleteProject = async (id) => {
 };
 
 //Please add update methods for all the fields in the project excluding the userId
-
-

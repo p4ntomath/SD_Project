@@ -7,8 +7,8 @@ import { ClipLoader } from "react-spinners"; // Import the spinner
 
 const SignUpForm = () => {
   const paths = {
-    sucess: "/authHomeTest",
-    succesGoogle: "/complete-profile",
+    success: "/ResearcherHomePage",
+    successGoogle: "/complete-profile",
   };
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
