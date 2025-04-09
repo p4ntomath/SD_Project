@@ -1,16 +1,45 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import CreateProjectForm from '../components/CreateProjectForm';
 import { logOut } from "../backend/firebase/authFirebase";
-import { updateProject } from "../backend/firebase/projectDB";
-import { deleteProject } from "../backend/firebase/projectDB";
+import { createProject ,fetchProjects,deleteProject} from "../backend/firebase/projectDB";
+import { auth } from "../backend/firebase/firebaseConfig";
 
 export default function ResearcherHomePage() {
   const [projects, setProjects] = useState([]);
   const [showForm, setShowForm] = useState(false);
 
+  const fetchAllProjects = async (user) => {
+    try {
+      if (!user) {
+        console.error("User not authenticated");
+      }
+      const fetchedProjects = await fetchProjects(user.uid);
+      setProjects(fetchedProjects);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+    }
+  };
+
+  // Fetch projects when the component mounts
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (user) {
+      fetchAllProjects(user);
+    } else {
+      console.error("User not authenticated");
+    }
+  }, [projects.length]); // Re-fetch projects when the length changes
+
+  // Function to handle project creation
   const handleCreateProject = (newProject) => {
-    setProjects([...projects, newProject]);
-    setShowForm(false);
+    try{
+      createProject(newProject.title, newProject.description, newProject.researchField, newProject.startDate, newProject.endDate, newProject.goals, newProject.contact)
+      setProjects([...projects, newProject]);
+      setShowForm(false);
+    }
+    catch(err){
+      console.error("Error creating project:", err);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -18,6 +47,17 @@ export default function ResearcherHomePage() {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
+  const formatFirebaseDate = (timestamp) => {
+    if (!timestamp || typeof timestamp !== "object") return "";
+  
+    const date = new Date(timestamp.seconds * 1000); // Convert seconds to ms
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+  
 
 
   return (
@@ -59,7 +99,7 @@ export default function ResearcherHomePage() {
                         </span>
                       </div>
                       <div className="text-sm text-gray-500">
-                        Created: {formatDate(project.createdAt)}
+                        Created: {formatFirebaseDate(project.createdAt)}
                       </div>
                     </div>
                     
@@ -103,7 +143,6 @@ export default function ResearcherHomePage() {
                             contact: project.contact,
                             goals: project.goals
                           };
-                          updateProject(project.id, updatedData);
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-2 md:px-6 rounded-lg text-sm md:text-base transition-colors"
                         >
@@ -113,6 +152,7 @@ export default function ResearcherHomePage() {
                       <button 
                         onClick={() => {
                           deleteProject(project.id);
+                          setProjects(projects.filter((p) => p.id !== project.id)); // Update the local state after deletion
                         }}
                         className="bg-red-600 hover:bg-red-500 text-white font-medium py-2 px-4 md:px-6 rounded-lg text-sm md:text-base transition-colors"
                         >

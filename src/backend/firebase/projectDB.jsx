@@ -10,7 +10,7 @@ import {
 
 
 //this function creates a new project in the Firestore database
-export async function createProject(title, description, researchField, goals, startDate, endDate) {
+export async function createProject(title, description, researchField, goals, contact,startDate, endDate) {
     const user = auth.currentUser;
     if (!user) {
       throw new Error("User not authenticated");
@@ -28,11 +28,10 @@ export async function createProject(title, description, researchField, goals, st
         researchField,
         startDate,
         endDate,
+        contact,
         goals: goals.split(","),
         createdAt: new Date(),
       });
-
-      console.log("Project created with ID:", docRef.id);
     } catch (err) {
       throw err;
     }
