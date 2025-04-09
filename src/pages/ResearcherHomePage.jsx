@@ -33,7 +33,7 @@ export default function ResearcherHomePage() {
   // Function to handle project creation
   const handleCreateProject = (newProject) => {
     try{
-      createProject(newProject.title, newProject.description, newProject.researchField, newProject.startDate, newProject.endDate, newProject.goals, newProject.contact)
+      createProject(newProject.title, newProject.description, newProject.researchField, newProject.goals, newProject.contact, newProject.startDate, newProject.endDate)
       setProjects([...projects, newProject]);
       setShowForm(false);
     }
