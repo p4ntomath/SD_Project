@@ -1,9 +1,4 @@
-import React, { useState } from 'react';
-import { db } from "./firebaseConfig";  
-//import { addDoc, collection } from 'firebase/firestore';  
-//import { getDocs, collection } from 'firebase/firestore';
-//import { doc, updateDoc } from 'firebase/firestore';
-//import { doc, deleteDoc } from 'firebase/firestore';
+import { db,auth } from "./firebaseConfig";
 import {
   collection,
   addDoc,
@@ -13,28 +8,21 @@ import {
   deleteDoc
 } from 'firebase/firestore';
 
-function CreateProject() {
-  // State hooks for form input values
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [researchField, setResearchField] = useState("");
-  const [goals, setGoals] = useState("");
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [error, setError] = useState("");
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-
-    // Validation
+//this function creates a new project in the Firestore database
+export async function createProject(title, description, researchField, goals, startDate, endDate) {
+    const user = auth.currentUser;
+    if (!user) {
+      throw new Error("User not authenticated");
+    }
     if (!title || !description || !researchField) {
       setError("Please fill in all the required fields.");
-      return;
+      throw new Error("Missing required fields");
     }
 
     try {
-      // Storing data in Firestore (handled above)
       const docRef = await addDoc(collection(db, "projects"), {
+        userId: user.uid,
         title,
         description,
         researchField,
@@ -45,96 +33,37 @@ function CreateProject() {
       });
 
       console.log("Project created with ID:", docRef.id);
-      // Clear form fields
-      setTitle("");
-      setDescription("");
-      setResearchField("");
-      setGoals("");
-      setStartDate("");
-      setEndDate("");
     } catch (err) {
-      console.error("Error creating project:", err);
-      setError("An error occurred while creating the project. Please try again.");
+      throw err;
     }
-  };
+}
 
- /* return (
-    <div>
-      <h2>Create a New Project</h2>
-      <form onSubmit={handleSubmit}>
-        <div>
-          <label>Project Title</label>
-          <input
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label>Project Description</label>
-          <textarea
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label>Research Field</label>
-          <input
-            type="text"
-            value={researchField}
-            onChange={(e) => setResearchField(e.target.value)}
-            required
-          />
-        </div>
-        <div>
-          <label>Goals (comma separated)</label>
-          <input
-            type="text"
-            value={goals}
-            onChange={(e) => setGoals(e.target.value)}
-          />
-        </div>
-        <div>
-          <label>Start Date</label>
-          <input
-            type="date"
-            value={startDate}
-            onChange={(e) => setStartDate(e.target.value)}
-          />
-        </div>
-        <div>
-          <label>End Date</label>
-          <input
-            type="date"
-            value={endDate}
-            onChange={(e) => setEndDate(e.target.value)}
-          />
-        </div>
-        {error && <p style={{ color: "red" }}>{error}</p>}
-        <button type="submit">Create Project</button>
-      </form>
-    </div>
-  );*/
-}// commented out the UI PART, can completely erase if you want to
-
-// Read all projects
-export const fetchProjects = async () => {
-  const snapshot = await getDocs(collection(db, "projects"));
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+// fetxhProjects function to get all projects for a specific user
+export const fetchProjects = async (uid) => {
+  try {
+    const projectsCollection = collection(db, "projects");
+    const querySnapshot = await getDocs(projectsCollection);
+    const projects = [];
+    querySnapshot.forEach((doc) => {
+      if (doc.data().userId === uid) {
+        projects.push({ id: doc.id, ...doc.data() });
+      }
+    });
+    return projects;
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    throw error;
+  }
 };
-
-// Update a project
 export const updateProject = async (id, updatedData) => {
   const projectRef = doc(db, "projects", id);
   await updateDoc(projectRef, updatedData);
 };
 
-// Delete a project
+
 export const deleteProject = async (id) => {
   const projectRef = doc(db, "projects", id);
   await deleteDoc(projectRef);
 };
 
-export default CreateProject;
+//Please add update methods for all the fields in the project excluding the userId
