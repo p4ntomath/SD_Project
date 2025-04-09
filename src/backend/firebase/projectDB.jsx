@@ -29,7 +29,7 @@ export async function createProject(title, description, researchField, goals, co
         startDate,
         endDate,
         contact,
-        goals: goals.split(","),
+        goals: goals.map((goal) => goal.trim()),
         createdAt: new Date(),
       });
     } catch (err) {
