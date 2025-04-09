@@ -103,7 +103,7 @@ export default function ResearcherHomePage() {
 
                       <button 
                         onClick={() => {
-                          deleteProject();
+                          deleteProject(project.id);
                         }}
                         className="bg-red-600 hover:bg-red-500 text-white font-medium py-2 px-4 md:px-6 rounded-lg text-sm md:text-base transition-colors"
                         >
