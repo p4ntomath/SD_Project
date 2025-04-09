@@ -94,7 +94,16 @@ export default function ResearcherHomePage() {
                     <span className="flex space-x-4"> {/*these two buttons call the update and delete function imported from the projectDB file*/}
                       <button 
                         onClick={() => {
-                          updateProject();
+                          const updatedData = {
+                            title: project.title,
+                            researchField: project.researchField,
+                            description: project.description,
+                            startDate: project.startDate,
+                            endDate: project.endDate,
+                            contact: project.contact,
+                            goals: project.goals
+                          };
+                          updateProject(project.id, updatedData);
                         }}
                         className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-2 md:px-6 rounded-lg text-sm md:text-base transition-colors"
                         >
