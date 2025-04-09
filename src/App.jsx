@@ -10,9 +10,6 @@ import CompleteProfile from './pages/roleSelectionPage.jsx';
 import { AuthProvider } from './context/AuthContext'; // Import AuthProvider
 import ProtectedRoute from './components/ProtectedRoute'; // Import the ProtectedRoute component
 
-//import CreateProject from './backend/createProject' // Update path if different
-import  CreateProject  from "./backend/firebase/projectDB";
-
 //mport { fetchProjects, updateProject, deleteProject } from './backend/firebase/projectDB'; was just for testing
 function App() {
   
@@ -24,22 +21,18 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
           <Route path="/signup" element={<SignUpPage />} />
-          
           {/* Complete-profile is protected but available to users without role */}
           <Route path="/complete-profile" element={
             <ProtectedRoute>
               <CompleteProfile />
             </ProtectedRoute>
           } />
-          
           {/* AuthHomeTest requires both authentication and completed profile */}
           <Route path="/authHomeTest" element={
             <ProtectedRoute>
               <AuthHomeTest />
             </ProtectedRoute>
           } />
-          {/* Create Project route */}
-          <Route path="/create-project" element={<CreateProject />} />
 
         </Routes>
       </AuthProvider>
