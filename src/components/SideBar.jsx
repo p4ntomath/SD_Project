@@ -54,7 +54,7 @@ export default function SideBar({ isOpen, toggleSidebar }) {
               {/*The user should be the projects that they made
               Track the projects
               Search their project
-              Update/delete a projet
+              Update/delete a project
               */}
               <li className="flex items-center gap-3 p-2 hover:bg-blue-600 rounded cursor-pointer">
                 <FolderIcon className="h-5 w-5" />
