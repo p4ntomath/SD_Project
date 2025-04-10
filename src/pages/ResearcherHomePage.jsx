@@ -9,7 +9,7 @@ import { auth } from "../backend/firebase/firebaseConfig";
 export default function ResearcherHomePage() {
   const [projects, setProjects] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true); // Start closed by default
+  const [sidebarOpen, setSidebarOpen] = useState(false); // Start closed by default
 
   const fetchAllProjects = async (user) => {
     try {
