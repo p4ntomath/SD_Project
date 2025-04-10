@@ -3,6 +3,7 @@
  * for a specific user.
  */
 import { db,auth } from "./firebaseConfig";
+import { query, where } from "firebase/firestore";
 import {
   collection,
   addDoc,
@@ -18,7 +19,8 @@ import {
  * The function `createProject` in JavaScript React creates a new project with specified details after
  * checking user authentication and required fields.
  */
-export async function createProject(title, description, researchField, goals, contact,startDate, endDate) {
+export async function createProject(newProject) {
+    const { title, description, researchField } = newProject;
     const user = auth.currentUser;
     if (!user) {
       throw new Error("User not authenticated");
@@ -29,6 +31,11 @@ export async function createProject(title, description, researchField, goals, co
     }
 
     try {
+      const docRef = await addDoc(collection(db, "projects"), {
+        ...newProject,
+        userId: user.uid,
+      });
+      return docRef.id;
     } catch (err) {
       throw err;
     }
@@ -45,25 +52,34 @@ export async function createProject(title, description, researchField, goals, co
 export const fetchProjects = async (uid) => {
   try {
     const projectsCollection = collection(db, "projects");
-    const querySnapshot = await getDocs(projectsCollection);
-    const projects = [];
-    querySnapshot.forEach((doc) => {
-      if (doc.data().userId === uid) {
-        projects.push({ id: doc.id, ...doc.data() });
-      }
-    });
+    const userProjectsQuery = query(projectsCollection, where("userId", "==", uid));
+    const querySnapshot = await getDocs(userProjectsQuery);
+
+    const projects = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
     return projects;
   } catch (error) {
     console.error("Error fetching projects:", error);
-    throw error;
+    throw new Error("Failed to fetch projects");
   }
 };
+
+/**
+ * The `updateProject` function updates a project in a Firestore database using the provided `id` and
+ * `updatedData`.
+ */
 export const updateProject = async (id, updatedData) => {
   const projectRef = doc(db, "projects", id);
   await updateDoc(projectRef, updatedData);
 };
 
 
+/**
+ * The function `deleteProject` deletes a project document from a Firestore database using its ID.
+ */
 export const deleteProject = async (id) => {
   const projectRef = doc(db, "projects", id);
   await deleteDoc(projectRef);
