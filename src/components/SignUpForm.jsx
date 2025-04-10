@@ -93,7 +93,7 @@ const SignUpForm = () => {
       if (isNewUser) {
         navigate(paths.succesGoogle, { state: { userId: user.uid, email: user.email, name: user.displayName } });
       } else {
-        navigate(paths.sucess);
+        navigate(paths.success);
       }
     } catch (error) {
       setErrors({ form: error.message });
