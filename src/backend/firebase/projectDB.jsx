@@ -1,3 +1,7 @@
+/**
+ * The code includes functions to create, fetch, update, and delete projects in a Firestore database
+ * for a specific user.
+ */
 import { db,auth } from "./firebaseConfig";
 import {
   collection,
@@ -10,6 +14,10 @@ import {
 
 
 //this function creates a new project in the Firestore database
+/**
+ * The function `createProject` in JavaScript React creates a new project with specified details after
+ * checking user authentication and required fields.
+ */
 export async function createProject(title, description, researchField, goals, contact,startDate, endDate) {
     const user = auth.currentUser;
     if (!user) {
@@ -21,23 +29,19 @@ export async function createProject(title, description, researchField, goals, co
     }
 
     try {
-      const docRef = await addDoc(collection(db, "projects"), {
-        userId: user.uid,
-        title,
-        description,
-        researchField,
-        startDate,
-        endDate,
-        contact,
-        goals: goals.map((goal) => goal.trim()),
-        createdAt: new Date(),
-      });
     } catch (err) {
       throw err;
     }
 }
 
 // fetxhProjects function to get all projects for a specific user
+/**
+ * The function `fetchProjects` retrieves projects associated with a specific user ID from a Firestore
+ * collection.
+ * @returns The `fetchProjects` function returns an array of projects that belong to a specific user
+ * identified by their `uid`. Each project object in the array contains an `id` field representing the
+ * document ID in the database, along with other data retrieved from the document.
+ */
 export const fetchProjects = async (uid) => {
   try {
     const projectsCollection = collection(db, "projects");

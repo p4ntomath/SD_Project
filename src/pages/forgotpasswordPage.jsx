@@ -1,3 +1,6 @@
+/* This code snippet is a React component named `ForgotPasswordPage`. It is a functional component that
+handles the functionality for resetting a user's password. Here is a breakdown of what the code is
+doing: */
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { resetPassword } from '../backend/firebase/authFirebase';
@@ -10,6 +13,13 @@ const ForgotPasswordPage = () => {
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  /**
+   * The function `handleSubmit` is an asynchronous function that handles form submission, validates an
+   * email input, sends a reset password request, and updates the state accordingly.
+   * @returns The `handleSubmit` function returns either an error message if there is a validation
+   * error or an error during the password reset process, or it sets the `isSubmitted` state to true if
+   * the password reset is successful.
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
