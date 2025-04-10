@@ -163,7 +163,7 @@ export default function ResearcherHomePage() {
                           Update Project
                         </button>
                         <button 
-                          onClick={() => deleteProject()}
+                          onClick={() => deleteProject(project.id)}
                           className="bg-red-600 hover:bg-red-500 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
                         >
                           Delete Project
