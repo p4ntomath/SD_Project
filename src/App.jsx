@@ -5,12 +5,12 @@ import WelcomePage from './pages/welcomePage.jsx';
 import LoginPage from './pages/loginPage.jsx';
 import ForgotPasswordPage from './pages/forgotpasswordPage.jsx';
 import SignUpPage from './pages/SignUpPage.jsx';
-import AuthHomeTest from './pages/authHomeTest.jsx';
 import CompleteProfile from './pages/roleSelectionPage.jsx';
 import { AuthProvider } from './context/AuthContext'; // Import AuthProvider
 import ProtectedRoute from './components/ProtectedRoute'; // Import the ProtectedRoute component
 import ResearcherHomePage from './pages/ResearcherHomePage.jsx';
 
+//mport { fetchProjects, updateProject, deleteProject } from './backend/firebase/projectDB'; was just for testing
 function App() {
   return (
     <Router>
@@ -20,21 +20,19 @@ function App() {
           <Route path="/login" element={<LoginPage />} />
           <Route path="/forgotpassword" element={<ForgotPasswordPage />} />
           <Route path="/signup" element={<SignUpPage />} />
-          <Route path="/ResearcherHomePage" element={<ResearcherHomePage />} />
-          
           {/* Complete-profile is protected but available to users without role */}
           <Route path="/complete-profile" element={
             <ProtectedRoute>
               <CompleteProfile />
             </ProtectedRoute>
           } />
-          
           {/* AuthHomeTest requires both authentication and completed profile */}
-          <Route path="/authHomeTest" element={
+          <Route path="/ResearcherHomePage" element={
             <ProtectedRoute>
-              <AuthHomeTest />
+              <ResearcherHomePage/>
             </ProtectedRoute>
           } />
+
         </Routes>
       </AuthProvider>
     </Router>

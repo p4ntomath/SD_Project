@@ -1,19 +1,48 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import CreateProjectForm from '../components/CreateProjectForm';
 import SideBar from '../components/SideBar';
 import SidebarToggle from '../components/SidebarToggle';
 import { logOut } from "../backend/firebase/authFirebase";
-import { updateProject } from "../backend/firebase/projectDB";
-import { deleteProject } from "../backend/firebase/projectDB";
+import { createProject ,fetchProjects,deleteProject} from "../backend/firebase/projectDB";
+import { auth } from "../backend/firebase/firebaseConfig";
 
 export default function ResearcherHomePage() {
   const [projects, setProjects] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true); // Start closed by default
 
+  const fetchAllProjects = async (user) => {
+    try {
+      if (!user) {
+        console.error("User not authenticated");
+      }
+      const fetchedProjects = await fetchProjects(user.uid);
+      setProjects(fetchedProjects);
+    } catch (error) {
+      console.error("Error fetching projects:", error);
+    }
+  };
+
+  // Fetch projects when the component mounts
+  useEffect(() => {
+    const user = auth.currentUser;
+    if (user) {
+      fetchAllProjects(user);
+    } else {
+      console.error("User not authenticated");
+    }
+  }, [projects.length]); // Re-fetch projects when the length changes
+
+  // Function to handle project creation
   const handleCreateProject = (newProject) => {
-    setProjects([...projects, newProject]);
-    setShowForm(false);
+    try{
+      createProject(newProject.title, newProject.description, newProject.researchField, newProject.goals, newProject.contact, newProject.startDate, newProject.endDate)
+      setProjects([...projects, newProject]);
+      setShowForm(false);
+    }
+    catch(err){
+      console.error("Error creating project:", err);
+    }
   };
 
   const formatDate = (dateString) => {
@@ -21,6 +50,17 @@ export default function ResearcherHomePage() {
     const options = { year: 'numeric', month: 'short', day: 'numeric' };
     return new Date(dateString).toLocaleDateString(undefined, options);
   };
+  const formatFirebaseDate = (timestamp) => {
+    if (!timestamp || typeof timestamp !== "object") return "";
+  
+    const date = new Date(timestamp.seconds * 1000); // Convert seconds to ms
+    return date.toLocaleDateString("en-US", {
+      year: "numeric",
+      month: "long",
+      day: "numeric",
+    });
+  };
+  
 
   const toggleSidebar = () => {
     setSidebarOpen(!sidebarOpen);
@@ -57,26 +97,35 @@ export default function ResearcherHomePage() {
               </button>
             </div>
           </div>
-          
-          {!showForm ? (
-            <>
-              {projects.length > 0 ? (
-                  //show this if theres projects available
-
-                <div className="grid grid-cols-1 gap-6">
-                  {projects.map((project, index) => (
-                    <div key={index} className="bg-white p-6 rounded-lg shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
-                      {/* Project content remains the same */}
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h2 className="text-xl font-semibold text-gray-800">{project.title}</h2>
-                          <span className="inline-block mt-1 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
-                            {project.researchField}
-                          </span>
-                        </div>
-                        <div className="text-sm text-gray-500">
-                          Created: {formatDate(project.createdAt)}
-                        </div>
+        </div>
+        
+        {!showForm ? (
+          <>
+            {projects.length > 0 ? (
+              <div className="grid grid-cols-1 gap-6">
+                {projects.map((project, index) => (
+                  <div key={index} className="bg-white p-6 rounded-lg shadow-md border border-gray-100 hover:shadow-lg transition-shadow">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <h2 className="text-xl font-semibold text-gray-800">{project.title}</h2>
+                        <span className="inline-block mt-1 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
+                          {project.researchField}
+                        </span>
+                      </div>
+                      <div className="text-sm text-gray-500">
+                        Created: {formatFirebaseDate(project.createdAt)}
+                      </div>
+                    </div>
+                    
+                    <p className="mt-3 text-gray-600">{project.description}</p>
+                    
+                    <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <h3 className="font-medium text-gray-700 mb-1">Project Timeline</h3>
+                        <p>
+                          <span className="text-gray-600">Start:</span> {formatDate(project.startDate)}<br />
+                          <span className="text-gray-600">End:</span> {formatDate(project.endDate)}
+                        </p>
                       </div>
                       
                       <p className="mt-3 text-gray-600">{project.description}</p>
@@ -106,7 +155,6 @@ export default function ResearcherHomePage() {
                           </ul>
                         </div>
                       )}
-
                       <div className="flex space-x-4 mt-4">
                         <button 
                           onClick={() => updateProject()}
