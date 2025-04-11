@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import ChipComponent from './ResearcherComponents/ChipComponent';
 
 export default function CreateProjectForm({ onCreate, onCancel }) {
   const [formData, setFormData] = useState({
@@ -7,7 +8,8 @@ export default function CreateProjectForm({ onCreate, onCancel }) {
     researchField: '',
     startDate: '',
     endDate: '',
-    goals: '',
+    goals: [],
+    goalInput: '',
     contact: ''
   });
 
@@ -44,10 +46,9 @@ export default function CreateProjectForm({ onCreate, onCancel }) {
       newErrors.endDate = 'End date cannot be before start date';
     }
 
-    if (!formData.goals.trim()) {
-      newErrors.goals = 'Goals are required';
-    } else if (formData.goals.split(',').length < 2) {
-      newErrors.goals = 'Please enter at least 2 goals separated by commas';
+    
+    if (formData.goals.length < 2) {
+      newErrors.goals = 'Please enter at least 2 goals';
     }
 
     if (!formData.contact.trim()) {
@@ -61,12 +62,37 @@ export default function CreateProjectForm({ onCreate, onCancel }) {
     return Object.keys(newErrors).length === 0;
   };
 
+  
+  const addGoal = (e) => {
+    e.preventDefault();
+    if (formData.goalInput.trim() && !formData.goals.includes(formData.goalInput.trim())) {
+      setFormData({
+        ...formData,
+        goals: [...formData.goals, formData.goalInput.trim()],
+        goalInput: ''
+      });
+    }
+  };
+
+
+  const deleteGoal = (goalToDelete) => {
+    setFormData({
+      ...formData,
+      goals: formData.goals.filter(goal => goal !== goalToDelete)
+    });
+  };
+
+  const handleGoalKeyDown = (e) => {
+    if (e.key === 'Enter' || e.key === ',') {
+      addGoal(e);
+    }
+  };
+
   const handleSubmit = (e) => {
     e.preventDefault();
     if (validateForm()) {
       const projectData = {
         ...formData,
-        goals: formData.goals.split(',').map(goal => goal.trim()),
         createdAt: new Date()
       };
       onCreate(projectData);
@@ -175,24 +201,47 @@ export default function CreateProjectForm({ onCreate, onCancel }) {
         </div>
 
         {/* Goals Field */}
-        <div>
-          <label className="block text-sm font-medium mb-1">
-            Goals* <span className="text-gray-500 text-xs">(comma separated)</span>
-          </label>
-          <textarea
-            name="goals"
-            value={formData.goals}
-            onChange={handleChange}
-            className={`w-full p-2 border rounded-md ${
+        <div className="mb-4">
+        <label className="block text-sm font-medium mb-1">
+          Goals* <span className="text-gray-500 text-xs">(Press Enter or comma to add)</span>
+        </label>
+        
+        {/* Display chips for added goals */}
+        <div className="flex flex-wrap mb-2">
+          {formData.goals.map((goal, index) => (
+            <ChipComponent 
+              key={index} 
+              goal={goal} 
+              onDelete={() => deleteGoal(goal)} 
+            />
+          ))}
+        </div>
+        
+        {/* Input for new goals */}
+        <div className="flex">
+          <input
+            type="text"
+            value={formData.goalInput}
+            onChange={(e) => setFormData({...formData, goalInput: e.target.value})}
+            onKeyDown={handleGoalKeyDown}
+            placeholder="Enter a goal and press Enter"
+            className={`flex-1 p-2 border rounded-l-md ${
               errors.goals ? 'border-red-500' : 'border-gray-300'
             }`}
-            rows={2}
-            placeholder="Goal 1, Goal 2, Goal 3"
           />
-          {errors.goals && (
-            <p className="mt-1 text-sm text-red-600">{errors.goals}</p>
-          )}
+          <button
+            onClick={addGoal}
+            type="button"
+            className="bg-blue-600 text-white px-4 rounded-r-md hover:bg-blue-700 transition-colors"
+          >
+            Add
+          </button>
         </div>
+        
+        {errors.goals && (
+          <p className="mt-1 text-sm text-red-600">{errors.goals}</p>
+        )}
+      </div>
 
         {/* Contact Field */}
         <div>

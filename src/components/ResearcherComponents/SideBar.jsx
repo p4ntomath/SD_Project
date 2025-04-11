@@ -7,6 +7,7 @@ import {
   Cog6ToothIcon,
   XMarkIcon,
 } from "@heroicons/react/24/outline";
+import { logOut } from "../../backend/firebase/authFirebase";
 
 export default function SideBar({ isOpen, toggleSidebar }) {
   return (
@@ -30,7 +31,7 @@ export default function SideBar({ isOpen, toggleSidebar }) {
             <XMarkIcon className="h-6 w-6" />
           </button>
 
-          <h2 className="text-xl font-bold mb-12">Research Portal</h2>
+          <h2 className="text-xl font-bold mb-12">Welcome back!</h2>
 
         {/*Side bar tabs, onclick functionality not yet implemented*/}
 
@@ -60,17 +61,29 @@ export default function SideBar({ isOpen, toggleSidebar }) {
                 <FolderIcon className="h-5 w-5" />
                 My Projects
               </li>
-              <li className="flex items-center gap-3 p-2 hover:bg-blue-600 rounded cursor-pointer">
-                <CalendarIcon className="h-5 w-5" />
-                Calendar
-              </li>
+
               <li className="flex items-center gap-3 p-2 hover:bg-blue-600 rounded cursor-pointer">
                 <DocumentIcon className="h-5 w-5" />
                 Documents
               </li>
+
               <li className="flex items-center gap-3 p-2 hover:bg-blue-600 rounded cursor-pointer">
                 <Cog6ToothIcon className="h-5 w-5" />
                 Settings
+              </li>
+
+              <li>
+                <a
+                  href="#"
+                  className="flex items-center gap-3 p-2 hover:bg-blue-600 rounded cursor-pointer"
+                  onClick={() => {
+                    logOut();
+                    window.location.href = "/login";
+                  }}
+                >
+                  <XMarkIcon className="h-5 w-5" aria-hidden="true" />
+                  Log out
+                </a>
               </li>
             </ul>
           </nav>
