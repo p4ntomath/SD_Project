@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import CreateProjectForm from '../components/CreateProjectForm';
-import SideBar from '../components/SideBar';
-import SidebarToggle from '../components/SidebarToggle';
+import SideBar from '../components/ResearcherComponents/SideBar';
+import SidebarToggle from '../components/ResearcherComponents/SidebarToggle';
 import { logOut } from "../backend/firebase/authFirebase";
 import { createProject, fetchProjects, deleteProject } from "../backend/firebase/projectDB";
 import { auth } from "../backend/firebase/firebaseConfig";
@@ -9,7 +9,7 @@ import { auth } from "../backend/firebase/firebaseConfig";
 export default function ResearcherHomePage() {
   const [projects, setProjects] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(false);
 
   const fetchAllProjects = async (user) => {
@@ -90,23 +90,15 @@ export default function ResearcherHomePage() {
             <div className="flex space-x-4">
               <button
                 onClick={() => setShowForm(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 md:px-6 rounded-lg text-sm md:text-base transition-colors"
+                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 md:px-2 rounded-lg text-sm md:text-base transition-colors"
                 disabled={showForm}
               >
                 Create New Project
               </button>
-              <button
-                onClick={() => {
-                  logOut();
-                  window.location.href = "/login";
-                }}
-                className="bg-gray-200 hover:bg-gray-300 text-gray-800 font-medium py-2 px-4 rounded-lg text-sm md:text-base transition-colors"
-              >
-                Log Out
-              </button>
+             
             </div>
           </div>
-
+                
           {!showForm ? (
             loading ? (
               <div className="flex justify-center items-center py-20 space-x-2">

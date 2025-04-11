@@ -12,7 +12,7 @@ const LoginForm = () => {
 
   const { setRole } = useContext(AuthContext);
   const paths = {
-    success: "/ResearcherHomePage",
+    success: "/home",
     completeProfile: "/complete-profile",
   };
   const navigate = useNavigate();

@@ -1,10 +1,11 @@
-import React, { useEffect } from 'react';
+import React, { useEffect,useContext } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
 import { ClipLoader } from 'react-spinners';
+import AuthContext from "../context/AuthContext"; // Import the AuthContext
 
 const ProtectedRoute = ({ children }) => {
-    const { user, role, loading } = useAuth();
+    
+    const { user, role ,loading} = useContext(AuthContext);
     const navigate = useNavigate();
     const location = useLocation();
 
@@ -25,11 +26,10 @@ const ProtectedRoute = ({ children }) => {
 
     
         if (location.pathname === '/complete-profile' && role) {
-            navigate('/authHomeTest');
+            navigate('/home');
             return;
         }
     }, [user, role, loading, navigate, location.pathname]);
-    
 
     if (loading) {
         return (
