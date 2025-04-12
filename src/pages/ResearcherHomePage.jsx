@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState,useRef } from 'react';
 import CreateProjectForm from '../components/CreateProjectForm';
 import SideBar from '../components/ResearcherComponents/SideBar';
 import SidebarToggle from '../components/ResearcherComponents/SidebarToggle';
@@ -19,6 +19,8 @@ export default function ResearcherHomePage() {
   const [deletingProjectId, setDeletingProjectId] = useState(null);
   const [projectToUpdate, setProjectToUpdate] = useState(null);
   const [isUpdateMode, setIsUpdateMode] = useState(false);
+  const projectsRef = useRef(null);
+
 
   const fetchAllProjects = async (user) => {
     try {
@@ -103,6 +105,8 @@ export default function ResearcherHomePage() {
           setIsUpdateMode(false);
           setCreateLoading(false);
           setShowForm(false);
+          projectsRef.current?.scrollIntoView({ behavior: 'smooth' });
+
         }
       
     };
@@ -162,7 +166,7 @@ export default function ResearcherHomePage() {
             ) : (
               <>
                 {projects.length > 0 ? (
-                  <div className="grid grid-cols-1 gap-6">
+                  <div ref={projectsRef} className="grid grid-cols-1 gap-6">
                     {projects.map((project, index) => (
                       <div key={index} className="bg-white p-6 rounded-lg shadow-md border hover:shadow-lg transition-shadow">
                         <div className="flex justify-between items-start">
