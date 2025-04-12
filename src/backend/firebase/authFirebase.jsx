@@ -11,14 +11,15 @@ import {
 import {collection, query, where, getDocs } from "firebase/firestore";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 
-const signUp = async (fullName, email, password, role,university,degreeType,studentNumber,degreeName) => {
+const signUp = async (first_name,last_name, email, password, role,university,degreeType,studentNumber,degreeName) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     console.log("User signed up:", user);
     await setDoc(doc(db, "users", user.uid), {
       userId: user.uid, // Storing the userId
-      fullName,
+      first_name,
+      last_name,
       email,
       role,
       university,
@@ -62,11 +63,12 @@ const googleSignIn = async () => {
   }
 };
 
-const completeProfile = async (fullName, role, university, degreeType, studentNumber, degreeName ) => {
+const completeProfile = async (first_name,last_name, role, university, degreeType, studentNumber, degreeName ) => {
   try {
     const user = auth.currentUser;
     await setDoc(doc(db, "users", user.uid), {
-      fullName,
+      first_name,
+      last_name,
       role,
       university,
       degreeType,

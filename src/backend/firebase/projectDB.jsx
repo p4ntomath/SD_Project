@@ -8,6 +8,7 @@ import {
   collection,
   addDoc,
   getDocs,
+  getDoc,
   doc,
   updateDoc,
   deleteDoc
@@ -86,3 +87,59 @@ export const deleteProject = async (id) => {
 };
 
 //Please add update methods for all the fields in the project excluding the userId
+
+//fetch projects by projectid
+export const fetchProjectById = async (projectId) => {
+  try {
+    const projectDoc = doc(db, "projects", projectId);  // Fetching a single document by ID
+    const projectSnapshot = await getDoc(projectDoc);
+
+    if (projectSnapshot.exists()) {
+      return { id: projectSnapshot.id, ...projectSnapshot.data() };
+    } else {
+      throw new Error("Project not found");
+    }
+  } catch (error) {
+    console.error("Error fetching project details:", error);
+    throw new Error("Failed to fetch project details");
+  }
+};
+
+//add collaborator to project
+export const addCollaboratorToProject = async (projectId, collaboratorId) => {
+  try {
+    const projectRef = doc(db, "projects", projectId);
+    await updateDoc(projectRef, {
+      collaborators: arrayUnion(collaboratorId),  // Use Firestore's arrayUnion to add the collaborator without duplicating
+    });
+    console.log("Collaborator added successfully");
+  } catch (error) {
+    console.error("Error adding collaborator:", error);
+    throw new Error("Failed to add collaborator");
+  }
+};
+
+export const searchResearchers = async (searchTerm) => {
+  try {
+    const usersCollection = collection(db, "users");
+
+    // First, get all researchers
+    const researcherQuery = query(usersCollection, where("role", "==", "researcher"));
+    const querySnapshot = await getDocs(researcherQuery);
+
+    // Filter locally based on first name
+    const researchers = querySnapshot.docs
+      .map((doc) => ({
+        id: doc.id,
+        ...doc.data(),
+      }))
+      .filter((researcher) =>
+        researcher.first_name?.toLowerCase().includes(searchTerm.toLowerCase())
+        //Filter by name is not complete, also includes current_user name too
+      );
+    return researchers;
+  } catch (error) {
+    console.error("Error searching for researchers:", error);
+    throw new Error("Failed to search for researchers");
+  }
+};

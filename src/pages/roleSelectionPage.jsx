@@ -14,7 +14,7 @@ const RoleSelectionPage = () => {
   const handleSubmit = async (formData) => {
     setLoading(true); // Set loading to true when profile completion starts
     try {
-      await completeProfile(formData.name, formData.role, formData.university, formData.degreeType, formData.studentNumber, formData.degreeName);
+      await completeProfile(formData.first_name,formData.last_name, formData.role, formData.university, formData.degreeType, formData.studentNumber, formData.degreeName);
       setRole(formData.role); // Set the role in the context
       setProfileCompleted(true); // Mark profile as completed after the form is submitted
     } catch (error) {

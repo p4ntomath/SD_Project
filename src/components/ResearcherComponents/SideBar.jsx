@@ -35,7 +35,7 @@ export default function SideBar({ isOpen, toggleSidebar }) {
           </button>
 
           <h2 className="text-xl font-bold mb-12">
-            Welcome back, {userData?.fullName}!
+            Welcome back, {userData?.first_name} {userData?.last_name}!
           </h2>
 
           {/*Side bar tabs, onclick functionality not yet implemented*/}
