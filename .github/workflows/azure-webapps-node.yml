@@ -34,22 +34,16 @@ jobs:
       - name: Install dependencies
         run: npm install
 
-      - name: Build React app
-        env:
-          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
-          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
-          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
-          VITE_FIREBASE_STORAGE_BUCKET: ${{ secrets.VITE_FIREBASE_STORAGE_BUCKET }}
-          VITE_FIREBASE_MESSAGING_SENDER_ID: ${{ secrets.VITE_FIREBASE_MESSAGING_SENDER_ID }}
-          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
-          VITE_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}
-        run: npm run build
+      - name: Build React app (Vite)
+        run: |
+          npm run build
+          ls -l dist  # List contents of the dist folder
 
-      - name: List files in the build directory
-        run: ls -R
+      - name: List files after build
+        run: ls -R  # List all files in the directory
 
-      - name: Zip build folder
-        run: zip -r react-app.zip ./build
+      - name: Zip dist folder
+        run: zip -r react-app.zip dist/*  # Zip the dist folder
 
       - name: Azure CLI Login
         uses: azure/login@v2
