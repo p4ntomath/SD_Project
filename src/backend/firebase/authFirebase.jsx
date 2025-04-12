@@ -11,7 +11,7 @@ import {
 import {collection, query, where, getDocs } from "firebase/firestore";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 
-const signUp = async (fullName, email, password, role) => {
+const signUp = async (fullName, email, password, role,university,degreeType,studentNumber,degreeName) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
@@ -21,6 +21,10 @@ const signUp = async (fullName, email, password, role) => {
       fullName,
       email,
       role,
+      university,
+      degreeType,
+      studentNumber,
+      degreeName,
       createdAt: new Date(),
     });
 
@@ -58,12 +62,16 @@ const googleSignIn = async () => {
   }
 };
 
-const completeProfile = async (fullName, role) => {
+const completeProfile = async (fullName, role, university, degreeType, studentNumber, degreeName ) => {
   try {
     const user = auth.currentUser;
     await setDoc(doc(db, "users", user.uid), {
       fullName,
       role,
+      university,
+      degreeType,
+      studentNumber,
+      degreeName,
     }, { merge: true });
   } catch (error) {
     console.error("Error completing profile:", error.message);

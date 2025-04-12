@@ -8,8 +8,11 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import { logOut } from "../../backend/firebase/authFirebase";
+import { useAuth } from "../../context/AuthContext";
 
 export default function SideBar({ isOpen, toggleSidebar }) {
+  const { user, userData, role } = useAuth();
+
   return (
     <div
       className={`
@@ -31,11 +34,13 @@ export default function SideBar({ isOpen, toggleSidebar }) {
             <XMarkIcon className="h-6 w-6" />
           </button>
 
-          <h2 className="text-xl font-bold mb-12">Welcome back!</h2>
+          <h2 className="text-xl font-bold mb-12">
+            Welcome back, {userData?.fullName}!
+          </h2>
 
-        {/*Side bar tabs, onclick functionality not yet implemented*/}
+          {/*Side bar tabs, onclick functionality not yet implemented*/}
 
-          <nav>         
+          <nav>
             <ul className="space-y-4 text-lg font-semibold">
               {/*This should be the default page, 
               The user should be able to see all project that are available on the site. 
@@ -45,7 +50,6 @@ export default function SideBar({ isOpen, toggleSidebar }) {
                 <HomeIcon className="h-5 w-5" />
                 Dashboard
               </li>
-
 
               <li className="flex items-center gap-3 p-2 hover:bg-blue-600 rounded cursor-pointer">
                 <UserCircleIcon className="h-5 w-5" />

@@ -7,8 +7,11 @@ import {
     XMarkIcon,
   } from "@heroicons/react/24/outline";
   import { logOut } from "../../backend/firebase/authFirebase";
+  import { useAuth } from "../../context/AuthContext";
   
   export default function ReviewerSidebar({ isOpen, toggleSidebar }) {
+    
+    const { user, userData, role } = useAuth();
     return (
       <aside 
         aria-label="Reviewer navigation menu"
@@ -34,7 +37,7 @@ import {
   
             {/* Sidebar header */}
             <header>
-              <h2 className="text-xl font-bold mb-12">Welcome back!</h2>
+              <h2 className="text-xl font-bold mb-12">Welcome back, {userData?.fullName}!</h2>
             </header>
   
             {/* Main navigation */}
