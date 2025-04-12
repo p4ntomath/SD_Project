@@ -45,8 +45,11 @@ jobs:
           VITE_FIREBASE_MEASUREMENT_ID: ${{ secrets.VITE_FIREBASE_MEASUREMENT_ID }}
         run: npm run build
 
+      - name: List files in the build directory
+        run: ls -R
+
       - name: Zip build folder
-        run: zip -r react-app.zip ./build  # Correct path to the build folder
+        run: zip -r react-app.zip ./build
 
       - name: Azure CLI Login
         uses: azure/login@v2
