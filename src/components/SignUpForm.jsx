@@ -7,8 +7,8 @@ import { ClipLoader } from "react-spinners"; // Import the spinner
 
 const SignUpForm = () => {
   const paths = {
-    sucess: "/authHomeTest",
-    succesGoogle: "/complete-profile",
+    success: "/home",
+    successGoogle: "/complete-profile",
   };
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
@@ -30,6 +30,7 @@ const SignUpForm = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    setErrors((prev) => ({ ...prev, [name]: "" })); // Clear error for the field being changed
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -41,7 +42,7 @@ const SignUpForm = () => {
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
     } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
-      newErrors.email = "Email is invalid";
+      newErrors.email = "Please enter a valid email";
     }
 
     if (!formData.password) {
@@ -76,9 +77,8 @@ const SignUpForm = () => {
       await signUp(formData.name, formData.email, formData.password, formData.role);
       navigate(paths.sucess);
     } catch (error) {
-      if (error.message === "Email is already in use.") {
-        alert("Email already in use. Please log in.");
-        navigate("/login");
+      if (error.code === "auth/email-already-in-use") {
+        setErrors({ email: "Email already exists,try logging in or use a different email" });
       } else {
         setErrors({ form: error.message });
       }
@@ -93,10 +93,20 @@ const SignUpForm = () => {
       if (isNewUser) {
         navigate(paths.succesGoogle, { state: { userId: user.uid, email: user.email, name: user.displayName } });
       } else {
-        navigate(paths.sucess);
+        navigate(paths.success);
       }
     } catch (error) {
-      setErrors({ form: error.message });
+      if (error.code === "auth/popup-closed-by-user") {
+        setErrors({ form: "Google sign-in was closed before completion." });
+      }
+      else if (error.code === "auth/popup-blocked") {
+        setErrors({ form: "Google sign-in popup was blocked." });
+      }
+      else if (error.code === "auth/invalid-credential") {
+        setErrors({ form: "Invalid credentials. Please try again." });
+      }
+      else{
+      setErrors({ form: 'Google sign-up failed. Please try again.' });}
     }
     setLoading(false);
   };
@@ -117,7 +127,6 @@ const SignUpForm = () => {
         <FormInput label="Full Name" name="name" value={formData.name} onChange={handleChange} error={errors.name} />
         <FormInput
           label="Email Address"
-          type="email"
           name="email"
           value={formData.email}
           onChange={handleChange}

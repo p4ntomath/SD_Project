@@ -1,12 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { completeProfile } from '../backend/firebase/authFirebase';
 import RoleSelectionForm from '../components/RoleSelctionForm';
 import { ClipLoader } from 'react-spinners';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';// Importing useNavigate for redirection
+import AuthContext from '../context/AuthContext';'../context/AuthContext';// Importing useNavigate for redirection
 
 const RoleSelectionPage = () => {
-  const {setRole} = useAuth();
+  const {setRole,role} = useContext(AuthContext); // Importing setRole from AuthContext
   const [loading, setLoading] = useState(false);
   const [profileCompleted, setProfileCompleted] = useState(false); // Track profile completion
   const navigate = useNavigate(); // Initialize useNavigate hook
@@ -27,9 +27,12 @@ const RoleSelectionPage = () => {
   // Effect to handle redirection once the profile is completed
   useEffect(() => {
     if (profileCompleted) {
-      navigate('/authHomeTest'); // Redirect to the home page after profile completion
+      navigate('/home'); // Redirect to the home page after profile completion
     }
-  }, [profileCompleted, navigate]); // Trigger this effect only when profileCompleted changes
+    if(role){
+      navigate('/home'); // Redirect to the home page if role is already set
+    }
+  }, [profileCompleted, navigate,role]); // Trigger this effect only when profileCompleted changes
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">

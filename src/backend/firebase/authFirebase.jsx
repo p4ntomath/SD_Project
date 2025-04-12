@@ -11,15 +11,11 @@ import {
 import {collection, query, where, getDocs } from "firebase/firestore";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 
-// 🔹 Handle Firebase Auth Error
-
-// 🔹 Email/Password Sign-Up
 const signUp = async (fullName, email, password, role) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
-
-    // Store user details in Firestore including the userId (which is the Firebase UID)
+    console.log("User signed up:", user);
     await setDoc(doc(db, "users", user.uid), {
       userId: user.uid, // Storing the userId
       fullName,
@@ -30,7 +26,7 @@ const signUp = async (fullName, email, password, role) => {
 
     return user;
   } catch (error) {
-    console.error("Sign-up error:", error.message);
+    throw error;
   }
 };
 
@@ -116,9 +112,26 @@ const logOut = async () => {
   }
 };
 
+const getUserRole = async (uid) => {
+  try {
+    const docRef = doc(db, "users", uid);
+    const docSnap = await getDoc(docRef);
+
+    if (docSnap.exists()) {
+      return docSnap.data().role;
+    } else {
+      console.log("No such document!");
+      return null;
+    }
+  } catch (error) {
+    console.error("Error getting user role:", error);
+    return null;
+  }
+};
+
 // 🔹 Auth State Listener
 const authStateListener = (callback) => {
   return onAuthStateChanged(auth, callback);
 };
 
-export { signUp, signIn, googleSignIn, resetPassword, logOut, authStateListener, completeProfile };
+export { signUp, signIn, googleSignIn, resetPassword, logOut, authStateListener, completeProfile , getUserRole };

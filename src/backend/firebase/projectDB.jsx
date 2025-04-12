@@ -2,7 +2,6 @@
  * The code includes functions to create, fetch, update, and delete projects in a Firestore database
  * for a specific user.
  */
-
 import { db,auth } from "./firebaseConfig";
 import { query, where } from "firebase/firestore";
 import {
@@ -37,11 +36,9 @@ export async function createProject(newProject) {
         ...newProject,
         userId: user.uid,
       });
-
       await updateDoc(docRef, {
         projectId: docRef.id,
       });
-  
       return docRef.id;
     } catch (err) {
       throw err;
@@ -79,8 +76,11 @@ export const fetchProjects = async (uid) => {
  * `updatedData`.
  */
 
+
 /*export const updateProject = async (id, updatedData) => {
   
+
+export const updateProject = async (id, updatedData) => {
   const projectRef = doc(db, "projects", id);
   await updateDoc(projectRef, updatedData);
 };
@@ -126,7 +126,6 @@ export const updateProject = async (id, updatedData) => {
     if (Object.keys(filteredData).length === 0) {
       throw new Error('No valid fields to update.');
     }
-
     // Update the project in Firestore with the filtered data
     await updateDoc(projectRef, filteredData);
 
@@ -142,9 +141,9 @@ export const updateProject = async (id, updatedData) => {
  */
 /*export const deleteProject = async (id) => {
   
-  const projectRef = doc(db, "projects", id);
-  await deleteDoc(projectRef);
-};*/
+/**
+ * The function `deleteProject` deletes a project document from a Firestore database using its ID.
+ */
 
 export const deleteProject = async (projectId) => {
   try {

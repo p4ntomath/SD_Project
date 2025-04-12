@@ -1,7 +1,7 @@
 import React, { createContext, useState, useEffect, useContext } from 'react';
 import { auth, db } from '../backend/firebase/firebaseConfig'; // Adjust path as needed
 import { onAuthStateChanged } from 'firebase/auth';
-import { useNavigate } from 'react-router-dom';
+import { useLocation } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
 import { ClipLoader } from 'react-spinners'; // Importing the spinner
 
@@ -10,10 +10,10 @@ const AuthContext = createContext();
 
 // AuthProvider component that wraps the app
 export const AuthProvider = ({ children }) => {
+  const location = useLocation();
   const [user, setUser] = useState(null);
   const [role, setRole] = useState(null); // Store the role selection
   const [loading, setLoading] = useState(true); // To manage loading state
-  const navigate = useNavigate();
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -53,7 +53,7 @@ export const AuthProvider = ({ children }) => {
   
 
 
-  if (loading) {
+  if (loading && location.pathname !== '/login') {
     return (
       <div className="flex justify-center items-center h-screen bg-gray-50">
         <ClipLoader color="#3498db" size={50} />
@@ -77,3 +77,5 @@ export const AuthProvider = ({ children }) => {
 export const useAuth = () => {
   return useContext(AuthContext);
 };
+
+export default AuthContext;
