@@ -1,7 +1,8 @@
-import { useState } from 'react';
+import { useState ,useEffect} from 'react';
 import ChipComponent from './ResearcherComponents/ChipComponent';
+import { ClipLoader } from "react-spinners";
 
-export default function CreateProjectForm({ onCreate, onCancel }) {
+export default function CreateProjectForm({ loading,onUpdate,onCreate, onCancel ,projectToUpdate,isUpdateMode }) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
@@ -12,6 +13,22 @@ export default function CreateProjectForm({ onCreate, onCancel }) {
     goalInput: '',
     contact: ''
   });
+
+  // Pre-fill form data if preFormData is provided
+  useEffect(() => {
+    if (isUpdateMode && projectToUpdate) {
+      setFormData({
+        title: projectToUpdate.title || '',
+        description: projectToUpdate.description || '',
+        researchField: projectToUpdate.researchField || '',
+        startDate: projectToUpdate.startDate || '',
+        endDate: projectToUpdate.endDate || '',
+        goals: projectToUpdate.goals || [],
+        goalInput: '',
+        contact: projectToUpdate.contact || ''
+      });
+    }
+  }, [isUpdateMode, projectToUpdate]);
 
   const [errors, setErrors] = useState({});
 
@@ -93,11 +110,18 @@ export default function CreateProjectForm({ onCreate, onCancel }) {
     if (validateForm()) {
       const projectData = {
         ...formData,
-        createdAt: new Date()
+        createdAt: projectToUpdate?.createdAt || new Date(), // keep original createdAt if editing
+        id: projectToUpdate?.id, // this will be important for updating
       };
-      onCreate(projectData);
+  
+      if (isUpdateMode) {
+        onUpdate(projectData);  // Call update
+      } else {
+        onCreate(projectData);  // Call create
+      }
     }
   };
+  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -271,9 +295,12 @@ export default function CreateProjectForm({ onCreate, onCancel }) {
           </button>
           <button
             type="submit"
+            disabled={loading}
             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
           >
-            Create Project
+           {loading ? (
+            <ClipLoader color="#ffffff" loading={loading} size={20} />
+           ) : isUpdateMode ? 'Update Project' : 'Create Project'}
           </button>
         </div>
       </div>

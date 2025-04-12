@@ -2,15 +2,23 @@ import { useEffect, useState } from 'react';
 import CreateProjectForm from '../components/CreateProjectForm';
 import SideBar from '../components/ResearcherComponents/SideBar';
 import SidebarToggle from '../components/ResearcherComponents/SidebarToggle';
-import { logOut } from "../backend/firebase/authFirebase";
-import { createProject, fetchProjects, deleteProject } from "../backend/firebase/projectDB";
+import  StatusModal from '../components/StatusModal';
+import { createProject, fetchProjects, deleteProject ,updateProject} from "../backend/firebase/projectDB";
 import { auth } from "../backend/firebase/firebaseConfig";
+import { ClipLoader } from "react-spinners";
 
 export default function ResearcherHomePage() {
   const [projects, setProjects] = useState([]);
   const [showForm, setShowForm] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [deletionSuccess, setDeletionSuccess] = useState(true);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [createLoading, setCreateLoading] = useState(false);
+  const [deletingProjectId, setDeletingProjectId] = useState(null);
+  const [projectToUpdate, setProjectToUpdate] = useState(null);
+  const [isUpdateMode, setIsUpdateMode] = useState(false);
 
   const fetchAllProjects = async (user) => {
     try {
@@ -35,24 +43,69 @@ export default function ResearcherHomePage() {
     return () => unsubscribe();
   }, [projects.length]);
 
+
   const handleCreateProject = async (newProject) => {
+    if (!newProject) return;
+    setCreateLoading(true);
+
+    // Remove goalInput from newProject before saving
+    const { goalInput, ...cleanedProject } = newProject;
+    console.log("Cleaned Project:", cleanedProject);
+
     try {
-      await createProject(newProject);
-      setProjects([...projects, newProject]);
+      await createProject(cleanedProject);
+      setProjects([...projects, cleanedProject]);
       setShowForm(false);
     } catch (err) {
       console.error("Error creating project:", err);
+    } finally {
+      setCreateLoading(false);
     }
   };
-
-  const handleDeleteProject = async (projectId) => {
-    try {
-      await deleteProject(projectId);
-      setProjects(projects.filter((project) => project.id !== projectId));
-    } catch (error) {
-      console.error("Error deleting project:", error);
-    }
-  };
+  
+    const handleDeleteProject = async (projectId) => {
+      if (!projectId) return;
+      setCreateLoading(true);
+      setDeletingProjectId(projectId);
+    
+      try {
+        await deleteProject(projectId);
+        setProjects(projects.filter((project) => project.id !== projectId));
+        setDeletionSuccess(true);
+        setStatusMessage('Project was successfully deleted.');
+      } catch (error) {
+        setDeletionSuccess(false);
+        setStatusMessage('Failed to delete the project. Please try again.');
+      } finally {
+        setDeletingProjectId(null);
+        setModalOpen(true);
+      }
+    };
+    const handleUpdateProject = async (updatedProject) => {
+      if (!updatedProject) return;
+      setCreateLoading(true);
+      try {
+          await updateProject(updatedProject.id, updatedProject);
+          setProjects((prevProjects) =>
+            prevProjects.map((project) =>
+              project.id === updatedProject.id ? { ...project, ...updatedProject } : project
+            )
+          );
+          setDeletionSuccess(true);
+          setStatusMessage('Project was successfully updated.');
+        } catch (error) {
+          setDeletionSuccess(false);
+          setStatusMessage('Failed to update the project. Please try again.');
+        }finally {
+          setModalOpen(true);
+          setCreateLoading(false);
+          setProjectToUpdate(null);
+          setIsUpdateMode(false);
+          setCreateLoading(false);
+          setShowForm(false);
+        }
+      
+    };
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Not specified';
@@ -74,9 +127,7 @@ export default function ResearcherHomePage() {
     setSidebarOpen(!sidebarOpen);
   };
 
-  const updateProject = () => {
-    console.warn("Update functionality not yet implemented.");
-  };
+
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
@@ -95,10 +146,8 @@ export default function ResearcherHomePage() {
               >
                 Create New Project
               </button>
-             
             </div>
           </div>
-                
           {!showForm ? (
             loading ? (
               <div className="flex justify-center items-center py-20 space-x-2">
@@ -157,16 +206,26 @@ export default function ResearcherHomePage() {
 
                         <div className="flex space-x-4 mt-4">
                           <button
-                            onClick={() => updateProject()}
+                            disabled={showForm}
+                            onClick={() => {
+                              setIsUpdateMode(true)
+                              setShowForm(true)
+                              setProjectToUpdate(project)
+                            }}
                             className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
                           >
                             Update Project
                           </button>
                           <button
-                            onClick={async () => handleDeleteProject(project.id)}
+                            disabled={deletingProjectId === project.id}
+                            onClick={() => handleDeleteProject(project.id)}
                             className="bg-red-600 hover:bg-red-500 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
                           >
-                            Delete Project
+                            {deletingProjectId === project.id ? (
+                              <ClipLoader color="#ffffff" size={20} />
+                            ) : (
+                              "Delete Project"
+                            )}
                           </button>
                         </div>
                       </div>
@@ -187,11 +246,21 @@ export default function ResearcherHomePage() {
           ) : (
             <CreateProjectForm
               onCreate={handleCreateProject}
+              onUpdate={handleUpdateProject}
+              loading={createLoading}
               onCancel={() => setShowForm(false)}
+              projectToUpdate={projectToUpdate}
+              isUpdateMode={isUpdateMode} // Pass the project to update
             />
           )}
         </div>
       </div>
+      <StatusModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        success={deletionSuccess}
+        message={statusMessage}
+      />
     </div>
   );
 }
