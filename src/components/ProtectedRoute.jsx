@@ -8,17 +8,17 @@ const ProtectedRoute = ({ children }) => {
     const { user, role ,loading} = useContext(AuthContext);
     const navigate = useNavigate();
     const location = useLocation();
-
-    useEffect(() => {
-        if (loading) return; // Wait until auth state and role are both loaded
-    
+    useEffect(() => { // Wait until auth state and role are both loaded
         if (!user) {
             navigate('/login');
             return;
         }
-    
+        if(role){
+            navigate('/home');
+            return;
+        }
         // Wait for role state to be fully determined before making navigation decisions
-        if (role === null) 
+        if (role === null)
             {
                 navigate('/complete-profile');
                 return;
@@ -30,8 +30,8 @@ const ProtectedRoute = ({ children }) => {
             return;
         }
     }, [user, role, loading, navigate, location.pathname]);
-
-    if (loading) {
+    console.log(location.pathname);
+    if (loading && location.pathname !== '/login') {
         return (
             <div className="flex justify-center items-center h-screen bg-gray-50">
                 <ClipLoader color="#3498db" size={50} />

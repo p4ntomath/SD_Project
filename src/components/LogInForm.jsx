@@ -5,12 +5,11 @@ import FormInput from './FormInput';
 import { signIn, googleSignIn ,getUserRole} from "../backend/firebase/authFirebase";
 import { ClipLoader } from "react-spinners";
 import AuthContext from "../context/AuthContext";
-import ResearcherHomePage from "../pages/ResearcherHomePage";
 
 
 const LoginForm = () => {
 
-  const { setRole } = useContext(AuthContext);
+  const { setRole,setLoading} = useContext(AuthContext);
   const paths = {
     success: "/home",
     completeProfile: "/complete-profile",
@@ -23,7 +22,7 @@ const LoginForm = () => {
   });
 
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -64,6 +63,7 @@ const LoginForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
+    setIsLoading(true);
     setLoading(true);
     try {
       const user = await signIn(formData.email, formData.password);
@@ -84,23 +84,28 @@ const LoginForm = () => {
         setErrors({ form: error.code });}
     }
     setLoading(false);
+    setIsLoading(false);
   };
 
 
 
   const handleGoogleAuth = async () => {
+    setIsLoading(true);
     setLoading(true);
     try {
-      const { isNewUser } = await googleSignIn();
+      const { isNewUser,user } = await googleSignIn();
       if (isNewUser) {
         navigate(paths.completeProfile);
       } else {
+        const role = await getUserRole(user.uid);
+        setRole(role);
         navigate(paths.success);
       }
     } catch (error) {
-      setErrors({ form: error.message });
+      setErrors({ form:'Google sign-in failed. Please try again.' });
     }
     setLoading(false);
+    setIsLoading(false);
   };
 
   return (
@@ -148,11 +153,11 @@ const LoginForm = () => {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={isLoading}
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md"
         >
-          {loading ? (
-            <ClipLoader color="#ffffff" loading={loading} size={20} />
+          {isLoading ? (
+            <ClipLoader color="#ffffff" loading={isLoading} size={20} />
           ) : (
             "Login"
           )}
@@ -169,11 +174,11 @@ const LoginForm = () => {
         <button 
           type="button"
           onClick={handleGoogleAuth}
-          disabled={loading}
+          disabled={isLoading}
           className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-md py-2 px-4 text-sm font-medium text-gray-700 hover:bg-gray-100 transition"
         >
-          {loading ? (
-            <ClipLoader color="#4B5563" loading={loading} size={20} />
+          {isLoading ? (
+            <ClipLoader color="#4B5563" loading={isLoading} size={20} />
           ) : (
             <>
               <img src={googleLogo} alt="Google" className="w-5 h-5" />

@@ -96,7 +96,17 @@ const SignUpForm = () => {
         navigate(paths.success);
       }
     } catch (error) {
-      setErrors({ form: error.message });
+      if (error.code === "auth/popup-closed-by-user") {
+        setErrors({ form: "Google sign-in was closed before completion." });
+      }
+      else if (error.code === "auth/popup-blocked") {
+        setErrors({ form: "Google sign-in popup was blocked." });
+      }
+      else if (error.code === "auth/invalid-credential") {
+        setErrors({ form: "Invalid credentials. Please try again." });
+      }
+      else{
+      setErrors({ form: 'Google sign-up failed. Please try again.' });}
     }
     setLoading(false);
   };
