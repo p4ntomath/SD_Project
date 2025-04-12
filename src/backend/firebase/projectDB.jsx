@@ -6,8 +6,9 @@ import { db,auth } from "./firebaseConfig";
 import { query, where } from "firebase/firestore";
 import {
   collection,
-  addDoc,
+  setDoc,
   getDocs,
+  getDoc,
   doc,
   updateDoc,
   deleteDoc
@@ -26,16 +27,22 @@ export async function createProject(newProject) {
       throw new Error("User not authenticated");
     }
     if (!title || !description || !researchField) {
-      setError("Please fill in all the required fields.");
+      //setError("Please fill in all the required fields.");
       throw new Error("Missing required fields");
     }
 
     try {
-      const docRef = await addDoc(collection(db, "projects"), {
-        ...newProject,
-        userId: user.uid,
-      });
-      return docRef.id;
+      const projectsRef = collection(db, "projects");
+      const newDocRef = doc(projectsRef); // generates a new doc ref with ID
+
+      const projectWithId = {
+      ...newProject,
+      userId: user.uid,
+      projectId: newDocRef.id,
+    };
+    await setDoc(newDocRef, projectWithId);
+
+    return newDocRef.id;
     } catch (err) {
       throw err;
     }
@@ -71,18 +78,86 @@ export const fetchProjects = async (uid) => {
  * The `updateProject` function updates a project in a Firestore database using the provided `id` and
  * `updatedData`.
  */
+
+
 export const updateProject = async (id, updatedData) => {
-  const projectRef = doc(db, "projects", id);
-  await updateDoc(projectRef, updatedData);
+  try {
+    const user = auth.currentUser;
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    const projectRef = doc(db, "projects", id);
+    const projectSnapshot = await getDoc(projectRef);
+
+    if (!projectSnapshot.exists()) {
+      throw new Error('Project not found');
+    }
+
+    const projectData = projectSnapshot.data();
+    const projectUserId = projectData.userId;
+
+    if (user.uid !== projectUserId) {
+      throw new Error('You are not authorized to update this project');
+    }
+
+    const restrictedFields = ['id', 'userId', 'createdAt'];
+    const filteredData = Object.keys(updatedData).reduce((acc, key) => {
+      if (!restrictedFields.includes(key)) {
+        acc[key] = updatedData[key];
+      }
+      return acc;
+    }, {});
+
+    if (Object.keys(filteredData).length === 0) {
+      return;
+    }
+
+    await updateDoc(projectRef, filteredData);
+    return { success: true, message: 'Project updated successfully' };
+  } catch (error) {
+    throw error; //
+  }
 };
 
 
 /**
  * The function `deleteProject` deletes a project document from a Firestore database using its ID.
  */
-export const deleteProject = async (id) => {
-  const projectRef = doc(db, "projects", id);
-  await deleteDoc(projectRef);
+/*export const deleteProject = async (id) => {
+  
+/**
+ * The function `deleteProject` deletes a project document from a Firestore database using its ID.
+ */
+
+export const deleteProject = async (projectId) => {
+  try {
+    
+    const user = auth.currentUser;
+    if (!user) throw new Error('You must be logged in to delete projects');
+
+    // 2. Get Project Reference
+    const projectRef = doc(db, "projects", projectId);
+
+    // 3. Verify Project Exists and Get Owner
+    const projectSnap = await getDoc(projectRef);
+    if (!projectSnap.exists()) throw new Error('Project does not exist');
+
+    const projectOwnerId = projectSnap.data().userId;
+
+    if (user.uid !== projectOwnerId) {
+      throw new Error('You can only delete your own projects');
+    }
+
+
+    await deleteDoc(projectRef);
+
+    return { success: true, message: 'Project deleted successfully' };
+
+  } catch (error) {
+    console.error('Delete project error:', error);
+    throw new Error(`Failed to delete project: ${error.message}`);
+  }
 };
 
 //Please add update methods for all the fields in the project excluding the userId
