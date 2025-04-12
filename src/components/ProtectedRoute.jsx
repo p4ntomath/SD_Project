@@ -30,7 +30,6 @@ const ProtectedRoute = ({ children }) => {
             return;
         }
     }, [user, role, loading, navigate, location.pathname]);
-    console.log(location.pathname);
     if (loading && location.pathname !== '/login') {
         return (
             <div className="flex justify-center items-center h-screen bg-gray-50">
