@@ -133,7 +133,7 @@ export const updateProject = async (id, updatedData) => {
     
   } catch (error) {
     console.error('Error updating project:', error);
-  }
+    throw error;
 };
 
 /**
