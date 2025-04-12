@@ -37,10 +37,10 @@ jobs:
       - name: Build React app (Vite)
         run: |
           npm run build
-          ls -l dist  # List contents of the dist folder
+          
 
       - name: List files after build
-        run: ls -R  # List all files in the directory
+         
 
       - name: Zip dist folder
         run: zip -r react-app.zip dist/*  # Zip the dist folder
