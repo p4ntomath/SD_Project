@@ -7,7 +7,7 @@ name: Build and deploy Node.js app to Azure Web App - {name_of_your_app}
 on:
   push:
     branches:
-      - main
+      - master
   workflow_dispatch:
 
 # Optional: environment variables can be injected here
