@@ -37,6 +37,11 @@ export async function createProject(newProject) {
         ...newProject,
         userId: user.uid,
       });
+
+      await updateDoc(docRef, {
+        projectId: docRef.id,
+      });
+  
       return docRef.id;
     } catch (err) {
       throw err;
