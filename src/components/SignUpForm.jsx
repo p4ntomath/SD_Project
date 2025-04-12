@@ -1,9 +1,10 @@
-import { useState } from "react";
+import { useState,useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import FormInput from "./FormInput";
 import googleLogo from "../assets/googleLogo.png";
-import { signUp, googleSignIn } from "../backend/firebase/authFirebase";
+import { signUp, googleSignIn,getUserRole } from "../backend/firebase/authFirebase";
 import { ClipLoader } from "react-spinners"; // Import the spinner
+import AuthContext from "../context/AuthContext";
 
 const SignUpForm = () => {
   const paths = {
@@ -18,9 +19,11 @@ const SignUpForm = () => {
     confirmPassword: "",
     role: "",
   });
+  
 
   const [errors, setErrors] = useState({});
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const { setRole,setLoading} = useContext(AuthContext);
 
   const roles = [
     { value: "", label: "Select your role", disabled: true },
@@ -72,7 +75,7 @@ const SignUpForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-    setLoading(true);
+    setIsLoading(true);
     try {
       await signUp(formData.name, formData.email, formData.password, formData.role);
       navigate(paths.sucess);
@@ -83,13 +86,16 @@ const SignUpForm = () => {
         setErrors({ form: error.message });
       }
     }
-    setLoading(false);
+    setIsLoading(false);
   };
 
   const handleGoogleAuth = async () => {
+    setIsLoading(true);
     setLoading(true);
     try {
       const { isNewUser, user } = await googleSignIn();
+      const role = await getUserRole(user.uid);
+      setRole(role);
       if (isNewUser) {
         navigate(paths.succesGoogle, { state: { userId: user.uid, email: user.email, name: user.displayName } });
       } else {
@@ -109,6 +115,7 @@ const SignUpForm = () => {
       setErrors({ form: 'Google sign-up failed. Please try again.' });}
     }
     setLoading(false);
+    setIsLoading(false);
   };
 
   return (
@@ -183,11 +190,11 @@ const SignUpForm = () => {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={isLoading}
           className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition"
         >
-          {loading ? (
-            <ClipLoader color="#ffffff" loading={loading} size={20} />
+          {isLoading ? (
+            <ClipLoader color="#ffffff" loading={isLoading} size={20} />
           ) : (
             "Sign Up"
           )}
@@ -207,7 +214,7 @@ const SignUpForm = () => {
         <button
           type="button"
           onClick={handleGoogleAuth}
-          disabled={loading}
+          disabled={isLoading}
           className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-md py-2 px-4 text-sm font-medium text-gray-700 hover:bg-gray-100 transition"
         >
           <img src={googleLogo} alt="Google" className="w-5 h-5" />
