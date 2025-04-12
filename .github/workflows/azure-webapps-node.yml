@@ -1,5 +1,6 @@
 name: Deploy React App to Azure Web App
 
+
 on:
   push:
     branches: ["master"]
