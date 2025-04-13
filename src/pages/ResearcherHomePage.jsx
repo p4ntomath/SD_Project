@@ -71,7 +71,6 @@ export default function ResearcherHomePage() {
 
     const handleDeleteProject = async (projectId) => {
       if (!projectId) return;
-      setCreateLoading(true);
       setDeletingProjectId(projectId);
     
       try {
@@ -103,8 +102,8 @@ export default function ResearcherHomePage() {
           setDeletionSuccess(false);
           setStatusMessage('Failed to update the project. Please try again.');
         }finally {
-          setModalOpen(true);
           setCreateLoading(false);
+          setModalOpen(true);
           setProjectToUpdate(null);
           setIsUpdateMode(false);
           setCreateLoading(false);
