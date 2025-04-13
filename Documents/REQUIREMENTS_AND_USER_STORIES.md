@@ -134,7 +134,8 @@ that is of most importance.
 +--------+-------+-----------------------------------------------------+
 | REQ12  | 10    | User passwords and other sensitive information      |
 |        |       | should be encrypted to protect against unauthorized |
-|        |       | access.                                             |+----------------------------------------------------------------------+
+|        |       | access.                                             |
++----------------------------------------------------------------------+
 | REQ13  | 6     | The system should automatically log out a user if   |
 |        |       | they are inactive for over 15 minutes.              |
 +--------+-------+-----------------------------------------------------+
@@ -197,7 +198,8 @@ that is of most importance.
 +--------+-------+-----------------------------------------------------+
 |  12    |  6    | As a reviewer, I can generate reports so that I can |
 |        |       | document my assessments, feedback and see the       |
-|        |       | projects that I have reviewed.                      |+----------------------------------------------------------------------+
+|        |       | projects that I have reviewed.                      |
++----------------------------------------------------------------------+
 |  13    |  9    | As an administrator, I can manage user accounts so  |
 |        |       | that I can enforce system regulations.              |
 +--------+-------+-----------------------------------------------------+
@@ -206,4 +208,5 @@ that is of most importance.
 |        |       | system’s features effectively.                      |
 +--------+-------+-----------------------------------------------------+
 |  15    |  8    | As an administrator, I can resolve user issues so   |
-|        |       | that I can ensure a smooth experience for all users.|+----------------------------------------------------------------------+
+|        |       | that I can ensure a smooth experience for all users.|
++----------------------------------------------------------------------+
