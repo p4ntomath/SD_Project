@@ -49,14 +49,20 @@ export default function ResearcherHomePage() {
   const handleCreateProject = async (newProject) => {
     if (!newProject) return;
     setCreateLoading(true);
-
-    // Remove goalInput from newProject before saving
-    const { goalInput, ...cleanedProject } = newProject;
-    console.log("Cleaned Project:", cleanedProject);
+    // Check if the project already exists
+    // Strip out goalInput and id
+    const { goalInput, id, ...cleanedProject } = newProject;
 
     try {
-      await createProject(cleanedProject);
-      setProjects([...projects, cleanedProject]);
+      const createdProjectId = await createProject(cleanedProject);
+
+      const fullProject = {
+        ...cleanedProject,
+        userId: auth.currentUser.uid,
+        projectId: createdProjectId,
+      };
+
+      setProjects([...projects, fullProject]);
       setShowForm(false);
     } catch (err) {
       console.error("Error creating project:", err);
@@ -64,7 +70,7 @@ export default function ResearcherHomePage() {
       setCreateLoading(false);
     }
   };
-  
+
     const handleDeleteProject = async (projectId) => {
       if (!projectId) return;
       setCreateLoading(true);
