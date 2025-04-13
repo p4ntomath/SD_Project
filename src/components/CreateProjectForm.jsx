@@ -227,7 +227,7 @@ export default function CreateProjectForm({ loading,onUpdate,onCreate, onCancel 
     {/* Goals Field */}
     <section className="mb-4">
       <label className="block text-sm font-medium mb-1">
-        Goals* <p className="text-gray-500 text-xs">(Press Enter or comma to add)</p>
+        Goals* <span className="text-gray-500 text-xs">(Press Enter or comma to add)</span>
       </label>
 
       {/* Display chips for added goals */}
