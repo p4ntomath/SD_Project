@@ -49,8 +49,6 @@ export default function ResearcherHomePage() {
   const handleCreateProject = async (newProject) => {
     if (!newProject) return;
     setCreateLoading(true);
-    // Check if the project already exists
-    // Strip out goalInput and id
     const { goalInput, id, ...cleanedProject } = newProject;
 
     try {
