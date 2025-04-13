@@ -72,7 +72,6 @@ export default function ResearcherHomePage() {
     const handleDeleteProject = async (projectId) => {
       if (!projectId) return;
       setDeletingProjectId(projectId);
-    
       try {
         await deleteProject(projectId);
         setProjects(projects.filter((project) => project.id !== projectId));
