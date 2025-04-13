@@ -35,15 +35,15 @@ const RoleSelectionPage = () => {
   }, [profileCompleted, navigate,role]); // Trigger this effect only when profileCompleted changes
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
+    <section className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       {loading ? (
-        <div className="flex justify-center items-center h-screen bg-gray-50">
+        <section className="flex justify-center items-center h-screen bg-gray-50">
           <ClipLoader color="#3498db" size={50} />
-        </div>
+        </section>
       ) : (
         <RoleSelectionForm onSubmit={handleSubmit} />
       )}
-    </div>
+    </section>
   );
 };
 

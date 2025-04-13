@@ -12,23 +12,22 @@ export default function ReviewerHomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <section className="min-h-screen bg-gray-50 flex">
       <ReviewerSidebar isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
       <ReviewerSidebarToggle isOpen={isSidebarOpen} toggleSidebar={toggleSidebar} />
 
       <main className={`flex-1 transition-all duration-300 ${isSidebarOpen ? 'ml-64' : 'ml-0'}`}>
         <header className="bg-white shadow-sm p-4">
-          <div className="max-w-7xl mx-auto flex justify-between items-center">
+          <section className="max-w-7xl mx-auto flex justify-between items-center">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Reviewer Dashboard</h1>
-
-          </div>
+          </section>
         </header>
 
         <section aria-labelledby="projects-heading" className="p-4 md:p-8">
           <h2 id="projects-heading" className="sr-only">Projects for Review</h2>
           
           {/* Empty state card */}
-          <div className="bg-white p-8 rounded-lg shadow-md text-center max-w-7xl mx-auto">
+          <article className="bg-white p-8 rounded-lg shadow-md text-center max-w-7xl mx-auto">
             <ClipboardDocumentListIcon 
               className="mx-auto h-12 w-12 text-gray-400" 
               aria-hidden="true"
@@ -39,9 +38,9 @@ export default function ReviewerHomePage() {
             <p className="mt-1 text-gray-500">
               New projects will appear here when they're ready for your evaluation
             </p>
-          </div>
+          </article>
         </section>
       </main>
-    </div>
+    </section>
   );
 }

@@ -32,10 +32,11 @@ const ProtectedRoute = ({ children }) => {
     }, [user, role, loading, navigate, location.pathname]);
     if (loading && location.pathname !== '/login') {
         return (
-            <div className="flex justify-center items-center h-screen bg-gray-50">
-                <ClipLoader color="#3498db" size={50} />
-            </div>
-        );
+            <main className="flex justify-center items-center h-screen bg-gray-50">
+              <ClipLoader color="#3498db" size={50} />
+            </main>
+          );
+          
     }
 
     // If we got here, the route is authorized

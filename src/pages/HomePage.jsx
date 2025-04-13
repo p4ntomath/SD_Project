@@ -11,10 +11,10 @@ export default function HomePage() {
     } else if (role === 'reviewer') {
         return <ReviewerHomePage />;
     } else {
-        return <div className="flex h-screen w-full justify-center items-center">
+        return <section className="flex h-screen w-full justify-center items-center">
             <h1 className='text-8xl font-bold'>Page Not Found</h1>
             {/* Add any other content you want to display when no role is selected */}
-        </div>; // or any other fallback UI
+        </section>; // or any other fallback UI
     }
 }
     // return (

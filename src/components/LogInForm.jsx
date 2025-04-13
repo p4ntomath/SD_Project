@@ -109,15 +109,15 @@ const LoginForm = () => {
   };
 
   return (
-    <div className="w-full max-w-md">
+    <main className="w-full max-w-md mx-auto">
       <header className="text-center mb-6">
         <h1 className="text-4xl font-bold">Welcome!</h1>
         <p className="text-lg font-semibold text-gray-600 mt-1">Login.</p>
       </header>
-
+  
       {errors.form && <p className="text-red-600 mb-4">{errors.form}</p>}
-
-      <form onSubmit={handleSubmit} className="space-y-4">
+  
+      <form onSubmit={handleSubmit} className="space-y-4" aria-label="Login Form">
         <FormInput
           label="Email Address"
           name="email"
@@ -126,7 +126,7 @@ const LoginForm = () => {
           error={errors.email}
           placeholder=""
         />
-
+  
         <FormInput
           label="Password"
           type="password"
@@ -136,8 +136,8 @@ const LoginForm = () => {
           error={errors.password}
           placeholder=""
         />
-
-        <div className="flex items-center justify-between text-sm text-gray-600">
+  
+        <section className="flex items-center justify-between text-sm text-gray-600">
           <label className="inline-flex items-center">
             <input 
               type="checkbox" 
@@ -149,8 +149,8 @@ const LoginForm = () => {
             Remember me
           </label>
           <a href="/forgotpassword" className="text-green-600 hover:underline">Forgot Password?</a>
-        </div>
-
+        </section>
+  
         <button
           type="submit"
           disabled={isLoading}
@@ -163,14 +163,14 @@ const LoginForm = () => {
           )}
         </button>
       </form>
-
-      <div className="flex items-center my-6 w-full">
+  
+      <section className="flex items-center my-6 w-full" aria-label="Separator">
         <hr className="flex-grow border-gray-300" />
-        <span className="mx-2 text-sm text-gray-500">OR</span>
+        <p className="mx-2 text-sm text-gray-500">OR</p>
         <hr className="flex-grow border-gray-300" />
-      </div>
-
-      <div className="space-y-3 w-full">
+      </section>
+  
+      <section className="space-y-3 w-full">
         <button 
           type="button"
           onClick={handleGoogleAuth}
@@ -186,13 +186,14 @@ const LoginForm = () => {
             </>
           )}
         </button>
-      </div>
-
-      <p className="text-center text-sm text-gray-500 mt-6">
+      </section>
+  
+      <footer className="text-center text-sm text-gray-500 mt-6">
         Don't have an account? <a href="/signup" className="text-green-600 hover:underline">Sign Up</a>
-      </p>
-    </div>
+      </footer>
+    </main>
   );
+  
 };
 
 export default LoginForm;
