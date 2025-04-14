@@ -1,20 +1,30 @@
-import {React,useContext} from "react";
+import React, { useContext, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import ResearcherHomePage from './ResearcherHomePage.jsx';
-import ReviewerHomePage from './ReviewerHomePage';
+import ReviewerHomePage from './ReviewerHomePage.jsx';
 import AuthContext from "../context/AuthContext"; // Import the AuthContext
-
+import { ClipLoader } from "react-spinners"; // Import the ClipLoader component
 
 export default function HomePage() {
-    const { role } = useContext(AuthContext); // Access the role from AuthContext
+    const { role, loading, user } = useContext(AuthContext);
+    const navigate = useNavigate();
+
+    useEffect(() => {
+        if (user && role == null && loading === false) {
+            navigate('/complete-profile');
+        }
+    }, [user, role, loading, navigate]);
+
     if (role === 'researcher') {
         return <ResearcherHomePage />;
     } else if (role === 'reviewer') {
         return <ReviewerHomePage />;
-    } else {
-        return <div className="flex h-screen w-full justify-center items-center">
-            <h1 className='text-8xl font-bold'>Page Not Found</h1>
-            {/* Add any other content you want to display when no role is selected */}
-        </div>; // or any other fallback UI
+    }
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <ClipLoader color="#36d7b7" size={50} />
+            </div>
+        );
     }
 }
-    // return (
