@@ -2,7 +2,7 @@
  * The code includes functions to create, fetch, update, and delete projects in a Firestore database
  * for a specific user.
  */
-import { db,auth } from "./firebaseConfig";
+import { db, auth } from "./firebaseConfig";
 import { query, where } from "firebase/firestore";
 import {
   collection,
@@ -11,9 +11,9 @@ import {
   getDoc,
   doc,
   updateDoc,
-  deleteDoc
-} from 'firebase/firestore';
-
+  deleteDoc,
+  arrayUnion,
+} from "firebase/firestore";
 
 //this function creates a new project in the Firestore database
 /**
@@ -21,25 +21,25 @@ import {
  * checking user authentication and required fields.
  */
 export async function createProject(newProject) {
-    const { title, description, researchField } = newProject;
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error("User not authenticated");
-    }
-    if (!title || !description || !researchField) {
-      setError("Please fill in all the required fields.");
-      throw new Error("Missing required fields");
-    }
+  const { title, description, researchField } = newProject;
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
+  if (!title || !description || !researchField) {
+    setError("Please fill in all the required fields.");
+    throw new Error("Missing required fields");
+  }
 
-    try {
-      const docRef = await addDoc(collection(db, "projects"), {
-        ...newProject,
-        userId: user.uid,
-      });
-      return docRef.id;
-    } catch (err) {
-      throw err;
-    }
+  try {
+    const docRef = await addDoc(collection(db, "projects"), {
+      ...newProject,
+      userId: user.uid,
+    });
+    return docRef.id;
+  } catch (err) {
+    throw err;
+  }
 }
 
 // fetxhProjects function to get all projects for a specific user
@@ -53,7 +53,10 @@ export async function createProject(newProject) {
 export const fetchProjects = async (uid) => {
   try {
     const projectsCollection = collection(db, "projects");
-    const userProjectsQuery = query(projectsCollection, where("userId", "==", uid));
+    const userProjectsQuery = query(
+      projectsCollection,
+      where("userId", "==", uid)
+    );
     const querySnapshot = await getDocs(userProjectsQuery);
 
     const projects = querySnapshot.docs.map((doc) => ({
@@ -77,7 +80,6 @@ export const updateProject = async (id, updatedData) => {
   await updateDoc(projectRef, updatedData);
 };
 
-
 /**
  * The function `deleteProject` deletes a project document from a Firestore database using its ID.
  */
@@ -91,7 +93,7 @@ export const deleteProject = async (id) => {
 //fetch projects by projectid
 export const fetchProjectById = async (projectId) => {
   try {
-    const projectDoc = doc(db, "projects", projectId);  // Fetching a single document by ID
+    const projectDoc = doc(db, "projects", projectId); // Fetching a single document by ID
     const projectSnapshot = await getDoc(projectDoc);
 
     if (projectSnapshot.exists()) {
@@ -110,21 +112,24 @@ export const addCollaboratorToProject = async (projectId, collaboratorId) => {
   try {
     const projectRef = doc(db, "projects", projectId);
     await updateDoc(projectRef, {
-      collaborators: arrayUnion(collaboratorId),  // Use Firestore's arrayUnion to add the collaborator without duplicating
+      collaborators: arrayUnion(collaboratorId), // Use Firestore's arrayUnion to add the collaborator without duplicating
     });
     console.log("Collaborator added successfully");
   } catch (error) {
-    console.error("Error adding collaborator:", error);
+    console.error("Error adding collaborator:", error.message, error.stack);
     throw new Error("Failed to add collaborator");
   }
 };
 
-export const searchResearchers = async (searchTerm) => {
+export const searchResearchers = async (searchTerm, currentUserId, project) => {
   try {
     const usersCollection = collection(db, "users");
 
     // First, get all researchers
-    const researcherQuery = query(usersCollection, where("role", "==", "researcher"));
+    const researcherQuery = query(
+      usersCollection,
+      where("role", "==", "researcher")
+    );
     const querySnapshot = await getDocs(researcherQuery);
 
     // Filter locally based on first name
@@ -133,10 +138,16 @@ export const searchResearchers = async (searchTerm) => {
         id: doc.id,
         ...doc.data(),
       }))
-      .filter((researcher) =>
-        researcher.first_name?.toLowerCase().includes(searchTerm.toLowerCase())
+      .filter((researcher) => {
+        const nameMatches = researcher.first_name
+          ?.toLowerCase()
+          .includes(searchTerm.toLowerCase());
+        const isCurrentUser = researcher.id === currentUserId;
+        const isCollaborator = project.collaborators?.includes(researcher.id);
         //Filter by name is not complete, also includes current_user name too
-      );
+        return nameMatches && !isCurrentUser && !isCollaborator;
+      });
+
     return researchers;
   } catch (error) {
     console.error("Error searching for researchers:", error);

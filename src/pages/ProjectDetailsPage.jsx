@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { fetchProjectById, searchResearchers } from "../backend/firebase/projectDB"; // Import the new function
+import { fetchProjectById, searchResearchers, addCollaboratorToProject } from "../backend/firebase/projectDB"; // Import the new function
 
 export default function ProjectDetailsPage() {
   const { id } = useParams();
@@ -15,7 +15,7 @@ export default function ProjectDetailsPage() {
   // Fetch all researchers initially
   const fetchResearchers = async () => {
     try {
-      const allResearchers = await searchResearchers(""); // Get all researchers initially
+      const allResearchers = await searchResearchers("",project.userId,project); // Get all researchers initially
       setResearchers(allResearchers);
       setFilteredResearchers(allResearchers); // Initialize with all researchers
     } catch (error) {
@@ -25,15 +25,18 @@ export default function ProjectDetailsPage() {
 
   // Handle the search and filter the list of researchers
   const handleSearch = (term) => {
-    setSearchTerm(term);
+    console.log(project.userId);
+    setSearchTerm(term, project.userId, project);
     if (term === "") {
       setFilteredResearchers(researchers); // Show all if search is empty
     } else {
       // Filter researchers based on the name
-      const results = researchers.filter((researcher) =>
-        researcher.name.toLowerCase().includes(term.toLowerCase())
+      const filtered = researchers.filter((researcher) =>
+        (researcher.first_name || "")
+          .toLowerCase()
+          .includes((searchTerm || "").toLowerCase())
       );
-      setFilteredResearchers(results);
+      setFilteredResearchers(filtered);
     }
   };
 
@@ -44,11 +47,16 @@ export default function ProjectDetailsPage() {
     }
   }, [showCollaboratorSearch]);
 
-  const addCollaborator = (collaboratorId) => {
-    // Function to update the project with the collaborator's ID
-    console.log("Add collaborator with ID:", collaboratorId);
-    // Call Firestore to update project with collaborator (e.g., add to "collaborators" field)
+  const addCollaborator = async (collaboratorId) => {
+    try {
+      //console.log("Add collaborator with ID:", collaboratorId, "Project Id:", id);
+      await addCollaboratorToProject(id, collaboratorId);
+    } catch (error) {
+      console.error("Failed to add collaborator in addCollaborator():", error.message);
+      // Optionally: Show error to user or handle it in UI
+    }
   };
+  
 
   useEffect(() => {
     const fetchData = async () => {
