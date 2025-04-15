@@ -47,35 +47,35 @@ const ForgotPasswordPage = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col md:flex-row">
+    <section className="min-h-screen flex flex-col md:flex-row">
       {/* Image Section - Hidden on mobile */}
-      <div className="hidden md:flex md:w-1/2 bg-gray-100 items-center justify-center p-8 rounded-tr-2xl rounded-br-2xl">
-        <div className="h-full w-full flex items-center justify-center">
+      <section className="hidden md:flex md:w-1/2 bg-gray-100 items-center justify-center p-8 rounded-tr-2xl rounded-br-2xl">
+        <section className="h-full w-full flex items-center justify-center">
           <img
             src={welcomeImage}
             alt="Welcome"
             className="h-auto object-contain rounded-lg shadow-md"
           />
-        </div>
-      </div>
+        </section>
+      </section>
       
       {/* Form Section */}
-      <div className="w-full md:w-1/2 flex items-center justify-center p-8 bg-white">
-        <div className="w-full max-w-md">
+      <section className="w-full md:w-1/2 flex items-center justify-center p-8 bg-white">
+        <section className="w-full max-w-md">
           <h2 className="text-4xl font-bold text-gray-800 mb-2">Reset Your Password</h2>
           
           {isSubmitted ? (
-            <div className="text-center">
-              <div className="mb-4 p-4 bg-green-100 text-green-700 rounded-md">
+            <section className="text-center">
+              <section className="mb-4 p-4 bg-green-100 text-green-700 rounded-md">
                 Password reset link has been sent to your email.
-              </div>
+              </section>
               <Link 
                 to="/login" 
                 className="text-blue-600 hover:text-blue-800 hover:underline"
               >
                 Back to Sign In
               </Link>
-            </div>
+            </section>
           ) : (
             <>
               <p className="text-gray-600 mb-6">
@@ -83,13 +83,13 @@ const ForgotPasswordPage = () => {
               </p>
               
               {error && (
-                <div className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
+                <section className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
                   {error}
-                </div>
+                </section>
               )}
-
+  
               <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="mb-4">
+                <section className="mb-4">
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                     Email Address
                   </label>
@@ -105,7 +105,7 @@ const ForgotPasswordPage = () => {
                     }`}
                     placeholder="your@email.com"
                   />
-                </div>
+                </section>
                 
                 <button
                   type="submit"
@@ -120,7 +120,7 @@ const ForgotPasswordPage = () => {
                 </button>
               </form>
               
-              <div className="mt-6 text-center text-sm text-gray-600">
+              <section className="mt-6 text-center text-sm text-gray-600">
                 Remember your password?{' '}
                 <Link 
                   to="/login" 
@@ -128,13 +128,14 @@ const ForgotPasswordPage = () => {
                 >
                   Sign In
                 </Link>
-              </div>
+              </section>
             </>
           )}
-        </div>
-      </div>
-    </div>
+        </section>
+      </section>
+    </section>
   );
+  
 };
 
 export default ForgotPasswordPage;

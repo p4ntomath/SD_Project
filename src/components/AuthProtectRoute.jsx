@@ -21,9 +21,9 @@ const AuthProtectRoute = ({ children }) => {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center h-screen bg-gray-50">
+            <section className="flex justify-center items-center h-screen bg-gray-50">
                 <ClipLoader color="#3498db" size={50} />
-            </div>
+            </section>
         );
     }
 
