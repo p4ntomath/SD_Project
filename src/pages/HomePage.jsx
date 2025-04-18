@@ -1,6 +1,7 @@
 import React, { useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import ResearcherHomePage from './ResearcherHomePage.jsx';
+import ResearcherHome from "./ResearcherPages/ResearcherHome.jsx";
 import ReviewerHomePage from './ReviewerHomePage.jsx';
 import AuthContext from "../context/AuthContext"; // Import the AuthContext
 import { ClipLoader } from "react-spinners"; // Import the ClipLoader component
@@ -16,7 +17,7 @@ export default function HomePage() {
     }, [user, role, loading, navigate]);
 
     if (role === 'researcher') {
-        return <ResearcherHomePage />;
+        return <ResearcherHome />;
     } else if (role === 'reviewer') {
         return <ReviewerHomePage />;
     }

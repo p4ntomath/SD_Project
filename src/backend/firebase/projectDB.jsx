@@ -160,4 +160,4 @@ export const deleteProject = async (projectId) => {
   }
 };
 
-//Please add update methods for all the fields in the project excluding the userId
+//Please add update methods for all the fields in the project excluding the userId  
