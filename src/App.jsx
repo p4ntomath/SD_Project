@@ -10,6 +10,7 @@ import { AuthProvider } from './context/AuthContext'; // Import AuthProvider
 import ProtectedRoute from './components/ProtectedRoute'; // Import the ProtectedRoute component
 import HomePage from './pages/HomePage.jsx';
 import AuthProtectRoute from './components/AuthProtectRoute'; // Import the AuthProtectRoute component
+import FundingTrackerPage from './pages/FundingTrackerPage.jsx';
 
 //mport { fetchProjects, updateProject, deleteProject } from './backend/firebase/projectDB'; was just for testing
 function App() {
@@ -47,7 +48,11 @@ function App() {
               <HomePage/>
             </ProtectedRoute>
           }/>
-
+          
+          <Route path="/TrackFunding" element={
+              <FundingTrackerPage />
+          }/>
+          
         </Routes>
       </AuthProvider>
     </Router>

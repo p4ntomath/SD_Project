@@ -9,7 +9,11 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
     researchField: '',
     duration: '',
     goals: [],
-    goalInput: ''
+    goalInput: '',
+    availableFunds:100,
+    usedFunds: 50,
+    status:'In Progress'
+
   });
 
   // Pre-fill form data if preFormData is provided

@@ -41,7 +41,7 @@ export default function MobileBottomNav ({ showForm, setShowForm }) {
                     aria-label="View profile"
                 >
                     <FiUser className="h-6 w-6 group-hover:text-blue-600" />
-                    <p className="text-xs mt-1 group-hover:text-blue-600">Profile</p>
+                    <p className="text-xs mt-1 group-hover:text-blue-600">Account</p>
                 </button>
       </section>
     </nav>

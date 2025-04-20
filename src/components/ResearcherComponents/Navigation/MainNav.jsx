@@ -17,7 +17,7 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
       <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <section className="flex justify-between h-16 items-center">
           {/* Desktop Navigation */}
-          <section className="hidden md:flex items-center space-x-6">
+          <section className="hidden md:flex items-center space-x-2">
                 <button 
                     className="group flex flex-col items-center justify-center p-3 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
                     aria-label="Home"
@@ -55,7 +55,7 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
                     aria-label="View profile"
                 >
                     <FiUser className="h-6 w-6 group-hover:text-blue-600" />
-                    <p className="text-xs mt-1 group-hover:text-blue-600">Profile</p>
+                    <p className="text-xs mt-1 group-hover:text-blue-600">Account</p>
                 </button>
             </section>
 
@@ -75,10 +75,10 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
             </form>
           </section>
 
-        <section className='hidden md:flex items-cente space-x-6'>
+        <section className='hidden md:flex items-center space-x-6'>
           {/* Logo/Title */}
           <section className="hidden md:flex items-center">
-            <h1 className="text-xl font-bold text-gray-800">Research Portal</h1>
+            <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent">Research Portal</h1>
             
           </section>
 
@@ -98,7 +98,7 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
 
 
           {/* Mobile menu button */}
-          <div className="md:hidden flex items-center">
+          <section className="md:hidden flex items-center">
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none"
@@ -111,23 +111,25 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
                 <FiMenu className="h-6 w-6" />
               )}
             </button>
-          </div>
+          </section>
         </section>
       </section>
 
       {/* Mobile menu */}
       {mobileMenuOpen && (
-        <div className="md:hidden bg-white shadow-md">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+        <section className="md:hidden bg-white shadow-md">
+          <section className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
         
             <button
               className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
               aria-label="View profile"
             >
-              Profile
+              My Profile
             </button>
-          </div>
-        </div>
+
+           
+          </section>
+        </section>
       )}
     </nav>
   );
