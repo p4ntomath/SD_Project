@@ -25,7 +25,10 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
         researchField: projectToUpdate.researchField || '',
         duration: projectToUpdate.duration || '',
         goals: projectToUpdate.goals || [],
-        goalInput: ''
+        goalInput: '',
+        availableFunds: 0,
+        usedFunds: 0,
+        status:'In Progress'
       });
     }
   }, [isUpdateMode, projectToUpdate]);
@@ -94,6 +97,9 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
     if (validateForm()) {
       const projectData = {
         ...formData,
+        availableFunds: 0,       // Ensure these values are always set
+        usedFunds: 0,             // on creation For testing purposes (Please update this later)
+        status: 'In Progress', 
         createdAt: projectToUpdate?.createdAt || new Date(),
         id: projectToUpdate?.id,
       };

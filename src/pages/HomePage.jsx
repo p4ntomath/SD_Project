@@ -23,9 +23,9 @@ export default function HomePage() {
     }
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
+            <section className="flex items-center justify-center min-h-screen">
                 <ClipLoader color="#36d7b7" size={50} />
-            </div>
+            </section>
         );
     }
 }

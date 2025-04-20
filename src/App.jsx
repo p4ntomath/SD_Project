@@ -11,6 +11,7 @@ import ProtectedRoute from './components/ProtectedRoute'; // Import the Protecte
 import HomePage from './pages/HomePage.jsx';
 import AuthProtectRoute from './components/AuthProtectRoute'; // Import the AuthProtectRoute component
 import FundingTrackerPage from './pages/FundingTrackerPage.jsx';
+import ProjectDetailsPage from './pages/ProjectDetailsPage.jsx';
 
 //mport { fetchProjects, updateProject, deleteProject } from './backend/firebase/projectDB'; was just for testing
 function App() {
@@ -52,6 +53,9 @@ function App() {
           <Route path="/TrackFunding" element={
               <FundingTrackerPage />
           }/>
+          <Route path="/projects/:projectId" element={
+            <ProjectDetailsPage />
+            } />
           
         </Routes>
       </AuthProvider>

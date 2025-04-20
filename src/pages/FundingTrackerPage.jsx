@@ -5,10 +5,14 @@ import { useNavigate } from 'react-router-dom';
 import { fetchProjects } from '../backend/firebase/projectDB';
 import { auth } from '../backend/firebase/firebaseConfig';
 
+
 export default function FundingTrackerPage() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filteredProjects, setFilteredProjects] = useState([]);
+  const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
+  
 
   useEffect(() => {
     const fetchUserProjects = async () => {
@@ -17,6 +21,7 @@ export default function FundingTrackerPage() {
         try {
           const fetchedProjects = await fetchProjects(user.uid);
           setProjects(fetchedProjects);
+          setFilteredProjects(fetchedProjects);
         } catch (error) {
           console.error("Error fetching projects:", error);
         } finally {
@@ -27,6 +32,17 @@ export default function FundingTrackerPage() {
 
     fetchUserProjects();
   }, []);
+
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredProjects(projects);
+    } else {
+      const filtered = projects.filter(project =>
+        project.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredProjects(filtered);
+    }
+  }, [searchQuery, projects]);
 
   // Calculate total funds
   const totalAvailableFunds = projects.reduce((sum, project) => sum + ((project.availableFunds || 0) - (project.usedFunds || 0)), 0);
@@ -68,8 +84,10 @@ export default function FundingTrackerPage() {
                 </section>
                 <input
                   className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="Search projects or funders..."
+                  placeholder="Search projects..."
                   type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </section>
             </section>
@@ -91,14 +109,15 @@ export default function FundingTrackerPage() {
 
       <main className="min-h-screen bg-gray-50 pt-15 px-4 md:px-8 pb-8">
         <section className="max-w-7xl mx-auto">
+
           {/* Stats Overview Banner - Hidden on mobile */}
           <section className="mb-8 hidden md:grid grid-cols-1 md:grid-cols-3 gap-4">
             <section className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
               <p className="text-sm text-gray-500">Total Projects</p>
-              <p className="text-2xl font-bold">{projects.length}</p>
+              <p className="text-2xl font-bold">{filteredProjects.length}</p>
             </section>
             <section className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-              <p className="text-sm text-gray-500">Available Funds</p>
+              <p className="text-sm text-gray-500">Total Available Funds</p>
               <p className="text-2xl font-bold text-green-600">R {totalAvailableFunds.toLocaleString()}</p>
             </section>
             <section className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
@@ -158,13 +177,13 @@ export default function FundingTrackerPage() {
               <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <h2 className="text-lg font-semibold mb-4">Your Projects</h2>
                 <section className="space-y-4">
-                  {projects.map((project) => {
+                  {filteredProjects.map((project) => {
                     const availableFunds = (project.availableFunds || 0);
                     const usedPercentage = project.availableFunds ? 
                       ((project.usedFunds || 0) / project.availableFunds * 100) : 0;
                     
                     return (
-                      //Please include onclick functionality such that clicking on a project takes you the project's funding summery
+                      //Please include onclick functionality such that clicking on a project takes you the project's details
                       <section 
                         key={project.id} 
                         className="p-5 border border-gray-100 rounded-lg hover:shadow-md transition-all cursor-pointer"

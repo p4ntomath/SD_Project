@@ -24,12 +24,15 @@ export default function ResearcherHome() {
   const [isUpdateMode, setIsUpdateMode] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const projectsRef = useRef(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredProjects, setFilteredProjects] = useState([]);
 
   const fetchAllProjects = async (user) => {
     try {
       setLoading(true);
       const fetchedProjects = await fetchProjects(user.uid);
       setProjects(fetchedProjects);
+      setFilteredProjects(fetchedProjects);
     } catch (error) {
       console.error("Error fetching projects:", error);
     } finally {
@@ -48,6 +51,18 @@ export default function ResearcherHome() {
     return () => unsubscribe();
   }, []);
 
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    if (query.trim() === '') {
+      setFilteredProjects(projects);
+    } else {
+      const filtered = projects.filter(project =>
+        project.title.toLowerCase().includes(query.toLowerCase())
+      );
+      setFilteredProjects(filtered);
+    }
+  };
+
   const handleCreateProject = async (newProject) => {
     if (!newProject) return;
     setCreateLoading(true);
@@ -61,6 +76,7 @@ export default function ResearcherHome() {
         projectId: createdProjectId,
       };
       setProjects([...projects, fullProject]);
+      setFilteredProjects([...filteredProjects, fullProject]);
       setShowForm(false);
     } catch (err) {
       console.error("Error creating project:", err);
@@ -74,7 +90,9 @@ export default function ResearcherHome() {
     setDeletingProjectId(projectId);
     try {
       await deleteProject(projectId);
-      setProjects(projects.filter((project) => project.id !== projectId));
+      const updatedProjects = projects.filter((project) => project.id !== projectId);
+      setProjects(updatedProjects);
+      setFilteredProjects(updatedProjects);
       setDeletionSuccess(true);
       setStatusMessage('Project was successfully deleted.');
     } catch (error) {
@@ -92,11 +110,11 @@ export default function ResearcherHome() {
     setCreateLoading(true);
     try {
       await updateProject(updatedProject.id, updatedProject);
-      setProjects((prevProjects) =>
-        prevProjects.map((project) =>
-          project.id === updatedProject.id ? { ...project, ...updatedProject } : project
-        )
+      const updatedProjects = projects.map((project) =>
+        project.id === updatedProject.id ? { ...project, ...updatedProject } : project
       );
+      setProjects(updatedProjects);
+      setFilteredProjects(updatedProjects);
       setDeletionSuccess(true);
       setStatusMessage('Project was successfully updated.');
     } catch (error) {
@@ -125,6 +143,7 @@ export default function ResearcherHome() {
           setShowForm={setShowForm} 
           setMobileMenuOpen={setMobileMenuOpen} 
           mobileMenuOpen={mobileMenuOpen} 
+          onSearch={handleSearch}
         />
       </header>
 
@@ -158,16 +177,25 @@ export default function ResearcherHome() {
                 </section>
               ) : (
                 <>
-                  {projects.length > 0 ? (
+                  {filteredProjects.length > 0 ? (
                     <section ref={projectsRef} className="grid grid-cols-1 gap-6">
-                      {projects.map((project) => (
-                        <article key={project.id} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-100">
-                          <section className="flex justify-between items-start">
-                            <section>
-                              <h2 className="text-xl font-semibold text-gray-800">{project.title}</h2>
-                              <p className="mt-2 text-gray-600">{project.description}</p>
+                      {filteredProjects.map((project) => (
+                        <article key={project.id} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-100"
+                        onClick={() => navigate(`/projects/${project.id}`, {
+                          state: {
+                            title: project.title,
+                            description: project.description,
+                            status: project.status,
+                            availableFunds: project.availableFunds,
+                            usedFunds: project.usedFunds
+                          }
+                        })}>
+                            <section className="flex justify-between items-start">
+                              <section>
+                                <h2 className="text-xl font-semibold text-gray-800">{project.title}</h2>
+                                <p className="mt-2 text-gray-600">{project.description}</p>
+                              </section>
                             </section>
-                          </section>
 
                           <section className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-4">
                             <section>
@@ -181,17 +209,20 @@ export default function ResearcherHome() {
                                 <section className="w-full bg-gray-200 rounded-full h-2">
                                   <section 
                                     className="bg-blue-600 h-2 rounded-full" 
-                                    style={{ width: '50%' }}
+                                    //*Implement progress tracking functions here
+                                    style={{ width: '0%' }}
                                   />
-                                </section>
-                                <span className="text-xs text-gray-500">50%</span>
+                                </section >{/*Implement progress tracking functions here*/}
+                                <p className="text-xs text-gray-500">0%</p> 
                               </section>
+
                             </section>
                           </section>
 
                           <section className="flex flex-wrap gap-2 mt-6">
                             <button
-                              onClick={() => {
+                              onClick={(e) => {
+                                e.stopPropagation();
                                 setIsUpdateMode(true);
                                 setShowForm(true);
                                 setProjectToUpdate(project);
@@ -202,7 +233,10 @@ export default function ResearcherHome() {
                               Update
                             </button>
                             <button
-                              onClick={() => handleDeleteProject(project.id)}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDeleteProject(project.id)
+                              }}
                               className="bg-white hover:bg-gray-50 text-red-600 border border-red-600 font-medium py-2 px-4 rounded-lg text-sm transition-colors"
                               disabled={deletingProjectId === project.id}
                             >
@@ -222,8 +256,12 @@ export default function ResearcherHome() {
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1}
                           d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
                       </svg>
-                      <h3 className="mt-2 text-lg font-medium text-gray-900">No projects yet</h3>
-                      <p className="mt-1 text-gray-500">Get started by creating a new research project.</p>
+                      <h3 className="mt-2 text-lg font-medium text-gray-900">
+                        {searchQuery ? 'No matching projects found' : 'No projects yet'}
+                      </h3>
+                      <p className="mt-1 text-gray-500">
+                        {searchQuery ? 'Try a different search term' : 'Get started by creating a new research project.'}
+                      </p>
                     </section>
                   )}
                 </>
