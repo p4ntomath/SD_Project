@@ -10,8 +10,8 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
     duration: '',
     goals: [],
     goalInput: '',
-    availableFunds:100,
-    usedFunds: 50,
+    availableFunds: 0,
+    usedFunds: 0,
     status:'In Progress'
 
   });
