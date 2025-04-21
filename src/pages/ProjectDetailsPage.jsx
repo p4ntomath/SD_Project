@@ -194,7 +194,7 @@ export default function ProjectDetailsPage() {
                   name="title"
                   value={editedProject.title}
                   onChange={handleInputChange}
-                  className="text-2xl font-bold text-gray-800 mb-2 p-1 border rounded"
+                  className="text-2xl font-bold text-gray-800 mb-2 mr-2 p-1 border rounded"
                 />
               ) : (
                 <h2 className="text-2xl font-bold text-gray-800 mb-2">{project.title}</h2>
