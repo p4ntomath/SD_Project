@@ -43,19 +43,21 @@ function App() {
               <CompleteProfile />
             </ProtectedRoute>
           } />
-          {/* AuthHomeTest requires both authentication and completed profile */}
           <Route path="/home" element={
             <ProtectedRoute>
               <HomePage/>
             </ProtectedRoute>
           }/>
-          
           <Route path="/TrackFunding" element={
+            <ProtectedRoute>
               <FundingTrackerPage />
+            </ProtectedRoute>
           }/>
           <Route path="/projects/:projectId" element={
-            <ProjectDetailsPage />
-            } />
+            <ProtectedRoute>
+              <ProjectDetailsPage />
+            </ProtectedRoute>
+          } />
           
         </Routes>
       </AuthProvider>

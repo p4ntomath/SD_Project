@@ -129,11 +129,11 @@ export default function FundingTrackerPage() {
           </section>
 
           {/* Main Content Grid */}
-          <section className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          <section className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-screen">
             {/* Left Column - Funding Cards */}
             <section className="lg:col-span-1 space-y-6">
               {/* Funding Overview Card */}
-              <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 sticky top-24">
+              <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <section className="flex items-center mb-4">
                   <FaPiggyBank className="mr-2 text-pink-500" size={24} />
                   <h2 className="text-lg font-semibold">Funding Overview</h2>
@@ -152,8 +152,8 @@ export default function FundingTrackerPage() {
                 </section>
               </section>
               
-              {/* Funding Opportunities Card, Please implement some functionality to dynamiclly add sponsors */}
-              <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100 sticky top-[420px]">
+              {/* Funding Opportunities Card */}
+              <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <h2 className="text-lg font-semibold mb-4 flex items-center">
                   <FaPiggyBank className="text-pink-500 mr-2" size={24}  />
                   Need Funding?
