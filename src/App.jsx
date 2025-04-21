@@ -48,16 +48,12 @@ function App() {
               <HomePage/>
             </ProtectedRoute>
           }/>
-          <Route path="/TrackFunding" element={
-            <ProtectedRoute>
+          <Route path="/trackfunding" element={
               <FundingTrackerPage />
-            </ProtectedRoute>
           }/>
           <Route path="/projects/:projectId" element={
-            <ProtectedRoute>
-              <ProjectDetailsPage />
-            </ProtectedRoute>
-          } />
+            <ProjectDetailsPage />
+            } />
           
         </Routes>
       </AuthProvider>

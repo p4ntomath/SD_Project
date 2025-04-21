@@ -300,7 +300,7 @@ export default function ResearcherHome() {
 
                   <section className="pt-2">
                     <button
-                      onClick={() => navigate('/TrackFunding')}
+                      onClick={() => navigate('/trackfunding')}
                       className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors flex items-center justify-center"
                     >
                       <FaChartLine className="mr-2" />
