@@ -1,31 +1,33 @@
-import { useState ,useEffect} from 'react';
+import { useState, useEffect } from 'react';
 import ChipComponent from './ResearcherComponents/ChipComponent';
 import { ClipLoader } from "react-spinners";
 
-export default function CreateProjectForm({ loading,onUpdate,onCreate, onCancel ,projectToUpdate,isUpdateMode }) {
+export default function CreateProjectForm({ loading, onUpdate, onCreate, onCancel, projectToUpdate, isUpdateMode }) {
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     researchField: '',
-    startDate: '',
-    endDate: '',
+    duration: '',
     goals: [],
     goalInput: '',
-    contact: ''
+    availableFunds: 0,
+    usedFunds: 0,
+    status: 'In Progress'
   });
 
-  // Pre-fill form data if preFormData is provided
+  // Pre-fill form data if projectToUpdate is provided
   useEffect(() => {
     if (isUpdateMode && projectToUpdate) {
       setFormData({
         title: projectToUpdate.title || '',
         description: projectToUpdate.description || '',
         researchField: projectToUpdate.researchField || '',
-        startDate: projectToUpdate.startDate || '',
-        endDate: projectToUpdate.endDate || '',
+        duration: projectToUpdate.duration || '',
         goals: projectToUpdate.goals || [],
         goalInput: '',
-        contact: projectToUpdate.contact || ''
+        availableFunds: projectToUpdate.availableFunds || 0,
+        usedFunds: projectToUpdate.usedFunds || 0,
+        status: projectToUpdate.status || 'In Progress'
       });
     }
   }, [isUpdateMode, projectToUpdate]);
@@ -53,55 +55,39 @@ export default function CreateProjectForm({ loading,onUpdate,onCreate, onCancel 
       newErrors.researchField = 'Research field must be at least 3 characters';
     }
 
-    if (!formData.startDate) {
-      newErrors.startDate = 'Start date is required';
+    if (!formData.duration) {
+      newErrors.duration = 'Duration is required';
     }
 
-    if (!formData.endDate) {
-      newErrors.endDate = 'End date is required';
-    } else if (formData.startDate && new Date(formData.endDate) < new Date(formData.startDate)) {
-      newErrors.endDate = 'End date cannot be before start date';
-    }
-
-    
     if (formData.goals.length < 2) {
       newErrors.goals = 'Please enter at least 2 goals';
-    }
-
-    if (!formData.contact.trim()) {
-      newErrors.contact = 'Contact information is required';
-    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.contact) && 
-               !/^(\+\d{1,3}[- ]?)?\d{10}$/.test(formData.contact)) {
-      newErrors.contact = 'Please enter a valid email or phone number';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  
-  const addGoal = (e) => {
-    e.preventDefault();
-    if (formData.goalInput.trim() && !formData.goals.includes(formData.goalInput.trim())) {
+  const addGoal = () => {
+    if (formData.goalInput.trim()) {
       setFormData({
         ...formData,
-        goals: [...formData.goals, formData.goalInput.trim()],
+        goals: [...formData.goals, { text: formData.goalInput.trim(), completed: false }],
         goalInput: ''
       });
     }
   };
 
-
   const deleteGoal = (goalToDelete) => {
     setFormData({
       ...formData,
-      goals: formData.goals.filter(goal => goal !== goalToDelete)
+      goals: formData.goals.filter(goal => goal.text !== goalToDelete.text)
     });
   };
 
   const handleGoalKeyDown = (e) => {
     if (e.key === 'Enter' || e.key === ',') {
-      addGoal(e);
+      e.preventDefault();
+      addGoal();
     }
   };
 
@@ -110,18 +96,22 @@ export default function CreateProjectForm({ loading,onUpdate,onCreate, onCancel 
     if (validateForm()) {
       const projectData = {
         ...formData,
-        createdAt: projectToUpdate?.createdAt || new Date(), // keep original createdAt if editing
-        id: projectToUpdate?.id, // this will be important for updating
+        goals: formData.goals.map(goal => 
+          typeof goal === 'string' ? { text: goal, completed: false } : goal
+        ),
+        availableFunds: projectToUpdate?.availableFunds || formData.availableFunds,
+        usedFunds: projectToUpdate?.usedFunds || formData.usedFunds,
+        status: projectToUpdate?.status || formData.status,
+        createdAt: projectToUpdate?.createdAt || new Date(),
       };
-  
+
       if (isUpdateMode) {
-        onUpdate(projectData);  // Call update
+        onUpdate(projectData);
       } else {
-        onCreate(projectData);  // Call create
+        onCreate(projectData);
       }
     }
   };
-  
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -133,178 +123,162 @@ export default function CreateProjectForm({ loading,onUpdate,onCreate, onCancel 
 
   return (
     <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md">
-  <h2 className="text-xl font-semibold mb-4">New Project Details</h2>
+      <header>
+        <h1 className="text-xl font-semibold mb-4">{isUpdateMode ? 'Update Project' : 'New Project Details'}</h1>
+      </header>
 
-  <section className="space-y-4">
-    {/* Title Field */}
-    <section>
-      <label className="block text-sm font-medium mb-1">Title*</label>
-      <input
-        type="text"
-        name="title"
-        value={formData.title}
-        onChange={handleChange}
-        className={`w-full p-2 border rounded-md ${
-          errors.title ? 'border-red-500' : 'border-gray-300'
-        }`}
-      />
-      {errors.title && (
-        <p className="mt-1 text-sm text-red-600">{errors.title}</p>
-      )}
-    </section>
+      <fieldset className="space-y-2">
+        <legend className="sr-only">Project Information</legend>
 
-    {/* Description Field */}
-    <section>
-      <label className="block text-sm font-medium mb-1">Description*</label>
-      <textarea
-        name="description"
-        value={formData.description}
-        onChange={handleChange}
-        className={`w-full p-2 border rounded-md ${
-          errors.description ? 'border-red-500' : 'border-gray-300'
-        }`}
-        rows={4}
-      />
-      {errors.description && (
-        <p className="mt-1 text-sm text-red-600">{errors.description}</p>
-      )}
-    </section>
-
-    {/* Research Field (now text input) */}
-    <section>
-      <label className="block text-sm font-medium mb-1">Research Field*</label>
-      <input
-        type="text"
-        name="researchField"
-        value={formData.researchField}
-        onChange={handleChange}
-        className={`w-full p-2 border rounded-md ${
-          errors.researchField ? 'border-red-500' : 'border-gray-300'
-        }`}
-        placeholder="Enter your research field (e.g., Computer Science, Biology)"
-      />
-      {errors.researchField && (
-        <p className="mt-1 text-sm text-red-600">{errors.researchField}</p>
-      )}
-    </section>
-
-    {/* Date Range Fields */}
-    <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
-      <section>
-        <label className="block text-sm font-medium mb-1">Start Date*</label>
-        <input
-          type="date"
-          name="startDate"
-          value={formData.startDate}
-          onChange={handleChange}
-          className={`w-full p-2 border rounded-md ${
-            errors.startDate ? 'border-red-500' : 'border-gray-300'
-          }`}
-          min={new Date().toISOString().split('T')[0]}
-        />
-        {errors.startDate && (
-          <p className="mt-1 text-sm text-red-600">{errors.startDate}</p>
-        )}
-      </section>
-      <section>
-        <label className="block text-sm font-medium mb-1">End Date*</label>
-        <input
-          type="date"
-          name="endDate"
-          value={formData.endDate}
-          onChange={handleChange}
-          className={`w-full p-2 border rounded-md ${
-            errors.endDate ? 'border-red-500' : 'border-gray-300'
-          }`}
-          min={formData.startDate || new Date().toISOString().split('T')[0]}
-        />
-        {errors.endDate && (
-          <p className="mt-1 text-sm text-red-600">{errors.endDate}</p>
-        )}
-      </section>
-    </section>
-
-    {/* Goals Field */}
-    <section className="mb-4">
-      <label className="block text-sm font-medium mb-1">
-        Goals* <span className="text-gray-500 text-xs">(Press Enter or comma to add)</span>
-      </label>
-
-      {/* Display chips for added goals */}
-      <section className="flex flex-wrap mb-2">
-        {formData.goals.map((goal, index) => (
-          <ChipComponent
-            key={index}
-            goal={goal}
-            onDelete={() => deleteGoal(goal)}
+        {/* Title Field */}
+        <div role="group" aria-labelledby="title-label">
+          <label id="title-label" className="block text-sm font-medium mb-1">Title*</label>
+          <input
+            type="text"
+            name="title"
+            value={formData.title}
+            onChange={handleChange}
+            className={`w-full p-2 border rounded-md ${
+              errors.title ? 'border-red-500' : 'border-gray-300'
+            }`}
+            aria-required="true"
+            aria-invalid={!!errors.title}
+            aria-describedby={errors.title ? "title-error" : undefined}
           />
-        ))}
-      </section>
+          {errors.title && (
+            <p id="title-error" className="mt-1 text-sm text-red-600" role="alert">{errors.title}</p>
+          )}
+        </div>
 
-      {/* Input for new goals */}
-      <section className="flex">
-        <input
-          type="text"
-          value={formData.goalInput}
-          onChange={(e) => setFormData({ ...formData, goalInput: e.target.value })}
-          onKeyDown={handleGoalKeyDown}
-          placeholder="Enter a goal and press Enter"
-          className={`flex-1 p-2 border rounded-l-md ${
-            errors.goals ? 'border-red-500' : 'border-gray-300'
-          }`}
-        />
-        <button
-          onClick={addGoal}
-          type="button"
-          className="bg-blue-600 text-white px-4 rounded-r-md hover:bg-blue-700 transition-colors"
-        >
-          Add
-        </button>
-      </section>
+        {/* Description Field */}
+        <div role="group" aria-labelledby="description-label">
+          <label id="description-label" className="block text-sm font-medium mb-1">Description*</label>
+          <textarea
+            name="description"
+            value={formData.description}
+            onChange={handleChange}
+            className={`w-full p-2 border rounded-md ${
+              errors.description ? 'border-red-500' : 'border-gray-300'
+            }`}
+            rows={4}
+            aria-required="true"
+            aria-invalid={!!errors.description}
+            aria-describedby={errors.description ? "description-error" : undefined}
+          />
+          {errors.description && (
+            <p id="description-error" className="mt-1 text-sm text-red-600" role="alert">{errors.description}</p>
+          )}
+        </div>
 
-      {errors.goals && (
-        <p className="mt-1 text-sm text-red-600">{errors.goals}</p>
-      )}
-    </section>
+        {/* Research Field */}
+        <div role="group" aria-labelledby="research-field-label">
+          <label id="research-field-label" className="block text-sm font-medium mb-1">Research Field*</label>
+          <input
+            type="text"
+            name="researchField"
+            value={formData.researchField}
+            onChange={handleChange}
+            className={`w-full p-2 border rounded-md ${
+              errors.researchField ? 'border-red-500' : 'border-gray-300'
+            }`}
+            placeholder="Enter your research field (e.g., Computer Science, Biology)"
+            aria-required="true"
+            aria-invalid={!!errors.researchField}
+            aria-describedby={errors.researchField ? "research-field-error" : undefined}
+          />
+          {errors.researchField && (
+            <p id="research-field-error" className="mt-1 text-sm text-red-600" role="alert">{errors.researchField}</p>
+          )}
+        </div>
 
-    {/* Contact Field */}
-    <section>
-      <label className="block text-sm font-medium mb-1">Contact Info*</label>
-      <input
-        type="text"
-        name="contact"
-        value={formData.contact}
-        onChange={handleChange}
-        className={`w-full p-2 border rounded-md ${
-          errors.contact ? 'border-red-500' : 'border-gray-300'
-        }`}
-        placeholder="Email or phone number"
-      />
-      {errors.contact && (
-        <p className="mt-1 text-sm text-red-600">{errors.contact}</p>
-      )}
-    </section>
+        {/* Duration Field */}
+        <div role="group" aria-labelledby="duration-label">
+          <label id="duration-label" className="block text-sm font-medium mb-1">Duration*</label>
+          <input
+            type="text"
+            name="duration"
+            value={formData.duration}
+            onChange={handleChange}
+            className={`w-full p-2 border rounded-md ${
+              errors.duration ? 'border-red-500' : 'border-gray-300'
+            }`}
+            placeholder="e.g., 3 months, 6 weeks, 1 year"
+            aria-required="true"
+            aria-invalid={!!errors.duration}
+            aria-describedby={errors.duration ? "duration-error" : undefined}
+          />
+          {errors.duration && (
+            <p id="duration-error" className="mt-1 text-sm text-red-600" role="alert">{errors.duration}</p>
+          )}
+        </div>
 
-    <section className="flex justify-end space-x-3 pt-4">
-      <button
-        type="button"
-        onClick={onCancel}
-        className="px-4 py-2 border rounded-md hover:bg-gray-100 transition-colors"
-      >
-        Cancel
-      </button>
-      <button
-        type="submit"
-        disabled={loading}
-        className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
-      >
-        {loading ? (
-          <ClipLoader color="#ffffff" loading={loading} size={20} />
-        ) : isUpdateMode ? 'Update Project' : 'Create Project'}
-      </button>
-    </section>
-  </section>
-</form>
+        {/* Goals Field */}
+        <div role="group" aria-labelledby="goals-label" className="mb-4">
+          <label id="goals-label" className="block text-sm font-medium mb-1">
+            Goals* <span className="text-gray-500 text-xs">(Press Enter or comma to add)</span>
+          </label>
 
+          {/* Display chips for added goals */}
+          <ul className="flex flex-wrap mb-2" role="list" aria-label="Added goals">
+            {formData.goals.map((goal, index) => (
+              <li key={index}>
+                <ChipComponent
+                  goal={goal}
+                  onDelete={() => deleteGoal(goal)}
+                />
+              </li>
+            ))}
+          </ul>
+
+          {/* Input for new goals */}
+          <div className="flex">
+            <input
+              type="text"
+              value={formData.goalInput}
+              onChange={(e) => setFormData({ ...formData, goalInput: e.target.value })}
+              onKeyDown={handleGoalKeyDown}
+              placeholder="Enter a goal and press Enter"
+              className={`flex-1 p-2 border rounded-l-md ${
+                errors.goals ? 'border-red-500' : 'border-gray-300'
+              }`}
+              aria-invalid={!!errors.goals}
+              aria-describedby={errors.goals ? "goals-error" : undefined}
+            />
+            <button
+              onClick={addGoal}
+              type="button"
+              className="bg-blue-600 text-white px-4 rounded-r-md hover:bg-blue-700 transition-colors"
+              aria-label="Add goal"
+            >
+              Add
+            </button>
+          </div>
+
+          {errors.goals && (
+            <p id="goals-error" className="mt-1 text-sm text-red-600" role="alert">{errors.goals}</p>
+          )}
+        </div>
+
+        <footer className="flex justify-end space-x-3 pt-4">
+          <button
+            type="button"
+            onClick={onCancel}
+            className="px-4 py-2 border rounded-md hover:bg-gray-100 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            disabled={loading}
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+            aria-busy={loading}
+          >
+            {loading ? (
+              <ClipLoader color="#ffffff" loading={loading} size={20} />
+            ) : isUpdateMode ? 'Update Project' : 'Create Project'}
+          </button>
+        </footer>
+      </fieldset>
+    </form>
   );
 }

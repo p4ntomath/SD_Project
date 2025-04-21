@@ -75,6 +75,34 @@ export const fetchProjects = async (uid) => {
 };
 
 /**
+ * Fetches a single project by its ID from Firestore
+ * @param {string} projectId - The ID of the project to fetch
+ * @returns {Promise<Object>} The project data with its ID
+ * @throws {Error} If the project is not found or user is not authenticated
+ */
+export const fetchProject = async (projectId) => {
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    const projectRef = doc(db, "projects", projectId);
+    const projectSnap = await getDoc(projectRef);
+
+    if (!projectSnap.exists()) {
+      throw new Error('Project not found');
+    }
+
+    return {
+      id: projectSnap.id,
+      ...projectSnap.data()
+    };
+  } catch (error) {
+    console.error("Error fetching project:", error);
+    throw error;
+  }
+};
+
+/**
  * The `updateProject` function updates a project in a Firestore database using the provided `id` and
  * `updatedData`.
  */
