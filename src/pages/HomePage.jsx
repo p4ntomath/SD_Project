@@ -3,8 +3,8 @@ import { useNavigate } from "react-router-dom";
 import ResearcherHomePage from './ResearcherHomePage.jsx';
 import ResearcherHome from "./ResearcherPages/ResearcherHome.jsx";
 import ReviewerHomePage from './ReviewerHomePage.jsx';
-import AuthContext from "../context/AuthContext"; // Import the AuthContext
-import { ClipLoader } from "react-spinners"; // Import the ClipLoader component
+import AuthContext from "../context/AuthContext";
+import { ClipLoader } from "react-spinners";
 
 export default function HomePage() {
     const { role, loading, user } = useContext(AuthContext);
@@ -21,11 +21,16 @@ export default function HomePage() {
     } else if (role === 'reviewer') {
         return <ReviewerHomePage />;
     }
+    
     if (loading) {
         return (
-            <section className="flex items-center justify-center min-h-screen">
-                <ClipLoader color="#36d7b7" size={50} />
-            </section>
+            <main className="min-h-screen">
+                <section className="flex items-center justify-center min-h-screen" aria-label="Loading">
+                    <ClipLoader color="#36d7b7" size={50} aria-label="Loading spinner" />
+                </section>
+            </main>
         );
     }
+    
+    return null;
 }

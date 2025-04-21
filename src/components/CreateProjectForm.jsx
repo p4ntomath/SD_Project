@@ -123,12 +123,16 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
 
   return (
     <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md">
-      <h2 className="text-xl font-semibold mb-4">New Project Details</h2>
+      <header>
+        <h1 className="text-xl font-semibold mb-4">{isUpdateMode ? 'Update Project' : 'New Project Details'}</h1>
+      </header>
 
-      <section className="space-y-2">
+      <fieldset className="space-y-2">
+        <legend className="sr-only">Project Information</legend>
+
         {/* Title Field */}
-        <section>
-          <label className="block text-sm font-medium mb-1">Title*</label>
+        <div role="group" aria-labelledby="title-label">
+          <label id="title-label" className="block text-sm font-medium mb-1">Title*</label>
           <input
             type="text"
             name="title"
@@ -137,15 +141,18 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
             className={`w-full p-2 border rounded-md ${
               errors.title ? 'border-red-500' : 'border-gray-300'
             }`}
+            aria-required="true"
+            aria-invalid={!!errors.title}
+            aria-describedby={errors.title ? "title-error" : undefined}
           />
           {errors.title && (
-            <p className="mt-1 text-sm text-red-600">{errors.title}</p>
+            <p id="title-error" className="mt-1 text-sm text-red-600" role="alert">{errors.title}</p>
           )}
-        </section>
+        </div>
 
         {/* Description Field */}
-        <section>
-          <label className="block text-sm font-medium mb-1">Description*</label>
+        <div role="group" aria-labelledby="description-label">
+          <label id="description-label" className="block text-sm font-medium mb-1">Description*</label>
           <textarea
             name="description"
             value={formData.description}
@@ -154,15 +161,18 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
               errors.description ? 'border-red-500' : 'border-gray-300'
             }`}
             rows={4}
+            aria-required="true"
+            aria-invalid={!!errors.description}
+            aria-describedby={errors.description ? "description-error" : undefined}
           />
           {errors.description && (
-            <p className="mt-1 text-sm text-red-600">{errors.description}</p>
+            <p id="description-error" className="mt-1 text-sm text-red-600" role="alert">{errors.description}</p>
           )}
-        </section>
+        </div>
 
         {/* Research Field */}
-        <section>
-          <label className="block text-sm font-medium mb-1">Research Field*</label>
+        <div role="group" aria-labelledby="research-field-label">
+          <label id="research-field-label" className="block text-sm font-medium mb-1">Research Field*</label>
           <input
             type="text"
             name="researchField"
@@ -172,15 +182,18 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
               errors.researchField ? 'border-red-500' : 'border-gray-300'
             }`}
             placeholder="Enter your research field (e.g., Computer Science, Biology)"
+            aria-required="true"
+            aria-invalid={!!errors.researchField}
+            aria-describedby={errors.researchField ? "research-field-error" : undefined}
           />
           {errors.researchField && (
-            <p className="mt-1 text-sm text-red-600">{errors.researchField}</p>
+            <p id="research-field-error" className="mt-1 text-sm text-red-600" role="alert">{errors.researchField}</p>
           )}
-        </section>
+        </div>
 
         {/* Duration Field */}
-        <section>
-          <label className="block text-sm font-medium mb-1">Duration*</label>
+        <div role="group" aria-labelledby="duration-label">
+          <label id="duration-label" className="block text-sm font-medium mb-1">Duration*</label>
           <input
             type="text"
             name="duration"
@@ -190,31 +203,35 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
               errors.duration ? 'border-red-500' : 'border-gray-300'
             }`}
             placeholder="e.g., 3 months, 6 weeks, 1 year"
+            aria-required="true"
+            aria-invalid={!!errors.duration}
+            aria-describedby={errors.duration ? "duration-error" : undefined}
           />
           {errors.duration && (
-            <p className="mt-1 text-sm text-red-600">{errors.duration}</p>
+            <p id="duration-error" className="mt-1 text-sm text-red-600" role="alert">{errors.duration}</p>
           )}
-        </section>
+        </div>
 
         {/* Goals Field */}
-        <section className="mb-4">
-          <label className="block text-sm font-medium mb-1">
+        <div role="group" aria-labelledby="goals-label" className="mb-4">
+          <label id="goals-label" className="block text-sm font-medium mb-1">
             Goals* <span className="text-gray-500 text-xs">(Press Enter or comma to add)</span>
           </label>
 
           {/* Display chips for added goals */}
-          <section className="flex flex-wrap mb-2">
+          <ul className="flex flex-wrap mb-2" role="list" aria-label="Added goals">
             {formData.goals.map((goal, index) => (
-              <ChipComponent
-                key={index}
-                goal={goal}
-                onDelete={() => deleteGoal(goal)}
-              />
+              <li key={index}>
+                <ChipComponent
+                  goal={goal}
+                  onDelete={() => deleteGoal(goal)}
+                />
+              </li>
             ))}
-          </section>
+          </ul>
 
           {/* Input for new goals */}
-          <section className="flex">
+          <div className="flex">
             <input
               type="text"
               value={formData.goalInput}
@@ -224,22 +241,25 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
               className={`flex-1 p-2 border rounded-l-md ${
                 errors.goals ? 'border-red-500' : 'border-gray-300'
               }`}
+              aria-invalid={!!errors.goals}
+              aria-describedby={errors.goals ? "goals-error" : undefined}
             />
             <button
               onClick={addGoal}
               type="button"
               className="bg-blue-600 text-white px-4 rounded-r-md hover:bg-blue-700 transition-colors"
+              aria-label="Add goal"
             >
               Add
             </button>
-          </section>
+          </div>
 
           {errors.goals && (
-            <p className="mt-1 text-sm text-red-600">{errors.goals}</p>
+            <p id="goals-error" className="mt-1 text-sm text-red-600" role="alert">{errors.goals}</p>
           )}
-        </section>
+        </div>
 
-        <section className="flex justify-end space-x-3 pt-4">
+        <footer className="flex justify-end space-x-3 pt-4">
           <button
             type="button"
             onClick={onCancel}
@@ -251,13 +271,14 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
             type="submit"
             disabled={loading}
             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+            aria-busy={loading}
           >
             {loading ? (
               <ClipLoader color="#ffffff" loading={loading} size={20} />
             ) : isUpdateMode ? 'Update Project' : 'Create Project'}
           </button>
-        </section>
-      </section>
+        </footer>
+      </fieldset>
     </form>
   );
 }

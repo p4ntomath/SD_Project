@@ -51,9 +51,69 @@ export default function FundingTrackerPage() {
 
   if (loading) {
     return (
-      <section className="flex justify-center items-center py-20">
-        <p>Loading funding data...</p>
-      </section>
+      <>
+        {/* AppBar */}
+        <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
+          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <section className="flex justify-between items-center h-16">
+              <section className="flex items-center space-x-4">
+                <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
+                <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
+              </section>
+            </section>
+          </section>
+        </header>
+
+        <main className="min-h-screen bg-gray-50 pt-15 px-4 md:px-8 pb-8">
+          <section className="max-w-7xl mx-auto">
+            {/* Skeleton Stats Overview */}
+            <section className="mb-8 hidden md:grid grid-cols-1 md:grid-cols-3 gap-4">
+              {[...Array(3)].map((_, i) => (
+                <section key={i} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+                  <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2" />
+                  <div className="h-8 w-32 bg-gray-200 rounded animate-pulse" />
+                </section>
+              ))}
+            </section>
+
+            {/* Skeleton Main Content */}
+            <section className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+              {/* Left Column Skeleton */}
+              <section className="lg:col-span-1 space-y-6">
+                <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                  <div className="flex items-center mb-4">
+                    <div className="w-6 h-6 rounded bg-gray-200 animate-pulse mr-2" />
+                    <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
+                  </div>
+                  <div className="space-y-4">
+                    {[...Array(2)].map((_, i) => (
+                      <div key={i} className="h-20 bg-gray-100 rounded-lg animate-pulse" />
+                    ))}
+                  </div>
+                </section>
+              </section>
+
+              {/* Right Column Skeleton */}
+              <section className="lg:col-span-3">
+                <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                  <div className="h-6 w-32 bg-gray-200 rounded animate-pulse mb-6" />
+                  <div className="space-y-4">
+                    {[...Array(3)].map((_, i) => (
+                      <div key={i} className="p-5 border border-gray-100 rounded-lg">
+                        <div className="flex justify-between items-start mb-3">
+                          <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
+                          <div className="h-6 w-24 bg-gray-200 rounded-full animate-pulse" />
+                        </div>
+                        <div className="mt-4 h-12 bg-gray-200 rounded animate-pulse" />
+                      </div>
+                    ))}
+                  </div>
+                </section>
+              </section>
+            </section>
+          </section>
+        </main>
+      </>
     );
   }
 
@@ -159,7 +219,6 @@ export default function FundingTrackerPage() {
                   Need Funding?
                 </h2>
                 <section className="space-y-4">
-                  
                   {/* Example funding opportunity*/}
                   <section className="p-4 border border-gray-100 rounded-lg hover:bg-blue-50 transition-colors">
                     <h3 className="font-medium">Green Energy Fund</h3>
@@ -189,9 +248,9 @@ export default function FundingTrackerPage() {
                         className="p-5 border border-gray-100 rounded-lg hover:shadow-md transition-all cursor-pointer"
                        
                       >
-                        <section className="flex justify-between items-start mb-3">
+                        <section className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
                           <h3 className="text-lg font-medium">{project.title}</h3>
-                          <p className="text-sm px-2 py-1 bg-blue-100 text-blue-800 rounded-full">
+                          <p className="text-xs sm:text-sm px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full self-start whitespace-nowrap">
                             {project.status || 'In Progress'}
                           </p>
                         </section>
