@@ -5,6 +5,7 @@ import { fetchProject, updateProject, deleteProject } from '../backend/firebase/
 import { ClipLoader } from 'react-spinners';
 import StatusModal from '../components/StatusModal';
 import CreateProjectForm from '../components/CreateProjectForm';
+import { AnimatePresence, motion } from 'framer-motion';
 
 export default function ProjectDetailsPage() {
   const { projectId } = useParams();
@@ -16,6 +17,7 @@ export default function ProjectDetailsPage() {
   const [statusMessage, setStatusMessage] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [updateLoading, setUpdateLoading] = useState(false);
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     const loadProject = async () => {
@@ -39,19 +41,17 @@ export default function ProjectDetailsPage() {
   }, [projectId]);
 
   const handleDelete = async () => {
-    if (window.confirm("Are you sure you want to delete this project?")) {
-      try {
-        await deleteProject(projectId);
-        setModalOpen(true);
-        setStatusMessage("Project deleted successfully");
-        setTimeout(() => {
-          navigate("/home");
-        }, 2000);
-      } catch (err) {
-        setError(err.message);
-        setModalOpen(true);
-        setStatusMessage("Failed to delete project: " + err.message);
-      }
+    try {
+      await deleteProject(projectId);
+      setModalOpen(true);
+      setStatusMessage("Project deleted successfully");
+      setTimeout(() => {
+        navigate("/home");
+      }, 2000);
+    } catch (err) {
+      setError(err.message);
+      setModalOpen(true);
+      setStatusMessage("Failed to delete project: " + err.message);
     }
   };
 
@@ -158,10 +158,10 @@ export default function ProjectDetailsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 p-6">
+    <div className="min-h-screen bg-gray-50 px-4 sm:px-6 py-4 sm:py-6">
       {/* Header with actions */}
       <div className="max-w-7xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
           <button
             onClick={() => navigate(-1)}
             className="text-gray-600 hover:text-blue-600 transition-colors flex items-center"
@@ -169,11 +169,11 @@ export default function ProjectDetailsPage() {
             <FiArrowLeft className="text-xl mr-2" />
             Back
           </button>
-          <h1 className="text-3xl font-bold text-gray-900">{project.title}</h1>
-          <div className="flex gap-2">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center sm:text-left">{project.title}</h1>
+          <div className="flex gap-2 justify-center sm:justify-end">
             <button
               onClick={() => setIsEditing(true)}
-              className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center"
+              className="bg-blue-600 text-white py-2 px-3 sm:px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center text-sm sm:text-base"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -181,8 +181,8 @@ export default function ProjectDetailsPage() {
               Edit
             </button>
             <button
-              onClick={handleDelete}
-              className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors flex items-center"
+              onClick={() => setShowDeleteConfirm(true)}
+              className="bg-red-600 text-white py-2 px-3 sm:px-4 rounded-lg hover:bg-red-700 transition-colors flex items-center text-sm sm:text-base"
             >
               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -193,15 +193,15 @@ export default function ProjectDetailsPage() {
         </div>
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Left Column - Main Info */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Basic Info Card */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4">Project Overview</h2>
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4">Project Overview</h2>
               <div className="space-y-4">
                 {/* Progress Bar */}
-                <div className="mb-6">
+                <div className="mb-4 sm:mb-6">
                   <div className="flex justify-between items-center mb-2">
                     <p className="text-sm text-gray-500">Overall Progress</p>
                     <p className="text-sm font-medium">{calculateProgress()}%</p>
@@ -214,35 +214,38 @@ export default function ProjectDetailsPage() {
                   </div>
                 </div>
 
-                <div>
-                  <p className="text-sm text-gray-500">Research Field</p>
-                  <p className="font-medium">{project.researchField}</p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Research Field</p>
+                    <p className="font-medium">{project.researchField}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Duration</p>
+                    <p className="font-medium">{project.duration}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Created</p>
+                    <p className="font-medium">{formatDate(project.createdAt)}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Status</p>
+                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                      {project.status || 'In Progress'}
+                    </span>
+                  </div>
                 </div>
+
                 <div>
-                  <p className="text-sm text-gray-500">Description</p>
+                  <p className="text-sm text-gray-500 mb-1">Description</p>
                   <p className="text-gray-700">{project.description}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Duration</p>
-                  <p className="font-medium">{project.duration}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Created</p>
-                  <p className="font-medium">{formatDate(project.createdAt)}</p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Status</p>
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                    {project.status || 'In Progress'}
-                  </span>
                 </div>
               </div>
             </div>
 
             {/* Goals Card */}
-            <div className="bg-white rounded-lg shadow p-6">
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
               <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-semibold">Project Goals</h2>
+                <h2 className="text-lg sm:text-xl font-semibold">Project Goals</h2>
                 <div className="flex items-center gap-2">
                   <span className="text-sm text-gray-500">Progress</span>
                   <span className="font-medium">{calculateProgress()}%</span>
@@ -256,18 +259,18 @@ export default function ProjectDetailsPage() {
                     onClick={() => toggleGoalStatus(index)}
                     className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
                   >
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-3 flex-1">
                       <input
                         type="checkbox"
                         checked={goal.completed}
                         className="h-4 w-4 text-blue-600 rounded"
-                        onChange={() => {}} // Handled by parent div click
+                        onChange={() => {}}
                       />
-                      <span className={`${goal.completed ? 'line-through text-gray-400' : 'text-gray-700'}`}>
+                      <span className={`${goal.completed ? 'line-through text-gray-400' : 'text-gray-700'} text-sm sm:text-base break-words flex-1`}>
                         {goal.text}
                       </span>
                     </div>
-                    <span className={`text-xs font-medium px-2 py-1 rounded-full ${
+                    <span className={`text-xs font-medium px-2 py-1 rounded-full ml-2 ${
                       goal.completed ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
                     }`}>
                       {goal.completed ? 'Completed' : 'In Progress'}
@@ -277,9 +280,9 @@ export default function ProjectDetailsPage() {
               </div>
             </div>
 
-            {/* Documents Card */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4">Project Documents</h2>
+            {/* Documents Card - Moved here */}
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4">Project Documents</h2>
               <div className="space-y-4">
                 <div className="flex items-center space-x-3">
                   <div className="p-2 bg-yellow-50 rounded-lg">
@@ -288,11 +291,11 @@ export default function ProjectDetailsPage() {
                     </svg>
                   </div>
                   <div>
-                    <p className="font-medium">{project.title} Documents</p>
-                    <p className="text-sm text-gray-500">Project files and resources</p>
+                    <p className="font-medium text-sm sm:text-base">{project.title} Documents</p>
+                    <p className="text-xs sm:text-sm text-gray-500">Project files and resources</p>
                   </div>
                 </div>
-                <button className="w-full bg-blue-50 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-100 transition-colors flex items-center justify-center">
+                <button className="w-full bg-blue-50 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-100 transition-colors flex items-center justify-center text-sm sm:text-base">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
                   </svg>
@@ -303,29 +306,32 @@ export default function ProjectDetailsPage() {
           </div>
 
           {/* Right Column - Additional Info */}
-          <div className="space-y-6">
+          <div className="space-y-4 sm:space-y-6">
             {/* Funding Card */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4">Funding Details</h2>
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4">Funding Details</h2>
               <div className="space-y-4">
-                <div>
-                  <p className="text-sm text-gray-500">Available Funds</p>
-                  <p className="text-2xl font-bold text-green-600">
-                    R {(project.availableFunds || 0).toLocaleString()}
-                  </p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Available Funds</p>
+                    <p className="text-xl sm:text-2xl font-bold text-green-600">
+                      R {(project.availableFunds || 0).toLocaleString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Used Funds</p>
+                    <p className="text-lg sm:text-xl font-semibold text-red-600">
+                      R {(project.usedFunds || 0).toLocaleString()}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Remaining Funds</p>
+                    <p className="text-base sm:text-lg font-medium text-blue-600">
+                      R {((project.availableFunds || 0) - (project.usedFunds || 0)).toLocaleString()}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="text-sm text-gray-500">Used Funds</p>
-                  <p className="text-xl font-semibold text-red-600">
-                    R {(project.usedFunds || 0).toLocaleString()}
-                  </p>
-                </div>
-                <div>
-                  <p className="text-sm text-gray-500">Remaining Funds</p>
-                  <p className="text-lg font-medium text-blue-600">
-                    R {((project.availableFunds || 0) - (project.usedFunds || 0)).toLocaleString()}
-                  </p>
-                </div>
+                
                 <div className="pt-2">
                   <div className="w-full bg-gray-200 rounded-full h-2">
                     <div
@@ -339,9 +345,10 @@ export default function ProjectDetailsPage() {
                     {project.availableFunds ? ((project.usedFunds || 0) / project.availableFunds * 100).toFixed(1) : 0}% utilized
                   </p>
                 </div>
+
                 <button
                   onClick={() => navigate('/trackfunding')}
-                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
                 >
                   Track Funding
                 </button>
@@ -349,45 +356,45 @@ export default function ProjectDetailsPage() {
             </div>
 
             {/* Message Board Card */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4">Project Discussion</h2>
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4">Project Discussion</h2>
               <div className="space-y-4">
                 <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
                   <div className="flex items-center mb-3">
                     <svg className="h-5 w-5 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
                     </svg>
-                    <p className="text-blue-700 font-medium">Project Discussion Coming Soon!</p>
+                    <p className="text-blue-700 font-medium text-sm sm:text-base">Project Discussion Coming Soon!</p>
                   </div>
                   <div className="space-y-3">
                     <p className="text-sm text-gray-600">
                       Stay tuned for our new discussion features that will allow you to:
                     </p>
-                    <ul className="space-y-2 text-sm text-gray-600">
+                    <ul className="space-y-2 text-xs sm:text-sm text-gray-600">
                       <li className="flex items-center">
-                        <svg className="h-4 w-4 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="h-4 w-4 mr-2 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Communicate with team members in real-time
+                        <span>Communicate with team members in real-time</span>
                       </li>
                       <li className="flex items-center">
-                        <svg className="h-4 w-4 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="h-4 w-4 mr-2 text-blue-500 flex-shrink-0" fill="none" viewBox="0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Share updates and announcements
+                        <span>Share updates and announcements</span>
                       </li>
                       <li className="flex items-center">
-                        <svg className="h-4 w-4 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="h-4 w-4 mr-2 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Create topic-based discussion threads
+                        <span>Create topic-based discussion threads</span>
                       </li>
                     </ul>
                   </div>
                 </div>
                 <button
                   disabled
-                  className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 text-blue-600 rounded-lg bg-blue-50 opacity-50 cursor-not-allowed"
+                  className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 text-blue-600 rounded-lg bg-blue-50 opacity-50 cursor-not-allowed text-sm sm:text-base"
                 >
                   <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
@@ -398,45 +405,43 @@ export default function ProjectDetailsPage() {
             </div>
 
             {/* Collaborators Card */}
-            <div className="bg-white rounded-lg shadow p-6">
-              <h2 className="text-xl font-semibold mb-4">Project Collaborators</h2>
+            <div className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4">Project Collaborators</h2>
               <div className="space-y-4">
                 <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                  <p className="text-blue-700 text-sm">
+                  <p className="text-blue-700 text-xs sm:text-sm mb-2">
                     Collaboration features are coming soon! You'll be able to:
                   </p>
-                  <ul className="mt-2 space-y-1 text-sm text-gray-600">
+                  <ul className="mt-2 space-y-1 text-xs sm:text-sm text-gray-600">
                     <li className="flex items-center">
-                      <svg className="h-4 w-4 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="h-4 w-4 mr-2 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      Invite researchers to collaborate
+                      <span>Invite researchers to collaborate</span>
                     </li>
                     <li className="flex items-center">
-                      <svg className="h-4 w-4 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="h-4 w-4 mr-2 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      Share project documents
+                      <span>Share project documents</span>
                     </li>
                     <li className="flex items-center">
-                      <svg className="h-4 w-4 mr-2 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <svg className="h-4 w-4 mr-2 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      Track shared progress
+                      <span>Track shared progress</span>
                     </li>
                   </ul>
                 </div>
-                <div className="flex justify-center">
-                  <button
-                    disabled
-                    className="text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                    </svg>
-                    Add Collaborators (Coming Soon)
-                  </button>
-                </div>
+                <button
+                  disabled
+                  className="text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm font-medium w-full flex items-center justify-center"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                  </svg>
+                  Add Collaborators (Coming Soon)
+                </button>
               </div>
             </div>
           </div>
@@ -449,6 +454,46 @@ export default function ProjectDetailsPage() {
         success={!error}
         message={statusMessage}
       />
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteConfirm && (
+          <motion.div
+            className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+          >
+            <motion.div
+              className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md m-4 border border-gray-200"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            >
+              <h2 className="text-xl font-semibold mb-4 text-gray-900">Delete Project?</h2>
+              <p className="text-gray-700 mb-6">Are you sure you want to delete this project? This action cannot be undone.</p>
+              <div className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowDeleteConfirm(false)}
+                  className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50/80 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    setShowDeleteConfirm(false);
+                    handleDelete();
+                  }}
+                  className="bg-red-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-xl hover:bg-red-700/90 transition-colors"
+                >
+                  Delete
+                </button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
