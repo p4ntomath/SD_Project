@@ -1,26 +1,20 @@
-import { useEffect, useState,useRef } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import CreateProjectForm from '../components/CreateProjectForm';
-import SideBar from '../components/ResearcherComponents/SideBar';
-import SidebarToggle from '../components/ResearcherComponents/SidebarToggle';
-import  StatusModal from '../components/StatusModal';
-import { createProject, fetchProjects, deleteProject ,updateProject} from "../backend/firebase/projectDB";
+import StatusModal from '../components/StatusModal';
+import { createProject, fetchProjects } from "../backend/firebase/projectDB";
 import { auth } from "../backend/firebase/firebaseConfig";
 import { ClipLoader } from "react-spinners";
+import { useNavigate } from "react-router-dom";
 
 export default function ResearcherHomePage() {
   const [projects, setProjects] = useState([]);
   const [showForm, setShowForm] = useState(false);
-  const [sidebarOpen, setSidebarOpen] = useState(true);
   const [loading, setLoading] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
-  const [deletionSuccess, setDeletionSuccess] = useState(true);
   const [statusMessage, setStatusMessage] = useState('');
   const [createLoading, setCreateLoading] = useState(false);
-  const [deletingProjectId, setDeletingProjectId] = useState(null);
-  const [projectToUpdate, setProjectToUpdate] = useState(null);
-  const [isUpdateMode, setIsUpdateMode] = useState(false);
   const projectsRef = useRef(null);
-
+  const navigate = useNavigate();
 
   const fetchAllProjects = async (user) => {
     try {
@@ -43,8 +37,7 @@ export default function ResearcherHomePage() {
       }
     });
     return () => unsubscribe();
-  }, [projects.length]);
-
+  }, []);
 
   const handleCreateProject = async (newProject) => {
     if (!newProject) return;
@@ -53,65 +46,23 @@ export default function ResearcherHomePage() {
 
     try {
       const createdProjectId = await createProject(cleanedProject);
-
       const fullProject = {
         ...cleanedProject,
         userId: auth.currentUser.uid,
         projectId: createdProjectId,
       };
-
       setProjects([...projects, fullProject]);
+      setModalOpen(true);
+      setStatusMessage('Project was successfully created.');
       setShowForm(false);
     } catch (err) {
       console.error("Error creating project:", err);
+      setModalOpen(true);
+      setStatusMessage('Failed to create project. Please try again.');
     } finally {
       setCreateLoading(false);
     }
   };
-
-    const handleDeleteProject = async (projectId) => {
-      if (!projectId) return;
-      setDeletingProjectId(projectId);
-      try {
-        await deleteProject(projectId);
-        setProjects(projects.filter((project) => project.id !== projectId));
-        setDeletionSuccess(true);
-        setStatusMessage('Project was successfully deleted.');
-      } catch (error) {
-        setDeletionSuccess(false);
-        setStatusMessage('Failed to delete the project. Please try again.');
-      } finally {
-        setDeletingProjectId(null);
-        setModalOpen(true);
-      }
-    };
-    const handleUpdateProject = async (updatedProject) => {
-      if (!updatedProject) return;
-      setCreateLoading(true);
-      try {
-          await updateProject(updatedProject.id, updatedProject);
-          setProjects((prevProjects) =>
-            prevProjects.map((project) =>
-              project.id === updatedProject.id ? { ...project, ...updatedProject } : project
-            )
-          );
-          setDeletionSuccess(true);
-          setStatusMessage('Project was successfully updated.');
-        } catch (error) {
-          setDeletionSuccess(false);
-          setStatusMessage('Failed to update the project. Please try again.');
-        }finally {
-          setCreateLoading(false);
-          setModalOpen(true);
-          setProjectToUpdate(null);
-          setIsUpdateMode(false);
-          setCreateLoading(false);
-          setShowForm(false);
-          projectsRef.current?.scrollIntoView({ behavior: 'smooth' });
-
-        }
-      
-    };
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Not specified';
@@ -129,50 +80,38 @@ export default function ResearcherHomePage() {
     });
   };
 
-  const toggleSidebar = () => {
-    setSidebarOpen(!sidebarOpen);
-  };
-
-
-
   return (
-    <section className="min-h-screen bg-gray-50 flex">
-      <SideBar isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
-      <SidebarToggle isOpen={sidebarOpen} toggleSidebar={toggleSidebar} />
+    <section className="min-h-screen bg-gray-50">
+      <main className="container mx-auto px-4 py-8">
+        <section className="flex justify-between items-center mb-8">
+          <h1 className="text-2xl font-bold text-gray-800">My Projects</h1>
+          <button
+            onClick={() => setShowForm(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg"
+            disabled={showForm}
+          >
+            Create Project
+          </button>
+        </section>
 
-      <section className={`flex-1 transition-all duration-300 ${sidebarOpen ? 'ml-64' : 'ml-0'} p-4 md:p-8`}>
-        <section className="max-w-6xl mx-auto">
-          <section className="flex justify-between items-center mb-8">
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">My Research Projects</h1>
-            <section className="flex space-x-4">
-              <button
-                onClick={() => setShowForm(true)}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 md:px-2 rounded-lg text-sm md:text-base transition-colors"
-                disabled={showForm}
-              >
-                Create New Project
-              </button>
-            </section>
+        {loading ? (
+          <section className="flex justify-center items-center h-64">
+            <ClipLoader color="#3B82F6" />
           </section>
-          {!showForm ? (
-            loading ? (
-              <section className="flex justify-center items-center py-20 space-x-2">
-                {[0, 1, 2].map((i) => (
-                  <p
-                    key={i}
-                    className="w-3 h-3 bg-blue-600 rounded-full animate-bounce"
-                    style={{ animationDelay: `${i * 0.1}s` }}
-                  />
-                ))}
-              </section>
-            ) : (
+        ) : (
+          <>
+            {!showForm ? (
               <>
                 {projects.length > 0 ? (
-                  <section ref={projectsRef} className="grid grid-cols-1 gap-6">
-                    {projects.map((project, index) => (
-                      <section key={index} className="bg-white p-6 rounded-lg shadow-md border hover:shadow-lg transition-shadow">
-                        <section className="flex justify-between items-start">
-                          <section>
+                  <section className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                    {projects.map((project) => (
+                      <article
+                        key={project.id}
+                        className="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow"
+                        onClick={() => navigate(`/projects/${project.id}`, { state: project })}
+                      >
+                        <section>
+                          <section className="mb-4">
                             <h2 className="text-xl font-semibold text-gray-800">{project.title}</h2>
                             <p className="inline-block mt-1 px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full">
                               {project.researchField}
@@ -209,32 +148,7 @@ export default function ResearcherHomePage() {
                             </ul>
                           </section>
                         )}
-
-                        <section className="flex space-x-4 mt-4">
-                          <button
-                            disabled={showForm}
-                            onClick={() => {
-                              setIsUpdateMode(true)
-                              setShowForm(true)
-                              setProjectToUpdate(project)
-                            }}
-                            className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
-                          >
-                            Update Project
-                          </button>
-                          <button
-                            disabled={deletingProjectId === project.id}
-                            onClick={() => handleDeleteProject(project.id)}
-                            className="bg-red-600 hover:bg-red-500 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors"
-                          >
-                            {deletingProjectId === project.id ? (
-                              <ClipLoader color="#ffffff" size={20} />
-                            ) : (
-                              "Delete Project"
-                            )}
-                          </button>
-                        </section>
-                      </section>
+                      </article>
                     ))}
                   </section>
                 ) : (
@@ -248,23 +162,21 @@ export default function ResearcherHomePage() {
                   </section>
                 )}
               </>
-            )
-          ) : (
-            <CreateProjectForm
-              onCreate={handleCreateProject}
-              onUpdate={handleUpdateProject}
-              loading={createLoading}
-              onCancel={() => setShowForm(false)}
-              projectToUpdate={projectToUpdate}
-              isUpdateMode={isUpdateMode}
-            />
-          )}
-        </section>
-      </section>
+            ) : (
+              <CreateProjectForm
+                onCreate={handleCreateProject}
+                loading={createLoading}
+                onCancel={() => setShowForm(false)}
+              />
+            )}
+          </>
+        )}
+      </main>
+
       <StatusModal
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
-        success={deletionSuccess}
+        success={true}
         message={statusMessage}
       />
     </section>

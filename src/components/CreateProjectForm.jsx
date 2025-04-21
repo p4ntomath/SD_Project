@@ -68,12 +68,11 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
     return Object.keys(newErrors).length === 0;
   };
 
-  const addGoal = (e) => {
-    e.preventDefault();
-    if (formData.goalInput.trim() && !formData.goals.includes(formData.goalInput.trim())) {
+  const addGoal = () => {
+    if (formData.goalInput.trim()) {
       setFormData({
         ...formData,
-        goals: [...formData.goals, formData.goalInput.trim()],
+        goals: [...formData.goals, { text: formData.goalInput.trim(), completed: false }],
         goalInput: ''
       });
     }
@@ -88,7 +87,8 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
 
   const handleGoalKeyDown = (e) => {
     if (e.key === 'Enter' || e.key === ',') {
-      addGoal(e);
+      e.preventDefault();
+      addGoal();
     }
   };
 
