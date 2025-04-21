@@ -12,11 +12,10 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
     goalInput: '',
     availableFunds: 0,
     usedFunds: 0,
-    status:'In Progress'
-
+    status: 'In Progress'
   });
 
-  // Pre-fill form data if preFormData is provided
+  // Pre-fill form data if projectToUpdate is provided
   useEffect(() => {
     if (isUpdateMode && projectToUpdate) {
       setFormData({
@@ -26,9 +25,9 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
         duration: projectToUpdate.duration || '',
         goals: projectToUpdate.goals || [],
         goalInput: '',
-        availableFunds: 0,
-        usedFunds: 0,
-        status:'In Progress'
+        availableFunds: projectToUpdate.availableFunds || 0,
+        usedFunds: projectToUpdate.usedFunds || 0,
+        status: projectToUpdate.status || 'In Progress'
       });
     }
   }, [isUpdateMode, projectToUpdate]);
@@ -81,7 +80,7 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
   const deleteGoal = (goalToDelete) => {
     setFormData({
       ...formData,
-      goals: formData.goals.filter(goal => goal !== goalToDelete)
+      goals: formData.goals.filter(goal => goal.text !== goalToDelete.text)
     });
   };
 
@@ -97,13 +96,15 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
     if (validateForm()) {
       const projectData = {
         ...formData,
-        availableFunds: 0,       // Ensure these values are always set
-        usedFunds: 0,             // on creation For testing purposes (Please update this later)
-        status: 'In Progress', 
+        goals: formData.goals.map(goal => 
+          typeof goal === 'string' ? { text: goal, completed: false } : goal
+        ),
+        availableFunds: projectToUpdate?.availableFunds || formData.availableFunds,
+        usedFunds: projectToUpdate?.usedFunds || formData.usedFunds,
+        status: projectToUpdate?.status || formData.status,
         createdAt: projectToUpdate?.createdAt || new Date(),
-        id: projectToUpdate?.id,
       };
-  
+
       if (isUpdateMode) {
         onUpdate(projectData);
       } else {
