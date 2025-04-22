@@ -52,13 +52,37 @@ export default function FundingTrackerPage() {
   if (loading) {
     return (
       <>
-        {/* AppBar */}
         <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
           <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <section className="flex justify-between items-center h-16">
               <section className="flex items-center space-x-4">
-                <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
-                <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
+                <button
+                  data-testid="back-button"
+                  onClick={() => navigate(-1)}
+                  className="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
+                >
+                  <FaArrowLeft className="mr-2" />
+                </button>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent">
+                  Track Funding
+                </h1>
+              </section>
+            </section>
+
+            {/* Center - Search */}
+            <section className="flex-1 max-w-xl mx-4 hidden md:block">
+              <section className="relative">
+                <section className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaSearch className="text-gray-400" />
+                </section>
+                <input
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  placeholder="Search projects..."
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  disabled={loading}
+                />
               </section>
             </section>
           </section>
@@ -126,6 +150,7 @@ export default function FundingTrackerPage() {
             {/* Left side - Logo with back button */}
             <section className="flex items-center space-x-4">
               <button 
+                data-testid="back-button"
                 onClick={() => navigate(-1)}
                 className="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
               >
@@ -148,6 +173,7 @@ export default function FundingTrackerPage() {
                   type="search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  disabled={loading}
                 />
               </section>
             </section>
