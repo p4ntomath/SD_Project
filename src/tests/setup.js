@@ -10,9 +10,7 @@ vi.mock('../components/CreateProjectForm', () => ({
   default: () => React.createElement('div', { 'data-testid': 'create-project-form' }, 'Mock CreateProjectForm')
 }));
 
-vi.mock('../pages/forgotpasswordPage', () => ({
-  default: () => React.createElement('div', { 'data-testid': 'forgot-password-page' }, 'Mock ForgotPasswordPage')
-}));
+
 
 vi.mock('../backend/firebase/projectDB', () => ({
   createProject: vi.fn().mockResolvedValue('new-project-id')
