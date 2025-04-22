@@ -10,8 +10,6 @@ vi.mock('../components/CreateProjectForm', () => ({
   default: () => React.createElement('div', { 'data-testid': 'create-project-form' }, 'Mock CreateProjectForm')
 }));
 
-
-
 vi.mock('../backend/firebase/projectDB', () => ({
   createProject: vi.fn().mockResolvedValue('new-project-id')
 }));

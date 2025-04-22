@@ -9,6 +9,10 @@ const ProtectedRoute = ({ children }) => {
     const location = useLocation();
 
     useEffect(() => {
+        if (loading || location.pathname === '/login') {
+            return;
+        }
+
         if (!user) {
             navigate('/login');
             return;
@@ -23,7 +27,7 @@ const ProtectedRoute = ({ children }) => {
     if (loading && location.pathname !== '/login') {
         return (
             <main className="flex justify-center items-center h-screen bg-gray-50">
-                <ClipLoader color="#3498db" size={50} />
+                <ClipLoader data-testid="clip-loader" color="#3498db" size={50} />
             </main>
         );
     }
