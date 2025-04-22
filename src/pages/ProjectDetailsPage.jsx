@@ -158,38 +158,45 @@ export default function ProjectDetailsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-gray-50 px-4 sm:px-6 py-4 sm:py-6">
+    <>
+
+      <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <section className="flex justify-between items-center h-16">
+              <button
+                onClick={() => navigate(-1)}
+                className="text-gray-600 hover:text-blue-600 transition-colors flex items-center"
+              >
+                <FiArrowLeft className="text-xl mr-2" />
+                Back
+              </button> 
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent">{project.title}</h1>
+              <nav className="flex gap-2 justify-center sm:justify-end">
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="bg-blue-600 text-white py-2 px-3 sm:px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center text-sm sm:text-base"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Edit
+                </button>
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="bg-red-600 text-white py-2 px-3 sm:px-4 rounded-lg hover:bg-red-700 transition-colors flex items-center text-sm sm:text-base"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Delete
+                </button>
+              </nav>
+              </section>
+        </section>
+      </header>
+
+      <main className="min-h-screen bg-gray-50 px-4 sm:px-6 py-4 sm:py-6">
       <article className="max-w-7xl mx-auto">
-        <header className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
-          <button
-            onClick={() => navigate(-1)}
-            className="text-gray-600 hover:text-blue-600 transition-colors flex items-center"
-          >
-            <FiArrowLeft className="text-xl mr-2" />
-            Back
-          </button>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 text-center sm:text-left">{project.title}</h1>
-          <nav className="flex gap-2 justify-center sm:justify-end">
-            <button
-              onClick={() => setIsEditing(true)}
-              className="bg-blue-600 text-white py-2 px-3 sm:px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center text-sm sm:text-base"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-              </svg>
-              Edit
-            </button>
-            <button
-              onClick={() => setShowDeleteConfirm(true)}
-              className="bg-red-600 text-white py-2 px-3 sm:px-4 rounded-lg hover:bg-red-700 transition-colors flex items-center text-sm sm:text-base"
-            >
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-              </svg>
-              Delete
-            </button>
-          </nav>
-        </header>
 
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Left Column - Main Info */}
@@ -491,5 +498,6 @@ export default function ProjectDetailsPage() {
         )}
       </AnimatePresence>
     </main>
+  </>
   );
 }

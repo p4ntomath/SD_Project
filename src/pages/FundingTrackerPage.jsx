@@ -57,8 +57,8 @@ export default function FundingTrackerPage() {
           <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <section className="flex justify-between items-center h-16">
               <section className="flex items-center space-x-4">
-                <div className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
-                <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
+                <section className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
+                <section className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
               </section>
             </section>
           </section>
@@ -70,8 +70,8 @@ export default function FundingTrackerPage() {
             <section className="mb-8 hidden md:grid grid-cols-1 md:grid-cols-3 gap-4">
               {[...Array(3)].map((_, i) => (
                 <section key={i} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                  <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2" />
-                  <div className="h-8 w-32 bg-gray-200 rounded animate-pulse" />
+                  <section className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2" />
+                  <section className="h-8 w-32 bg-gray-200 rounded animate-pulse" />
                 </section>
               ))}
             </section>
@@ -81,33 +81,33 @@ export default function FundingTrackerPage() {
               {/* Left Column Skeleton */}
               <section className="lg:col-span-1 space-y-6">
                 <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                  <div className="flex items-center mb-4">
-                    <div className="w-6 h-6 rounded bg-gray-200 animate-pulse mr-2" />
-                    <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
-                  </div>
-                  <div className="space-y-4">
+                  <section className="flex items-center mb-4">
+                    <section className="w-6 h-6 rounded bg-gray-200 animate-pulse mr-2" />
+                    <section className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
+                  </section>
+                  <section className="space-y-4">
                     {[...Array(2)].map((_, i) => (
-                      <div key={i} className="h-20 bg-gray-100 rounded-lg animate-pulse" />
+                      <section key={i} className="h-20 bg-gray-100 rounded-lg animate-pulse" />
                     ))}
-                  </div>
+                  </section>
                 </section>
               </section>
 
               {/* Right Column Skeleton */}
               <section className="lg:col-span-3">
                 <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                  <div className="h-6 w-32 bg-gray-200 rounded animate-pulse mb-6" />
-                  <div className="space-y-4">
+                  <section className="h-6 w-32 bg-gray-200 rounded animate-pulse mb-6" />
+                  <section className="space-y-4">
                     {[...Array(3)].map((_, i) => (
-                      <div key={i} className="p-5 border border-gray-100 rounded-lg">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
-                          <div className="h-6 w-24 bg-gray-200 rounded-full animate-pulse" />
-                        </div>
-                        <div className="mt-4 h-12 bg-gray-200 rounded animate-pulse" />
-                      </div>
+                      <section key={i} className="p-5 border border-gray-100 rounded-lg">
+                        <section className="flex justify-between items-start mb-3">
+                          <section className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
+                          <section className="h-6 w-24 bg-gray-200 rounded-full animate-pulse" />
+                        </section>
+                        <section className="mt-4 h-12 bg-gray-200 rounded animate-pulse" />
+                      </section>
                     ))}
-                  </div>
+                  </section>
                 </section>
               </section>
             </section>
