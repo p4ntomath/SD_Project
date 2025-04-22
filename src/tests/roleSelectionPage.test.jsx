@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
@@ -112,5 +112,25 @@ describe('RoleSelectionPage', () => {
     });
 
     consoleError.mockRestore();
+  });
+
+  it('shows loading spinner when loading state is true', async () => {
+    // Mock completeProfile to delay resolution
+    completeProfile.mockImplementationOnce(() => 
+      new Promise(resolve => setTimeout(resolve, 100))
+    );
+    
+    renderWithContext();
+
+    const nameInput = screen.getByLabelText(/name/i);
+    const roleSelect = screen.getByLabelText(/your role/i);
+    const submitButton = screen.getByRole('button', { name: /continue/i });
+
+    fireEvent.change(nameInput, { target: { value: 'John Doe' } });
+    fireEvent.change(roleSelect, { target: { value: 'researcher' } });
+    
+    fireEvent.click(submitButton);
+
+    expect(await screen.findByTestId('loading-spinner')).toBeInTheDocument();
   });
 });
