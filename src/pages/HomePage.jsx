@@ -26,7 +26,7 @@ export default function HomePage() {
         return (
             <main className="min-h-screen">
                 <section className="flex items-center justify-center min-h-screen" aria-label="Loading">
-                    <ClipLoader color="#36d7b7" size={50} aria-label="Loading spinner" />
+                    <ClipLoader color="#36d7b7" size={50} aria-label="Loading" />
                 </section>
             </main>
         );
