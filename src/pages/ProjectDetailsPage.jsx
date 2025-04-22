@@ -110,6 +110,12 @@ export default function ProjectDetailsPage() {
   const calculateProgress = () => {
     if (!project.goals || project.goals.length === 0) return 0;
     const completed = project.goals.filter(goal => goal.completed).length;
+    if(Math.round((completed / project.goals.length) * 100) === 100){
+      project.status = 'Complete';
+    }
+    else{
+      project.status = 'In Progress';
+    }
     return Math.round((completed / project.goals.length) * 100);
   };
 
@@ -262,11 +268,11 @@ export default function ProjectDetailsPage() {
               <ul className="space-y-3">
                 {project.goals?.map((goal, index) => (
                   <li
-                    key={index}
-                    onClick={() => toggleGoalStatus(index)}
-                    className="flex items-center justify-between p-3 border rounded-lg cursor-pointer hover:bg-gray-50"
-                  >
-                    <div className="flex items-center gap-3 flex-1">
+                  key={index}
+                  onClick={() => toggleGoalStatus(index)}
+                  className="flex items-center justify-between p-3 border border-gray-200 rounded-lg cursor-pointer hover:bg-gray-50"
+                >
+                    <div className="flex items-center  gap-3 flex-1">
                       <input
                         type="checkbox"
                         checked={goal.completed}
