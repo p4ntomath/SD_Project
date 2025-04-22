@@ -10,6 +10,22 @@ import { FiPlus } from 'react-icons/fi';
 import { FaChartLine, FaPiggyBank } from 'react-icons/fa';
 import { useNavigate } from "react-router-dom";
 
+export const formatDate = (dateString) => {
+  if (!dateString) return 'Not specified';
+  const options = { year: 'numeric', month: 'short', day: 'numeric' };
+  return new Date(dateString).toLocaleDateString(undefined, options);
+};
+
+export const formatFirebaseDate = (timestamp) => {
+  if (!timestamp || typeof timestamp !== "object") return "";
+  const date = new Date(timestamp.seconds * 1000);
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
+
 export default function ResearcherHome() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
@@ -85,7 +101,7 @@ export default function ResearcherHome() {
       setStatusMessage('Project was successfully created.');
       setShowForm(false);
       // Add a small delay to ensure state is updated before allowing navigation
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => setTimeout(resolve, 500));
     } catch (err) {
       console.error("Error creating project:", err);
       setModalOpen(true);
@@ -100,7 +116,7 @@ export default function ResearcherHome() {
   const totalUsedFunds = projects.reduce((sum, project) => sum + (project.usedFunds || 0), 0);
 
   return (
-    <section className="min-h-screen bg-gray-50 flex flex-col">
+    <section data-testid="researcher-home" className="min-h-screen bg-gray-50 flex flex-col">
       <header>
         <MainNav 
           showForm={showForm} 
@@ -275,6 +291,12 @@ export default function ResearcherHome() {
         success={true}
         message={statusMessage}
       />
+
+      {createLoading && (
+        <div data-testid="create-loading-indicator">
+          <ClipLoader color="#3B82F6" />
+        </div>
+      )}
     </section>
   );
 }
