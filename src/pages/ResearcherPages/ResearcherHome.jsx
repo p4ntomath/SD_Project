@@ -114,7 +114,7 @@ export default function ResearcherHome() {
                 onClick={() => setShowForm(true)}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors flex items-center"
                 disabled={showForm}
-                aria-label="Create new project"
+                aria-label="create new research project"
               >
                 <FiPlus className="mr-2" />
                 Create Project
