@@ -24,20 +24,35 @@ export default function ProjectDetailsPage() {
       try {
         setLoading(true);
         const projectData = await fetchProject(projectId);
+        if (!projectData) {
+          setError('Project not found');
+          return;
+        }
+        
         if (projectData.goals) {
           projectData.goals = projectData.goals.map(goal =>
             typeof goal === 'string' ? { text: goal, completed: false } : goal
           );
         }
+        
+        // Ensure all required fields are present
+        projectData.id = projectData.id || projectId;
+        projectData.status = projectData.status || 'In Progress';
+        projectData.availableFunds = projectData.availableFunds || 0;
+        projectData.usedFunds = projectData.usedFunds || 0;
+        
         setProject(projectData);
       } catch (err) {
+        console.error('Error loading project:', err);
         setError(err.message);
       } finally {
         setLoading(false);
       }
     };
 
-    loadProject();
+    if (projectId) {
+      loadProject();
+    }
   }, [projectId]);
 
   const handleDelete = async () => {

@@ -75,14 +75,21 @@ export default function ResearcherHome() {
       const createdProjectId = await createProject(cleanedProject);
       const fullProject = {
         ...cleanedProject,
+        id: createdProjectId, // Set the id property correctly
         userId: auth.currentUser.uid,
         projectId: createdProjectId,
       };
-      setProjects([...projects, fullProject]);
-      setFilteredProjects([...filteredProjects, fullProject]);
+      setProjects(prevProjects => [...prevProjects, fullProject]);
+      setFilteredProjects(prevFiltered => [...prevFiltered, fullProject]);
+      setModalOpen(true);
+      setStatusMessage('Project was successfully created.');
       setShowForm(false);
+      // Add a small delay to ensure state is updated before allowing navigation
+      await new Promise(resolve => setTimeout(resolve, 100));
     } catch (err) {
       console.error("Error creating project:", err);
+      setModalOpen(true);
+      setStatusMessage('Failed to create project. Please try again.');
     } finally {
       setCreateLoading(false);
     }
@@ -138,9 +145,13 @@ export default function ResearcherHome() {
                     <section ref={projectsRef} className="grid grid-cols-1 gap-6">
                       {filteredProjects.map((project) => (
                         <article key={project.id} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-100"
-                        onClick={() => navigate(`/projects/${project.id}`, {
-                          state: project
-                        })}>
+                        onClick={() => {
+                          if (project.id) {
+                            navigate(`/projects/${project.id}`, {
+                              state: project
+                            });
+                          }
+                        }}>
                             <section className="flex justify-between items-start">
                               <section>
                                 <h2 className="text-xl font-semibold text-gray-800">{project.title}</h2>
