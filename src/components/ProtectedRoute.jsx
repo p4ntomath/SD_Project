@@ -3,7 +3,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { ClipLoader } from 'react-spinners';
 import AuthContext from "../context/AuthContext";
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, allowedRoles }) => {
     const { user, role, loading } = useContext(AuthContext);
     const navigate = useNavigate();
     const location = useLocation();
@@ -22,7 +22,13 @@ const ProtectedRoute = ({ children }) => {
             navigate('/complete-profile');
             return;
         }
-    }, [user, role, loading, navigate, location.pathname]);
+
+        // Check if route requires specific roles
+        if (allowedRoles && !allowedRoles.includes(role)) {
+            navigate('/home');
+            return;
+        }
+    }, [user, role, loading, navigate, location.pathname, allowedRoles]);
 
     if (loading && location.pathname !== '/login') {
         return (

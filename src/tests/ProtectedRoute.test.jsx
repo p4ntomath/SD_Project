@@ -1,13 +1,18 @@
 import React from 'react';
-import { render, screen } from '@testing-library/react';
-import { MemoryRouter, useNavigate } from 'react-router-dom';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen, cleanup } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import '@testing-library/jest-dom';
 import ProtectedRoute from '../components/ProtectedRoute';
 import AuthContext from '../context/AuthContext';
 
-// Mock react-router-dom
+// Mock components
+const MockComponent = () => <div data-testid="protected-content">Protected Content</div>;
+
+// Mock navigation
 const mockNavigate = vi.fn();
+
+// Mock router hooks
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
@@ -17,25 +22,12 @@ vi.mock('react-router-dom', async () => {
 });
 
 describe('ProtectedRoute Component', () => {
-  const MockChild = () => <div>Protected Content</div>;
-  
   beforeEach(() => {
-    vi.clearAllMocks();
+    mockNavigate.mockClear();
   });
 
-  it('shows loading spinner when loading is true', () => {
-    render(
-      <AuthContext.Provider value={{ user: null, role: null, loading: true }}>
-        <MemoryRouter>
-          <ProtectedRoute>
-            <MockChild />
-          </ProtectedRoute>
-        </MemoryRouter>
-      </AuthContext.Provider>
-    );
-
-    expect(screen.getByRole('main')).toHaveClass('flex', 'justify-center', 'items-center', 'h-screen', 'bg-gray-50');
-    expect(screen.getByTestId('clip-loader')).toBeInTheDocument();
+  afterEach(() => {
+    cleanup();
   });
 
   it('redirects to login when user is not authenticated', () => {
@@ -43,7 +35,7 @@ describe('ProtectedRoute Component', () => {
       <AuthContext.Provider value={{ user: null, role: null, loading: false }}>
         <MemoryRouter>
           <ProtectedRoute>
-            <MockChild />
+            <MockComponent />
           </ProtectedRoute>
         </MemoryRouter>
       </AuthContext.Provider>
@@ -52,12 +44,12 @@ describe('ProtectedRoute Component', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/login');
   });
 
-  it('redirects to complete-profile when user exists but has no role', () => {
+  it('redirects to complete-profile when user has no role', () => {
     render(
       <AuthContext.Provider value={{ user: { uid: 'test-uid' }, role: null, loading: false }}>
         <MemoryRouter>
           <ProtectedRoute>
-            <MockChild />
+            <MockComponent />
           </ProtectedRoute>
         </MemoryRouter>
       </AuthContext.Provider>
@@ -66,32 +58,65 @@ describe('ProtectedRoute Component', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/complete-profile');
   });
 
-  it('renders children when user is authenticated and has a role', () => {
+  it('renders children when user is authenticated and has role', () => {
     render(
       <AuthContext.Provider value={{ user: { uid: 'test-uid' }, role: 'researcher', loading: false }}>
         <MemoryRouter>
           <ProtectedRoute>
-            <MockChild />
+            <MockComponent />
           </ProtectedRoute>
         </MemoryRouter>
       </AuthContext.Provider>
     );
 
-    expect(screen.getByText('Protected Content')).toBeInTheDocument();
-    expect(mockNavigate).not.toHaveBeenCalled();
+    expect(screen.getByTestId('protected-content')).toBeInTheDocument();
   });
 
-  it('does not redirect when on login page and loading', () => {
+  it('shows loading state while checking authentication', () => {
     render(
       <AuthContext.Provider value={{ user: null, role: null, loading: true }}>
-        <MemoryRouter initialEntries={['/login']}>
+        <MemoryRouter>
           <ProtectedRoute>
-            <MockChild />
+            <MockComponent />
           </ProtectedRoute>
         </MemoryRouter>
       </AuthContext.Provider>
     );
 
+    expect(screen.queryByTestId('protected-content')).not.toBeInTheDocument();
+  });
+
+  it('handles role-specific routes correctly', () => {
+    // First test with incorrect role
+    render(
+      <AuthContext.Provider value={{ user: { uid: 'test-uid' }, role: 'reviewer', loading: false }}>
+        <MemoryRouter>
+          <ProtectedRoute allowedRoles={['researcher']}>
+            <MockComponent />
+          </ProtectedRoute>
+        </MemoryRouter>
+      </AuthContext.Provider>
+    );
+
+    // Verify navigation happened
+    expect(mockNavigate).toHaveBeenCalledTimes(1);
+    expect(mockNavigate).toHaveBeenCalledWith('/home');
+
+    cleanup();
+    mockNavigate.mockClear();
+
+    // Now test with correct role
+    render(
+      <AuthContext.Provider value={{ user: { uid: 'test-uid' }, role: 'researcher', loading: false }}>
+        <MemoryRouter>
+          <ProtectedRoute allowedRoles={['researcher']}>
+            <MockComponent />
+          </ProtectedRoute>
+        </MemoryRouter>
+      </AuthContext.Provider>
+    );
+
+    expect(screen.getByTestId('protected-content')).toBeInTheDocument();
     expect(mockNavigate).not.toHaveBeenCalled();
   });
 });

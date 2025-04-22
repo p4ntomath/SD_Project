@@ -17,9 +17,9 @@ export default function HomePage() {
     }, [user, role, loading, navigate]);
 
     if (role === 'researcher') {
-        return <ResearcherHome />;
+        return <div data-testid="home-page"><ResearcherHome /></div>;
     } else if (role === 'reviewer') {
-        return <ReviewerHomePage />;
+        return <div data-testid="home-page"><ReviewerHomePage /></div>;
     }
     
     if (loading) {
