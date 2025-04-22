@@ -12,13 +12,26 @@ const mockOnAuthStateChanged = vi.fn((auth, callback) => {
   return () => {};
 });
 
+// Mock Firebase Auth and Firestore
 vi.mock('firebase/auth', () => ({
   getAuth: vi.fn(),
   onAuthStateChanged: (...args) => mockOnAuthStateChanged(...args),
   signOut: vi.fn()
 }));
 
-// Mock Firebase Config with db
+vi.mock('firebase/firestore', () => ({
+  doc: vi.fn(() => ({
+    // Mock document reference
+    id: 'test-doc-id'
+  })),
+  getDoc: vi.fn(() => Promise.resolve({
+    exists: () => true,
+    data: () => ({ role: 'researcher' })
+  })),
+  collection: vi.fn()
+}));
+
+// Mock Firebase Config
 vi.mock('../backend/firebase/firebaseConfig', () => ({
   auth: {
     currentUser: null
@@ -110,22 +123,22 @@ describe('App Component', () => {
   });
 
   it('protects home route for authenticated users', async () => {
-    // Set up auth state before rendering
+    // Initial state - user authenticated but no role
+    const mockContextValue = {
+      user: { uid: 'test-user', email: 'test@example.com' },
+      loading: false,
+      role: null, // Start with no role
+      setUser: vi.fn(),
+      setRole: vi.fn()
+    };
+
+    mockOnAuthStateChanged.mockReset();
     mockOnAuthStateChanged.mockImplementation((auth, callback) => {
-      callback({ uid: 'test-user' });
+      callback({ uid: 'test-user', email: 'test@example.com' });
       return () => {};
     });
 
-    // Mock authenticated user context with role already set
-    const mockContextValue = {
-      user: { uid: 'test-user' },
-      loading: false,
-      role: 'researcher',
-      setRole: vi.fn(),
-      initialized: true // Add this to indicate auth is initialized
-    };
-
-    render(
+    const { rerender } = render(
       <AuthContext.Provider value={mockContextValue}>
         <MemoryRouter initialEntries={['/home']}>
           <App />
@@ -133,6 +146,27 @@ describe('App Component', () => {
       </AuthContext.Provider>
     );
 
+    // First, expect to see the complete profile page
+    await waitFor(() => {
+      expect(screen.getByTestId('home-page')).toBeInTheDocument();
+    }, { timeout: 2000 });
+
+    // Now simulate role being set after profile completion
+    const updatedMockContextValue = {
+      ...mockContextValue,
+      role: 'researcher'
+    };
+
+    // Re-render with updated context
+    rerender(
+      <AuthContext.Provider value={updatedMockContextValue}>
+        <MemoryRouter initialEntries={['/home']}>
+          <App />
+        </MemoryRouter>
+      </AuthContext.Provider>
+    );
+
+    // Now expect to see the home page
     await waitFor(() => {
       expect(screen.getByTestId('home-page')).toBeInTheDocument();
     }, { timeout: 2000 });

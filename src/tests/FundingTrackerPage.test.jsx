@@ -4,6 +4,8 @@ import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
 import FundingTrackerPage from '../pages/FundingTrackerPage';
+import { act } from '@testing-library/react';
+
 
 // Mock navigation
 const mockNavigate = vi.fn();
@@ -46,23 +48,27 @@ describe('FundingTrackerPage', () => {
     vi.clearAllMocks();
   });
 
-  it('renders loading state initially', () => {
-    render(
-      <MemoryRouter>
-        <FundingTrackerPage />
-      </MemoryRouter>
-    );
+  it('renders loading state initially', async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <FundingTrackerPage />
+        </MemoryRouter>
+      );
+    });
     
     expect(screen.getByText('Track Funding')).toBeInTheDocument();
     expect(screen.getByPlaceholderText('Search projects...')).toBeInTheDocument();
   });
 
   it('loads and displays projects with funding information', async () => {
-    render(
-      <MemoryRouter>
-        <FundingTrackerPage />
-      </MemoryRouter>
-    );
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <FundingTrackerPage />
+        </MemoryRouter>
+      );
+    });
 
     // Wait for projects to load
     await waitFor(() => {
@@ -75,11 +81,13 @@ describe('FundingTrackerPage', () => {
   });
 
   it('calculates and displays total funds correctly', async () => {
-    render(
-      <MemoryRouter>
-        <FundingTrackerPage />
-      </MemoryRouter>
-    );
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <FundingTrackerPage />
+        </MemoryRouter>
+      );
+    });
 
     await waitFor(() => {
       // Total Available Funds = (10000 - 5000) + (20000 - 2000) = 23000
@@ -111,24 +119,33 @@ describe('FundingTrackerPage', () => {
     expect(screen.getByText('Test Project 2')).toBeInTheDocument();
   });
 
-  it('navigates back when back button is clicked', () => {
+  
+
+  it('navigates back when back button is clicked', async () => {
     render(
       <MemoryRouter>
         <FundingTrackerPage />
       </MemoryRouter>
     );
-
+  
     const backButton = screen.getByTestId('back-button');
-    fireEvent.click(backButton);
+  
+    await act(async () => {
+      fireEvent.click(backButton);
+    });
+  
     expect(mockNavigate).toHaveBeenCalledWith(-1);
   });
+  
 
   it('shows correct utilization rate', async () => {
-    render(
-      <MemoryRouter>
-        <FundingTrackerPage />
-      </MemoryRouter>
-    );
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <FundingTrackerPage />
+        </MemoryRouter>
+      );
+    });
 
     await waitFor(() => {
       // Total Used = 7000, Total Available + Used = 30000
@@ -148,11 +165,13 @@ describe('FundingTrackerPage', () => {
       }
     ]);
 
-    render(
-      <MemoryRouter>
-        <FundingTrackerPage />
-      </MemoryRouter>
-    );
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <FundingTrackerPage />
+        </MemoryRouter>
+      );
+    });
 
     await waitFor(() => {
       expect(screen.getByText('Project Without Funding')).toBeInTheDocument();
@@ -172,11 +191,13 @@ describe('FundingTrackerPage', () => {
 
     const consoleSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
 
-    render(
-      <MemoryRouter>
-        <FundingTrackerPage />
-      </MemoryRouter>
-    );
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <FundingTrackerPage />
+        </MemoryRouter>
+      );
+    });
 
     await waitFor(() => {
       expect(consoleSpy).toHaveBeenCalledWith('Error fetching projects:', expect.any(Error));
@@ -204,11 +225,13 @@ describe('FundingTrackerPage', () => {
   });
 
   it('displays funding opportunity section correctly', async () => {
-    render(
-      <MemoryRouter>
-        <FundingTrackerPage />
-      </MemoryRouter>
-    );
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <FundingTrackerPage />
+        </MemoryRouter>
+      );
+    });
 
     // First wait for projects to load (any project title will do)
     await waitFor(() => {

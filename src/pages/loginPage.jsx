@@ -12,7 +12,7 @@ const LoginPage = () => (
         />
       </figure>
     </aside>
-    <section className="md:w-1/2 flex items-center justify-center p-8 bg-white" aria-label="Login form">
+    <section data-testid="login-page" className="md:w-1/2 flex items-center justify-center p-8 bg-white" aria-label="Login form">
       <LoginForm />
     </section>
   </main>
