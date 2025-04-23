@@ -580,14 +580,10 @@ export default function ProjectDetailsPage() {
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {showDeleteConfirm && (
-          <dialog
-            className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <article
-              className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md m-4 border border-gray-200"
+          <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
+            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
+            <motion.article
+              className="relative bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200"
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
@@ -612,8 +608,8 @@ export default function ProjectDetailsPage() {
                   Delete
                 </button>
               </footer>
-            </article>
-          </dialog>
+            </motion.article>
+          </div>
         )}
       </AnimatePresence>
 
