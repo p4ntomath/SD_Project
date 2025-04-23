@@ -211,7 +211,7 @@ export default function FundingTrackerPage() {
               <p className="text-sm text-gray-500">Total Projects</p>
               <p className="text-2xl font-bold">{filteredProjects.length}</p>
             </section>
-            <section className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+            <section className="bg-white p-5 rounded-xl shadow-sm border border-gray-100" data-testid="total-available-funds">
               <p className="text-sm text-gray-500">Total Available Funds</p>
               <p className="text-2xl font-bold text-green-600">R {totalAvailableFunds.toLocaleString()}</p>
             </section>
@@ -234,7 +234,7 @@ export default function FundingTrackerPage() {
                   <h2 className="text-lg font-semibold">Funding Overview</h2>
                 </section>
 
-                <section className="space-y-4">
+                <section className="space-y-4" data-testid="funding-overview">
                   <section className="bg-green-50 p-4 rounded-lg">
                     <p className="text-gray-600">Total Available Funds</p>
                     <p className="text-xl font-bold">R {totalAvailableFunds.toLocaleString()}</p>
