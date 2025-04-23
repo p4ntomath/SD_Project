@@ -34,22 +34,25 @@ export const updateProjectFunds = async (projectId, additionalFunds) => {
         throw new Error("Not authorized to update funding for this project");
       }
   
-      const currentFunds = projectData.funds || 0;
-      const updatedFunds = currentFunds + additionalFunds;
+      const currentAvailableFunds = projectData.availableFunds || 0;
+      const updatedAvailableFunds = currentAvailableFunds + additionalFunds;
   
       // Update the main document
-      await updateDoc(projectRef, { funds: updatedFunds });
+      await updateDoc(projectRef, { 
+        availableFunds: updatedAvailableFunds
+      });
   
       // Add funding history entry
       const historyRef = collection(db, "projects", projectId, "fundingHistory");
       await addDoc(historyRef, {
         amount: additionalFunds,
-        totalAfterUpdate: updatedFunds,
+        totalAfterUpdate: updatedAvailableFunds,
         updatedAt: Timestamp.now(),
         updatedBy: user.uid,
+        type: "funding"
       });
   
-      return { success: true, message: "Funds updated and history logged", updatedFunds };
+      return { success: true, message: "Funds updated and history logged", updatedFunds: updatedAvailableFunds };
     } catch (error) {
       console.error("Error updating funds:", error);
       throw new Error(error.message);
@@ -116,27 +119,35 @@ export const updateProjectExpense = async (projectId, expenseAmount) => {
       throw new Error("Not authorized to update expenses for this project");
     }
 
-    const currentFunds = projectData.funds || 0;
-    if (expenseAmount > currentFunds) {
+    const currentAvailableFunds = projectData.availableFunds || 0;
+    const currentUsedFunds = projectData.usedFunds || 0;
+
+    if (expenseAmount > currentAvailableFunds) {
       throw new Error("Insufficient funds to cover the expense");
     }
 
-    const updatedFunds = currentFunds - expenseAmount;
-
-    // Update the main document
-    await updateDoc(projectRef, { funds: updatedFunds });
+    // Update the main document with both available and used funds
+    await updateDoc(projectRef, { 
+      availableFunds: currentAvailableFunds - expenseAmount,
+      usedFunds: currentUsedFunds + expenseAmount
+    });
 
     // Add expense history entry
     const historyRef = collection(db, "projects", projectId, "fundingHistory");
     await addDoc(historyRef, {
-      amount: -expenseAmount, // Negative value for expense
-      totalAfterUpdate: updatedFunds,
+      amount: -expenseAmount,
+      totalAfterUpdate: currentAvailableFunds - expenseAmount,
       updatedAt: Timestamp.now(),
       updatedBy: user.uid,
-      type: "expense", // Adding a type to differentiate between funds added and subtracted
+      type: "expense"
     });
 
-    return { success: true, message: "Expense updated and history logged", updatedFunds };
+    return { 
+      success: true, 
+      message: "Expense updated and history logged", 
+      updatedAvailableFunds: currentAvailableFunds - expenseAmount,
+      updatedUsedFunds: currentUsedFunds + expenseAmount
+    };
   } catch (error) {
     console.error("Error updating expense:", error);
     throw new Error(error.message);
@@ -164,7 +175,7 @@ export const getCurrentFunds = async (projectId) => {
     }
 
     // Return the current funds
-    return projectData.funds || 0;
+    return projectData.availableFunds || 0;
   } catch (error) {
     console.error("Error fetching current funds:", error);
     throw new Error(error.message);
