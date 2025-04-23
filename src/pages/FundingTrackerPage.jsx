@@ -44,8 +44,12 @@ export default function FundingTrackerPage() {
     }
   }, [searchQuery, projects]);
 
-  // Calculate total funds
-  const totalAvailableFunds = projects.reduce((sum, project) => sum + (project.availableFunds || 0), 0);
+  // Calculate total funds - updated to show net available funds
+  const totalAvailableFunds = projects.reduce((sum, project) => {
+    const available = project.availableFunds || 0;
+    const used = project.usedFunds || 0;
+    return sum + (available - used);
+  }, 0);
   const totalUsedFunds = projects.reduce((sum, project) => sum + (project.usedFunds || 0), 0);
   const utilizationRate = ((totalUsedFunds / (totalAvailableFunds + totalUsedFunds)) * 100) || 0;
 
