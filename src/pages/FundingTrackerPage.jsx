@@ -264,8 +264,8 @@ export default function FundingTrackerPage() {
                 <section className="space-y-4">
                   {filteredProjects.map((project) => {
                     const availableFunds = (project.availableFunds || 0);
-                    const usedPercentage = project.availableFunds ? 
-                      ((project.usedFunds || 0) / project.availableFunds * 100) : 0;
+                    const usedFunds = (project.usedFunds || 0);
+                    const usedPercentage = ((usedFunds) / (availableFunds + usedFunds) * 100) || 0;
                     
                     return (
                       //Please include onclick functionality such that clicking on a project takes you the project's details
