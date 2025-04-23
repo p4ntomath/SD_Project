@@ -44,14 +44,19 @@ export default function FundingTrackerPage() {
     }
   }, [searchQuery, projects]);
 
-  // Calculate total funds - updated to show net available funds
-  const totalAvailableFunds = projects.reduce((sum, project) => {
+  // Calculate total funds correctly
+  const totalOriginalFunds = projects.reduce((sum, project) => {
     const available = project.availableFunds || 0;
     const used = project.usedFunds || 0;
-    return sum + (available - used);
+    return sum + available + used;  // Sum of all funds (both available and used)
   }, 0);
-  const totalUsedFunds = projects.reduce((sum, project) => sum + (project.usedFunds || 0), 0);
-  const utilizationRate = ((totalUsedFunds / (totalAvailableFunds + totalUsedFunds)) * 100) || 0;
+  
+  const totalUsedFunds = projects.reduce((sum, project) => 
+    sum + (project.usedFunds || 0)
+  , 0);
+  
+  const totalAvailableFunds = totalOriginalFunds - totalUsedFunds;
+  const utilizationRate = totalOriginalFunds > 0 ? Math.min((totalUsedFunds / totalOriginalFunds) * 100, 100) : 0;
 
   if (loading) {
     return (
@@ -269,14 +274,14 @@ export default function FundingTrackerPage() {
                   {filteredProjects.map((project) => {
                     const availableFunds = (project.availableFunds || 0);
                     const usedFunds = (project.usedFunds || 0);
-                    const usedPercentage = ((usedFunds) / (availableFunds + usedFunds) * 100) || 0;
+                    const totalFunds = availableFunds + usedFunds;
+                    const usedPercentage = totalFunds > 0 ? (usedFunds / totalFunds * 100) : 0;
                     
                     return (
-                      //Please include onclick functionality such that clicking on a project takes you the project's details
                       <section 
                         key={project.id} 
                         className="p-5 border border-gray-100 rounded-lg hover:shadow-md transition-all cursor-pointer"
-                       
+                        onClick={() => navigate(`/projects/${project.id}`)}
                       >
                         <section className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
                           <h3 className="text-lg font-medium">{project.title}</h3>
