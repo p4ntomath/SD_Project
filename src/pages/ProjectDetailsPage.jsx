@@ -118,8 +118,25 @@ export default function ProjectDetailsPage() {
         return goal;
       });
       
-      await updateProject(projectId, { goals: updatedGoals });
-      setProject({ ...project, goals: updatedGoals });
+      // Check if all goals are completed
+      const allGoalsCompleted = updatedGoals.every(goal => goal.completed);
+      
+      // Update both goals and status if all goals are completed
+      await updateProject(projectId, { 
+        goals: updatedGoals,
+        status: allGoalsCompleted ? 'Complete' : 'In Progress'
+      });
+      
+      setProject({ 
+        ...project, 
+        goals: updatedGoals,
+        status: allGoalsCompleted ? 'Complete' : 'In Progress'
+      });
+      
+      if (allGoalsCompleted) {
+        setModalOpen(true);
+        setStatusMessage("All goals completed! Project status set to Complete.");
+      }
     } catch (err) {
       setError(err.message);
       setModalOpen(true);
