@@ -2,6 +2,7 @@ import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
 import { useState, useEffect } from 'react';
 import { fetchProject, updateProject, deleteProject } from '../backend/firebase/projectDB';
+import { updateProjectFunds, updateProjectExpense, getFundingHistory } from '../backend/firebase/fundingDB';
 import { ClipLoader } from 'react-spinners';
 import StatusModal from '../components/StatusModal';
 import CreateProjectForm from '../components/CreateProjectForm';
@@ -12,12 +13,22 @@ export default function ProjectDetailsPage() {
   const navigate = useNavigate();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error, setError] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [isEditing, setIsEditing] = useState(false);
   const [updateLoading, setUpdateLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const [showAddFundsModal, setShowAddFundsModal] = useState(false);
+  const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
+  const [showFundingHistory, setShowFundingHistory] = useState(false);
+  const [fundingHistory, setFundingHistory] = useState([]);
+  const [fundAmount, setFundAmount] = useState('');
+  const [expenseAmount, setExpenseAmount] = useState('');
+  const [expenseDescription, setExpenseDescription] = useState('');
+  const [fundingSource, setFundingSource] = useState('');
+  const [addFundsLoading, setAddFundsLoading] = useState(false);
+  const [addExpenseLoading, setAddExpenseLoading] = useState(false);
 
   useEffect(() => {
     const loadProject = async () => {
@@ -25,7 +36,9 @@ export default function ProjectDetailsPage() {
         setLoading(true);
         const projectData = await fetchProject(projectId);
         if (!projectData) {
-          setError('Project not found');
+          setModalOpen(true);
+          setError(true);
+          setStatusMessage('Project not found');
           return;
         }
         
@@ -35,16 +48,18 @@ export default function ProjectDetailsPage() {
           );
         }
         
-        // Ensure all required fields are present
         projectData.id = projectData.id || projectId;
         projectData.status = projectData.status || 'In Progress';
         projectData.availableFunds = projectData.availableFunds || 0;
         projectData.usedFunds = projectData.usedFunds || 0;
         
         setProject(projectData);
+        setError(false);
       } catch (err) {
         console.error('Error loading project:', err);
-        setError(err.message);
+        setModalOpen(true);
+        setError(true);
+        setStatusMessage(err.message);
       } finally {
         setLoading(false);
       }
@@ -103,8 +118,25 @@ export default function ProjectDetailsPage() {
         return goal;
       });
       
-      await updateProject(projectId, { goals: updatedGoals });
-      setProject({ ...project, goals: updatedGoals });
+      // Check if all goals are completed
+      const allGoalsCompleted = updatedGoals.every(goal => goal.completed);
+      
+      // Update both goals and status if all goals are completed
+      await updateProject(projectId, { 
+        goals: updatedGoals,
+        status: allGoalsCompleted ? 'Complete' : 'In Progress'
+      });
+      
+      setProject({ 
+        ...project, 
+        goals: updatedGoals,
+        status: allGoalsCompleted ? 'Complete' : 'In Progress'
+      });
+      
+      if (allGoalsCompleted) {
+        setModalOpen(true);
+        setStatusMessage("All goals completed! Project status set to Complete.");
+      }
     } catch (err) {
       setError(err.message);
       setModalOpen(true);
@@ -128,6 +160,102 @@ export default function ProjectDetailsPage() {
     return Math.round((completed / project.goals.length) * 100);
   };
 
+  const loadFundingHistory = async () => {
+    try {
+      const history = await getFundingHistory(projectId);
+      setFundingHistory(history.sort((a, b) => b.updatedAt.seconds - a.updatedAt.seconds));
+    } catch (err) {
+      console.error('Error loading funding history:', err);
+      setError(err.message);
+    }
+  };
+
+  const handleAddFunds = async (e) => {
+    e.preventDefault();
+    try {
+      setAddFundsLoading(true);
+      const amount = parseFloat(fundAmount);
+      if (isNaN(amount) || amount <= 0) {
+        throw new Error('Please enter a valid amount');
+      }
+
+      await updateProjectFunds(projectId, amount);
+      setProject({
+        ...project,
+        availableFunds: (project.availableFunds || 0) + amount
+      });
+      setShowAddFundsModal(false);
+      setFundAmount('');
+      setFundingSource('');
+      setModalOpen(true);
+      setStatusMessage('Funds added successfully');
+      loadFundingHistory();
+    } catch (err) {
+      setError(err.message);
+      setModalOpen(true);
+      setStatusMessage('Failed to add funds: ' + err.message);
+    } finally {
+      setAddFundsLoading(false);
+    }
+  };
+
+  const handleAddExpense = async (e) => {
+    e.preventDefault();
+    try {
+      setAddExpenseLoading(true);
+      const amount = parseFloat(expenseAmount);
+      if (isNaN(amount) || amount <= 0) {
+        setShowAddExpenseModal(false);
+        setModalOpen(true);
+        setError(true);
+        setStatusMessage('Please enter a valid amount');
+        return;
+      }
+      if (!expenseDescription.trim()) {
+        setShowAddExpenseModal(false);
+        setModalOpen(true);
+        setError(true);
+        setStatusMessage('Please enter an expense description');
+        return;
+      }
+
+      if (amount > (project.availableFunds || 0)) {
+        setShowAddExpenseModal(false);
+        setModalOpen(true);
+        setError(true);
+        setStatusMessage('Insufficient funds to cover the expense');
+        return;
+      }
+
+      await updateProjectExpense(projectId, amount);
+      setProject({
+        ...project,
+        usedFunds: (project.usedFunds || 0) + amount,
+        availableFunds: (project.availableFunds || 0) - amount
+      });
+      setShowAddExpenseModal(false);
+      setExpenseAmount('');
+      setExpenseDescription('');
+      setModalOpen(true);
+      setError(false);
+      setStatusMessage('Expense added successfully');
+      loadFundingHistory();
+    } catch (err) {
+      setShowAddExpenseModal(false);
+      setModalOpen(true);
+      setError(true);
+      setStatusMessage(err.message);
+    } finally {
+      setAddExpenseLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (showFundingHistory) {
+      loadFundingHistory();
+    }
+  }, [showFundingHistory]);
+
   if (loading) {
     return (
       <main className="flex justify-center items-center min-h-screen">
@@ -136,18 +264,10 @@ export default function ProjectDetailsPage() {
     );
   }
 
-  if (error) {
-    return (
-      <main className="p-6 text-center">
-        <h2 className="text-xl text-red-600">Error: {error}</h2>
-      </main>
-    );
-  }
-
   if (!project) {
     return (
-      <main className="p-6 text-center">
-        <h2 className="text-xl">Project not found</h2>
+      <main className="flex justify-center items-center min-h-screen">
+        <ClipLoader color="#3B82F6" />
       </main>
     );
   }
@@ -326,7 +446,7 @@ export default function ProjectDetailsPage() {
             <section className="bg-white rounded-lg shadow p-4 sm:p-6">
               <h2 className="text-lg sm:text-xl font-semibold mb-4">Funding Details</h2>
               <section className="space-y-4">
-                <dl className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <dt className="text-sm text-gray-500">Available Funds</dt>
                     <dd className="text-xl sm:text-2xl font-bold text-green-600">
@@ -339,32 +459,40 @@ export default function ProjectDetailsPage() {
                       R {(project.usedFunds || 0).toLocaleString()}
                     </dd>
                   </div>
-                  <div>
-                    <dt className="text-sm text-gray-500">Remaining Funds</dt>
-                    <dd className="text-base sm:text-lg font-medium text-blue-600">
-                      R {((project.availableFunds || 0) - (project.usedFunds || 0)).toLocaleString()}
-                    </dd>
-                  </div>
                 </dl>
                 
                 <section className="pt-2">
                   <section className="w-full bg-gray-200 rounded-full h-2">
                     <section 
                       className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                      style={{ width: `${project.availableFunds ? ((project.usedFunds || 0) / project.availableFunds * 100) : 0}%` }}
+                      style={{ width: `${((project.usedFunds || 0) / ((project.availableFunds || 0) + (project.usedFunds || 0)) * 100) || 0}%` }}
                     />
                   </section>
                   <p className="text-xs text-gray-500 text-right mt-1">
-                    {project.availableFunds ? ((project.usedFunds || 0) / project.availableFunds * 100).toFixed(1) : 0}% utilized
+                    {(((project.usedFunds || 0) / ((project.availableFunds || 0) + (project.usedFunds || 0)) * 100) || 0).toFixed(1)}% utilized
                   </p>
                 </section>
 
-                <button
-                  onClick={() => navigate('/trackfunding')}
-                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
-                >
-                  Track Funding
-                </button>
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    onClick={() => setShowAddFundsModal(true)}
+                    className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
+                  >
+                    Add Funds
+                  </button>
+                  <button
+                    onClick={() => setShowAddExpenseModal(true)}
+                    className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base"
+                  >
+                    Add Expense
+                  </button>
+                  <button
+                    onClick={() => setShowFundingHistory(true)}
+                    className="bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors text-sm sm:text-base"
+                  >
+                    View History
+                  </button>
+                </div>
               </section>
             </section>
 
@@ -469,14 +597,10 @@ export default function ProjectDetailsPage() {
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {showDeleteConfirm && (
-          <dialog
-            className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <article
-              className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md m-4 border border-gray-200"
+          <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
+            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
+            <motion.article
+              className="relative bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200"
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
@@ -501,8 +625,192 @@ export default function ProjectDetailsPage() {
                   Delete
                 </button>
               </footer>
-            </article>
-          </dialog>
+            </motion.article>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Add Funds Modal */}
+      <AnimatePresence>
+        {showAddFundsModal && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex min-h-screen items-center justify-center p-4">
+              <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => !addFundsLoading && setShowAddFundsModal(false)} />
+              <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+                <h2 className="text-xl font-semibold mb-4 text-gray-900">Add Funds</h2>
+                <form onSubmit={handleAddFunds}>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Amount (R)</label>
+                      <input
+                        type="number"
+                        value={fundAmount}
+                        onChange={(e) => setFundAmount(e.target.value)}
+                        className="mt-1 block w-full h-12 px-4 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        min="0"
+                        step="0.01"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Source</label>
+                      <input
+                        type="text"
+                        value={fundingSource}
+                        onChange={(e) => setFundingSource(e.target.value)}
+                        className="mt-1 block w-full h-12 px-4 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-6 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddFundsModal(false)}
+                      className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50/80 transition-colors"
+                      disabled={addFundsLoading}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="bg-blue-600/90 text-white px-4 py-2 rounded-xl hover:bg-blue-700/90 transition-colors flex items-center justify-center disabled:opacity-50"
+                      disabled={addFundsLoading}
+                    >
+                      {addFundsLoading ? (
+                        <>
+                          <ClipLoader size={16} color="#FFFFFF" className="mr-2" />
+                          Adding...
+                        </>
+                      ) : (
+                        'Add Funds'
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Add Expense Modal */}
+      <AnimatePresence>
+        {showAddExpenseModal && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex min-h-screen items-center justify-center p-4">
+              <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => !addExpenseLoading && setShowAddExpenseModal(false)} />
+              <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+                <h2 className="text-xl font-semibold mb-4 text-gray-900">Add Expense</h2>
+                <form onSubmit={handleAddExpense}>
+                  <div className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Amount (R)</label>
+                      <input
+                        type="number"
+                        value={expenseAmount}
+                        onChange={(e) => setExpenseAmount(e.target.value)}
+                        className="mt-1 block w-full h-12 px-4 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        min="0"
+                        step="0.01"
+                        required
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Description</label>
+                      <input
+                        type="text"
+                        value={expenseDescription}
+                        onChange={(e) => setExpenseDescription(e.target.value)}
+                        className="mt-1 block w-full h-12 px-4 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div className="mt-6 flex justify-end gap-3">
+                    <button
+                      type="button"
+                      onClick={() => setShowAddExpenseModal(false)}
+                      className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50/80 transition-colors"
+                      disabled={addExpenseLoading}
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      className="bg-blue-600/90 text-white px-4 py-2 rounded-xl hover:bg-blue-700/90 transition-colors flex items-center justify-center disabled:opacity-50"
+                      disabled={addExpenseLoading}
+                    >
+                      {addExpenseLoading ? (
+                        <>
+                          <ClipLoader size={16} color="#FFFFFF" className="mr-2" />
+                          Adding...
+                        </>
+                      ) : (
+                        'Add Expense'
+                      )}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Funding History Modal */}
+      <AnimatePresence>
+        {showFundingHistory && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex min-h-screen items-center justify-center p-4">
+              <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowFundingHistory(false)} />
+              <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl p-6">
+                <header className="flex justify-between items-center mb-6">
+                  <h2 className="text-xl font-semibold text-gray-900">Funding History</h2>
+                  <button
+                    onClick={() => setShowFundingHistory(false)}
+                    className="text-gray-500 hover:text-gray-700"
+                  >
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </header>
+                <div className="max-h-[60vh] overflow-y-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance After</th>
+                      </tr>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {fundingHistory.map((entry) => (
+                        <tr key={entry.id}>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {formatDate(entry.updatedAt)}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {entry.type === 'expense' ? 'Expense' : 'Funds Added'}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm">
+                            <span className={entry.amount < 0 ? 'text-red-600' : 'text-green-600'}>
+                              R {Math.abs(entry.amount).toLocaleString()}
+                            </span>
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            R {entry.totalAfterUpdate.toLocaleString()}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </AnimatePresence>
     </main>
