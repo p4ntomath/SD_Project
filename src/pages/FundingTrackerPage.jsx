@@ -3,16 +3,17 @@ import { FaPiggyBank, FaArrowLeft, FaSearch, FaBell, FaUserCircle, FaPlus } from
 import { FiBell, FiUser } from 'react-icons/fi';
 import { useNavigate } from 'react-router-dom';
 import { fetchProjects } from '../backend/firebase/projectDB';
+import { fetchFunding } from '../backend/firebase/fundingDB';
 import { auth } from '../backend/firebase/firebaseConfig';
-
 
 export default function FundingTrackerPage() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filteredProjects, setFilteredProjects] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [fundingOpportunities, setFundingOpportunities] = useState([]);
+  const [fundingLoading, setFundingLoading] = useState(true);
   const navigate = useNavigate();
-  
 
   useEffect(() => {
     const fetchUserProjects = async () => {
@@ -31,6 +32,21 @@ export default function FundingTrackerPage() {
     };
 
     fetchUserProjects();
+  }, []);
+
+  useEffect(() => {
+    const loadFundingData = async () => {
+      try {
+        const data = await fetchFunding();
+        setFundingOpportunities(data);
+      } catch (error) {
+        console.error("Error loading funding opportunities:", error);
+      } finally {
+        setFundingLoading(false);
+      }
+    };
+
+    loadFundingData();
   }, []);
 
   useEffect(() => {
@@ -57,7 +73,7 @@ export default function FundingTrackerPage() {
   
   const totalAvailableFunds = totalOriginalFunds - totalUsedFunds;
   const utilizationRate = totalOriginalFunds > 0 ? Math.min((totalUsedFunds / totalOriginalFunds) * 100, 100) : 0;
-
+  
   if (loading) {
     return (
       <>
@@ -103,8 +119,8 @@ export default function FundingTrackerPage() {
             <section className="mb-8 hidden md:grid grid-cols-1 md:grid-cols-3 gap-4">
               {[...Array(3)].map((_, i) => (
                 <section key={i} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                  <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2" />
-                  <div className="h-8 w-32 bg-gray-200 rounded animate-pulse" />
+                  <section className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2" />
+                  <section className="h-8 w-32 bg-gray-200 rounded animate-pulse" />
                 </section>
               ))}
             </section>
@@ -114,33 +130,33 @@ export default function FundingTrackerPage() {
               {/* Left Column Skeleton */}
               <section className="lg:col-span-1 space-y-6">
                 <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                  <div className="flex items-center mb-4">
-                    <div className="w-6 h-6 rounded bg-gray-200 animate-pulse mr-2" />
-                    <div className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
-                  </div>
-                  <div className="space-y-4">
+                  <section className="flex items-center mb-4">
+                    <section className="w-6 h-6 rounded bg-gray-200 animate-pulse mr-2" />
+                    <section className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
+                  </section>
+                  <section className="space-y-4">
                     {[...Array(2)].map((_, i) => (
-                      <div key={i} className="h-20 bg-gray-100 rounded-lg animate-pulse" />
+                      <section key={i} className="h-20 bg-gray-100 rounded-lg animate-pulse" />
                     ))}
-                  </div>
+                  </section>
                 </section>
               </section>
 
               {/* Right Column Skeleton */}
               <section className="lg:col-span-3">
                 <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                  <div className="h-6 w-32 bg-gray-200 rounded animate-pulse mb-6" />
-                  <div className="space-y-4">
+                  <section className="h-6 w-32 bg-gray-200 rounded animate-pulse mb-6" />
+                  <section className="space-y-4">
                     {[...Array(3)].map((_, i) => (
-                      <div key={i} className="p-5 border border-gray-100 rounded-lg">
-                        <div className="flex justify-between items-start mb-3">
-                          <div className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
-                          <div className="h-6 w-24 bg-gray-200 rounded-full animate-pulse" />
-                        </div>
-                        <div className="mt-4 h-12 bg-gray-200 rounded animate-pulse" />
-                      </div>
+                      <section key={i} className="p-5 border border-gray-100 rounded-lg">
+                        <section className="flex justify-between items-start mb-3">
+                          <section className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
+                          <section className="h-6 w-24 bg-gray-200 rounded-full animate-pulse" />
+                        </section>
+                        <section className="mt-4 h-12 bg-gray-200 rounded animate-pulse" />
+                      </section>
                     ))}
-                  </div>
+                  </section>
                 </section>
               </section>
             </section>
@@ -170,7 +186,7 @@ export default function FundingTrackerPage() {
               </h1>
             </section>
 
-            {/* Center - Search, Implement search functionality here*/}
+            {/* Center - Search */}
             <section className="flex-1 max-w-xl mx-4 hidden md:block">
               <section className="relative">
                 <section className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -196,7 +212,7 @@ export default function FundingTrackerPage() {
               <button className="p-2 rounded-full text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200">
                 <FiUser className="h-6 w-6 group-hover:text-blue-600" /> 
               </button>
-              <p  className="text-md text-gray-500">My Profile</p>
+              <p className="text-md text-gray-500">My Profile</p>
             </section>
           </section>
         </section>
@@ -250,18 +266,64 @@ export default function FundingTrackerPage() {
               {/* Funding Opportunities Card */}
               <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <h2 className="text-lg font-semibold mb-4 flex items-center">
-                  <FaPiggyBank className="text-pink-500 mr-2" size={24}  />
+                  <FaPiggyBank className="text-pink-500 mr-2" size={24} />
                   Need Funding?
                 </h2>
+
                 <section className="space-y-4">
-                  {/* Example funding opportunity*/}
-                  <section className="p-4 border border-gray-100 rounded-lg hover:bg-blue-50 transition-colors">
-                    <h3 className="font-medium">Green Energy Fund</h3>
-                    <p className="text-sm text-gray-500 mt-1">Up to R500,000 available</p>
-                    <button className="mt-2 text-sm text-blue-600 hover:underline">
-                      View details
-                    </button>
-                  </section>
+                  {fundingLoading ? (
+                    // Loading state
+                    [...Array(2)].map((_, i) => (
+                      <section key={i} className="p-4 border border-gray-100 rounded-lg">
+                        <section className="h-5 w-3/4 bg-gray-200 rounded animate-pulse mb-2" />
+                        <section className="h-4 w-1/2 bg-gray-200 rounded animate-pulse" />
+                        <section className="h-4 w-20 bg-gray-200 rounded animate-pulse mt-2" />
+                      </section>
+                    ))
+                  ) : fundingOpportunities.length > 0 ? (
+                    // Display actual funding opportunities
+                    fundingOpportunities.map((opportunity) => (
+                      <section 
+                        key={opportunity.id}
+                        className="p-4 border border-gray-100 rounded-lg hover:bg-blue-50 transition-colors"
+                      >
+                        <h3 className="font-medium">{opportunity.funding_name || 'Funding Opportunity'}</h3>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {opportunity.expected_funds ? `Up to R${opportunity.expected_funds} available` : 'Funding available'}
+                        </p>
+                        
+                           {opportunity.external_link && (
+                          <button 
+                            className="mt-2 text-sm text-blue-600 hover:underline flex items-center"
+                            onClick={() => {
+                              window.open(opportunity.external_link, '_blank', 'noopener,noreferrer');
+                            }}
+                          >
+                            Apply Here
+                            <svg 
+                              xmlns="http://www.w3.org/2000/svg" 
+                              className="h-4 w-4 ml-1" 
+                              fill="none" 
+                              viewBox="0 0 24 24" 
+                              stroke="currentColor"
+                            >
+                              <path 
+                                strokeLinecap="round" 
+                                strokeLinejoin="round" 
+                                strokeWidth={2} 
+                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" 
+                              />
+                            </svg>
+                          </button>
+                        )}
+                      </section>
+                    ))
+                  ) : (
+                    // No opportunities available
+                    <p className="text-gray-500 text-sm">
+                      No funding opportunities available at the moment.
+                    </p>
+                  )}
                 </section>
               </section>
             </section>

@@ -178,7 +178,7 @@ export default function ResearcherHome() {
                               <p className="inline-block px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 rounded-full">
                                 {project.researchField}
                               </p>
-                              <p className="text-sm text-gray-500">Status: {project.status || 'In Progress'}</p>
+                              <p className="text-sm text-gray-500">Status: {project.status}</p>
                             </section>
 
                             {/* Project Progress */}
