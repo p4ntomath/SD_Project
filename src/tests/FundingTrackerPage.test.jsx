@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
@@ -90,16 +90,14 @@ describe('FundingTrackerPage', () => {
     });
 
     await waitFor(() => {
-      // Check total available funds in the stats overview
-      const statsSection = screen.getByTestId('total-available-funds');
-      const availableFunds = within(statsSection).getByText('R 30,000');
-      expect(availableFunds).toBeInTheDocument();
-      expect(availableFunds).toHaveClass('text-2xl', 'font-bold', 'text-green-600');
+      // Total Available Funds = 10000 + 20000 = 30000
+      const availableFundsEl = screen.getByTestId('total-available-funds-value');
+      expect(availableFundsEl).toHaveTextContent('R 30,000');
+      expect(availableFundsEl).toHaveClass('text-2xl', 'font-bold', 'text-green-600');
       
-      // Check total used funds in the funding overview section
-      const fundingOverview = screen.getByTestId('funding-overview');
-      const usedFundsEl = within(fundingOverview).getByText('R 7,000');
-      expect(usedFundsEl).toBeInTheDocument();
+      // Total Used Funds = 5000 + 2000 = 7000
+      const usedFundsEl = screen.getByTestId('total-used-funds-value');
+      expect(usedFundsEl).toHaveTextContent('R 7,000');
     });
   });
 
@@ -150,12 +148,11 @@ describe('FundingTrackerPage', () => {
     });
 
     await waitFor(() => {
-      // Total Original Funds = (10000 + 5000) + (20000 + 2000) = 37000 
-      // Total Used Funds = 5000 + 2000 = 7000
-      // Utilization Rate = (7000 / 37000) * 100 ≈ 18.9%
-      const utilizationEl = screen.getByText('18.9%', { exact: false });
-      expect(utilizationEl).toBeInTheDocument();
-      expect(utilizationEl.closest('p')).toHaveClass('text-2xl', 'font-bold', 'text-blue-600');
+      // Find utilization rate element using data-testid
+      const utilizationRateEl = screen.getByTestId('utilization-rate-value');
+      expect(utilizationRateEl).toBeInTheDocument();
+      expect(utilizationRateEl).toHaveClass('text-2xl', 'font-bold', 'text-blue-600');
+      expect(utilizationRateEl).toHaveTextContent('18.9%');
     });
   });
 

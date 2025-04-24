@@ -211,13 +211,13 @@ export default function FundingTrackerPage() {
               <p className="text-sm text-gray-500">Total Projects</p>
               <p className="text-2xl font-bold">{filteredProjects.length}</p>
             </section>
-            <section className="bg-white p-5 rounded-xl shadow-sm border border-gray-100" data-testid="total-available-funds">
+            <section className="bg-white p-5 rounded-xl shadow-sm border border-gray-100" data-testid="total-available-stats">
               <p className="text-sm text-gray-500">Total Available Funds</p>
-              <p className="text-2xl font-bold text-green-600">R {totalAvailableFunds.toLocaleString()}</p>
+              <p className="text-2xl font-bold text-green-600" data-testid="total-available-funds-value">R {totalAvailableFunds.toLocaleString()}</p>
             </section>
-            <section className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+            <section className="bg-white p-5 rounded-xl shadow-sm border border-gray-100" data-testid="utilization-rate">
               <p className="text-sm text-gray-500">Utilization Rate</p>
-              <p className="text-2xl font-bold text-blue-600">
+              <p className="text-2xl font-bold text-blue-600" data-testid="utilization-rate-value">
                 {utilizationRate.toFixed(1)}%
               </p>
             </section>
@@ -242,7 +242,7 @@ export default function FundingTrackerPage() {
                   
                   <section className="bg-red-50 p-4 rounded-lg">
                     <p className="text-gray-600">Total Used Funds</p>
-                    <p className="text-xl font-bold">R {totalUsedFunds.toLocaleString()}</p>
+                    <p className="text-xl font-bold" data-testid="total-used-funds-value">R {totalUsedFunds.toLocaleString()}</p>
                   </section>
                 </section>
               </section>
