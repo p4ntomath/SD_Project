@@ -47,7 +47,7 @@ const ForgotPasswordPage = () => {
   };
 
   return (
-    <section className="min-h-screen flex flex-col md:flex-row">
+    <section className="min-h-screen flex flex-col md:flex-row" data-testid="forgot-password-page">
       {/* Image Section - Hidden on mobile */}
       <section className="hidden md:flex md:w-1/2 bg-gray-100 items-center justify-center p-8 rounded-tr-2xl rounded-br-2xl">
         <section className="h-full w-full flex items-center justify-center">
@@ -62,7 +62,9 @@ const ForgotPasswordPage = () => {
       {/* Form Section */}
       <section className="w-full md:w-1/2 flex items-center justify-center p-8 bg-white">
         <section className="w-full max-w-md">
-          <h2 className="text-4xl font-bold text-gray-800 mb-2">Reset Your Password</h2>
+          <h2 className="text-4xl font-bold text-gray-800 mb-2" data-testid="reset-password-heading" >
+            Reset Your Password
+          </h2>
           
           {isSubmitted ? (
             <section className="text-center">
@@ -83,12 +85,12 @@ const ForgotPasswordPage = () => {
               </p>
               
               {error && (
-                <section className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm">
+                <section className="mb-4 p-3 bg-red-100 text-red-700 rounded-md text-sm" data-testid="error-message">
                   {error}
                 </section>
               )}
   
-              <form onSubmit={handleSubmit} className="space-y-4">
+              <form onSubmit={handleSubmit} className="space-y-4" data-testid="reset-password-form">
                 <section className="mb-4">
                   <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                     Email Address
@@ -110,6 +112,8 @@ const ForgotPasswordPage = () => {
                 <button
                   type="submit"
                   disabled={loading}
+                  aria-label="send reset link"
+                  role="button"
                   className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition flex justify-center items-center"
                 >
                   {loading ? (

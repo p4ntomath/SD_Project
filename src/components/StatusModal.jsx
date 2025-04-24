@@ -5,22 +5,18 @@ const StatusModal = ({ isOpen, onClose, success, message }) => {
   return (
     <AnimatePresence>
       {isOpen && (
-        <dialog
-          open={isOpen}
-          className="fixed inset-0 backdrop-blur-sm bg-white/30 flex items-center justify-center z-50"
+        <motion.div
+          className="fixed inset-0 flex items-center justify-center z-[9999] backdrop-blur-sm bg-black/30"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          role="alertdialog"
-          aria-modal="true"
-          aria-labelledby="modal-title"
         >
-          <article
-            className="bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md m-4 border border-gray-200"
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.8, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+          <motion.div
+            className="bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200"
+            initial={{ scale: 0.8, opacity: 0, y: -20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.8, opacity: 0, y: 20 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
           >
             <header>
               <h2 
@@ -42,8 +38,8 @@ const StatusModal = ({ isOpen, onClose, success, message }) => {
                 Close
               </button>
             </footer>
-          </article>
-        </dialog>
+          </motion.div>
+        </motion.div>
       )}
     </AnimatePresence>
   );

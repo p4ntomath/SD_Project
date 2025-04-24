@@ -10,6 +10,22 @@ import { FiPlus } from 'react-icons/fi';
 import { FaChartLine, FaPiggyBank } from 'react-icons/fa';
 import { useNavigate } from "react-router-dom";
 
+export const formatDate = (dateString) => {
+  if (!dateString) return 'Not specified';
+  const options = { year: 'numeric', month: 'short', day: 'numeric' };
+  return new Date(dateString).toLocaleDateString(undefined, options);
+};
+
+export const formatFirebaseDate = (timestamp) => {
+  if (!timestamp || typeof timestamp !== "object") return "";
+  const date = new Date(timestamp.seconds * 1000);
+  return date.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+};
+
 export default function ResearcherHome() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
@@ -75,14 +91,21 @@ export default function ResearcherHome() {
       const createdProjectId = await createProject(cleanedProject);
       const fullProject = {
         ...cleanedProject,
+        id: createdProjectId, // Set the id property correctly
         userId: auth.currentUser.uid,
         projectId: createdProjectId,
       };
-      setProjects([...projects, fullProject]);
-      setFilteredProjects([...filteredProjects, fullProject]);
+      setProjects(prevProjects => [...prevProjects, fullProject]);
+      setFilteredProjects(prevFiltered => [...prevFiltered, fullProject]);
+      setModalOpen(true);
+      setStatusMessage('Project was successfully created.');
       setShowForm(false);
+      // Add a small delay to ensure state is updated before allowing navigation
+      await new Promise(resolve => setTimeout(resolve, 500));
     } catch (err) {
       console.error("Error creating project:", err);
+      setModalOpen(true);
+      setStatusMessage('Failed to create project. Please try again.');
     } finally {
       setCreateLoading(false);
     }
@@ -93,7 +116,7 @@ export default function ResearcherHome() {
   const totalUsedFunds = projects.reduce((sum, project) => sum + (project.usedFunds || 0), 0);
 
   return (
-    <section className="min-h-screen bg-gray-50 flex flex-col">
+    <section data-testid="researcher-home" className="min-h-screen bg-gray-50 flex flex-col">
       <header>
         <MainNav 
           showForm={showForm} 
@@ -114,7 +137,7 @@ export default function ResearcherHome() {
                 onClick={() => setShowForm(true)}
                 className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors flex items-center"
                 disabled={showForm}
-                aria-label="Create new project"
+                aria-label="create new research project"
               >
                 <FiPlus className="mr-2" />
                 Create Project
@@ -138,9 +161,13 @@ export default function ResearcherHome() {
                     <section ref={projectsRef} className="grid grid-cols-1 gap-6">
                       {filteredProjects.map((project) => (
                         <article key={project.id} className="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow border border-gray-100"
-                        onClick={() => navigate(`/projects/${project.id}`, {
-                          state: project
-                        })}>
+                        onClick={() => {
+                          if (project.id) {
+                            navigate(`/projects/${project.id}`, {
+                              state: project
+                            });
+                          }
+                        }}>
                             <section className="flex justify-between items-start">
                               <section>
                                 <h2 className="text-xl font-semibold text-gray-800">{project.title}</h2>
@@ -264,6 +291,12 @@ export default function ResearcherHome() {
         success={true}
         message={statusMessage}
       />
+
+      {createLoading && (
+        <div data-testid="create-loading-indicator">
+          <ClipLoader color="#3B82F6" />
+        </div>
+      )}
     </section>
   );
 }

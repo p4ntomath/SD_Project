@@ -13,7 +13,7 @@ export default function MobileBottomNav ({ showForm, setShowForm }) {
                 </button>
                 <button 
                     className="group flex flex-col items-center justify-center p-3 text-gray-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                    aria-label="Documents"
+                    aria-label="My Projects"
                 >
                     <FiFolder className="h-6 w-6 group-hover:text-blue-600" />
                     <p className="text-xs mt-1 group-hover:text-blue-600">My Projects</p>
@@ -22,7 +22,7 @@ export default function MobileBottomNav ({ showForm, setShowForm }) {
 
                 <button 
                     className="group flex flex-col items-center justify-center p-3 text-gray-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                    aria-label="Documents"
+                    aria-label="View documents"
                 >
                     <FiFileText className="h-6 w-6 group-hover:text-blue-600" />
                     <p className="text-xs mt-1 group-hover:text-blue-600">Documents</p>
@@ -30,7 +30,7 @@ export default function MobileBottomNav ({ showForm, setShowForm }) {
 
                 <button 
                     className="group flex flex-col items-center justify-center p-3 text-gray-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                    aria-label="View projects"
+                    aria-label="View alerts"
                 >
                     <FiBell className="h-6 w-6 group-hover:text-blue-600" />
                     <p className="text-xs mt-1 group-hover:text-blue-600">Alerts</p>
@@ -38,7 +38,7 @@ export default function MobileBottomNav ({ showForm, setShowForm }) {
 
                 <button 
                     className="group flex flex-col items-center justify-center p-3 text-gray-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                    aria-label="View profile"
+                    aria-label="View account"
                 >
                     <FiUser className="h-6 w-6 group-hover:text-blue-600" />
                     <p className="text-xs mt-1 group-hover:text-blue-600">Account</p>

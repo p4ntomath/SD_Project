@@ -60,21 +60,54 @@ export default function FundingTrackerPage() {
     }
   }, [searchQuery, projects]);
 
-  // Calculate total funds
-  const totalAvailableFunds = projects.reduce((sum, project) => sum + ((project.availableFunds || 0) - (project.usedFunds || 0)), 0);
-  const totalUsedFunds = projects.reduce((sum, project) => sum + (project.usedFunds || 0), 0);
-  const utilizationRate = ((totalUsedFunds / (totalAvailableFunds + totalUsedFunds)) * 100 || 0);
-
+  // Calculate total funds correctly
+  const totalOriginalFunds = projects.reduce((sum, project) => {
+    const available = project.availableFunds || 0;
+    const used = project.usedFunds || 0;
+    return sum + available + used;  // Sum of all funds (both available and used)
+  }, 0);
+  
+  const totalUsedFunds = projects.reduce((sum, project) => 
+    sum + (project.usedFunds || 0)
+  , 0);
+  
+  const totalAvailableFunds = totalOriginalFunds - totalUsedFunds;
+  const utilizationRate = totalOriginalFunds > 0 ? Math.min((totalUsedFunds / totalOriginalFunds) * 100, 100) : 0;
+  
   if (loading) {
     return (
       <>
-        {/* AppBar */}
         <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
           <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <section className="flex justify-between items-center h-16">
               <section className="flex items-center space-x-4">
-                <section className="w-8 h-8 rounded-full bg-gray-200 animate-pulse" />
-                <section className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
+                <button
+                  data-testid="back-button"
+                  onClick={() => navigate(-1)}
+                  className="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
+                >
+                  <FaArrowLeft className="mr-2" />
+                </button>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent">
+                  Track Funding
+                </h1>
+              </section>
+            </section>
+
+            {/* Center - Search */}
+            <section className="flex-1 max-w-xl mx-4 hidden md:block">
+              <section className="relative">
+                <section className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <FaSearch className="text-gray-400" />
+                </section>
+                <input
+                  className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                  placeholder="Search projects..."
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  disabled={loading}
+                />
               </section>
             </section>
           </section>
@@ -142,6 +175,7 @@ export default function FundingTrackerPage() {
             {/* Left side - Logo with back button */}
             <section className="flex items-center space-x-4">
               <button 
+                data-testid="back-button"
                 onClick={() => navigate(-1)}
                 className="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
               >
@@ -164,6 +198,7 @@ export default function FundingTrackerPage() {
                   type="search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
+                  disabled={loading}
                 />
               </section>
             </section>
@@ -192,7 +227,7 @@ export default function FundingTrackerPage() {
               <p className="text-sm text-gray-500">Total Projects</p>
               <p className="text-2xl font-bold">{filteredProjects.length}</p>
             </section>
-            <section className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+            <section className="bg-white p-5 rounded-xl shadow-sm border border-gray-100" data-testid="total-available-funds">
               <p className="text-sm text-gray-500">Total Available Funds</p>
               <p className="text-2xl font-bold text-green-600">R {totalAvailableFunds.toLocaleString()}</p>
             </section>
@@ -215,7 +250,7 @@ export default function FundingTrackerPage() {
                   <h2 className="text-lg font-semibold">Funding Overview</h2>
                 </section>
 
-                <section className="space-y-4">
+                <section className="space-y-4" data-testid="funding-overview">
                   <section className="bg-green-50 p-4 rounded-lg">
                     <p className="text-gray-600">Total Available Funds</p>
                     <p className="text-xl font-bold">R {totalAvailableFunds.toLocaleString()}</p>
@@ -300,14 +335,15 @@ export default function FundingTrackerPage() {
                 <section className="space-y-4">
                   {filteredProjects.map((project) => {
                     const availableFunds = (project.availableFunds || 0);
-                    const usedPercentage = project.availableFunds ? 
-                      ((project.usedFunds || 0) / project.availableFunds * 100) : 0;
+                    const usedFunds = (project.usedFunds || 0);
+                    const totalFunds = availableFunds + usedFunds;
+                    const usedPercentage = totalFunds > 0 ? (usedFunds / totalFunds * 100) : 0;
                     
                     return (
                       <section 
                         key={project.id} 
                         className="p-5 border border-gray-100 rounded-lg hover:shadow-md transition-all cursor-pointer"
-                       
+                        onClick={() => navigate(`/projects/${project.id}`)}
                       >
                         <section className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
                           <h3 className="text-lg font-medium">{project.title}</h3>

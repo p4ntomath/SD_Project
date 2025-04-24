@@ -122,7 +122,11 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-white p-6 rounded-lg shadow-md">
+    <form 
+      onSubmit={handleSubmit} 
+      className="bg-white p-6 rounded-lg shadow-md"
+      data-testid="create-project-form"
+    >
       <header>
         <h1 className="text-xl font-semibold mb-4">{isUpdateMode ? 'Update Project' : 'New Project Details'}</h1>
       </header>
@@ -130,10 +134,9 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
       <fieldset className="space-y-2">
         <legend className="sr-only">Project Information</legend>
 
-        {/* Title Field */}
-        <div role="group" aria-labelledby="title-label">
-          <label id="title-label" className="block text-sm font-medium mb-1">Title*</label>
+        <label htmlFor="title" className="block text-sm font-medium mb-1">Title*</label>
           <input
+            id="title"
             type="text"
             name="title"
             value={formData.title}
@@ -145,15 +148,12 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
             aria-invalid={!!errors.title}
             aria-describedby={errors.title ? "title-error" : undefined}
           />
-          {errors.title && (
-            <p id="title-error" className="mt-1 text-sm text-red-600" role="alert">{errors.title}</p>
-          )}
-        </div>
 
         {/* Description Field */}
         <div role="group" aria-labelledby="description-label">
-          <label id="description-label" className="block text-sm font-medium mb-1">Description*</label>
+          <label  htmlFor="description" className="block text-sm font-medium mb-1">Description*</label>
           <textarea
+            id="description"
             name="description"
             value={formData.description}
             onChange={handleChange}
@@ -172,8 +172,9 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
 
         {/* Research Field */}
         <div role="group" aria-labelledby="research-field-label">
-          <label id="research-field-label" className="block text-sm font-medium mb-1">Research Field*</label>
+          <label htmlFor='research field' className="block text-sm font-medium mb-1">Research Field*</label>
           <input
+            id="research field"
             type="text"
             name="researchField"
             value={formData.researchField}
@@ -193,8 +194,9 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
 
         {/* Duration Field */}
         <div role="group" aria-labelledby="duration-label">
-          <label id="duration-label" className="block text-sm font-medium mb-1">Duration*</label>
+          <label htmlFor="duration" className="block text-sm font-medium mb-1">Duration*</label>
           <input
+            id='duration'
             type="text"
             name="duration"
             value={formData.duration}
@@ -214,7 +216,7 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
 
         {/* Goals Field */}
         <div role="group" aria-labelledby="goals-label" className="mb-4">
-          <label id="goals-label" className="block text-sm font-medium mb-1">
+          <label htmlFor="goalInput" className="block text-sm font-medium mb-1">
             Goals* <span className="text-gray-500 text-xs">(Press Enter or comma to add)</span>
           </label>
 
@@ -233,6 +235,8 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
           {/* Input for new goals */}
           <div className="flex">
             <input
+              id="goalInput"
+              name="goalInput"
               type="text"
               value={formData.goalInput}
               onChange={(e) => setFormData({ ...formData, goalInput: e.target.value })}
@@ -242,7 +246,7 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
                 errors.goals ? 'border-red-500' : 'border-gray-300'
               }`}
               aria-invalid={!!errors.goals}
-              aria-describedby={errors.goals ? "goals-error" : undefined}
+              aria-describedby={errors.goals ? 'goals-error' : undefined}
             />
             <button
               onClick={addGoal}
@@ -268,6 +272,7 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
             Cancel
           </button>
           <button
+            test-id="submit-button"
             type="submit"
             disabled={loading}
             className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
