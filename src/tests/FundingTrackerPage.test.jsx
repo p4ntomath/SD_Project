@@ -37,6 +37,17 @@ vi.mock('../backend/firebase/projectDB', () => ({
   ]))
 }));
 
+vi.mock('../backend/firebase/fundingDB', () => ({
+  fetchFunding: vi.fn(() => Promise.resolve([
+    {
+      id: '1',
+      funding_name: 'Green Energy Fund',
+      expected_funds: '500,000',
+      external_link: 'https://example.com/fund'
+    }
+  ]))
+}));
+
 vi.mock('../backend/firebase/firebaseConfig', () => ({
   auth: {
     currentUser: { uid: 'test-user-id' }
