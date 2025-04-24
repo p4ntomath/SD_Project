@@ -1,13 +1,11 @@
-
-import { collection, getDocs } from "firebase/firestore";
 import { db, auth } from "./firebaseConfig";
 import {
   doc,
   getDoc,
   updateDoc,
-  collection,
   addDoc,
   getDocs,
+  collection,
   Timestamp
 } from "firebase/firestore";
 
@@ -33,6 +31,7 @@ export const fetchFunding = async () => {
     }
   };
   
+
 
 
 /**
