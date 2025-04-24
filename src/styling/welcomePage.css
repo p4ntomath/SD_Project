@@ -1,0 +1,348 @@
+.page-container {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    background-color: #DFF3E3 ;
+    position: relative;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+  }
+  
+  .main-content {
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-left: 1rem;
+    padding-right: 1rem;
+    z-index: 1;
+    position: relative;
+  }
+  
+  @media (min-width: 768px) {
+    .main-content {
+      padding-left: 3rem;
+      padding-right: 3rem;
+    }
+  }
+
+  .flex-layout {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 1280px;
+    column-gap: 3rem;
+  }
+  
+  @media (min-width: 768px) {
+    .flex-layout {
+      flex-direction: row;
+    }
+  }
+  
+  .fixed-header {
+    position: fixed;
+    width: 100%;
+    z-index: 20;
+    top: 0;
+    left: 0;
+    background-color: #DFF3E3 ;
+  }
+
+  .nav-container {
+    max-width: 1280px;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    margin: 0 auto;
+    padding: 1rem;
+    background-color: #DFF3E3 ;
+  }
+
+.signUp-button{
+    background-color: #5870E4;
+    color : white;
+    font-size: 16px;
+    font-weight: 600;
+    padding:  7px 50px;
+    border: none;
+    border-radius: 12px;
+    transition: background-color 0.3s ease, transform 0.2s ease;
+
+}
+button:hover {
+    transform: scale(1.05);
+    box-shadow: 0 8px 20px rgba(37, 99, 235, 0.2);
+    background-color: #101087;
+  }
+  
+.heading{
+    color: black;
+    font-size: 47px;
+    font-weight: bold;
+    margin: 0;
+    line-height: 1.2;
+    width: fit-content;
+}
+
+.tagline{
+    font-size: 16px;
+    font-weight: 650;
+    color: #5870E4;
+    border-left: 2px solid black;
+    padding-left: 8px;
+    margin: 23pt;
+}
+
+.description{
+    margin-left: 23pt;
+    margin-bottom: 45pt;
+    font-size: 15px;
+}
+
+.logo{
+    color: #0A540D;
+    font-size: 32px;
+    font-weight: bold;
+    margin: 17pt;
+}
+
+.imageLogo{
+    width: 12%;
+}
+
+.logo-section{
+    display: flex;
+    gap: 0px;
+}
+
+
+ .navbar {
+  display: flex;
+  justify-content: space-between;
+  gap: 32px;
+  padding: 10px 40px;
+  margin: 30pt;
+  font-family: Arial, sans-serif;
+}
+
+.nav-link{
+  text-decoration: none;
+  font-weight: 500;
+  font-size: 16px;
+  transition: all 0.2s ease;
+}
+
+.nav-link:hover {
+    text-decoration: underline;
+    color: #0A540D;
+  }
+
+.nav-link.active {
+  font-weight: bold;
+  color: #014d00;
+}
+
+.nav-items-container {
+    display: none;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .nav-list {
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    margin-top: 1rem;
+    font-weight: 500;
+    border: 1px solid #DFF3E3;
+    border-radius: 0.5rem;
+    background-color: #DFF3E3 ;
+    list-style: none;
+  }
+  
+  @media (min-width: 768px) {
+    .nav-list {
+      flex-direction: row;
+      padding: 0;
+      margin-top: 0;
+      border: none;
+      background-color: #DFF3E3 ;
+      gap: 2rem; /* equivalent to md:space-x-8 */
+    }
+  }
+
+  .hero-content {
+    width: 100%;
+    padding: 1rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  @media (min-width: 768px) {
+    .hero-content {
+      width: 50%;
+      align-items: flex-start;
+      text-align: left;
+    }
+  }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  
+.hero-content {
+    animation: fadeUp 0.9s ease forwards;
+  }
+
+  p.tagline,
+  p.description {
+    font-family: 'Open Sans', sans-serif;
+    line-height: 1.6;
+  }
+
+  .hero-content {
+    max-width: 600px;
+    padding: 2rem 1rem;
+  }
+
+  .page-container {
+    position: relative;
+    overflow: hidden;
+    background-color: #DFF3E3;
+  }
+  
+  /* Floating blob background layer */
+  .floating-bg-blobs {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+  }
+  
+  .floating-bg-blobs::before,
+  .floating-bg-blobs::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    opacity: 0.3;
+    animation: blobFloat 40s infinite ease-in-out;
+    z-index: 1;
+  }
+
+  .floating-bg-blobs::before {
+    width: 300px;
+    height: 300px;
+    background: #dab3eb;
+    bottom: -100px;
+    left: -100px;
+  }
+  
+  .floating-bg-blobs::after {
+    width: 250px;
+    height: 250px;
+    background: #77c0e1;
+    bottom: -100px;
+    right: -80px;
+  }
+  
+  @keyframes blobFloat {
+    0%   { transform: translate(0, 0) scale(1); }
+    50%  { transform: translate(20px, 10px) scale(1.05) rotate(3deg); }
+    100% { transform: translate(0, 0) scale(1); }
+  }
+  .floating-blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(100px);
+    opacity: 0.3;
+    z-index: 0;
+    animation: float 10s ease-in-out infinite alternate;
+  }
+  
+  .blob-1 {
+    width: 400px;
+    height: 400px;
+    background: #bbf7d0;
+    top: -100px;
+    left: -100px;
+  }
+  
+  .blob-2 {
+    width: 300px;
+    height: 300px;
+    background: #93c5fd;
+    bottom: -100px;
+    right: -80px;
+  }
+
+  .fixed-header {
+    z-index: 50; /* higher than blobs */
+    position: fixed;
+    background-color: #DFF3E3;
+    width: 100%;
+    top: 0;
+    left: 0;
+  }
+
+  .floating-blob{
+    z-index: 0;
+  }
+  
+  .page-container {
+    position: relative;
+    overflow: hidden;
+    background: #dff3e3;
+    isolation: isolate;
+  }
+  
+  .aurora-layers {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+    overflow: hidden;
+  }
+  
+  .aurora {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+    opacity: 0.25;
+    animation: pulseGlow 16s ease-in-out infinite alternate;
+  }
+  
+  .aurora-1 {
+    width: 400px;
+    height: 600px;
+    background: radial-gradient(circle, #af86d8, #282aca);
+    bottom: -90px;
+    left: -90px;
+  }
+  
+  .aurora-2 {
+    width: 500px;
+    height: 500px;
+    background: radial-gradient(circle, #66a7f2, #005e32);
+    bottom: -150px;
+    right: -150px;
+  }
+  
+  @keyframes pulseGlow {
+    0% {
+      transform: scale(1) translateY(0px);
+      opacity: 0.45;
+    }
+    100% {
+      transform: scale(1.1) translateY(30px);
+      opacity: 0.35;
+    }
+  }
