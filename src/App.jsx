@@ -12,6 +12,8 @@ import AuthProtectRoute from './components/AuthProtectRoute';
 import HomePage from './pages/HomePage.jsx';
 import FundingTrackerPage from './pages/FundingTrackerPage.jsx';
 import ProjectDetailsPage from './pages/ProjectDetailsPage.jsx';
+import MyProfilePage from './pages/myProfilePage.jsx';
+import Documents from './pages/Documents.jsx';
 
 function App() {
   return (
@@ -54,6 +56,17 @@ function App() {
               <ProjectDetailsPage />
             </ProtectedRoute>
           } />
+          
+          {/* <Route path="/myprofile" element={
+            <ProtectedRoute>
+              <MyProfilePage />
+            </ProtectedRoute>
+          } /> */}
+
+          <Route path="/myprofile" element={<MyProfilePage />} />
+          
+          <Route path="/documents" element={<Documents />} />
+
         </Routes>
       </AuthProvider>
     </Router>

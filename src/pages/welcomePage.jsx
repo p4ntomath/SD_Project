@@ -1,26 +1,41 @@
 import React from "react";
 import NavBar from "../components/navigationBar.jsx";
-import welcomeDisplay from "../assets/welcomeDisplayImage.jpg";
+import welcomeDisplayImage from "../assets/welcomeDisplay.png";
+import '../styling/welcomePage.css';
 import { useNavigate } from "react-router-dom";
 
 export default function WelcomePage() {
   const navigate = useNavigate();
 
   return (
-    <section className="min-h-screen flex flex-col">
+    
+    <section className="page-container ">
+
+    <aside className="aurora-layers" aria-hidden="true">
+      <aside className="aurora aurora-1"></aside>
+      <aside className="aurora aurora-2"></aside>
+    </aside>
+      <aside className="floating-bg-blobs" aria-hidden="true"></aside>
       <NavBar />
-      <main className="flex-grow flex items-center justify-center px-4 md:px-12">
-        <article className="flex flex-col md:flex-row items-center justify-between w-full max-w-screen-xl gap-x-12">
+      <main className="main-content">
+        <article className="flex-layout">
           
+        <figure className="blob-container" aria-hidden="true">
+          <aside className="floating-blob blob-1"></aside>
+          <aside className="floating-blob blob-2"></aside>
+        </figure>
+
           {/* Text Content */}
-          <section className="md:w-1/2 w-full p-4 flex flex-col items-center md:items-start text-center md:text-start">
-            <h1 className="text-4xl font-bold mb-4">
+          <section className="hero-content ">
+            <h1 className="heading">
               One platform.
               <br />
-              Endless Academic Possibilities
+              Endless Academic
+              <br /> 
+              Possibilities
             </h1>
-            <p className="text-sm mb-7 max-w-md">
-              All your research tools, in one brilliant place.
+            <p className="tagline">All your research tools, in one brilliant place.</p>
+            <p className="description">
               Whether you're a student, researcher, or academic collaborator,
               our platform simplifies the entire research journey. From project
               creation and milestone tracking to real-time messaging, funding
@@ -29,7 +44,7 @@ export default function WelcomePage() {
               and bring your research to life with clarity and confidence.
             </p>
             <button
-              className="bg-blue-600 hover:bg-blue-700 text-white font-bold py-1 px-5 rounded-lg text-lg"
+              className="signUp-button"
               onClick={() => navigate("/signup")}
             >
               Sign Up!
@@ -37,9 +52,9 @@ export default function WelcomePage() {
           </section>
   
           {/* Image */}
-          <figure className="md:w-1/2 hidden md:block p-4">
+          <figure className="image-container">
             <img
-              src={welcomeDisplay}
+              src={welcomeDisplayImage}
               alt="Research collaboration illustration"
               className="max-w-full h-auto"
             />
