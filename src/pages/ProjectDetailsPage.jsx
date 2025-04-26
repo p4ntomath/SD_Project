@@ -303,16 +303,20 @@ export default function ProjectDetailsPage() {
 
       <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <section className="flex justify-between items-center h-16">
-              <button
-                onClick={() => navigate(-1)}
-                className="text-gray-600 hover:text-blue-600 transition-colors flex items-center"
-              >
-                <FiArrowLeft className="text-xl mr-2" />
-                Back
-              </button> 
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent">{project.title}</h1>
-              <nav className="flex gap-2 justify-center sm:justify-end">
+          <section className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 sm:h-16 gap-3 sm:gap-0">
+              <div className="flex items-center">
+                <button
+                  onClick={() => navigate(-1)}
+                  className="text-gray-600 hover:text-blue-600 transition-colors flex items-center mr-3"
+                >
+                  <FiArrowLeft className="text-xl mr-2" />
+                  Back
+                </button>
+                <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent truncate max-w-[200px] sm:max-w-none">
+                  {project.title}
+                </h1>
+              </div>
+              <nav className="flex gap-2 justify-start sm:justify-end">
                 <button
                   onClick={() => setIsEditing(true)}
                   className="bg-blue-600 text-white py-2 px-3 sm:px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center text-sm sm:text-base"
@@ -332,7 +336,7 @@ export default function ProjectDetailsPage() {
                   Delete
                 </button>
               </nav>
-              </section>
+          </section>
         </section>
       </header>
 
