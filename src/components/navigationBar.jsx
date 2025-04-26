@@ -6,7 +6,7 @@ const NavBar = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="bg-white fixed w-full z-20 top-0 start-0">
+    <header className="bg-white sticky w-full z-20 top-0 start-0 shadow-sm">
       <nav className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4" aria-label="Main navigation">
         <a href="/" className="flex items-center space-x-3 rtl:space-x-reverse">
           <img src={appLogo} className="h-8" alt="app Logo" />
@@ -91,7 +91,6 @@ const NavBar = () => {
       </nav>
     </header>
   );
-  
 };
 
 export default NavBar;
