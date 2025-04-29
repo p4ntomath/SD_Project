@@ -69,8 +69,11 @@ Make sure you have the following installed:
 
 # THESE ARE THE DESIGNS FOR THE PAGES:
 
-## Researcher Dashboard
-![Dashboard](PageDesigns/adminDashboard.png)
+## research Dashboard
+![Dashboard](PageDesigns/researchDashboard.png)
+
+## research Dashboard Small Screen
+![Dashboard](PageDesigns/researchDashboardSmallScreen.png)
 
 ## Admin Dashboard
 ![Dashboard](PageDesigns/adminDashboard.png)
