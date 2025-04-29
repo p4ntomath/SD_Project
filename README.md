@@ -69,4 +69,52 @@ Make sure you have the following installed:
 
 # THESE ARE THE DESIGNS FOR THE PAGES:
 
-![researcherDashboard](https://github.com/user-attachments/assets/16deff24-7ed8-44e5-9efb-46763eadd979)
+## Researcher Dashboard
+![Dashboard](PageDesigns/adminDashboard.png)
+
+## Admin Dashboard
+![Dashboard](PageDesigns/adminDashboard.png)
+
+## admin Dashboard Small Screen
+![Dashboard](PageDesigns/adminDashboardSmallScreen.png)
+
+## create Project Page
+![Dashboard](PageDesigns/createProjectPage.png)
+
+## create Project Page Small Screen
+![Dashboard](PageDesigns/createProjectPageSmallScreen.png)
+
+## Documents
+![Dashboard](PageDesigns/documents.png)
+
+## documents Small Screen
+![Dashboard](PageDesigns/documentsSmallScreen.png)
+
+## myProfile
+![Dashboard](PageDesigns/myProfile.png)
+
+## myProfile Small Screen
+![Dashboard](PageDesigns/myProfileSmallScreen.png)
+
+## Researcher Dashboard version 2
+![Dashboard](PageDesigns/researcherDashboardv2.png)
+
+## reviewer Dashboard
+![Dashboard](PageDesigns/reviewerDashboard.png)
+
+## reviewer Dashboard Small Screen
+![Dashboard](PageDesigns/reviewerDashboardSmallScreen.png)
+
+## track Project Funding Page
+![Dashboard](PageDesigns/trackProjectFundingPage.png)
+
+## track Project Funding Page Small Screen
+![Dashboard](PageDesigns/trackProjectFundingPageSmallScreen.png)
+
+## view Project Page
+![Dashboard](PageDesigns/viewProjectPage.png)
+
+## view Project Page Small Screen
+![Dashboard](PageDesigns/viewProjectPageSmallScreen.png)
+
+
