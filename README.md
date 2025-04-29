@@ -66,3 +66,7 @@ Make sure you have the following installed:
 1. Clone the repository:  
    ```sh
    git clone https://github.com/p4ntomath/SD_Project
+
+# THESE ARE THE DESIGNS FOR THE PAGES:
+
+![researcherDashboard](https://github.com/user-attachments/assets/16deff24-7ed8-44e5-9efb-46763eadd979)
