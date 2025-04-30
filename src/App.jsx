@@ -12,6 +12,7 @@ import AuthProtectRoute from './components/AuthProtectRoute';
 import HomePage from './pages/HomePage.jsx';
 import FundingTrackerPage from './pages/FundingTrackerPage.jsx';
 import ProjectDetailsPage from './pages/ProjectDetailsPage.jsx';
+import AdminHomePage from './pages/AdminHomePage.jsx';
 
 function App() {
   return (
@@ -42,6 +43,11 @@ function App() {
           <Route path="/home" element={
             <ProtectedRoute allowedRoles={['researcher', 'reviewer']}>
               <HomePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminHomePage />
             </ProtectedRoute>
           } />
           <Route path="/trackfunding" element={
