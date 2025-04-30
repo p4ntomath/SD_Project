@@ -82,7 +82,7 @@ export default function WelcomePage() {
         <NavBar />
         
         {/* Hero Section */}
-        <section className="py-6 md:py-2 flex-grow">
+        <section className="pt-24 pb-6 md:py-24 flex-grow">
           <article className="container mx-auto px-4 flex flex-col md:flex-row items-center justify-between gap-x-12">
             <motion.section
               className="md:w-1/2 w-full flex flex-col items-center md:items-start text-center md:text-start"
