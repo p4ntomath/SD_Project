@@ -21,7 +21,7 @@ import {
  * checking user authentication and required fields.
  */
 export async function createProject(newProject) {
-    const { title, description, researchField } = newProject;
+    const { title, description, researchField, deadline } = newProject;
     const user = auth.currentUser;
     if (!user) {
       throw new Error("User not authenticated");
@@ -30,6 +30,14 @@ export async function createProject(newProject) {
       //setError("Please fill in all the required fields.");
       throw new Error("Missing required fields");
     }
+    const deadlineDate = new Date(deadline);
+    if (isNaN(deadlineDate.getTime())) {
+      throw new Error("Invalid deadline date");
+    }
+    const currentDate = new Date();
+    if (deadlineDate <= currentDate) {
+      throw new Error("Deadline must be after the current date");
+    }
 
     try {
       const projectsRef = collection(db, "projects");
@@ -37,6 +45,7 @@ export async function createProject(newProject) {
 
       const projectWithId = {
       ...newProject,
+      deadline: deadlineDate,
       userId: user.uid,
       projectId: newDocRef.id,
     };
@@ -92,6 +101,13 @@ export const fetchProject = async (projectId) => {
       throw new Error('Project not found');
     }
 
+    const projectData = projectSnap.data();
+
+    // Check if deadline exists and convert from Timestamp to Date if necessary
+    if (projectData.deadline) {
+      projectData.deadline = projectData.deadline.toDate ? projectData.deadline.toDate() : new Date(projectData.deadline);
+    }
+
     return {
       id: projectSnap.id,
       ...projectSnap.data()
@@ -136,6 +152,17 @@ export const updateProject = async (id, updatedData) => {
       }
       return acc;
     }, {});
+
+    if (filteredData.deadline) {// change to allow
+      const deadlineDate = new Date(filteredData.deadline);
+      if (isNaN(deadlineDate.getTime())) {
+        throw new Error("Invalid deadline date");
+      }
+      const currentDate = new Date();
+      if (deadlineDate <= currentDate) {
+        throw new Error("Deadline must be after the current date");
+      }
+    }
 
     if (Object.keys(filteredData).length === 0) {
       return;
