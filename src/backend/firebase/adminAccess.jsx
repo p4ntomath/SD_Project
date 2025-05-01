@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 
 /**
@@ -128,5 +128,24 @@ export const deleteFunding = async (id) => {
   } catch (error) {
     console.error("Error deleting funding:", error);
     throw error;
+  }
+};
+
+/**
+ * Fetches all projects from Firestore
+ * @returns {Promise<Array>} Array of all projects
+ */
+export const getAllProjects = async () => {
+  try {
+    const projectsRef = collection(db, 'projects');
+    const snapshot = await getDocs(projectsRef);
+    
+    return snapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+  } catch (error) {
+    console.error("Error fetching projects:", error);
+    throw new Error("Failed to load projects");
   }
 };
