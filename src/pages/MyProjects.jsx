@@ -221,13 +221,10 @@ export default function MyProjects() {
         onClose={() => setModalOpen(false)}
         success={true}
         message={statusMessage}
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="modal-title"
       />
-
-      {createLoading && (
-        <div data-testid="create-loading-indicator">
-          <ClipLoader color="#3B82F6" />
-        </div>
-      )}
     </section>
   );
 }

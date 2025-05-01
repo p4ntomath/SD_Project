@@ -69,7 +69,7 @@ export default function ResearcherHome() {
           
           {loading ? (
             <section className="flex justify-center items-center py-20">
-              <ClipLoader color="#3B82F6" />
+              <ClipLoader data-testid="loading-spinner" color="#3B82F6" />
             </section>
           ) : (
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -82,11 +82,11 @@ export default function ResearcherHome() {
                 <section className="space-y-4">
                   <section className="grid grid-cols-2 gap-4">
                     <section className="text-center p-3 bg-gray-50 rounded-lg">
-                      <p className="text-2xl font-bold text-blue-600">{totalProjects}</p>
+                      <p data-testid="total-projects" className="text-2xl font-bold text-blue-600">{totalProjects}</p>
                       <p className="text-sm text-gray-600">Total Projects</p>
                     </section>
                     <section className="text-center p-3 bg-gray-50 rounded-lg">
-                      <p className="text-2xl font-bold text-green-600">{activeProjects}</p>
+                      <p data-testid="active-projects" className="text-2xl font-bold text-green-600">{activeProjects}</p>
                       <p className="text-sm text-gray-600">Active</p>
                     </section>
                   </section>
@@ -152,7 +152,7 @@ export default function ResearcherHome() {
                         <p className="text-sm text-gray-600">Overall Progress</p>
                       </section>
                       <section className="text-center p-3 bg-gray-50 rounded-lg">
-                        <p className="text-2xl font-bold text-blue-600">{completedProjects}</p>
+                        <p data-testid="completed-projects" className="text-2xl font-bold text-blue-600">{completedProjects}</p>
                         <p className="text-sm text-gray-600">Completed</p>
                       </section>
                     </section>

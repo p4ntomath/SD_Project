@@ -17,10 +17,13 @@ const StatusModal = ({ isOpen, onClose, success, message }) => {
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.8, opacity: 0, y: 20 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="status-title"
           >
             <header>
               <h2 
-                id="modal-title"
+                id="status-title"
                 className={`text-xl font-semibold mb-4 ${success ? 'text-green-600/90' : 'text-red-600/90'}`}
               >
                 {success ? 'Success' : 'Error'}

@@ -275,11 +275,11 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
             test-id="submit-button"
             type="submit"
             disabled={loading}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center min-w-[120px]"
             aria-busy={loading}
           >
             {loading ? (
-              <ClipLoader color="#ffffff" loading={loading} size={20} />
+              <ClipLoader data-testid="create-loading-indicator" color="#ffffff" loading={loading} size={20} />
             ) : isUpdateMode ? 'Update Project' : 'Create Project'}
           </button>
         </footer>

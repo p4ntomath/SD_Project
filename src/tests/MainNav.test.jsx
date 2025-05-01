@@ -4,6 +4,7 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
 import MainNav from '../components/ResearcherComponents/Navigation/MainNav';
 import { logOut } from '../backend/firebase/authFirebase';
+import { BrowserRouter } from 'react-router-dom';
 
 // Mock the firebase auth module
 vi.mock('../backend/firebase/authFirebase', () => ({
@@ -13,6 +14,14 @@ vi.mock('../backend/firebase/authFirebase', () => ({
 // Mock window.location
 delete window.location;
 window.location = { href: '' };
+
+const renderWithRouter = (component) => {
+  return render(
+    <BrowserRouter>
+      {component}
+    </BrowserRouter>
+  );
+};
 
 describe('MainNav Component', () => {
   const defaultProps = {
@@ -28,25 +37,24 @@ describe('MainNav Component', () => {
   });
 
   it('renders all desktop navigation buttons', () => {
-    render(<MainNav {...defaultProps} />);
+    renderWithRouter(<MainNav {...defaultProps} />);
     
-    // Test navigation buttons by their text content since it's more reliable
-    expect(screen.getByText('Home')).toBeInTheDocument();
-    expect(screen.getByText('My Projects')).toBeInTheDocument();
-    expect(screen.getByText('Documents')).toBeInTheDocument();
-    expect(screen.getByText('Alerts')).toBeInTheDocument();
-    expect(screen.getByText('Account')).toBeInTheDocument();
+    expect(screen.getByLabelText('Home')).toBeInTheDocument();
+    expect(screen.getByLabelText('My Projects')).toBeInTheDocument();
+    expect(screen.getByLabelText('Documents')).toBeInTheDocument();
+    expect(screen.getByLabelText('View alerts')).toBeInTheDocument();
+    expect(screen.getByLabelText('View profile')).toBeInTheDocument();
   });
 
   it('renders the search bar', () => {
-    render(<MainNav {...defaultProps} />);
+    renderWithRouter(<MainNav {...defaultProps} />);
     
     const searchInput = screen.getByPlaceholderText('Search projects...');
     expect(searchInput).toBeInTheDocument();
   });
 
   it('handles search form submission', () => {
-    render(<MainNav {...defaultProps} />);
+    renderWithRouter(<MainNav {...defaultProps} />);
     
     const searchInput = screen.getByPlaceholderText('Search projects...');
     const searchForm = searchInput.closest('form');
@@ -58,14 +66,14 @@ describe('MainNav Component', () => {
   });
 
   it('renders mobile menu toggle button on mobile view', () => {
-    render(<MainNav {...defaultProps} />);
+    renderWithRouter(<MainNav {...defaultProps} />);
     
     const menuButton = screen.getByLabelText('Toggle menu');
     expect(menuButton).toBeInTheDocument();
   });
 
   it('toggles mobile menu when menu button is clicked', () => {
-    render(<MainNav {...defaultProps} />);
+    renderWithRouter(<MainNav {...defaultProps} />);
     
     const menuButton = screen.getByLabelText('Toggle menu');
     fireEvent.click(menuButton);
@@ -74,13 +82,14 @@ describe('MainNav Component', () => {
   });
 
   it('shows mobile menu content when mobileMenuOpen is true', () => {
-    render(<MainNav {...defaultProps} mobileMenuOpen={true} />);
+    renderWithRouter(<MainNav {...defaultProps} mobileMenuOpen={true} />);
     
-    expect(screen.getByText('My Profile')).toBeInTheDocument();
+    const profileButton = screen.getByText('My Profile');
+    expect(profileButton).toBeInTheDocument();
   });
 
   it('handles logout button click', () => {
-    render(<MainNav {...defaultProps} />);
+    renderWithRouter(<MainNav {...defaultProps} />);
     
     const logoutButton = screen.getByText('Logout');
     fireEvent.click(logoutButton);
@@ -90,16 +99,17 @@ describe('MainNav Component', () => {
   });
 
   it('displays the Research Portal heading', () => {
-    render(<MainNav {...defaultProps} />);
+    renderWithRouter(<MainNav {...defaultProps} />);
     
     expect(screen.getByText('Research Portal')).toBeInTheDocument();
   });
 
-  it('applies hover styles to navigation buttons', () => {
-    render(<MainNav {...defaultProps} />);
+  it('applies correct classes to navigation buttons', () => {
+    renderWithRouter(<MainNav {...defaultProps} />);
     
     const homeButton = screen.getByLabelText('Home');
     expect(homeButton).toHaveClass('group');
     expect(homeButton).toHaveClass('hover:bg-blue-50');
+    expect(homeButton).toHaveClass('text-gray-600');
   });
 });
