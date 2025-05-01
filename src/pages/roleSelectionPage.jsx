@@ -37,8 +37,13 @@ const RoleSelectionPage = () => {
   return (
     <section className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
       {loading ? (
-        <section className="flex justify-center items-center h-screen bg-gray-50">
-          <ClipLoader color="#3498db" size={50} />
+        <section className="flex justify-center items-center h-screen bg-gray-50" role="status">
+          <ClipLoader 
+            color="#3498db" 
+            size={50} 
+            data-testid="loading-spinner"
+            aria-label="Loading"
+          />
         </section>
       ) : (
         <RoleSelectionForm onSubmit={handleSubmit} />

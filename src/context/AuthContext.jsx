@@ -34,20 +34,34 @@ export const AuthProvider = ({ children }) => {
   // In your AuthProvider component
   const fetchRoleFromDatabase = async (uid) => {
     try {
-      const docRef = doc(db, 'users', uid);
-      const docSnap = await getDoc(docRef);
+      if (!uid) {
+        console.error('No UID provided to fetch role');
+        setRole(null);
+        setLoading(false);
+        return;
+      }
   
-      if (docSnap.exists()) {
+      const docRef = doc(db, 'users', uid);
+      if (!docRef) {
+        console.error('Could not create document reference');
+        setRole(null);
+        setLoading(false);
+        return;
+      }
+  
+      const docSnap = await getDoc(docRef);
+      if (docSnap?.exists()) {
         const userData = docSnap.data();
-        setRole(userData.role || null);
+        setRole(userData?.role || null);
       } else {
+        console.log('No user document found for UID:', uid);
         setRole(null);
       }
     } catch (error) {
       console.error('Error fetching role:', error);
       setRole(null);
     } finally {
-      setLoading(false); // Only set loading to false AFTER fetching role
+      setLoading(false);
     }
   };
   

@@ -75,6 +75,34 @@ export const fetchProjects = async (uid) => {
 };
 
 /**
+ * Fetches a single project by its ID from Firestore
+ * @param {string} projectId - The ID of the project to fetch
+ * @returns {Promise<Object>} The project data with its ID
+ * @throws {Error} If the project is not found or user is not authenticated
+ */
+export const fetchProject = async (projectId) => {
+  try {
+    const user = auth.currentUser;
+    if (!user) throw new Error('User not authenticated');
+
+    const projectRef = doc(db, "projects", projectId);
+    const projectSnap = await getDoc(projectRef);
+
+    if (!projectSnap.exists()) {
+      throw new Error('Project not found');
+    }
+
+    return {
+      id: projectSnap.id,
+      ...projectSnap.data()
+    };
+  } catch (error) {
+    console.error("Error fetching project:", error);
+    throw error;
+  }
+};
+
+/**
  * The `updateProject` function updates a project in a Firestore database using the provided `id` and
  * `updatedData`.
  */
@@ -132,31 +160,35 @@ export const updateProject = async (id, updatedData) => {
 
 export const deleteProject = async (projectId) => {
   try {
-    
     const user = auth.currentUser;
     if (!user) throw new Error('You must be logged in to delete projects');
 
-    // 2. Get Project Reference
     const projectRef = doc(db, "projects", projectId);
-
-    // 3. Verify Project Exists and Get Owner
     const projectSnap = await getDoc(projectRef);
-    if (!projectSnap.exists()) throw new Error('Project does not exist');
 
-    const projectOwnerId = projectSnap.data().userId;
-
-    if (user.uid !== projectOwnerId) {
-      throw new Error('You can only delete your own projects');
+    if (!projectSnap.exists()) {
+      throw new Error('Project not found');
     }
 
+    const projectData = projectSnap.data();
+    if (projectData.userId !== user.uid) {
+      throw new Error('You are not authorized to delete this project');
+    }
 
+    // First delete all funding history documents
+    const historyRef = collection(db, "projects", projectId, "fundingHistory");
+    const historySnapshot = await getDocs(historyRef);
+    
+    // Delete each history document
+    const deletePromises = historySnapshot.docs.map(doc => deleteDoc(doc.ref));
+    await Promise.all(deletePromises);
+
+    // Then delete the project document
     await deleteDoc(projectRef);
-
-    return { success: true, message: 'Project deleted successfully' };
-
+    
+    return { success: true, message: 'Project and funding history deleted successfully' };
   } catch (error) {
-    console.error('Delete project error:', error);
-    throw new Error(`Failed to delete project: ${error.message}`);
+    throw error;
   }
 };
 

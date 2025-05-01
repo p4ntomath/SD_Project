@@ -6,20 +6,19 @@ import LoginPage from './pages/loginPage.jsx';
 import ForgotPasswordPage from './pages/forgotpasswordPage.jsx';
 import SignUpPage from './pages/SignUpPage.jsx';
 import CompleteProfile from './pages/roleSelectionPage.jsx';
-import { AuthProvider } from './context/AuthContext'; // Import AuthProvider
-import ProtectedRoute from './components/ProtectedRoute'; // Import the ProtectedRoute component
+import { AuthProvider } from './context/AuthContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import AuthProtectRoute from './components/AuthProtectRoute';
 import HomePage from './pages/HomePage.jsx';
-import AuthProtectRoute from './components/AuthProtectRoute'; // Import the AuthProtectRoute component
+import FundingTrackerPage from './pages/FundingTrackerPage.jsx';
+import ProjectDetailsPage from './pages/ProjectDetailsPage.jsx';
 
-//mport { fetchProjects, updateProject, deleteProject } from './backend/firebase/projectDB'; was just for testing
 function App() {
   return (
     <Router>
       <AuthProvider>
         <Routes>
-          <Route path="/" element={
-            <WelcomePage />
-          } />
+          <Route path="/" element={<WelcomePage />} />
           <Route path="/login" element={
             <AuthProtectRoute>
               <LoginPage />
@@ -35,19 +34,26 @@ function App() {
               <SignUpPage />
             </AuthProtectRoute>
           } />
-          {/* Complete-profile is protected but available to users without role */}
           <Route path="/complete-profile" element={
             <ProtectedRoute>
               <CompleteProfile />
             </ProtectedRoute>
           } />
-          {/* AuthHomeTest requires both authentication and completed profile */}
           <Route path="/home" element={
-            <ProtectedRoute>
-              <HomePage/>
+            <ProtectedRoute allowedRoles={['researcher', 'reviewer']}>
+              <HomePage />
             </ProtectedRoute>
-          }/>
-
+          } />
+          <Route path="/trackfunding" element={
+            <ProtectedRoute allowedRoles={['researcher']}>
+              <FundingTrackerPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/projects/:projectId" element={
+            <ProtectedRoute allowedRoles={['researcher']}>
+              <ProjectDetailsPage />
+            </ProtectedRoute>
+          } />
         </Routes>
       </AuthProvider>
     </Router>
