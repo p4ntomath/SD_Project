@@ -87,7 +87,7 @@ describe('ResearcherHome', () => {
     render(<ResearcherHome />, { wrapper: MemoryRouter });
 
     await waitFor(() => {
-      expect(screen.getByText('Project Funding')).toBeInTheDocument();
+      expect(screen.getByText('Funding')).toBeInTheDocument();
       expect(screen.getByText('R 30,000')).toBeInTheDocument(); // Total available
       expect(screen.getByText('R 20,000')).toBeInTheDocument(); // Total used
     });

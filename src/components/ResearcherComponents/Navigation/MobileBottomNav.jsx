@@ -19,11 +19,11 @@ export default function MobileBottomNav ({ showForm, setShowForm }) {
 
         <button 
           onClick={() => navigate('/projects')}
-          className={`group flex flex-col items-center justify-center p-3 ${location.pathname.includes('/projects') ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
-          aria-label="My Projects"
+          className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/projects' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
+          aria-label="Projects"
         >
           <FiFolder className="h-6 w-6 group-hover:text-blue-600" />
-          <p className="text-xs mt-1 group-hover:text-blue-600">My Projects</p>
+          <p className="text-xs mt-1 group-hover:text-blue-600">Projects</p>
         </button>
 
         <button 

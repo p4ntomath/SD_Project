@@ -13,6 +13,7 @@ import HomePage from './pages/HomePage.jsx';
 import FundingTrackerPage from './pages/FundingTrackerPage.jsx';
 import ProjectDetailsPage from './pages/ProjectDetailsPage.jsx';
 import DocumentsPage from './pages/Documents.jsx';
+import MyProjects from './pages/MyProjects.jsx';
 
 function App() {
   return (
@@ -43,6 +44,11 @@ function App() {
           <Route path="/home" element={
             <ProtectedRoute allowedRoles={['researcher', 'reviewer']}>
               <HomePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/projects" element={
+            <ProtectedRoute allowedRoles={['researcher']}>
+              <MyProjects />
             </ProtectedRoute>
           } />
           <Route path="/trackfunding" element={
