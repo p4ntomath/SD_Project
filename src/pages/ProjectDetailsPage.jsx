@@ -30,6 +30,17 @@ export default function ProjectDetailsPage() {
   const [addFundsLoading, setAddFundsLoading] = useState(false);
   const [addExpenseLoading, setAddExpenseLoading] = useState(false);
 
+  // New state for documents and folders
+  const [folders, setFolders] = useState([]);
+  const [showFolderModal, setShowFolderModal] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [selectedFolder, setSelectedFolder] = useState(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [customName, setCustomName] = useState('');
+  const [customDescription, setCustomDescription] = useState('');
+
   useEffect(() => {
     const loadProject = async () => {
       try {
@@ -256,6 +267,91 @@ export default function ProjectDetailsPage() {
     }
   };
 
+  const handleCreateFolder = () => {
+    if (newFolderName.trim()) {
+      const newFolder = {
+        id: Date.now(),
+        name: newFolderName,
+        files: [],
+        createdAt: new Date(),
+        projectId: projectId
+      };
+
+      setFolders([...folders, newFolder]);
+      setNewFolderName('');
+      setShowFolderModal(false);
+      setModalOpen(true);
+      setStatusMessage('Folder created successfully');
+    }
+  };
+
+  const handleFileUpload = (event) => {
+    const file = event.target.files[0];
+    if (file) {
+      setSelectedFile(file);
+      setCustomName(file.name);
+      setShowUploadModal(true);
+    }
+  };
+
+  const handleConfirmUpload = async () => {
+    if (!customName.trim()) {
+      setModalOpen(true);
+      setError(true);
+      setStatusMessage('Please enter a file name');
+      return;
+    }
+
+    if (!selectedFolder) {
+      setModalOpen(true);
+      setError(true);
+      setStatusMessage('Please select a folder');
+      return;
+    }
+
+    try {
+      setUploadLoading(true);
+      
+      const newFile = {
+        id: Date.now(),
+        name: customName,
+        description: customDescription || 'No description provided',
+        originalName: selectedFile.name,
+        size: (selectedFile.size / 1024).toFixed(1) + ' KB',
+        type: selectedFile.type,
+        uploadDate: new Date(),
+        folderId: selectedFolder.id,
+        projectId: projectId
+      };
+
+      // Update the selected folder with the new file
+      const updatedFolders = folders.map(folder => {
+        if (folder.id === selectedFolder.id) {
+          return {
+            ...folder,
+            files: [...folder.files, newFile]
+          };
+        }
+        return folder;
+      });
+
+      setFolders(updatedFolders);
+      setShowUploadModal(false);
+      setSelectedFile(null);
+      setCustomName('');
+      setCustomDescription('');
+      setModalOpen(true);
+      setError(false);
+      setStatusMessage('File uploaded successfully');
+    } catch (err) {
+      setModalOpen(true);
+      setError(true);
+      setStatusMessage('Failed to upload file: ' + err.message);
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
   useEffect(() => {
     if (showFundingHistory) {
       loadFundingHistory();
@@ -432,25 +528,180 @@ export default function ProjectDetailsPage() {
             <section className="bg-white rounded-lg shadow p-4 sm:p-6">
               <h2 className="text-lg sm:text-xl font-semibold mb-4">Project Documents</h2>
               <section className="space-y-4">
-                <header className="flex items-center space-x-3">
-                  <div className="p-2 bg-yellow-50 rounded-lg">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                <header className="flex justify-between items-center">
+                  <div className="flex items-center space-x-3">
+                    <div className="p-2 bg-yellow-50 rounded-lg">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-sm sm:text-base">Project Documents</h3>
+                      <p className="text-xs sm:text-sm text-gray-500">{folders.length} folders</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={() => setShowFolderModal(true)}
+                    className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                     </svg>
-                  </div>
-                  <div>
-                    <h3 className="font-medium text-sm sm:text-base">{project.title} Documents</h3>
-                    <p className="text-xs sm:text-sm text-gray-500">Project files and resources</p>
-                  </div>
+                    New Folder
+                  </button>
                 </header>
-                <button className="w-full bg-blue-50 text-blue-600 py-2 px-4 rounded-lg hover:bg-blue-100 transition-colors flex items-center justify-center text-sm sm:text-base">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                  </svg>
-                  Upload New Document
-                </button>
+
+                {/* Folders Grid */}
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 mt-4">
+                  {folders.map((folder) => (
+                    <div key={folder.id} className="border rounded-lg p-4 hover:border-blue-300 transition-colors">
+                      <div className="flex items-center space-x-3 mb-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                        </svg>
+                        <div>
+                          <h4 className="font-medium">{folder.name}</h4>
+                          <p className="text-sm text-gray-500">{folder.files.length} files</p>
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        {folder.files.map((file) => (
+                          <div key={file.id} className="text-sm flex items-center space-x-2 text-gray-600">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                            </svg>
+                            <span>{file.name}</span>
+                          </div>
+                        ))}
+                      </div>
+                      <div className="mt-4 flex justify-end">
+                        <button
+                          onClick={() => {
+                            setSelectedFolder(folder);
+                            document.getElementById('file-upload').click();
+                          }}
+                          className="text-blue-600 text-sm hover:text-blue-800 flex items-center"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                          </svg>
+                          Upload File
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+
+                <input
+                  id="file-upload"
+                  type="file"
+                  className="hidden"
+                  onChange={handleFileUpload}
+                />
               </section>
             </section>
+
+            {/* Create Folder Modal */}
+            <AnimatePresence>
+              {showFolderModal && (
+                <div className="fixed inset-0 z-50 overflow-y-auto">
+                  <div className="flex min-h-screen items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowFolderModal(false)} />
+                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+                      <h2 className="text-xl font-semibold mb-4 text-gray-900">Create New Folder</h2>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Folder Name</label>
+                          <input
+                            type="text"
+                            value={newFolderName}
+                            onChange={(e) => setNewFolderName(e.target.value)}
+                            className="mt-1 block w-full h-12 px-4 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            placeholder="Enter folder name"
+                            required
+                          />
+                        </div>
+                        <div className="flex justify-end gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setShowFolderModal(false)}
+                            className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50/80 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleCreateFolder}
+                            disabled={!newFolderName.trim()}
+                            className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50"
+                          >
+                            Create Folder
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </AnimatePresence>
+
+            {/* Upload File Modal */}
+            <AnimatePresence>
+              {showUploadModal && (
+                <div className="fixed inset-0 z-50 overflow-y-auto">
+                  <div className="flex min-h-screen items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowUploadModal(false)} />
+                    <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+                      <h2 className="text-xl font-semibold mb-4 text-gray-900">Upload File</h2>
+                      <div className="space-y-4">
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">File Name</label>
+                          <input
+                            type="text"
+                            value={customName}
+                            onChange={(e) => setCustomName(e.target.value)}
+                            className="mt-1 block w-full h-12 px-4 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            required
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-sm font-medium text-gray-700">Description (optional)</label>
+                          <textarea
+                            value={customDescription}
+                            onChange={(e) => setCustomDescription(e.target.value)}
+                            className="mt-1 block w-full px-4 py-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                            rows={3}
+                          />
+                        </div>
+                        <div className="flex justify-end gap-3">
+                          <button
+                            type="button"
+                            onClick={() => setShowUploadModal(false)}
+                            className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50/80 transition-colors"
+                          >
+                            Cancel
+                          </button>
+                          <button
+                            onClick={handleConfirmUpload}
+                            disabled={!customName.trim() || uploadLoading}
+                            className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center"
+                          >
+                            {uploadLoading ? (
+                              <>
+                                <ClipLoader size={16} color="#FFFFFF" className="mr-2" />
+                                Uploading...
+                              </>
+                            ) : (
+                              'Upload File'
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </AnimatePresence>
+
           </section>
 
           {/* Right Column - Additional Info */}
