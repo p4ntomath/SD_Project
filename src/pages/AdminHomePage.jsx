@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { logOut } from '../backend/firebase/authFirebase';
 import { useNavigate } from 'react-router-dom';
 import { createFunding, getAllFunding, fetchProjectsWithUsers, fetchAllUsers } from '../backend/firebase/adminAccess.jsx';
@@ -18,6 +18,7 @@ export default function AdminHomePage() {
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const [showAddFunding, setShowAddFunding] = useState(false);
+  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const [newFunding, setNewFunding] = useState({
     name: '',
     expectedFunds: '',
@@ -69,6 +70,7 @@ export default function AdminHomePage() {
     } catch (error) {
       console.error('Logout error:', error);
     }
+    setShowLogoutModal(false);
   };
 
   const handleAddFunding = async (e) => {
@@ -96,7 +98,7 @@ export default function AdminHomePage() {
         <div className="flex justify-between items-center">
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Admin Dashboard</h1>
           <button
-            onClick={handleLogout}
+            onClick={() => setShowLogoutModal(true)}
             className="inline-flex items-center justify-center px-3 py-1.5 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors duration-200"
             aria-label="Logout"
           >
@@ -328,6 +330,57 @@ export default function AdminHomePage() {
             </div>
           </div>
         )}
+
+        {/* Logout Confirmation Modal */}
+        <AnimatePresence>
+          {showLogoutModal && (
+            <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+              <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity" aria-hidden="true"></div>
+                <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+                <motion.article
+                  className="relative inline-block align-bottom bg-white/90 backdrop-blur-md rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-200"
+                  initial={{ scale: 0.9, opacity: 0 }}
+                  animate={{ scale: 1, opacity: 1 }}
+                  exit={{ scale: 0.9, opacity: 0 }}
+                  transition={{ type: "spring", bounce: 0.3 }}
+                >
+                  <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                    <div className="sm:flex sm:items-start">
+                      <div className="mt-3 text-center sm:mt-0 sm:text-left">
+                        <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                          Confirm Logout
+                        </h3>
+                        <div className="mt-2">
+                          <p className="text-sm text-gray-500">
+                            Are you sure you want to log out? You'll need to sign in again to access your account.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                    <button
+                      type="button"
+                      className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
+                      onClick={handleLogout}
+                    >
+                      Logout
+                    </button>
+                    <button
+                      type="button"
+                      className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                      onClick={() => setShowLogoutModal(false)}
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </motion.article>
+              </div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );
