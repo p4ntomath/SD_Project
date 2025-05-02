@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { fetchProjects } from '../../backend/firebase/projectDB';
 import { auth } from '../../backend/firebase/firebaseConfig';
-import { ClipLoader } from "react-spinners";
 import MainNav from '../../components/ResearcherComponents/Navigation/MainNav';
 import MobileBottomNav from '../../components/ResearcherComponents/Navigation/MobileBottomNav';
 import { FaChartLine, FaPiggyBank, FaFolder, FaClipboardCheck, FaUsers, FaClock } from 'react-icons/fa';
@@ -57,6 +56,22 @@ export default function ResearcherHome() {
     return Math.round(totalProgress / projects.length);
   };
 
+  const SkeletonCard = () => (
+    <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 animate-pulse">
+      <div className="flex items-center mb-4">
+        <div className="w-8 h-8 bg-gray-200 rounded-full mr-2"></div>
+        <div className="h-6 w-32 bg-gray-200 rounded"></div>
+      </div>
+      <div className="space-y-3">
+        <div className="grid grid-cols-2 gap-4">
+          <div className="h-20 bg-gray-100 rounded-lg"></div>
+          <div className="h-20 bg-gray-100 rounded-lg"></div>
+        </div>
+        <div className="h-10 bg-gray-100 rounded-lg"></div>
+      </div>
+    </div>
+  );
+
   return (
     <section data-testid="researcher-home" className="min-h-screen bg-gray-50 flex flex-col">
       <header>
@@ -71,8 +86,10 @@ export default function ResearcherHome() {
           <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-8">Dashboard</h1>
           
           {loading ? (
-            <section className="flex justify-center items-center py-20">
-              <ClipLoader data-testid="loading-spinner" color="#3B82F6" />
+            <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(6)].map((_, index) => (
+                <SkeletonCard key={index} />
+              ))}
             </section>
           ) : (
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
