@@ -41,7 +41,10 @@ export default function ResearcherHome() {
   const totalUsedFunds = projects.reduce((sum, project) => sum + (project.usedFunds || 0), 0);
   const totalProjects = projects.length;
   const activeProjects = projects.filter(project => project.status === 'In Progress').length;
-  const completedProjects = projects.filter(project => project.status === 'Completed').length;
+  const completedProjects = projects.filter(project => {
+    if (!project.goals || project.goals.length === 0) return false;
+    return project.goals.every(goal => goal.completed);
+  }).length;
   const totalCollaborators = [...new Set(projects.flatMap(project => project.collaborators || []))].length;
   
   const calculateOverallProgress = () => {
