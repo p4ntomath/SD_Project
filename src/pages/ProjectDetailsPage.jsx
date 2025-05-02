@@ -7,6 +7,7 @@ import { ClipLoader } from 'react-spinners';
 import StatusModal from '../components/StatusModal';
 import CreateProjectForm from '../components/CreateProjectForm';
 import { AnimatePresence, motion } from 'framer-motion';
+import { formatFirebaseDate } from '../utils/dateUtils';
 
 export default function ProjectDetailsPage() {
   const { projectId } = useParams();
@@ -59,6 +60,23 @@ export default function ProjectDetailsPage() {
           );
         }
         
+        // Ensure deadline and duration are properly handled
+        if (projectData.deadline) {
+          projectData.deadline = typeof projectData.deadline === 'string' 
+            ? new Date(projectData.deadline)
+            : projectData.deadline;
+
+          // Calculate and set duration based on deadline
+          const today = new Date();
+          const deadlineDate = new Date(projectData.deadline.seconds ? projectData.deadline.seconds * 1000 : projectData.deadline);
+          const durationDays = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+          const months = Math.floor(durationDays / 30);
+          
+          projectData.duration = months > 0 
+            ? `${months} month${months > 1 ? 's' : ''}`
+            : `${durationDays} day${durationDays > 1 ? 's' : ''}`;
+        }
+        
         projectData.id = projectData.id || projectId;
         projectData.status = projectData.status || 'In Progress';
         projectData.availableFunds = projectData.availableFunds || 0;
@@ -105,6 +123,18 @@ export default function ProjectDetailsPage() {
       updateData.availableFunds = updatedProject.availableFunds ?? project.availableFunds;
       updateData.usedFunds = updatedProject.usedFunds ?? project.usedFunds;
       updateData.status = updatedProject.status ?? project.status;
+      
+      // Recalculate duration if deadline has changed
+      if (updateData.deadline) {
+        const today = new Date();
+        const deadlineDate = new Date(updateData.deadline);
+        const durationDays = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
+        const months = Math.floor(durationDays / 30);
+        
+        updateData.duration = months > 0 
+          ? `${months} month${months > 1 ? 's' : ''}`
+          : `${durationDays} day${durationDays > 1 ? 's' : ''}`;
+      }
       
       await updateProject(projectId, updateData);
       setProject({ ...project, ...updateData });
@@ -157,12 +187,22 @@ export default function ProjectDetailsPage() {
 
   const formatDate = (timestamp) => {
     if (!timestamp || typeof timestamp !== 'object') return 'Not specified';
-    const date = new Date(timestamp.seconds * 1000);
-    return date.toLocaleDateString('en-US', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
+    if (timestamp.seconds) {
+      const date = new Date(timestamp.seconds * 1000);
+      return date.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+    if (timestamp instanceof Date) {
+      return timestamp.toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+    }
+    return 'Not specified';
   };
 
   const calculateProgress = () => {
@@ -467,7 +507,11 @@ export default function ProjectDetailsPage() {
                   </div>
                   <div>
                     <dt className="text-sm text-gray-500">Created</dt>
-                    <dd className="font-medium">{formatDate(project.createdAt)}</dd>
+                    <dd className="font-medium">{formatFirebaseDate(project.createdAt)}</dd>
+                  </div>
+                  <div>
+                    <dt className="text-sm text-gray-500">Deadline</dt>
+                    <dd className="font-medium">{formatFirebaseDate(project.deadline)}</dd>
                   </div>
                   <div>
                     <dt className="text-sm text-gray-500">Status</dt>
@@ -1054,7 +1098,7 @@ export default function ProjectDetailsPage() {
                       {fundingHistory.map((entry) => (
                         <tr key={entry.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            {formatDate(entry.updatedAt)}
+                            {formatFirebaseDate(entry.updatedAt)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {entry.type === 'expense' ? 'Expense' : 'Funds Added'}
