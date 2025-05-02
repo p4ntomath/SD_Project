@@ -131,10 +131,17 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
           <section className="md:hidden bg-white shadow-md">
             <section className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
               <button
+                onClick={() => navigate('/account')}
                 className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
                 aria-label="View profile"
               >
                 My Profile
+              </button>
+              <button
+                onClick={() => setShowLogoutModal(true)}
+                className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
+              >
+                Logout
               </button>
             </section>
           </section>
