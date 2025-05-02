@@ -17,10 +17,13 @@ const StatusModal = ({ isOpen, onClose, success, message }) => {
             animate={{ scale: 1, opacity: 1, y: 0 }}
             exit={{ scale: 0.8, opacity: 0, y: 20 }}
             transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="status-title"
           >
             <header>
               <h2 
-                id="modal-title"
+                id="status-title"
                 className={`text-xl font-semibold mb-4 ${success ? 'text-green-600/90' : 'text-red-600/90'}`}
               >
                 {success ? 'Success' : 'Error'}
@@ -32,7 +35,7 @@ const StatusModal = ({ isOpen, onClose, success, message }) => {
             <footer className="flex justify-end">
               <button
                 onClick={onClose}
-                className="bg-blue-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-xl hover:bg-blue-700/90 transition-colors"
+                className={`${success ? 'bg-green-600/90' : 'bg-red-600/90'} backdrop-blur-sm text-white px-4 py-2 rounded-xl hover:${success ? 'bg-green-700/90' : 'bg-red-700/90'} transition-colors`}
                 aria-label="Close modal"
               >
                 Close

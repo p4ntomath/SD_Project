@@ -1,10 +1,13 @@
 import { FiHome, FiFolder, FiList, FiUser, FiMenu, FiX, FiSearch, FiBell } from 'react-icons/fi';
 import { useState } from 'react';
-import {DocumentIcon} from "@heroicons/react/24/outline";
+import { DocumentIcon } from "@heroicons/react/24/outline";
 import { logOut } from '../../../backend/firebase/authFirebase';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobileMenuOpen, onSearch }) {
   const [searchQuery, setSearchQuery] = useState('');
+  const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -19,7 +22,8 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
         <section className="flex justify-between h-16 items-center">
           <section className="hidden md:flex items-center space-x-2">
                 <button 
-                    className="group flex flex-col items-center justify-center p-3 text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                    onClick={() => navigate('/home')}
+                    className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/home' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                     aria-label="Home"
                 >
                     <FiHome className="h-6 w-6 group-hover:text-blue-600" />
@@ -27,14 +31,17 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
                 </button>
 
                 <button 
-                    className="group flex flex-col items-center justify-center p-3 text-gray-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                    aria-label="Documents"
+                    onClick={() => navigate('/projects')}
+                    className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/projects' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
+                    aria-label="My Projects"
                 >
                     <FiFolder className="h-6 w-6 group-hover:text-blue-600" />
-                    <p className="text-xs mt-1 group-hover:text-blue-600">My Projects</p>
+                    <p className="text-xs mt-1 group-hover:text-blue-600">Projects</p>
                 </button>
+
                 <button 
-                    className="group flex flex-col items-center justify-center p-3 text-gray-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                    onClick={() => navigate('/documents')}
+                    className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/documents' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                     aria-label="Documents"
                 >
                     <DocumentIcon className="h-6 w-6 group-hover:text-blue-600" />
@@ -42,15 +49,17 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
                 </button>
 
                 <button 
-                    className="group flex flex-col items-center justify-center p-3 text-gray-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
-                    aria-label="View projects"
+                    onClick={() => navigate('/alerts')}
+                    className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/alerts' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
+                    aria-label="View alerts"
                 >
                     <FiBell className="h-6 w-6 group-hover:text-blue-600" />
                     <p className="text-xs mt-1 group-hover:text-blue-600">Alerts</p>
                 </button>
 
                 <button 
-                    className="group flex flex-col items-center justify-center p-3 text-gray-600 hover:bg-blue-50 rounded-lg transition-all duration-200"
+                    onClick={() => navigate('/account')}
+                    className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/account' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                     aria-label="View profile"
                 >
                     <FiUser className="h-6 w-6 group-hover:text-blue-600" />

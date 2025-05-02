@@ -1,0 +1,199 @@
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
+import { collection, doc, setDoc, getDocs, getDoc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { auth, db } from "./firebaseConfig";
+
+const storage = getStorage();
+
+/**
+ * Uploads a document file to Firebase Storage and stores metadata in Firestore
+ * @param {File} file - The file object from input
+ * @param {string} projectId - The ID of the project this document is related to
+ * @param {string} folderId - The ID of the folder to upload the document into
+ * @param {Object} metadata - Optional metadata for the file
+ * @returns {Promise<string>} - The document ID created in Firestore
+ */
+export const uploadDocument = async (file, projectId, folderId, metadata = {}) => {
+    try {
+        if (!file) throw new Error("No file provided");
+        if (!projectId) throw new Error("Project ID is required");
+        if (!folderId) throw new Error("Folder ID is required");
+
+        const maxFileSize = 10 * 1024 * 1024; // 10MB in bytes
+        if (file.size > maxFileSize) {
+            throw new Error("File size exceeds the maximum limit of 10MB");
+        }
+
+        // Create a safe filename for storage while preserving custom name
+        const fileExtension = file.name.split('.').pop();
+        const safeFileName = `${Date.now()}.${fileExtension}`;
+        const storageRef = ref(storage, `projects/${projectId}/folders/${folderId}/${safeFileName}`);
+
+        // Upload the file to Firebase Storage
+        const snapshot = await uploadBytes(storageRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+
+        // Create document reference in Firestore
+        const projectRef = doc(db, "projects", projectId);
+        const folderRef = doc(projectRef, "folders", folderId);
+        const filesCollectionRef = collection(folderRef, "files");
+        const docRef = doc(filesCollectionRef);
+
+        // Store comprehensive file metadata in Firestore
+        const fileMetadata = {
+            documentId: docRef.id,
+            fileName: file.name,         // Original file name
+            displayName: metadata.displayName || file.name, // Custom name if provided
+            storageFileName: safeFileName, // Name in storage
+            downloadURL,
+            uploadedAt: serverTimestamp(),
+            lastModified: serverTimestamp(),
+            size: file.size,
+            type: file.type,
+            description: metadata.description || '',
+            uploadedBy: auth.currentUser?.uid,
+            folderId: folderId,
+            projectId: projectId
+        };
+
+        await setDoc(docRef, fileMetadata);
+
+        return docRef.id;
+    } catch (error) {
+        console.error("Error uploading document:", error);
+        throw new Error("Failed to upload document: " + error.message);
+    }
+};
+
+/**
+ * Fetch documents by projectId
+ * @param {string} projectId - The ID of the project
+ * @returns {Promise<Array>} - List of folders and their documents associated with the project
+ */
+export const fetchDocumentsByFolder = async (projectId) => {
+  try {
+    const foldersRef = collection(db, "projects", projectId, "folders");
+    const folderSnapshot = await getDocs(foldersRef);
+    
+    const folders = await Promise.all(
+      folderSnapshot.docs.map(async (folderDoc) => {
+        const folderData = folderDoc.data();
+        const filesRef = collection(folderDoc.ref, "files");
+        const fileSnapshot = await getDocs(filesRef);
+        
+        return {
+          id: folderDoc.id,
+          name: folderData.name,
+          createdAt: folderData.createdAt,
+          ...folderData,
+          files: fileSnapshot.docs.map(doc => {
+            const fileData = doc.data();
+            return {
+              id: doc.id,
+              documentId: doc.id,
+              name: fileData.displayName || fileData.fileName, // Prefer display name if set
+              fileName: fileData.fileName,
+              description: fileData.description || '',
+              downloadURL: fileData.downloadURL,
+              size: fileData.size ? `${(fileData.size / 1024).toFixed(1)} KB` : 'Unknown size',
+              type: fileData.type || 'Unknown type',
+              uploadDate: fileData.uploadedAt,
+              lastModified: fileData.lastModified,
+              ...fileData
+            };
+          })
+        };
+      })
+    );
+
+    return folders;
+  } catch (error) {
+    console.error("Error fetching documents:", error);
+    throw new Error("Failed to fetch project documents");
+  }
+};
+
+/**
+ * Re-upload a document (update its metadata in Firestore and re-upload the file)
+ * @param {File} file - The new file object
+ * @param {string} documentId - The ID of the document to update
+ * @param {string} projectId - The project ID the document belongs to
+ * @param {string} folderId - The folder ID the document belongs to
+ * @returns {Promise<string>} - The document ID
+ */
+export const reuploadDocument = async (file, documentId, projectId, folderId) => {// this is for updating documents
+    try {
+      if (!file) throw new Error("No file provided");
+
+      const folderPath = `projects/${projectId}/folders/${folderId}/`;  // Folder for each project
+      const storageRef = ref(storage, `${folderPath}${file.name}`);
+      await uploadBytes(storageRef, file);
+  
+      const downloadURL = await getDownloadURL(storageRef);
+      const projectRef = doc(db, "projects", projectId);
+      const folderRef = doc(projectRef, "folders", folderId);
+      const filesCollectionRef = collection(folderRef, "files");
+      const docRef = doc(filesCollectionRef, documentId); // Reference to the existing document
+  
+      await updateDoc(docRef, {
+        fileName: file.name,
+        downloadURL,
+        uploadedAt: serverTimestamp(),
+      });
+
+      return documentId;
+    } catch (error) {
+      console.error("Error re-uploading document:", error);
+      throw new Error("Failed to re-upload document");
+    }
+};
+
+/**
+ * Delete a document from Firebase Storage and Firestore
+ * @param {string} documentId - The ID of the document to delete
+ * @param {string} projectId - The ID of the project this document belongs to
+ * @param {string} folderId - The folder ID the document belongs to
+ * @returns {Promise<boolean>} - Returns true if document was deleted successfully
+ */
+export const deleteDocument = async (documentId, projectId, folderId) => {
+    try {
+      const folderRef = doc(db, "projects", projectId, "folders", folderId);
+      const filesCollectionRef = collection(folderRef, "files");
+      const docRef = doc(filesCollectionRef, documentId);
+
+      const docSnap = await getDoc(docRef);  // Fetch the document
+      if (!docSnap.exists()) throw new Error("Document not found");
+
+      const data = docSnap.data();
+      // Use storageFileName instead of fileName for deletion
+      const fileRef = ref(storage, `projects/${projectId}/folders/${folderId}/${data.storageFileName}`);
+
+      try {
+        await deleteObject(fileRef);  // Delete the file from Firebase Storage
+      } catch (storageError) {
+        console.warn("Storage file not found, continuing with document deletion:", storageError);
+      }
+      
+      await deleteDoc(docRef);  // Delete the document from Firestore
+      return true;
+    } catch (error) {
+      console.error("Error deleting document:", error);
+      throw new Error("Failed to delete document");
+    }
+};
+
+/**
+ * Helper function to download document from its URL
+ * @param {string} downloadURL - The URL to the document to download
+ */
+const downloadDocument = (downloadURL) => {
+    try {
+      const a = document.createElement("a");
+      a.href = downloadURL;
+      a.target = "_blank";
+      a.download = "";
+      a.click();
+    } catch (error) {
+      console.error("Error downloading document:", error);
+      alert("Failed to download document.");
+    }
+};

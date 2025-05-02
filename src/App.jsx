@@ -12,6 +12,8 @@ import AuthProtectRoute from './components/AuthProtectRoute';
 import HomePage from './pages/HomePage.jsx';
 import FundingTrackerPage from './pages/FundingTrackerPage.jsx';
 import ProjectDetailsPage from './pages/ProjectDetailsPage.jsx';
+import DocumentsPage from './pages/Documents.jsx';
+import MyProjects from './pages/MyProjects.jsx';
 import AdminHomePage from './pages/AdminHomePage.jsx';
 import FundingManagementPage from './pages/FundingManagementPage.jsx';
 import AdminUsersPage from './pages/AdminUsersPage.jsx';
@@ -48,6 +50,9 @@ function App() {
               <HomePage />
             </ProtectedRoute>
           } />
+          <Route path="/projects" element={
+            <ProtectedRoute allowedRoles={['researcher']}>
+              <MyProjects />
           <Route path="/admin" element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminHomePage />
@@ -81,6 +86,11 @@ function App() {
           <Route path="/projects/:projectId" element={
             <ProtectedRoute allowedRoles={['researcher', 'admin']}>
               <ProjectDetailsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/documents" element={
+            <ProtectedRoute allowedRoles={['researcher', 'reviewer']}>
+              <DocumentsPage />
             </ProtectedRoute>
           } />
         </Routes>

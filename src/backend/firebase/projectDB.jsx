@@ -21,31 +21,59 @@ import {
  * checking user authentication and required fields.
  */
 export async function createProject(newProject) {
-    const { title, description, researchField } = newProject;
-    const user = auth.currentUser;
-    if (!user) {
-      throw new Error("User not authenticated");
-    }
-    if (!title || !description || !researchField) {
-      //setError("Please fill in all the required fields.");
-      throw new Error("Missing required fields");
+  const { title, description, researchField, deadline } = newProject;
+  const user = auth.currentUser;
+  if (!user) {
+    throw new Error("User not authenticated");
+  }
+  if (!title || !description || !researchField || !deadline) {
+    throw new Error("Missing required fields");
+  }
+
+  try {
+    const projectsRef = collection(db, "projects");
+    const newDocRef = doc(projectsRef);
+
+    // Calculate duration based on creation date and deadline
+    const creationDate = new Date();
+    const deadlineDate = new Date(deadline);
+    const durationMs = deadlineDate.getTime() - creationDate.getTime();
+    const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
+    let duration;
+    if (durationDays >= 365) {
+      const years = Math.floor(durationDays / 365);
+      duration = `${years} year${years > 1 ? 's' : ''}`;
+    } else if (durationDays >= 30) {
+      const months = Math.floor(durationDays / 30);
+      duration = `${months} month${months > 1 ? 's' : ''}`;
+    } else {
+      duration = `${durationDays} day${durationDays > 1 ? 's' : ''}`;
     }
 
-    try {
-      const projectsRef = collection(db, "projects");
-      const newDocRef = doc(projectsRef); // generates a new doc ref with ID
-
-      const projectWithId = {
+    // Create a clean project object with properly formatted data
+    const projectWithId = {
       ...newProject,
+      createdAt: creationDate,
+      updatedAt: creationDate,
+      deadline: deadlineDate,
+      duration: duration,
       userId: user.uid,
       projectId: newDocRef.id,
+      availableFunds: newProject.availableFunds || 0,
+      usedFunds: newProject.usedFunds || 0,
+      status: newProject.status || 'In Progress',
+      goals: Array.isArray(newProject.goals) ? newProject.goals.map(goal => ({
+        text: goal.text || goal,
+        completed: Boolean(goal.completed || false)
+      })) : []
     };
-    await setDoc(newDocRef, projectWithId);
 
+    await setDoc(newDocRef, projectWithId);
     return newDocRef.id;
-    } catch (err) {
-      throw err;
-    }
+  } catch (err) {
+    console.error("Error creating project:", err);
+    throw new Error(`Failed to create project: ${err.message}`);
+  }
 }
 
 // fetxhProjects function to get all projects for a specific user
@@ -92,9 +120,33 @@ export const fetchProject = async (projectId) => {
       throw new Error('Project not found');
     }
 
+    const projectData = projectSnap.data();
+
+    // Convert string format timestamps to proper Firebase timestamps
+    if (typeof projectData.createdAt === 'string') {
+      projectData.createdAt = {
+        seconds: Math.floor(new Date(projectData.createdAt).getTime() / 1000),
+        nanoseconds: 0
+      };
+    }
+    
+    if (typeof projectData.deadline === 'string') {
+      projectData.deadline = {
+        seconds: Math.floor(new Date(projectData.deadline).getTime() / 1000),
+        nanoseconds: 0
+      };
+    }
+
+    if (typeof projectData.updatedAt === 'string') {
+      projectData.updatedAt = {
+        seconds: Math.floor(new Date(projectData.updatedAt).getTime() / 1000),
+        nanoseconds: 0
+      };
+    }
+
     return {
       id: projectSnap.id,
-      ...projectSnap.data()
+      ...projectData
     };
   } catch (error) {
     console.error("Error fetching project:", error);
@@ -129,7 +181,7 @@ export const updateProject = async (id, updatedData) => {
       throw new Error('You are not authorized to update this project');
     }
 
-    const restrictedFields = ['id', 'userId', 'createdAt'];
+    const restrictedFields = ['id', 'userId', 'createdAt', 'projectId'];
     const filteredData = Object.keys(updatedData).reduce((acc, key) => {
       if (!restrictedFields.includes(key)) {
         acc[key] = updatedData[key];
@@ -137,14 +189,49 @@ export const updateProject = async (id, updatedData) => {
       return acc;
     }, {});
 
+    // Handle deadline conversion, validation and duration calculation
+    if (filteredData.deadline) {
+      let deadlineDate;
+      try {
+        deadlineDate = new Date(filteredData.deadline);
+        if (isNaN(deadlineDate.getTime())) {
+          throw new Error("Invalid deadline date");
+        }
+        
+        // Recalculate duration based on creation date and new deadline
+        const creationDate = projectData.createdAt.toDate ? projectData.createdAt.toDate() : new Date(projectData.createdAt);
+        const durationMs = deadlineDate.getTime() - creationDate.getTime();
+        const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
+        
+        if (durationDays >= 365) {
+          const years = Math.floor(durationDays / 365);
+          filteredData.duration = `${years} year${years > 1 ? 's' : ''}`;
+        } else if (durationDays >= 30) {
+          const months = Math.floor(durationDays / 30);
+          filteredData.duration = `${months} month${months > 1 ? 's' : ''}`;
+        } else {
+          filteredData.duration = `${durationDays} day${durationDays > 1 ? 's' : ''}`;
+        }
+        
+        // Update the deadline
+        filteredData.deadline = deadlineDate;
+      } catch (error) {
+        throw new Error(`Invalid deadline format: ${error.message}`);
+      }
+    }
+
     if (Object.keys(filteredData).length === 0) {
       return;
     }
 
+    // Add update timestamp
+    filteredData.updatedAt = new Date();
+
     await updateDoc(projectRef, filteredData);
     return { success: true, message: 'Project updated successfully' };
   } catch (error) {
-    throw error; //
+    console.error("Error updating project:", error);
+    throw error;
   }
 };
 

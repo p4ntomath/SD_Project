@@ -1,68 +1,72 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, fireEvent } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import CreateProjectForm from '../components/CreateProjectForm';
 
-// Mock the components and React
-vi.mock('react', async () => {
-  const actual = await vi.importActual('react');
-  return { ...actual, default: actual };
-});
-
-// Mock the component itself
-vi.mock('../components/CreateProjectForm', () => ({
-  default: () => {
-    const React = require('react');
-    return React.createElement('div', {
-      'data-testid': 'create-project-form',
-      children: [
-        React.createElement('h2', { key: 'title' }, 'Create New Project'),
-        React.createElement('form', { key: 'form' }, [
-          React.createElement('input', { key: 'title-input', placeholder: 'Project Title' }),
-          React.createElement('textarea', { key: 'desc-input', placeholder: 'Project Description' }),
-          React.createElement('button', { key: 'submit', type: 'submit' }, 'Create Project')
-        ])
-      ]
-    });
-  }
-}));
-
-// Mock the project database functions
-vi.mock('../backend/firebase/projectDB', () => ({
-  createProject: vi.fn().mockImplementation((projectData) => {
-    return Promise.resolve('new-project-id');
-  })
-}));
-
-// Mock Auth Context
-vi.mock('../context/AuthContext', () => ({
-  useAuth: () => ({
-    user: { uid: 'test-user-id' },
-    loading: false
-  })
-}));
-
 describe('CreateProjectForm Component', () => {
+  const mockProps = {
+    loading: false,
+    onCreate: vi.fn(),
+    onUpdate: vi.fn(),
+    onCancel: vi.fn(),
+    isUpdateMode: false
+  };
+
   beforeEach(() => {
     vi.resetAllMocks();
   });
 
-  it('renders the create project form correctly', () => {
-    render(<CreateProjectForm />);
-    expect(screen.getByTestId('create-project-form')).toBeInTheDocument();
+  it('renders all required form fields', () => {
+    render(<CreateProjectForm {...mockProps} />);
+    
+    expect(screen.getByLabelText(/title/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/description/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/research field/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/deadline/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/goals/i)).toBeInTheDocument();
   });
 
-  it('mocks the createProject function correctly', async () => {
-    const { createProject } = await import('../backend/firebase/projectDB');
-    expect(createProject).toBeDefined();
+  it('validates required fields including deadline', async () => {
+    render(<CreateProjectForm {...mockProps} />);
     
-    const projectData = {
+    const submitButton = screen.getByRole('button', { name: /create project/i });
+    fireEvent.click(submitButton);
+
+    expect(await screen.findByText(/title is required/i)).toBeInTheDocument();
+    expect(await screen.findByText(/description is required/i)).toBeInTheDocument();
+    expect(await screen.findByText(/research field is required/i)).toBeInTheDocument();
+    expect(await screen.findByText(/deadline is required/i)).toBeInTheDocument();
+    expect(await screen.findByText(/please enter at least 2 goals/i)).toBeInTheDocument();
+  });
+
+  it('allows setting a deadline', () => {
+    render(<CreateProjectForm {...mockProps} />);
+    
+    const deadlineInput = screen.getByLabelText(/deadline/i);
+    fireEvent.change(deadlineInput, { target: { value: '2025-12-31' } });
+    
+    expect(deadlineInput.value).toBe('2025-12-31');
+  });
+
+  it('pre-fills form data in update mode', () => {
+    const projectToUpdate = {
       title: 'Test Project',
-      description: 'This is a test project',
-      researchField: 'Computer Science'
+      description: 'Test Description',
+      researchField: 'Computer Science',
+      deadline: '2025-12-31',
+      goals: [
+        { text: 'Goal 1', completed: false },
+        { text: 'Goal 2', completed: true }
+      ]
     };
+
+    render(<CreateProjectForm {...mockProps} isUpdateMode={true} projectToUpdate={projectToUpdate} />);
     
-    const result = await createProject(projectData);
-    expect(result).toBe('new-project-id');
+    expect(screen.getByLabelText(/title/i)).toHaveValue('Test Project');
+    expect(screen.getByLabelText(/description/i)).toHaveValue('Test Description');
+    expect(screen.getByLabelText(/research field/i)).toHaveValue('Computer Science');
+    expect(screen.getByLabelText(/deadline/i)).toHaveValue('2025-12-31');
+    expect(screen.getByText('Goal 1')).toBeInTheDocument();
+    expect(screen.getByText('Goal 2')).toBeInTheDocument();
   });
 });
