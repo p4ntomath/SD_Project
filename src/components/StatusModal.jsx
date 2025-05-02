@@ -35,7 +35,7 @@ const StatusModal = ({ isOpen, onClose, success, message }) => {
             <footer className="flex justify-end">
               <button
                 onClick={onClose}
-                className="bg-blue-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-xl hover:bg-blue-700/90 transition-colors"
+                className={`${success ? 'bg-green-600/90' : 'bg-red-600/90'} backdrop-blur-sm text-white px-4 py-2 rounded-xl hover:${success ? 'bg-green-700/90' : 'bg-red-700/90'} transition-colors`}
                 aria-label="Close modal"
               >
                 Close
