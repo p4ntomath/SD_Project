@@ -280,3 +280,17 @@ export const deleteProject = async (projectId) => {
 };
 
 //Please add update methods for all the fields in the project excluding the userId
+
+export const assignReviewers = async (projectId, reviewers) => {
+  try {
+    const projectRef = doc(db, 'projects', projectId);
+    await updateDoc(projectRef, {
+      reviewers: reviewers,
+      updatedAt: serverTimestamp()
+    });
+    return true;
+  } catch (error) {
+    console.error("Error assigning reviewers:", error);
+    throw error;
+  }
+};

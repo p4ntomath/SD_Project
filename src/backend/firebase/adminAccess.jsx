@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, getDoc } from 'firebase/firestore';
+import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, getDoc, query, where } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 
 /**
@@ -20,7 +20,8 @@ export const fetchProjectsWithUsers = async () => {
           const userRef = doc(db, 'users', projectData.userId);
           const userSnap = await getDoc(userRef);
           if (userSnap.exists()) {
-            userFullName = userSnap.data().fullName || 'Unknown';
+            const userData = userSnap.data();
+            userFullName = userData.fullName || userData.name || 'Unknown';
           }
         }
         
@@ -51,19 +52,21 @@ export const fetchAllUsers = async () => {
       const usersRef = collection(db, 'users');
       const snapshot = await getDocs(usersRef);
       
-      return snapshot.docs.map(doc => ({
-        id: doc.id,
-        fullName: doc.data().fullName || 'Unknown',
-        role: doc.data().role || 'No role specified',
-        email: doc.data().email || 'No email'
-      }));
+      return snapshot.docs.map(doc => {
+        const userData = doc.data();
+        return {
+          id: doc.id,
+          fullName: userData.fullName || userData.name || 'Unknown',
+          role: userData.role || 'No role specified',
+          email: userData.email || 'No email'
+        };
+      });
       
     } catch (error) {
       console.error("Error fetching users:", error);
       throw new Error("Failed to load users");
     }
   };
-  
 
 /*
   CRUD methods for the funding opportunities

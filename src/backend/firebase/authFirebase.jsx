@@ -11,16 +11,18 @@ import {
 import {collection, query, where, getDocs } from "firebase/firestore";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 
-const signUp = async (fullName, email, password, role) => {
+const signUp = async (fullName, email, password, role, additionalData = {}) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
     console.log("User signed up:", user);
+    
     await setDoc(doc(db, "users", user.uid), {
-      userId: user.uid, // Storing the userId
+      userId: user.uid,
       fullName,
       email,
       role,
+      ...additionalData,
       createdAt: new Date(),
     });
 
@@ -58,19 +60,25 @@ const googleSignIn = async () => {
   }
 };
 
-const completeProfile = async (fullName, role) => {
+const completeProfile = async (fullName, role, profileData) => {
   try {
     const user = auth.currentUser;
-    await setDoc(doc(db, "users", user.uid), {
+    
+    // Use profileData if provided, otherwise fallback to basic data
+    const userData = profileData || {
       fullName,
-      role,
+      role
+    };
+
+    await setDoc(doc(db, "users", user.uid), {
+      ...userData,
+      updatedAt: new Date()
     }, { merge: true });
   } catch (error) {
     console.error("Error completing profile:", error.message);
+    throw error; // Re-throw to handle in the component
   }
 }
-
-
 
 // 🔹 Email/Password Sign-In
 const signIn = async (email, password) => {

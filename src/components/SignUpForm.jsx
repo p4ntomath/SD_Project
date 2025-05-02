@@ -13,11 +13,13 @@ const SignUpForm = () => {
   };
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name: "",
+    fullName: "",
     email: "",
     password: "",
     confirmPassword: "",
     role: "",
+    expertise: "",
+    department: ""
   });
   
 
@@ -40,7 +42,7 @@ const SignUpForm = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) newErrors.name = "Name is required";
+    if (!formData.fullName.trim()) newErrors.fullName = "Full name is required";
 
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
@@ -68,6 +70,15 @@ const SignUpForm = () => {
 
     if (!formData.role) newErrors.role = "Please select a role";
 
+    if (formData.role === 'reviewer') {
+      if (!formData.expertise?.trim()) {
+        newErrors.expertise = 'Expertise is required for reviewers';
+      }
+      if (!formData.department?.trim()) {
+        newErrors.department = 'Department is required for reviewers';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -77,8 +88,14 @@ const SignUpForm = () => {
     if (!validateForm()) return;
     setIsLoading(true);
     try {
-      await signUp(formData.name, formData.email, formData.password, formData.role);
-      navigate(paths.sucess);
+      const additionalData = formData.role === 'reviewer' ? {
+        expertise: formData.expertise,
+        department: formData.department
+      } : {};
+      
+      await signUp(formData.fullName, formData.email, formData.password, formData.role, additionalData);
+      setRole(formData.role);
+      navigate(paths.success);
     } catch (error) {
       if (error.code === "auth/email-already-in-use") {
         setErrors({ email: "Email already exists,try logging in or use a different email" });
@@ -138,10 +155,10 @@ const SignUpForm = () => {
   
           <FormInput
             label="Full Name"
-            name="name"
-            value={formData.name}
+            name="fullName"
+            value={formData.fullName}
             onChange={handleChange}
-            error={errors.name}
+            error={errors.fullName}
           />
           <FormInput
             label="Email Address"
@@ -178,6 +195,47 @@ const SignUpForm = () => {
             </select>
             {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role}</p>}
           </section>
+
+          {/* Reviewer specific fields */}
+          {formData.role === 'reviewer' && (
+            <>
+              <section className="mb-4">
+                <label htmlFor="expertise" className="block text-sm font-medium text-gray-700 mb-1">
+                  Area of Expertise
+                </label>
+                <input
+                  type="text"
+                  id="expertise"
+                  name="expertise"
+                  value={formData.expertise}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    errors.expertise ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="e.g., Computer Science, Data Science"
+                />
+                {errors.expertise && <p className="mt-1 text-sm text-red-600">{errors.expertise}</p>}
+              </section>
+
+              <section className="mb-4">
+                <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">
+                  Department
+                </label>
+                <input
+                  type="text"
+                  id="department"
+                  name="department"
+                  value={formData.department}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    errors.department ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="e.g., Computing, Engineering"
+                />
+                {errors.department && <p className="mt-1 text-sm text-red-600">{errors.department}</p>}
+              </section>
+            </>
+          )}
   
           <FormInput
             label="Password"

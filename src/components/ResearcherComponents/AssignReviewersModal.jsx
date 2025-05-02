@@ -1,0 +1,201 @@
+import { useState, useEffect } from 'react';
+import { motion } from 'framer-motion';
+import { ClipLoader } from 'react-spinners';
+import { getAvailableReviewers } from '../../backend/firebase/reviewerDB';
+
+export default function AssignReviewersModal({ isOpen, onClose, onAssign, projectId }) {
+  const [searchQuery, setSearchQuery] = useState('');
+  const [selectedReviewers, setSelectedReviewers] = useState([]);
+  const [availableReviewers, setAvailableReviewers] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [fetchingReviewers, setFetchingReviewers] = useState(true);
+  const [allReviewers, setAllReviewers] = useState([]); // Add this new state
+
+  useEffect(() => {
+    const loadReviewers = async () => {
+      try {
+        const reviewers = await getAvailableReviewers();
+        const formattedReviewers = reviewers.map(reviewer => ({
+          id: reviewer.id,
+          name: reviewer.fullName,
+          expertise: reviewer.expertise || 'Not specified',
+          department: reviewer.department || 'Not specified'
+        }));
+        setAllReviewers(formattedReviewers);    // Store original list
+        setAvailableReviewers(formattedReviewers);
+        setFetchingReviewers(false);
+      } catch (error) {
+        console.error('Error fetching reviewers:', error);
+        setFetchingReviewers(false);
+      }
+    };
+
+    if (isOpen) {
+      loadReviewers();
+    }
+  }, [isOpen]);
+
+  const handleSearch = (query) => {
+    setSearchQuery(query);
+    if (query.trim() === '') {
+      setAvailableReviewers(allReviewers);
+    } else {
+      const filtered = allReviewers.filter(reviewer =>
+        reviewer.name.toLowerCase().includes(query.toLowerCase()) ||
+        reviewer.expertise.toLowerCase().includes(query.toLowerCase()) ||
+        reviewer.department.toLowerCase().includes(query.toLowerCase())
+      );
+      setAvailableReviewers(filtered);
+    }
+  };
+
+  const handleSelectReviewer = (reviewer) => {
+    if (selectedReviewers.find(r => r.id === reviewer.id)) {
+      setSelectedReviewers(selectedReviewers.filter(r => r.id !== reviewer.id));
+    } else {
+      setSelectedReviewers([...selectedReviewers, reviewer]);
+    }
+  };
+
+  const handleAssign = async () => {
+    if (selectedReviewers.length === 0) return;
+    setLoading(true);
+    try {
+      await onAssign(selectedReviewers);
+      onClose();
+    } catch (error) {
+      console.error('Error assigning reviewers:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto">
+      <div className="flex min-h-screen items-center justify-center p-4">
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
+        <motion.div
+          className="relative bg-white rounded-2xl shadow-2xl w-full max-w-2xl p-6"
+          initial={{ scale: 0.9, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          exit={{ scale: 0.9, opacity: 0 }}
+          transition={{ type: 'spring', bounce: 0.3 }}
+        >
+          <header className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold">Assign Reviewers</h2>
+            <button onClick={onClose} className="text-gray-500 hover:text-gray-700">
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </header>
+
+          <div className="mb-6">
+            <div className="relative">
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => handleSearch(e.target.value)}
+                placeholder="Search reviewers by name, expertise, or department..."
+                className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <svg
+                className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
+            </div>
+          </div>
+
+          <div className="max-h-[400px] overflow-y-auto mb-6">
+            <div className="grid grid-cols-1 gap-3">
+              {availableReviewers.map((reviewer) => (
+                <div
+                  key={reviewer.id}
+                  onClick={() => handleSelectReviewer(reviewer)}
+                  className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
+                    selectedReviewers.find(r => r.id === reviewer.id)
+                      ? 'bg-blue-50 border-2 border-blue-500'
+                      : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
+                  }`}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-full">
+                      <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="font-medium text-gray-900">{reviewer.name}</h3>
+                      <p className="text-sm text-gray-500">
+                        {reviewer.expertise} • {reviewer.department}
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center">
+                    <div
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
+                        selectedReviewers.find(r => r.id === reviewer.id)
+                          ? 'border-blue-500 bg-blue-500'
+                          : 'border-gray-300'
+                      }`}
+                    >
+                      {selectedReviewers.find(r => r.id === reviewer.id) && (
+                        <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <footer className="flex items-center justify-between">
+            <p className="text-sm text-gray-500">
+              {selectedReviewers.length} reviewer{selectedReviewers.length !== 1 ? 's' : ''} selected
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={onClose}
+                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleAssign}
+                disabled={selectedReviewers.length === 0 || loading}
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+              >
+                {loading ? (
+                  <>
+                    <ClipLoader size={16} color="#FFFFFF" className="mr-2" />
+                    Assigning...
+                  </>
+                ) : (
+                  'Confirm Assignment'
+                )}
+              </button>
+            </div>
+          </footer>
+        </motion.div>
+      </div>
+    </div>
+  );
+}

@@ -2,8 +2,10 @@ import { useState } from 'react';
 
 const RoleSelectionForm = ({ onSubmit }) => {
   const [formData, setFormData] = useState({
-    name: '',
-    role: ''
+    fullName: '',
+    role: '',
+    expertise: '',
+    department: ''
   });
 
   const [errors, setErrors] = useState({});
@@ -26,12 +28,21 @@ const RoleSelectionForm = ({ onSubmit }) => {
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.name.trim()) {
-      newErrors.name = 'Name is required';
+    if (!formData.fullName.trim()) {
+      newErrors.fullName = 'Full name is required';
     }
 
     if (!formData.role) {
       newErrors.role = 'Please select a role';
+    }
+
+    if (formData.role === 'reviewer') {
+      if (!formData.expertise?.trim()) {
+        newErrors.expertise = 'Expertise is required for reviewers';
+      }
+      if (!formData.department?.trim()) {
+        newErrors.department = 'Department is required for reviewers';
+      }
     }
 
     setErrors(newErrors);
@@ -54,20 +65,20 @@ const RoleSelectionForm = ({ onSubmit }) => {
           <legend className="sr-only">Profile Information</legend>
   
           <article>
-            <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
               Full Name
             </label>
             <input
               type="text"
-              id="name"
-              name="name"
-              value={formData.name}
+              id="fullName"
+              name="fullName"
+              value={formData.fullName}
               onChange={handleChange}
               className={`w-full px-3 py-2 border rounded-md ${
-                errors.name ? 'border-red-500' : 'border-gray-300'
+                errors.fullName ? 'border-red-500' : 'border-gray-300'
               }`}
             />
-            {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name}</p>}
+            {errors.fullName && <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>}
           </article>
   
           <article>
@@ -96,6 +107,46 @@ const RoleSelectionForm = ({ onSubmit }) => {
             </select>
             {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role}</p>}
           </article>
+
+          {formData.role === 'reviewer' && (
+            <>
+              <article>
+                <label htmlFor="expertise" className="block text-sm font-medium text-gray-700 mb-1">
+                  Area of Expertise
+                </label>
+                <input
+                  type="text"
+                  id="expertise"
+                  name="expertise"
+                  value={formData.expertise}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    errors.expertise ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="e.g., Computer Science, Data Science"
+                />
+                {errors.expertise && <p className="mt-1 text-sm text-red-600">{errors.expertise}</p>}
+              </article>
+
+              <article>
+                <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">
+                  Department
+                </label>
+                <input
+                  type="text"
+                  id="department"
+                  name="department"
+                  value={formData.department}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    errors.department ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="e.g., Computing, Engineering"
+                />
+                {errors.department && <p className="mt-1 text-sm text-red-600">{errors.department}</p>}
+              </article>
+            </>
+          )}
         </fieldset>
   
         <button
@@ -107,7 +158,6 @@ const RoleSelectionForm = ({ onSubmit }) => {
       </form>
     </section>
   );
-  
 };
 
 export default RoleSelectionForm;
