@@ -80,7 +80,7 @@ export default function AdminDocumentsPage() {
     return (
         <div className="min-h-screen bg-gray-50 p-4 md:p-8">
             <div className="max-w-7xl mx-auto">
-                <div className="flex items-center justify-between mb-6">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
                     <div className="flex items-center">
                         <button
                             onClick={() => navigate('/admin')}
@@ -92,16 +92,15 @@ export default function AdminDocumentsPage() {
                         <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Documents Management</h1>
                     </div>
                     
-                    {/* Add creator filter dropdown */}
                     <div className="flex items-center">
-                        <label htmlFor="creator-filter" className="mr-2 text-sm text-gray-600">
+                        <label htmlFor="creator-filter" className="mr-2 text-sm text-gray-600 whitespace-nowrap">
                             Filter by Creator:
                         </label>
                         <select
                             id="creator-filter"
                             value={selectedCreator}
                             onChange={(e) => setSelectedCreator(e.target.value)}
-                            className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
                         >
                             <option value="all">All Creators</option>
                             {uniqueCreators.map(creator => (
@@ -120,70 +119,78 @@ export default function AdminDocumentsPage() {
                 )}
 
                 <div className="bg-white rounded-lg shadow">
-                    <div className="p-6">
+                    <div className="p-4 sm:p-6">
                         <div className="flex flex-col">
                             <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                                 <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
                                     <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                                        <table className="min-w-full divide-y divide-gray-200">
-                                            <thead className="bg-gray-50">
-                                                <tr>
-                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Document Name
-                                                    </th>
-                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Project Name
-                                                    </th>
-                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Creator
-                                                    </th>
-                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Type
-                                                    </th>
-                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Size
-                                                    </th>
-                                                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                        Actions
-                                                    </th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="bg-white divide-y divide-gray-200">
-                                                {filteredDocuments.map((document) => (
-                                                    <motion.tr 
-                                                        key={document.id}
-                                                        initial={{ opacity: 0 }}
-                                                        animate={{ opacity: 1 }}
-                                                        transition={{ duration: 0.3 }}
-                                                    >
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <div className="text-sm font-medium text-gray-900">{document.fileName}</div>
-                                                            <div className="text-sm text-gray-500">{document.description}</div>
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <div className="text-sm text-gray-900">{document.projectName}</div>
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <div className="text-sm text-gray-900">{document.creatorName}</div>
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap">
-                                                            <div className="text-sm text-gray-900">{document.type}</div>
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                            {(document.size / 1024 / 1024).toFixed(2)} MB
-                                                        </td>
-                                                        <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                            <button
-                                                                onClick={() => window.open(document.downloadURL, '_blank')}
-                                                                className="text-blue-600 hover:text-blue-900 mr-4"
-                                                            >
-                                                                View
-                                                            </button>
-                                                        </td>
-                                                    </motion.tr>
-                                                ))}
-                                            </tbody>
-                                        </table>
+                                        <div className="overflow-x-auto">
+                                            <table className="min-w-full divide-y divide-gray-200">
+                                                <thead className="bg-gray-50">
+                                                    <tr>
+                                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            Document Name
+                                                        </th>
+                                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            Project Name
+                                                        </th>
+                                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            Creator
+                                                        </th>
+                                                        <th scope="col" className="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            Type
+                                                        </th>
+                                                        <th scope="col" className="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            Size
+                                                        </th>
+                                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                                            Actions
+                                                        </th>
+                                                    </tr>
+                                                </thead>
+                                                <tbody className="bg-white divide-y divide-gray-200">
+                                                    {loading ? (
+                                                        <tr>
+                                                            <td colSpan="6" className="px-4 sm:px-6 py-4 text-center">
+                                                                <ClipLoader color="#3B82F6" />
+                                                            </td>
+                                                        </tr>
+                                                    ) : filteredDocuments.map((document) => (
+                                                        <motion.tr 
+                                                            key={document.id}
+                                                            initial={{ opacity: 0 }}
+                                                            animate={{ opacity: 1 }}
+                                                            transition={{ duration: 0.3 }}
+                                                        >
+                                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                                                <div className="text-sm font-medium text-gray-900">{document.fileName}</div>
+                                                                <div className="text-sm text-gray-500 hidden sm:block">{document.description}</div>
+                                                            </td>
+                                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                                                <div className="text-sm text-gray-900">{document.projectName}</div>
+                                                            </td>
+                                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                                                <div className="text-sm text-gray-900">{document.creatorName}</div>
+                                                            </td>
+                                                            <td className="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap">
+                                                                <div className="text-sm text-gray-900">{document.type}</div>
+                                                            </td>
+                                                            <td className="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                                {(document.size / 1024 / 1024).toFixed(2)} MB
+                                                            </td>
+                                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                                                <button
+                                                                    onClick={() => window.open(document.downloadURL, '_blank')}
+                                                                    className="text-blue-600 hover:text-blue-900 mr-4"
+                                                                >
+                                                                    View
+                                                                </button>
+                                                            </td>
+                                                        </motion.tr>
+                                                    ))}
+                                                </tbody>
+                                            </table>
+                                        </div>
                                     </div>
                                 </div>
                             </div>

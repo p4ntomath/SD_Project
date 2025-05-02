@@ -36,28 +36,28 @@ export default function AdminUsersPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+          <div className="flex items-center">
             <button
               onClick={() => navigate('/admin')}
-              className="text-gray-600 hover:text-blue-600 transition-colors"
+              className="mr-4 p-2 text-gray-600 hover:text-gray-800 transition-colors"
+              aria-label="Back to dashboard"
             >
-              <FaArrowLeft size={24} />
+              <FaArrowLeft className="h-5 w-5" />
             </button>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Manage Users</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Manage Users</h1>
           </div>
 
-          {/* Add role filter dropdown */}
-          <div className="flex items-center">
-            <label htmlFor="role-filter" className="mr-2 text-sm text-gray-600">
+          <div className="flex items-center w-full sm:w-auto">
+            <label htmlFor="role-filter" className="mr-2 text-sm text-gray-600 whitespace-nowrap">
               Filter by Role:
             </label>
             <select
               id="role-filter"
               value={selectedRole}
               onChange={(e) => setSelectedRole(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Roles</option>
               {uniqueRoles.map(role => (
@@ -83,25 +83,26 @@ export default function AdminUsersPage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Email</th>
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Status</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredUsers.map((user) => (
-                    <tr key={user.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                    <tr key={user.id} className="hover:bg-gray-50">
+                      <td className="px-4 sm:px-6 py-4">
                         <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
+                        <div className="text-sm text-gray-500 sm:hidden mt-1">{user.email}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 sm:px-6 py-4 hidden sm:table-cell">
                         <div className="text-sm text-gray-900">{user.email}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-900">{user.role}</div>
+                      <td className="px-4 sm:px-6 py-4">
+                        <div className="text-sm text-gray-900 capitalize">{user.role}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 sm:px-6 py-4 hidden sm:table-cell">
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                           Active
                         </span>
@@ -110,6 +111,11 @@ export default function AdminUsersPage() {
                   ))}
                 </tbody>
               </table>
+              {filteredUsers.length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No users found</p>
+                </div>
+              )}
             </div>
           )}
         </motion.div>

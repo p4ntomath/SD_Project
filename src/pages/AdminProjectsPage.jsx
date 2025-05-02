@@ -36,28 +36,28 @@ export default function AdminProjectsPage() {
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
+      <div className="max-w-7xl mx-auto">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+          <div className="flex items-center">
             <button
               onClick={() => navigate('/admin')}
-              className="text-gray-600 hover:text-blue-600 transition-colors"
+              className="mr-4 p-2 text-gray-600 hover:text-gray-800 transition-colors"
+              aria-label="Back to dashboard"
             >
-              <FaArrowLeft size={24} />
+              <FaArrowLeft className="h-5 w-5" />
             </button>
-            <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Project Management</h1>
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Project Management</h1>
           </div>
 
-          {/* Add creator filter dropdown */}
-          <div className="flex items-center">
-            <label htmlFor="creator-filter" className="mr-2 text-sm text-gray-600">
+          <div className="flex items-center w-full sm:w-auto">
+            <label htmlFor="creator-filter" className="mr-2 text-sm text-gray-600 whitespace-nowrap">
               Filter by Creator:
             </label>
             <select
               id="creator-filter"
               value={selectedCreator}
               onChange={(e) => setSelectedCreator(e.target.value)}
-              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="all">All Creators</option>
               {uniqueCreators.map(creator => (
@@ -83,34 +83,37 @@ export default function AdminProjectsPage() {
               <table className="min-w-full divide-y divide-gray-200">
                 <thead className="bg-gray-50">
                   <tr>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Creator</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Research Field</th>
-                    <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Creator</th>
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Status</th>
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Research Field</th>
+                    <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
                   {filteredProjects.map((project) => (
-                    <tr key={project.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">{project.title}</div>
+                    <tr key={project.id} className="hover:bg-gray-50">
+                      <td className="px-4 sm:px-6 py-4">
+                        <div className="text-sm font-medium text-gray-900 break-words">{project.title}</div>
+                        <div className="text-sm text-gray-500 sm:hidden mt-1">
+                          Status: {project.status || 'In Progress'}
+                        </div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 sm:px-6 py-4">
                         <div className="text-sm text-gray-900">{project.userFullName}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
+                      <td className="px-4 sm:px-6 py-4 hidden sm:table-cell">
                         <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
                           {project.status || 'In Progress'}
                         </span>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {project.researchField || 'Not specified'}
+                      <td className="px-4 sm:px-6 py-4 hidden md:table-cell">
+                        <div className="text-sm text-gray-900">{project.researchField || 'Not specified'}</div>
                       </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                      <td className="px-4 sm:px-6 py-4 text-sm font-medium">
                         <button
                           onClick={() => navigate(`/admin/projects/${project.id}`)}
-                          className="text-blue-600 hover:text-blue-900"
+                          className="text-blue-600 hover:text-blue-900 inline-flex items-center gap-1"
                         >
                           View Details
                         </button>
@@ -119,6 +122,11 @@ export default function AdminProjectsPage() {
                   ))}
                 </tbody>
               </table>
+              {filteredProjects.length === 0 && (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No projects found</p>
+                </div>
+              )}
             </div>
           )}
         </motion.div>
