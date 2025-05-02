@@ -25,6 +25,8 @@ export default function DocumentsPage() {
     const [sortOption, setSortOption] = useState('date');
     const [filterOption, setFilterOption] = useState('all');
     const [projectsMap, setProjectsMap] = useState({});
+    const [projects, setProjects] = useState([]);
+    const [selectedProjectId, setSelectedProjectId] = useState('');
 
     useEffect(() => {
         loadFolders();
@@ -41,6 +43,7 @@ export default function DocumentsPage() {
 
             // First get all user's projects
             const projects = await fetchProjects(user.uid);
+            setProjects(projects); // Store all projects
             
             // Create a map of project IDs to project names
             const projectMapping = {};
@@ -85,16 +88,22 @@ export default function DocumentsPage() {
 
     const handleCreateFolder = async () => {
         if (!newFolderName.trim()) return;
+        if (!selectedProjectId) {
+            setError("Please select a project");
+            return;
+        }
 
         try {
             setUploadLoading(true);
             const user = auth.currentUser;
             if (!user) throw new Error("Please sign in to create folders");
             
-            await createFolder(user.uid, newFolderName.trim());
+            await createFolder(selectedProjectId, newFolderName.trim());
             await loadFolders(); // Reload folders to get the new one
             setNewFolderName('');
+            setSelectedProjectId('');
             setShowFolderModal(false);
+            setError(null);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -299,23 +308,53 @@ export default function DocumentsPage() {
                     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
                         <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
                             <h2 className="text-xl font-semibold mb-4">Create New Folder</h2>
-                            <input
-                                type="text"
-                                value={newFolderName}
-                                onChange={(e) => setNewFolderName(e.target.value)}
-                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                                placeholder="Enter folder name"
-                            />
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Select Project*
+                                    </label>
+                                    <select
+                                        value={selectedProjectId}
+                                        onChange={(e) => setSelectedProjectId(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        required
+                                    >
+                                        <option value="">Select a project</option>
+                                        {projects.map(project => (
+                                            <option key={project.id} value={project.id}>
+                                                {project.title}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Folder Name*
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={newFolderName}
+                                        onChange={(e) => setNewFolderName(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="Enter folder name"
+                                    />
+                                </div>
+                            </div>
                             <div className="mt-6 flex justify-end space-x-3">
                                 <button
-                                    onClick={() => setShowFolderModal(false)}
+                                    onClick={() => {
+                                        setShowFolderModal(false);
+                                        setNewFolderName('');
+                                        setSelectedProjectId('');
+                                        setError(null);
+                                    }}
                                     className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={handleCreateFolder}
-                                    disabled={!newFolderName.trim() || uploadLoading}
+                                    disabled={!newFolderName.trim() || !selectedProjectId || uploadLoading}
                                     className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
                                 >
                                     {uploadLoading ? (
