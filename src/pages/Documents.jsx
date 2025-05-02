@@ -232,9 +232,26 @@ export default function DocumentsPage() {
 
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <ClipLoader color="#3B82F6" />
-            </div>
+            <main className="min-h-screen bg-gray-50">
+                <MainNav mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} />
+                
+                <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                    <header className="mb-8">
+                        <h1 className="text-3xl font-bold text-gray-900">My Documents</h1>
+                        <p className="mt-2 text-sm text-gray-600">Manage and organize your research documents</p>
+                    </header>
+
+                    <div className="flex items-center justify-center min-h-[400px]">
+                        <div className="flex items-center space-x-2">
+                            <div className="w-3 h-3 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
+                            <div className="w-3 h-3 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
+                            <div className="w-3 h-3 bg-blue-600 rounded-full animate-bounce"></div>
+                        </div>
+                    </div>
+                </section>
+
+                <MobileBottomNav />
+            </main>
         );
     }
 

@@ -53,6 +53,8 @@ function App() {
           <Route path="/projects" element={
             <ProtectedRoute allowedRoles={['researcher']}>
               <MyProjects />
+            </ProtectedRoute>
+          } />
           <Route path="/admin" element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminHomePage />
