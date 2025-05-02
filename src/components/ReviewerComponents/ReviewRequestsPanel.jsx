@@ -13,11 +13,47 @@ export default function ReviewRequestsPanel() {
         loadRequests();
     }, []);
 
+    const formatDate = (timestamp) => {
+        if (!timestamp) return 'Date not available';
+        try {
+            // Handle Firebase Timestamp
+            if (typeof timestamp === 'object' && timestamp.seconds) {
+                return new Date(timestamp.seconds * 1000).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+            // Handle Date object
+            if (timestamp instanceof Date) {
+                return timestamp.toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'long',
+                    day: 'numeric',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+            }
+            // Handle date string
+            return new Date(timestamp).toLocaleDateString('en-US', {
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        } catch (error) {
+            console.error('Error formatting date:', error);
+            return 'Date not available';
+        }
+    };
+
     const loadRequests = async () => {
         try {
             const reviewerId = auth.currentUser?.uid;
             if (!reviewerId) return;
-            
             const reviewRequests = await getReviewerRequests(reviewerId);
             setRequests(reviewRequests);
         } catch (err) {
@@ -79,7 +115,7 @@ export default function ReviewRequestsPanel() {
                             {request.project?.title || 'Untitled Project'}
                         </h3>
                         <p className="text-sm text-gray-500 mt-1">
-                            Requested on {request.createdAt?.toDate().toLocaleDateString()}
+                            Requested on {formatDate(request.createdAt)}
                         </p>
                     </div>
 

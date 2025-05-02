@@ -1,6 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom';
 import {
   HomeIcon,
+  ClipboardDocumentListIcon,
   ClipboardDocumentCheckIcon,
   ClockIcon,
   ChartBarIcon,
@@ -57,12 +58,23 @@ export default function ReviewerSidebar({ isOpen, toggleSidebar }) {
 
               <li>
                 <button
+                  onClick={() => navigate('/reviewer/requests')}
+                  className={`w-full flex items-center gap-3 p-2 ${location.pathname === '/reviewer/requests' ? 'bg-blue-600' : ''} hover:bg-blue-600 rounded cursor-pointer`}
+                  aria-current={location.pathname === '/reviewer/requests' ? 'page' : undefined}
+                >
+                  <ClipboardDocumentListIcon className="h-5 w-5" aria-hidden="true" />
+                  Review Requests
+                </button>
+              </li>
+
+              <li>
+                <button
                   onClick={() => navigate('/reviewer/assigned')}
                   className={`w-full flex items-center gap-3 p-2 ${location.pathname === '/reviewer/assigned' ? 'bg-blue-600' : ''} hover:bg-blue-600 rounded cursor-pointer`}
                   aria-current={location.pathname === '/reviewer/assigned' ? 'page' : undefined}
                 >
                   <ClipboardDocumentCheckIcon className="h-5 w-5" aria-hidden="true" />
-                  Assigned Reviews
+                  Approved Projects
                 </button>
               </li>
 
@@ -103,7 +115,7 @@ export default function ReviewerSidebar({ isOpen, toggleSidebar }) {
                 <button
                   onClick={() => {
                     logOut();
-                    navigate('/login');
+                    window.location.href = "/login";
                   }}
                   className="w-full flex items-center gap-3 p-2 hover:bg-blue-600 rounded cursor-pointer"
                 >

@@ -29,6 +29,47 @@ export default function ReviewRequests() {
     loadRequests();
   }, []);
 
+  const formatDate = (timestamp) => {
+    if (!timestamp) return 'Date not available';
+    try {
+      // Handle Firebase Timestamp
+      if (typeof timestamp === 'object' && timestamp.seconds) {
+        const date = new Date(timestamp.seconds * 1000);
+        return date.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        });
+      }
+      // Handle regular Date object
+      if (timestamp instanceof Date) {
+        return timestamp.toLocaleDateString('en-US', {
+          year: 'numeric',
+          month: 'long',
+          day: 'numeric',
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        });
+      }
+      // Handle date string
+      return new Date(timestamp).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+        hour12: true
+      });
+    } catch (error) {
+      console.error('Error formatting date:', error);
+      return 'Date not available';
+    }
+  };
+
   const handleAcceptRequest = async (requestId) => {
     try {
       await updateReviewRequestStatus(requestId, 'accepted');
@@ -105,7 +146,7 @@ export default function ReviewRequests() {
             </h3>
             <div className="text-sm text-gray-500 space-y-2 mb-4">
               <p>From: {request.researcherName}</p>
-              <p>Requested: {new Date(request.requestedAt).toLocaleDateString()}</p>
+              <p>Requested: {formatDate(request.requestedAt)}</p>
               <p>Status: <span className="capitalize">{request.status}</span></p>
             </div>
             {request.status === 'pending' && (

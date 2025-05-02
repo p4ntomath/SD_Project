@@ -1,4 +1,4 @@
-import { FiHome, FiList, FiUser, FiMenu, FiX, FiSearch, FiClock } from 'react-icons/fi';
+import { FiHome, FiList, FiUser, FiMenu, FiX, FiSearch, FiClock, FiInbox } from 'react-icons/fi';
 import { useState } from 'react';
 import { ClipboardDocumentCheckIcon } from "@heroicons/react/24/outline";
 import { logOut } from '../../../backend/firebase/authFirebase';
@@ -33,8 +33,8 @@ export default function ReviewerMainNav({ setMobileMenuOpen, mobileMenuOpen, onS
           <section className="flex justify-between h-16 items-center">
             <section className="hidden md:flex items-center space-x-2">
               <button 
-                onClick={() => navigate('/reviewer/home')}
-                className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/home' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
+                onClick={() => navigate('/reviewer/dashboard')}
+                className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/dashboard' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                 aria-label="Home"
               >
                 <FiHome className="h-6 w-6 group-hover:text-blue-600" />
@@ -42,12 +42,21 @@ export default function ReviewerMainNav({ setMobileMenuOpen, mobileMenuOpen, onS
               </button>
 
               <button 
+                onClick={() => navigate('/reviewer/requests')}
+                className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/requests' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
+                aria-label="Pending Review Requests"
+              >
+                <FiInbox className="h-6 w-6 group-hover:text-blue-600" />
+                <p className="text-xs mt-1 group-hover:text-blue-600">Requests</p>
+              </button>
+
+              <button 
                 onClick={() => navigate('/reviewer/assigned')}
                 className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/assigned' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
-                aria-label="Assigned Reviews"
+                aria-label="Approved Projects"
               >
                 <ClipboardDocumentCheckIcon className="h-6 w-6 group-hover:text-blue-600" />
-                <p className="text-xs mt-1 group-hover:text-blue-600">Assigned</p>
+                <p className="text-xs mt-1 group-hover:text-blue-600">Approved</p>
               </button>
 
               <button 

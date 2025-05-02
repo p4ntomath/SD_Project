@@ -39,6 +39,13 @@ export default function ReviewRequestsSection() {
     }
   };
 
+  const formatDate = (timestamp) => {
+    if (!timestamp) return 'Date not available';
+    if (timestamp instanceof Date) return timestamp.toLocaleDateString();
+    if (timestamp.seconds) return new Date(timestamp.seconds * 1000).toLocaleDateString();
+    return new Date(timestamp).toLocaleDateString();
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center p-8">
@@ -76,7 +83,7 @@ export default function ReviewRequestsSection() {
           <div className="mb-4">
             <h3 className="text-lg font-medium text-gray-900">{request.project?.title}</h3>
             <p className="text-sm text-gray-500">
-              Requested on {request.createdAt?.toLocaleDateString()}
+              Requested on {formatDate(request.createdAt)}
             </p>
           </div>
 

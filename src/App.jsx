@@ -21,6 +21,10 @@ import AdminProjectsPage from './pages/AdminProjectsPage.jsx';
 import AdminDocumentsPage from './pages/AdminDocumentsPage.jsx';
 import ReviewProjectPage from './pages/ReviewProjectPage.jsx';
 import ReviewerHomePage from './pages/ReviewerHomePage.jsx';
+import ReviewerProjects from './pages/reviewer/ReviewerProjects.jsx';
+import ReviewProjectDetails from './pages/reviewer/ReviewProjectDetails.jsx';
+import ReviewRequests from './pages/reviewer/ReviewRequests.jsx';
+import ReviewerHistory from './pages/ReviewerPages/ReviewerHistory.jsx';
 
 function App() {
   return (
@@ -113,14 +117,24 @@ function App() {
               <ReviewerHomePage />
             </ProtectedRoute>
           } />
+          <Route path="/reviewer/requests" element={
+            <ProtectedRoute allowedRoles={['reviewer']}>
+              <ReviewRequests />
+            </ProtectedRoute>
+          } />
           <Route path="/reviewer/assigned" element={
             <ProtectedRoute allowedRoles={['reviewer']}>
-              <ReviewerHomePage />
+              <ReviewerProjects />
             </ProtectedRoute>
           } />
           <Route path="/reviewer/history" element={
             <ProtectedRoute allowedRoles={['reviewer']}>
-              <ReviewerHomePage />
+              <ReviewerHistory />
+            </ProtectedRoute>
+          } />
+          <Route path="/reviewer/projects/:projectId" element={
+            <ProtectedRoute allowedRoles={['reviewer']}>
+              <ReviewProjectDetails />
             </ProtectedRoute>
           } />
           <Route path="/reviewer/analytics" element={
