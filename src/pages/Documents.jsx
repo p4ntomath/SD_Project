@@ -14,6 +14,8 @@ export default function DocumentsPage() {
     const [loading, setLoading] = useState(true);
     const [showFolderModal, setShowFolderModal] = useState(false);
     const [showUploadModal, setShowUploadModal] = useState(false);
+    const [showDeleteFolderModal, setShowDeleteFolderModal] = useState(false);
+    const [folderToDelete, setFolderToDelete] = useState(null);
     const [newFolderName, setNewFolderName] = useState('');
     const [selectedFolder, setSelectedFolder] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
@@ -112,23 +114,58 @@ export default function DocumentsPage() {
     };
 
     const handleFileUpload = async () => {
-        if (!selectedFile || !selectedFolder || !customName.trim()) return;
+        if (!selectedFile || !selectedFolder || !customName.trim()) {
+            setError("Please select a file, folder and provide a name");
+            return;
+        }
+
+        // Validate file size (10MB limit)
+        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+        if (selectedFile.size > maxSize) {
+            setError("File size exceeds the maximum limit of 10MB");
+            return;
+        }
+
+        // Validate file type
+        const allowedTypes = [
+            'application/pdf',
+            'application/msword',
+            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+            'text/plain',
+            'image/jpeg',
+            'image/png',
+            'image/gif'
+        ];
+        if (!allowedTypes.includes(selectedFile.type)) {
+            setError("Invalid file type. Please upload a PDF, Word document, text file, or image.");
+            return;
+        }
 
         try {
             setUploadLoading(true);
             const user = auth.currentUser;
             if (!user) throw new Error("Please sign in to upload files");
 
-            await uploadDocument(selectedFile, selectedFolder.id, user.uid, {
-                displayName: customName.trim(),
-                description: customDescription.trim() || 'No description provided'
-            });
+            // Add file extension if it was removed
+            const fileExtension = selectedFile.name.split('.').pop();
+            const finalFileName = customName.endsWith(`.${fileExtension}`) ? customName : `${customName}.${fileExtension}`;
+
+            await uploadDocument(
+                selectedFile,
+                selectedFolder.projectId, // Use the project ID from the selected folder
+                selectedFolder.id,
+                {
+                    displayName: finalFileName,
+                    description: customDescription.trim() || 'No description provided'
+                }
+            );
 
             await loadFolders(); // Reload to get the new file
             setShowUploadModal(false);
             setSelectedFile(null);
             setCustomName('');
             setCustomDescription('');
+            setError(null); // Clear any previous errors
         } catch (err) {
             setError(err.message);
         } finally {
@@ -136,13 +173,18 @@ export default function DocumentsPage() {
         }
     };
 
-    const handleDeleteFolder = async (folderId) => {
-        if (!window.confirm('Are you sure you want to delete this folder and all its contents?')) return;
+    const handleDeleteFolder = async (folder) => {
+        setFolderToDelete(folder);
+        setShowDeleteFolderModal(true);
+    };
 
+    const confirmDeleteFolder = async () => {
         try {
             setUploadLoading(true);
-            await deleteFolder(auth.currentUser.uid, folderId);
+            await deleteFolder(auth.currentUser.uid, folderToDelete.id);
             await loadFolders();
+            setShowDeleteFolderModal(false);
+            setFolderToDelete(null);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -245,7 +287,7 @@ export default function DocumentsPage() {
                                     </div>
                                 </div>
                                 <button
-                                    onClick={() => handleDeleteFolder(folder.id)}
+                                    onClick={() => handleDeleteFolder(folder)}
                                     className="text-red-600 hover:text-red-800 transition-colors"
                                 >
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -305,8 +347,9 @@ export default function DocumentsPage() {
 
                 {/* Create Folder Modal */}
                 {showFolderModal && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+                    <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
+                        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowFolderModal(false)} />
+                        <div className="relative bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200">
                             <h2 className="text-xl font-semibold mb-4">Create New Folder</h2>
                             <div className="space-y-4">
                                 <div>
@@ -348,14 +391,14 @@ export default function DocumentsPage() {
                                         setSelectedProjectId('');
                                         setError(null);
                                     }}
-                                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                                    className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50/80 transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={handleCreateFolder}
                                     disabled={!newFolderName.trim() || !selectedProjectId || uploadLoading}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                                    className="px-4 py-2 bg-blue-600/90 backdrop-blur-sm text-white rounded-xl hover:bg-blue-700/90 transition-colors disabled:opacity-50"
                                 >
                                     {uploadLoading ? (
                                         <ClipLoader size={20} color="#ffffff" />
@@ -370,8 +413,9 @@ export default function DocumentsPage() {
 
                 {/* Upload File Modal */}
                 {showUploadModal && (
-                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-                        <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+                    <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
+                        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowUploadModal(false)} />
+                        <div className="relative bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200">
                             <h2 className="text-xl font-semibold mb-4">Upload File to {selectedFolder?.name}</h2>
                             
                             <div className="space-y-4">
@@ -427,19 +471,54 @@ export default function DocumentsPage() {
                                         setCustomName('');
                                         setCustomDescription('');
                                     }}
-                                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                                    className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50/80 transition-colors"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={handleFileUpload}
                                     disabled={!selectedFile || !customName.trim() || uploadLoading}
-                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                                    className="px-4 py-2 bg-blue-600/90 backdrop-blur-sm text-white rounded-xl hover:bg-blue-700/90 transition-colors disabled:opacity-50"
                                 >
                                     {uploadLoading ? (
                                         <ClipLoader size={20} color="#ffffff" />
                                     ) : (
                                         'Upload'
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Delete Folder Confirmation Modal */}
+                {showDeleteFolderModal && (
+                    <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
+                        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteFolderModal(false)} />
+                        <div className="relative bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200">
+                            <h2 className="text-xl font-semibold mb-4">Delete Folder?</h2>
+                            <p className="text-gray-700 mb-6">
+                                Are you sure you want to delete the folder "{folderToDelete?.name}" and all its contents? This action cannot be undone.
+                            </p>
+                            <div className="flex justify-end space-x-3">
+                                <button
+                                    onClick={() => {
+                                        setShowDeleteFolderModal(false);
+                                        setFolderToDelete(null);
+                                    }}
+                                    className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50/80 transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmDeleteFolder}
+                                    disabled={uploadLoading}
+                                    className="px-4 py-2 bg-red-600/90 backdrop-blur-sm text-white rounded-xl hover:bg-red-700/90 transition-colors disabled:opacity-50"
+                                >
+                                    {uploadLoading ? (
+                                        <ClipLoader size={20} color="#ffffff" />
+                                    ) : (
+                                        'Delete Folder'
                                     )}
                                 </button>
                             </div>
