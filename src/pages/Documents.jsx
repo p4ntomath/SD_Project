@@ -282,90 +282,113 @@ export default function DocumentsPage() {
                         New Folder
                     </button>
 
-                    <select
-                        value={sortOption}
-                        onChange={(e) => setSortOption(e.target.value)}
-                        className="px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-gray-700"
-                    >
-                        <option value="date">Sort by Date</option>
-                        <option value="name">Sort by Name</option>
-                    </select>
+                    {folders.length > 0 && (
+                        <select
+                            value={sortOption}
+                            onChange={(e) => setSortOption(e.target.value)}
+                            className="px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-gray-700"
+                        >
+                            <option value="date">Sort by Date</option>
+                            <option value="name">Sort by Name</option>
+                        </select>
+                    )}
                 </section>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {sortFolders(folders).map((folder) => (
-                        <article key={folder.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
-                            <header className="flex items-start justify-between mb-4">
-                                <div className="flex items-center">
-                                    <div className="p-2 bg-blue-50 rounded-lg mr-3">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                {folders.length === 0 ? (
+                    <div className="text-center py-12 px-4 rounded-lg bg-white shadow-sm border border-gray-200">
+                        <div className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+                            <svg className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                            </svg>
+                        </div>
+                        <h3 className="text-lg font-medium text-gray-900 mb-1">No documents yet</h3>
+                        <p className="text-sm text-gray-500 mb-4">Get started by creating a new folder to organize your research documents</p>
+                        <button
+                            onClick={() => setShowFolderModal(true)}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Create First Folder
+                        </button>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        {sortFolders(folders).map((folder) => (
+                            <article key={folder.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                                <header className="flex items-start justify-between mb-4">
+                                    <div className="flex items-center">
+                                        <div className="p-2 bg-blue-50 rounded-lg mr-3">
+                                            <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                                            </svg>
+                                        </div>
+                                        <div>
+                                            <h3 className="font-semibold text-gray-900">{folder.name}</h3>
+                                            <p className="text-sm text-gray-500">{folder.files?.length || 0} files</p>
+                                            <p className="text-xs text-blue-600 mt-1">Project: {folder.projectName}</p>
+                                        </div>
+                                    </div>
+                                    <button
+                                        onClick={() => handleDeleteFolder(folder)}
+                                        className="text-red-600 hover:text-red-800 transition-colors"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                         </svg>
-                                    </div>
-                                    <div>
-                                        <h3 className="font-semibold text-gray-900">{folder.name}</h3>
-                                        <p className="text-sm text-gray-500">{folder.files?.length || 0} files</p>
-                                        <p className="text-xs text-blue-600 mt-1">Project: {folder.projectName}</p>
-                                    </div>
+                                    </button>
+                                </header>
+
+                                <div className="space-y-2">
+                                    {folder.files?.map((file) => (
+                                        <div key={file.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-sm">
+                                            <div className="flex items-center space-x-2 min-w-0">
+                                                <DocumentIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                                                <span className="truncate">{file.name}</span>
+                                            </div>
+                                            <div className="flex items-center space-x-2">
+                                                <button
+                                                    onClick={() => handleDownload(file.downloadURL)}
+                                                    className="text-blue-600 hover:text-blue-800"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                    </svg>
+                                                </button>
+                                                <button
+                                                    onClick={() => handleDeleteFile(folder.id, file.id)}
+                                                    className="text-red-600 hover:text-red-800"
+                                                >
+                                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                    </svg>
+                                                </button>
+                                            </div>
+                                        </div>
+                                    ))}
+
+                                    <button
+                                        onClick={() => {
+                                            setSelectedFolder(folder);
+                                            setShowUploadModal(true);
+                                        }}
+                                        className="w-full mt-4 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors flex items-center justify-center"
+                                    >
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                        </svg>
+                                        Upload File
+                                    </button>
                                 </div>
-                                <button
-                                    onClick={() => handleDeleteFolder(folder)}
-                                    className="text-red-600 hover:text-red-800 transition-colors"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </button>
-                            </header>
 
-                            <div className="space-y-2">
-                                {folder.files?.map((file) => (
-                                    <div key={file.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-sm">
-                                        <div className="flex items-center space-x-2 min-w-0">
-                                            <DocumentIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                                            <span className="truncate">{file.name}</span>
-                                        </div>
-                                        <div className="flex items-center space-x-2">
-                                            <button
-                                                onClick={() => handleDownload(file.downloadURL)}
-                                                className="text-blue-600 hover:text-blue-800"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
-                                                </svg>
-                                            </button>
-                                            <button
-                                                onClick={() => handleDeleteFile(folder.id, file.id)}
-                                                className="text-red-600 hover:text-red-800"
-                                            >
-                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </div>
-                                ))}
-
-                                <button
-                                    onClick={() => {
-                                        setSelectedFolder(folder);
-                                        setShowUploadModal(true);
-                                    }}
-                                    className="w-full mt-4 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors flex items-center justify-center"
-                                >
-                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-                                    </svg>
-                                    Upload File
-                                </button>
-                            </div>
-
-                            <div className="mt-4 pt-4 border-t border-gray-100">
-                                <p className="text-xs text-gray-500">Created {formatFirebaseDate(folder.createdAt)}</p>
-                            </div>
-                        </article>
-                    ))}
-                </div>
+                                <div className="mt-4 pt-4 border-t border-gray-100">
+                                    <p className="text-xs text-gray-500">Created {formatFirebaseDate(folder.createdAt)}</p>
+                                </div>
+                            </article>
+                        ))}
+                    </div>
+                )}
 
                 {/* Create Folder Modal */}
                 {showFolderModal && (

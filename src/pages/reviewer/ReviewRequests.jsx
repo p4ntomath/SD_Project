@@ -13,6 +13,7 @@ export default function ReviewRequests() {
   const [error, setError] = useState(null);
   const [statusMessage, setStatusMessage] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [processingId, setProcessingId] = useState(null); // Track which request is being processed
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -45,10 +46,10 @@ export default function ReviewRequests() {
             }
           })
         );
-
+        
         setRequests(requestsWithProjects);
       } catch (err) {
-        console.error('Error loading review requests:', err);
+        console.error('Error loading requests:', err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -62,8 +63,7 @@ export default function ReviewRequests() {
     if (!timestamp) return 'Date not available';
     try {
       if (typeof timestamp === 'object' && timestamp.seconds) {
-        const date = new Date(timestamp.seconds * 1000);
-        return date.toLocaleDateString('en-US', {
+        return new Date(timestamp.seconds * 1000).toLocaleDateString('en-US', {
           year: 'numeric',
           month: 'long',
           day: 'numeric'
@@ -82,21 +82,27 @@ export default function ReviewRequests() {
 
   const handleAccept = async (projectId, requestId) => {
     try {
+      setProcessingId(requestId);
       await updateReviewRequestStatus(requestId, 'accepted');
       setStatusMessage('Review request accepted successfully');
       navigate(`/reviewer/review/${projectId}`);
     } catch (err) {
       setError('Failed to accept review request: ' + err.message);
+    } finally {
+      setProcessingId(null);
     }
   };
 
   const handleReject = async (requestId) => {
     try {
+      setProcessingId(requestId);
       await updateReviewRequestStatus(requestId, 'rejected');
       setStatusMessage('Review request rejected');
       setRequests(requests.filter(request => request.id !== requestId));
     } catch (err) {
       setError('Failed to reject review request: ' + err.message);
+    } finally {
+      setProcessingId(null);
     }
   };
 
@@ -118,11 +124,18 @@ export default function ReviewRequests() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900">Pending Review Requests</h1>
+            <p className="mt-1 text-sm text-gray-500">Review requests awaiting your response</p>
           </div>
 
           {statusMessage && (
             <div className="mb-6 p-4 rounded-lg bg-green-100 text-green-700">
               {statusMessage}
+            </div>
+          )}
+
+          {error && (
+            <div className="mb-6 p-4 rounded-lg bg-red-100 text-red-700">
+              {error}
             </div>
           )}
 
@@ -179,18 +192,36 @@ export default function ReviewRequests() {
                       </p>
                     </div>
 
-                    <div className="flex flex-col sm:flex-row gap-2">
+                    <div className="flex gap-2">
                       <button
                         onClick={() => handleAccept(request.projectId, request.id)}
-                        className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm"
+                        disabled={processingId !== null}
+                        className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Accept
+                        {processingId === request.id ? (
+                          <span className="flex items-center justify-center">
+                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Accepting...
+                          </span>
+                        ) : 'Accept'}
                       </button>
                       <button
                         onClick={() => handleReject(request.id)}
-                        className="flex-1 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm"
+                        disabled={processingId !== null}
+                        className="flex-1 bg-red-600 text-white px-4 py-2 rounded-md hover:bg-red-700 transition-colors text-sm disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        Decline
+                        {processingId === request.id ? (
+                          <span className="flex items-center justify-center">
+                            <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            Declining...
+                          </span>
+                        ) : 'Decline'}
                       </button>
                     </div>
                   </div>

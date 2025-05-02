@@ -150,20 +150,28 @@ export default function ReviewRequests() {
               <p>Status: <span className="capitalize">{request.status}</span></p>
             </div>
             {request.status === 'pending' && (
-              <div className="flex gap-3">
-                <button
-                  onClick={() => handleAcceptRequest(request.id)}
-                  className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                >
-                  Accept
-                </button>
-                <button
-                  onClick={() => handleRejectRequest(request.id)}
-                  className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-                >
-                  Reject
-                </button>
-              </div>
+              <>
+                <div className="mb-4 text-sm bg-blue-50 p-3 rounded-lg text-blue-700">
+                  <p>
+                    Declining a review request means you're opting out of reviewing this project. 
+                    This is different from accepting the request and later submitting a negative review.
+                  </p>
+                </div>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => handleAcceptRequest(request.id)}
+                    className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
+                  >
+                    Accept
+                  </button>
+                  <button
+                    onClick={() => handleRejectRequest(request.id)}
+                    className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
+                  >
+                    Decline Task
+                  </button>
+                </div>
+              </>
             )}
           </div>
         </article>

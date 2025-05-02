@@ -1,7 +1,7 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
 import { useState, useEffect } from 'react';
-import { fetchProject, updateProject, deleteProject, assignReviewers } from '../backend/firebase/projectDB';
+import { fetchProject, updateProject, deleteProject, getProjectDetails } from '../backend/firebase/projectDB';
 import { updateProjectFunds, updateProjectExpense, getFundingHistory } from '../backend/firebase/fundingDB';
 import { uploadDocument, fetchDocumentsByFolder, deleteDocument } from '../backend/firebase/documentsDB';
 import { createFolder, updateFolderName, deleteFolder } from '../backend/firebase/folderDB';
@@ -14,6 +14,7 @@ import AssignReviewersModal from '../components/ResearcherComponents/AssignRevie
 import ProjectReviews from '../components/ReviewerComponents/ProjectReviews';
 import { createReviewRequest, getReviewerRequestsForProject } from '../backend/firebase/reviewdb';
 import { auth } from '../backend/firebase/firebaseConfig';
+import { updateExistingReviewerInfo } from '../backend/firebase/reviewerDB';
 
 export default function ProjectDetailsPage() {
   const { projectId } = useParams();
@@ -101,6 +102,33 @@ export default function ProjectDetailsPage() {
         setModalOpen(true);
         setError(true);
         setStatusMessage(err.message);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (projectId) {
+      loadProject();
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    const loadProject = async () => {
+      try {
+        setLoading(true);
+        const projectData = await getProjectDetails(projectId);
+        if (projectData) {
+          // Update existing reviewer information
+          await updateExistingReviewerInfo(projectId);
+          // Reload project to get updated reviewer info
+          const refreshedProject = await getProjectDetails(projectId);
+          setProject(refreshedProject);
+        }
+        const requests = await getReviewerRequestsForProject(projectId);
+        setReviewRequests(requests);
+      } catch (err) {
+        console.error('Error loading project:', err);
+        setError(err.message);
       } finally {
         setLoading(false);
       }
@@ -700,7 +728,7 @@ export default function ProjectDetailsPage() {
                 </div>
                 <div>
                   <p className="font-medium text-sm">{reviewer.name}</p>
-                  <p className="text-xs text-gray-500">{reviewer.expertise}</p>
+                  <p className="text-xs text-gray-500">{reviewer.expertise || 'Reviewer'}</p>
                 </div>
               </div>
               <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
@@ -723,16 +751,29 @@ export default function ProjectDetailsPage() {
                   </div>
                   <div>
                     <p className="font-medium text-sm">{request.reviewerName}</p>
-                    <p className="text-xs text-gray-500">Request sent {request.requestedAt?.toDate().toLocaleDateString()}</p>
+                    <p className="text-xs text-gray-500">Request sent {formatFirebaseDate(request.requestedAt)}</p>
                   </div>
                 </div>
                 <span className={`px-2 py-1 text-xs rounded-full ${
                   request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                  request.status === 'completed' ? (
+                    request.reviewStatus === 'approved' ? 'bg-green-100 text-green-800' :
+                    request.reviewStatus === 'rejected' ? 'bg-red-100 text-red-800' :
+                    request.reviewStatus === 'needs_revision' ? 'bg-yellow-100 text-yellow-800' :
+                    'bg-blue-100 text-blue-800'
+                  ) :
                   request.status === 'accepted' ? 'bg-green-100 text-green-800' :
                   'bg-red-100 text-red-800'
                 }`}>
                   {request.status === 'pending' ? 'Pending Response' :
-                   request.status === 'accepted' ? 'Accepted' : 'Declined'}
+                   request.status === 'completed' ? (
+                     request.reviewStatus === 'approved' ? 'Approved' :
+                     request.reviewStatus === 'rejected' ? 'Rejected' :
+                     request.reviewStatus === 'needs_revision' ? 'Needs Revision' :
+                     'Completed'
+                   ) :
+                   request.status === 'accepted' ? 'In Progress' :
+                   'Declined'}
                 </span>
               </li>
             ))}
@@ -842,12 +883,6 @@ export default function ProjectDetailsPage() {
                   <p className="text-gray-700">{project.description}</p>
                 </section>
               </section>
-            </article>
-
-            {/* Project Reviews Section */}
-            <article className="bg-white rounded-lg shadow p-4 sm:p-6">
-              <h2 className="text-lg sm:text-xl font-semibold mb-4">Project Reviews</h2>
-              <ProjectReviews projectId={projectId} />
             </article>
 
             {/* Goals Card */}
@@ -1293,9 +1328,16 @@ export default function ProjectDetailsPage() {
             </section>
 
             <ReviewersCard />
-
+            
           </section>
         </section>
+
+        {/* Project Reviews Card - Full Width */}
+        <article className="bg-white rounded-lg shadow p-4 sm:p-6 mt-6">
+          <h2 className="text-lg sm:text-xl font-semibold mb-4">Project Reviews</h2>
+          <ProjectReviews projectId={projectId} />
+        </article>
+
       </article>
 
       <StatusModal

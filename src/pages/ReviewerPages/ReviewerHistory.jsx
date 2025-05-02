@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { auth } from '../../backend/firebase/firebaseConfig';
 import { getReviewerRequests } from '../../backend/firebase/reviewdb';
 import { ClipLoader } from 'react-spinners';
@@ -12,6 +12,7 @@ export default function ReviewerHistory() {
   const [error, setError] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     const loadCompletedReviews = async () => {
@@ -23,9 +24,8 @@ export default function ReviewerHistory() {
         }
 
         const reviewRequests = await getReviewerRequests(userId);
-        // Filter for completed reviews (those with feedback submitted)
         const completedReviews = reviewRequests.filter(req => 
-          req.status === 'completed' || req.status === 'approved' || req.status === 'rejected'
+          req.status === 'completed'
         );
         setReviews(completedReviews);
       } catch (err) {
@@ -67,8 +67,8 @@ export default function ReviewerHistory() {
         return 'bg-green-100 text-green-800';
       case 'rejected':
         return 'bg-red-100 text-red-800';
-      case 'completed':
-        return 'bg-blue-100 text-blue-800';
+      case 'needs_revision':
+        return 'bg-yellow-100 text-yellow-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -94,6 +94,12 @@ export default function ReviewerHistory() {
             <h1 className="text-2xl font-bold text-gray-900">Review History</h1>
             <p className="mt-1 text-sm text-gray-500">A list of all your completed project reviews</p>
           </div>
+
+          {location.state?.message && (
+            <div className="mb-6 p-4 rounded-lg bg-green-100 text-green-700">
+              {location.state.message}
+            </div>
+          )}
 
           {error && (
             <div className="mb-6 p-4 rounded-lg bg-red-100 text-red-700">
@@ -122,7 +128,7 @@ export default function ReviewerHistory() {
                     <div className="flex justify-between items-start">
                       <div>
                         <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                          {review.project?.title || review.projectTitle}
+                          {review.projectTitle}
                         </h2>
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
@@ -131,30 +137,38 @@ export default function ReviewerHistory() {
                           </div>
                           <div>
                             <h3 className="font-medium text-gray-500">Review Date</h3>
-                            <p className="text-gray-900">{formatDate(review.updatedAt || review.completedAt)}</p>
+                            <p className="text-gray-900">{formatDate(review.updatedAt)}</p>
                           </div>
                         </div>
                       </div>
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(review.status)}`}>
-                        {review.status.charAt(0).toUpperCase() + review.status.slice(1)}
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(review.reviewStatus || 'pending')}`}>
+                        {(review.reviewStatus || 'Pending').charAt(0).toUpperCase() + (review.reviewStatus || 'pending').slice(1)}
                       </span>
                     </div>
                     
-                    {review.feedback && (
+                    {review.reviewComment && (
                       <div className="mt-4 border-t border-gray-200 pt-4">
+                        <div className="flex items-center mb-2">
+                          <h3 className="font-medium text-gray-500">Rating:</h3>
+                          <div className="flex ml-2">
+                            {[1, 2, 3, 4, 5].map((star) => (
+                              <svg
+                                key={star}
+                                className={`h-5 w-5 ${
+                                  star <= review.reviewRating ? 'text-yellow-400' : 'text-gray-300'
+                                }`}
+                                fill="currentColor"
+                                viewBox="0 0 20 20"
+                              >
+                                <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+                              </svg>
+                            ))}
+                          </div>
+                        </div>
                         <h3 className="font-medium text-gray-500 mb-2">Your Feedback</h3>
-                        <p className="text-gray-700 text-sm whitespace-pre-wrap">{review.feedback}</p>
+                        <p className="text-gray-700 text-sm whitespace-pre-wrap">{review.reviewComment}</p>
                       </div>
                     )}
-                    
-                    <div className="mt-4 flex justify-end">
-                      <button
-                        onClick={() => navigate(`/reviewer/review/${review.projectId}`)}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                      >
-                        View Details
-                      </button>
-                    </div>
                   </div>
                 </article>
               ))}

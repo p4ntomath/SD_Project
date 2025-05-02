@@ -21,6 +21,21 @@ export default function ProjectFeedback({ projectId }) {
     loadFeedback();
   }, [projectId]);
 
+  const getStatusDisplay = (status) => {
+    switch (status) {
+      case 'approved':
+        return { text: 'Project Approved', style: { backgroundColor: 'rgb(220 252 231)', color: 'rgb(22 101 52)' } };
+      case 'rejected':
+        return { text: 'Project Rejected', style: { backgroundColor: 'rgb(254 226 226)', color: 'rgb(153 27 27)' } };
+      case 'needs_revision':
+        return { text: 'Revisions Required', style: { backgroundColor: 'rgb(254 249 195)', color: 'rgb(133 77 14)' } };
+      case 'in_progress':
+        return { text: 'Review in Progress', style: { backgroundColor: 'rgb(229 231 235)', color: 'rgb(55 65 81)' } };
+      default:
+        return { text: 'Status Pending', style: { backgroundColor: 'rgb(229 231 235)', color: 'rgb(55 65 81)' } };
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-8">
@@ -59,21 +74,14 @@ export default function ProjectFeedback({ projectId }) {
               </p>
             </div>
             <div className="flex items-center">
-              <span className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium" style={{
-                backgroundColor: review.status === 'approved' ? 'rgb(220 252 231)' : 
-                               review.status === 'rejected' ? 'rgb(254 226 226)' :
-                               review.status === 'needs_revision' ? 'rgb(254 249 195)' : 
-                               'rgb(229 231 235)',
-                color: review.status === 'approved' ? 'rgb(22 101 52)' :
-                       review.status === 'rejected' ? 'rgb(153 27 27)' :
-                       review.status === 'needs_revision' ? 'rgb(133 77 14)' :
-                       'rgb(55 65 81)'
-              }}>
-                {review.status === 'approved' ? 'Approved' :
-                 review.status === 'rejected' ? 'Rejected' :
-                 review.status === 'needs_revision' ? 'Needs Revision' :
-                 'In Progress'}
-              </span>
+              {review.status && (
+                <span 
+                  className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
+                  style={getStatusDisplay(review.status).style}
+                >
+                  {getStatusDisplay(review.status).text}
+                </span>
+              )}
             </div>
           </div>
 

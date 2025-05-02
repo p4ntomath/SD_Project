@@ -5,7 +5,7 @@ export default function ReviewFeedbackForm({ projectId, reviewerId, onSubmitComp
     const [feedback, setFeedback] = useState({
         comment: '',
         rating: 3,
-        status: 'pending'
+        status: 'in_progress'
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
@@ -29,20 +29,23 @@ export default function ReviewFeedbackForm({ projectId, reviewerId, onSubmitComp
         <form onSubmit={handleSubmit} className="space-y-6">
             <div>
                 <label htmlFor="status" className="block text-sm font-medium text-gray-700">
-                    Review Status
+                    Review Decision
                 </label>
                 <select
                     id="status"
                     value={feedback.status}
                     onChange={(e) => setFeedback({ ...feedback, status: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full px-4 py-2.5 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     required
                 >
-                    <option value="pending">In Progress</option>
-                    <option value="approved">Approve</option>
-                    <option value="rejected">Reject</option>
-                    <option value="needs_revision">Needs Revision</option>
+                    <option value="in_progress">Still Reviewing</option>
+                    <option value="approved">Approve Project</option>
+                    <option value="rejected">Reject Project</option>
+                    <option value="needs_revision">Request Revisions</option>
                 </select>
+                <p className="mt-1 text-sm text-gray-500">
+                    Choose your final review decision for this project
+                </p>
             </div>
 
             <div>
@@ -80,7 +83,7 @@ export default function ReviewFeedbackForm({ projectId, reviewerId, onSubmitComp
                     rows={4}
                     value={feedback.comment}
                     onChange={(e) => setFeedback({ ...feedback, comment: e.target.value })}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    className="mt-1 block w-full px-4 py-2.5 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     placeholder="Provide detailed feedback about the project..."
                     required
                 />

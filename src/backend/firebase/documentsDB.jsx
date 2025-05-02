@@ -1,5 +1,5 @@
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-import { collection, doc, setDoc, getDocs, getDoc, updateDoc, deleteDoc, serverTimestamp } from "firebase/firestore";
+import { collection, doc, setDoc, getDocs, getDoc, updateDoc, deleteDoc, serverTimestamp, query, where } from "firebase/firestore";
 import { auth, db } from "./firebaseConfig";
 
 const storage = getStorage();
@@ -71,44 +71,78 @@ export const uploadDocument = async (file, projectId, folderId, metadata = {}) =
  */
 export const fetchDocumentsByFolder = async (projectId) => {
   try {
-    const foldersRef = collection(db, "projects", projectId, "folders");
+    const user = auth.currentUser;
+    if (!user) throw new Error("User not authenticated");
+
+    // First check if user has access to this project
+    const projectRef = doc(db, "projects", projectId);
+    const projectSnap = await getDoc(projectRef);
+    if (!projectSnap.exists()) throw new Error("Project not found");
+
+    const projectData = projectSnap.data();
+    
+    // Check if user is owner or reviewer
+    const isOwner = projectData.userId === user.uid;
+    const isInReviewersArray = projectData.reviewers?.some(rev => rev.id === user.uid);
+
+    // Check reviewRequests collection for an accepted request
+    const requestQuery = query(
+      collection(db, "reviewRequests"),
+      where("projectId", "==", projectId),
+      where("reviewerId", "==", user.uid),
+      where("status", "==", "accepted")
+    );
+    const requestSnap = await getDocs(requestQuery);
+    const isAcceptedReviewer = !requestSnap.empty;
+
+    // Allow access if user is owner, in reviewers array, or has an accepted review request
+    if (!isOwner && !isInReviewersArray && !isAcceptedReviewer) {
+      throw new Error("You don't have permission to access this project's documents");
+    }
+
+    // Get all folders in the project
+    const foldersRef = collection(projectRef, "folders");
     const folderSnapshot = await getDocs(foldersRef);
     
+    if (folderSnapshot.empty) {
+      return [];
+    }
+
     const folders = await Promise.all(
       folderSnapshot.docs.map(async (folderDoc) => {
         const folderData = folderDoc.data();
         const filesRef = collection(folderDoc.ref, "files");
         const fileSnapshot = await getDocs(filesRef);
         
+        const files = fileSnapshot.docs.map(doc => {
+          const fileData = doc.data();
+          return {
+            id: doc.id,
+            documentId: doc.id,
+            name: fileData.displayName || fileData.fileName,
+            fileName: fileData.fileName,
+            description: fileData.description || '',
+            downloadURL: fileData.downloadURL,
+            size: fileData.size ? `${(fileData.size / 1024).toFixed(1)} KB` : 'Unknown size',
+            type: fileData.type || 'Unknown type',
+            uploadDate: fileData.uploadedAt,
+            lastModified: fileData.lastModified
+          };
+        });
+
         return {
           id: folderDoc.id,
           name: folderData.name,
           createdAt: folderData.createdAt,
-          ...folderData,
-          files: fileSnapshot.docs.map(doc => {
-            const fileData = doc.data();
-            return {
-              id: doc.id,
-              documentId: doc.id,
-              name: fileData.displayName || fileData.fileName, // Prefer display name if set
-              fileName: fileData.fileName,
-              description: fileData.description || '',
-              downloadURL: fileData.downloadURL,
-              size: fileData.size ? `${(fileData.size / 1024).toFixed(1)} KB` : 'Unknown size',
-              type: fileData.type || 'Unknown type',
-              uploadDate: fileData.uploadedAt,
-              lastModified: fileData.lastModified,
-              ...fileData
-            };
-          })
+          files
         };
       })
     );
 
-    return folders;
+    return folders.filter(folder => folder.files && folder.files.length > 0);
   } catch (error) {
     console.error("Error fetching documents:", error);
-    throw new Error("Failed to fetch project documents");
+    throw error;
   }
 };
 

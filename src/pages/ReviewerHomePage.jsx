@@ -34,11 +34,12 @@ export default function ReviewerHomePage() {
         
         // Calculate stats
         const pendingRequests = requests.filter(r => r.status === 'pending').length;
-        const pending = requests.filter(r => r.status === 'in_progress').length;
+        const acceptedRequests = requests.filter(r => r.status === 'accepted').length;
         const completed = requests.filter(r => r.status === 'completed').length;
+
         setStats({
           requests: pendingRequests,
-          pending,
+          pending: acceptedRequests,  // Show accepted requests as pending reviews
           completed,
           totalReviews: requests.length
         });
@@ -55,6 +56,10 @@ export default function ReviewerHomePage() {
   const handleViewPendingReviews = () => {
     // Navigate to the review requests page where user can see project details
     navigate('/reviewer/requests', { state: { reviewRequests } });
+  };
+
+  const handleViewCompletedReviews = () => {
+    navigate('/reviewer/history');
   };
 
   const handleSearch = (query) => {
@@ -83,29 +88,51 @@ export default function ReviewerHomePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-purple-100">Review Requests</p>
-                  <h3 className="text-3xl font-bold">{stats.requests}</h3>
+                  {loading ? (
+                    <div className="h-9 flex items-center">
+                      <ClipLoader color="#ffffff" size={24} />
+                    </div>
+                  ) : (
+                    <h3 className="text-3xl font-bold">{stats.requests}</h3>
+                  )}
                 </div>
                 <ClipboardDocumentListIcon className="h-12 w-12 opacity-20" />
               </div>
             </article>
 
             <article 
+              onClick={() => navigate('/reviewer/assigned')}
               className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-xl shadow-md text-white cursor-pointer hover:shadow-lg transition-shadow"
             >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-blue-100">Pending Reviews</p>
-                  <h3 className="text-3xl font-bold">{stats.pending}</h3>
+                  {loading ? (
+                    <div className="h-9 flex items-center">
+                      <ClipLoader color="#ffffff" size={24} />
+                    </div>
+                  ) : (
+                    <h3 className="text-3xl font-bold">{stats.pending}</h3>
+                  )}
                 </div>
                 <ClipboardDocumentListIcon className="h-12 w-12 opacity-20" />
               </div>
             </article>
 
-            <article className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl shadow-md text-white">
+            <article 
+              onClick={handleViewCompletedReviews}
+              className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl shadow-md text-white cursor-pointer hover:shadow-lg transition-shadow"
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-green-100">Completed Reviews</p>
-                  <h3 className="text-3xl font-bold">{stats.completed}</h3>
+                  {loading ? (
+                    <div className="h-9 flex items-center">
+                      <ClipLoader color="#ffffff" size={24} />
+                    </div>
+                  ) : (
+                    <h3 className="text-3xl font-bold">{stats.completed}</h3>
+                  )}
                 </div>
                 <DocumentTextIcon className="h-12 w-12 opacity-20" />
               </div>
@@ -115,7 +142,13 @@ export default function ReviewerHomePage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-indigo-100">Total Reviews</p>
-                  <h3 className="text-3xl font-bold">{stats.totalReviews}</h3>
+                  {loading ? (
+                    <div className="h-9 flex items-center">
+                      <ClipLoader color="#ffffff" size={24} />
+                    </div>
+                  ) : (
+                    <h3 className="text-3xl font-bold">{stats.totalReviews}</h3>
+                  )}
                 </div>
                 <ChartBarIcon className="h-12 w-12 opacity-20" />
               </div>

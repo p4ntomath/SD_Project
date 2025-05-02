@@ -121,8 +121,26 @@ export const fetchProject = async (projectId) => {
     }
 
     const projectData = projectSnap.data();
+    
+    // Check if user has access (is owner or reviewer)
+    const isOwner = projectData.userId === user.uid;
+    const isInReviewersArray = projectData.reviewers?.some(rev => rev.id === user.uid);
 
-    // Convert string format timestamps to proper Firebase timestamps
+    // Check reviewRequests collection for an accepted request
+    const requestQuery = query(
+      collection(db, "reviewRequests"),
+      where("projectId", "==", projectId),
+      where("reviewerId", "==", user.uid),
+      where("status", "==", "accepted")
+    );
+    const requestSnap = await getDocs(requestQuery);
+    const isAcceptedReviewer = !requestSnap.empty;
+
+    if (!isOwner && !isInReviewersArray && !isAcceptedReviewer) {
+      throw new Error('You do not have permission to access this project');
+    }
+
+    // Handle timestamp conversions
     if (typeof projectData.createdAt === 'string') {
       projectData.createdAt = {
         seconds: Math.floor(new Date(projectData.createdAt).getTime() / 1000),
@@ -142,6 +160,16 @@ export const fetchProject = async (projectId) => {
         seconds: Math.floor(new Date(projectData.updatedAt).getTime() / 1000),
         nanoseconds: 0
       };
+    }
+
+    // Add the review request to the project data if it exists
+    if (!isOwner && (isInReviewersArray || isAcceptedReviewer)) {
+      if (!requestSnap.empty) {
+        projectData.reviewRequest = {
+          id: requestSnap.docs[0].id,
+          ...requestSnap.docs[0].data()
+        };
+      }
     }
 
     return {
@@ -389,14 +417,49 @@ export const getProjectDetails = async (projectId) => {
       throw new Error('Project not found');
     }
 
-    const project = {
-      id: projectSnap.id,
-      ...projectSnap.data()
-    };
+    const projectData = projectSnap.data();
+    const currentUser = auth.currentUser;
 
-    return project;
+    if (!currentUser) {
+      throw new Error('User not authenticated');
+    }
+
+    // Check if user is owner
+    const isOwner = projectData.userId === currentUser.uid;
+
+    // First check if user is in the project's reviewers array
+    const isInReviewersArray = projectData.reviewers?.some(rev => rev.id === currentUser.uid);
+
+    // Then check reviewRequests collection for an accepted request
+    const requestQuery = query(
+      collection(db, "reviewRequests"),
+      where("projectId", "==", projectId),
+      where("reviewerId", "==", currentUser.uid),
+      where("status", "==", "accepted")
+    );
+    const requestSnap = await getDocs(requestQuery);
+    const isAcceptedReviewer = !requestSnap.empty;
+
+    if (!isOwner && !isInReviewersArray && !isAcceptedReviewer) {
+      throw new Error('You do not have permission to access this project');
+    }
+
+    // Add the review request to the project data if it exists
+    if (!isOwner && (isInReviewersArray || isAcceptedReviewer)) {
+      if (!requestSnap.empty) {
+        projectData.reviewRequest = {
+          id: requestSnap.docs[0].id,
+          ...requestSnap.docs[0].data()
+        };
+      }
+    }
+
+    return {
+      id: projectSnap.id,
+      ...projectData
+    };
   } catch (error) {
-    console.error('Error getting project details:', error);
+    console.error('Error fetching project:', error);
     throw error;
   }
 };

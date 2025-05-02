@@ -55,7 +55,9 @@ export default function ReviewRequestsPanel() {
             const reviewerId = auth.currentUser?.uid;
             if (!reviewerId) return;
             const reviewRequests = await getReviewerRequests(reviewerId);
-            setRequests(reviewRequests);
+            // Only show pending requests
+            const pendingRequests = reviewRequests.filter(req => req.status === 'pending');
+            setRequests(pendingRequests);
         } catch (err) {
             setError(err.message);
         } finally {
@@ -66,6 +68,9 @@ export default function ReviewRequestsPanel() {
     const handleAccept = async (requestId, projectId) => {
         try {
             await updateReviewRequestStatus(requestId, 'accepted');
+            // Remove the request from the list
+            setRequests(requests.filter(req => req.id !== requestId));
+            // Navigate to the review page
             navigate(`/reviewer/review/${projectId}`);
         } catch (err) {
             setError(err.message);

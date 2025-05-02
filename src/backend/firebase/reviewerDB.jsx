@@ -70,11 +70,30 @@ export const fetchReviewRequests = async (userId) => {
 export const assignReviewers = async (projectId, reviewerIds) => {
   try {
     const projectRef = doc(db, 'projects', projectId);
+
+    // Fetch reviewer details first
+    const reviewerPromises = reviewerIds.map(async (reviewerId) => {
+      const reviewerDoc = await getDoc(doc(db, "users", reviewerId));
+      if (!reviewerDoc.exists()) {
+        throw new Error(`Reviewer ${reviewerId} not found`);
+      }
+      const reviewerData = reviewerDoc.data();
+      return {
+        id: reviewerId,
+        name: reviewerData.fullName,
+        expertise: reviewerData.expertise || null
+      };
+    });
+
+    const reviewers = await Promise.all(reviewerPromises);
+
+    // Update project with reviewer details
     await updateDoc(projectRef, {
-      reviewers: arrayUnion(...reviewerIds),
+      reviewers: reviewers,
       status: 'Under Review',
       updatedAt: serverTimestamp()
     });
+
     return true;
   } catch (error) {
     console.error('Error assigning reviewers:', error);
@@ -225,5 +244,47 @@ export const getProjectFeedback = async (projectId) => {
   } catch (error) {
     console.error("Error getting project feedback:", error);
     throw new Error("Failed to get project feedback");
+  }
+};
+
+// Update existing reviewer information in projects
+export const updateExistingReviewerInfo = async (projectId) => {
+  try {
+    const projectRef = doc(db, 'projects', projectId);
+    const projectDoc = await getDoc(projectRef);
+    
+    if (!projectDoc.exists()) {
+      throw new Error('Project not found');
+    }
+
+    const projectData = projectDoc.data();
+    const currentReviewers = projectData.reviewers || [];
+
+    // Fetch updated reviewer details
+    const reviewerPromises = currentReviewers.map(async (reviewer) => {
+      const reviewerDoc = await getDoc(doc(db, "users", reviewer.id));
+      if (!reviewerDoc.exists()) {
+        return reviewer; // Keep existing data if reviewer not found
+      }
+      const reviewerData = reviewerDoc.data();
+      return {
+        id: reviewer.id,
+        name: reviewerData.fullName,
+        expertise: reviewerData.expertise || null
+      };
+    });
+
+    const updatedReviewers = await Promise.all(reviewerPromises);
+
+    // Update project with refreshed reviewer details
+    await updateDoc(projectRef, {
+      reviewers: updatedReviewers,
+      updatedAt: serverTimestamp()
+    });
+
+    return true;
+  } catch (error) {
+    console.error('Error updating reviewer information:', error);
+    throw error;
   }
 };

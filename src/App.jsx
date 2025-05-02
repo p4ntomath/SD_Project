@@ -19,12 +19,11 @@ import FundingManagementPage from './pages/FundingManagementPage.jsx';
 import AdminUsersPage from './pages/AdminUsersPage.jsx';
 import AdminProjectsPage from './pages/AdminProjectsPage.jsx';
 import AdminDocumentsPage from './pages/AdminDocumentsPage.jsx';
-import ReviewProjectPage from './pages/ReviewProjectPage.jsx';
 import ReviewerHomePage from './pages/ReviewerHomePage.jsx';
 import ReviewerProjects from './pages/reviewer/ReviewerProjects.jsx';
-import ReviewProjectDetails from './pages/reviewer/ReviewProjectDetails.jsx';
 import ReviewRequests from './pages/reviewer/ReviewRequests.jsx';
 import ReviewerHistory from './pages/ReviewerPages/ReviewerHistory.jsx';
+import ReviewProjectPage from './pages/ReviewerPages/ReviewProjectPage.jsx';
 
 function App() {
   return (
@@ -130,11 +129,6 @@ function App() {
           <Route path="/reviewer/history" element={
             <ProtectedRoute allowedRoles={['reviewer']}>
               <ReviewerHistory />
-            </ProtectedRoute>
-          } />
-          <Route path="/reviewer/projects/:projectId" element={
-            <ProtectedRoute allowedRoles={['reviewer']}>
-              <ReviewProjectDetails />
             </ProtectedRoute>
           } />
           <Route path="/reviewer/analytics" element={
