@@ -8,7 +8,16 @@ import { ClipLoader } from 'react-spinners';
 export default function AdminUsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedRole, setSelectedRole] = useState('all');
   const navigate = useNavigate();
+
+  // Get unique roles for filter dropdown
+  const uniqueRoles = [...new Set(users.map(user => user.role))];
+
+  // Filter users based on selected role
+  const filteredUsers = selectedRole === 'all' 
+    ? users 
+    : users.filter(user => user.role === selectedRole);
 
   useEffect(() => {
     const loadUsers = async () => {
@@ -38,6 +47,26 @@ export default function AdminUsersPage() {
             </button>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Manage Users</h1>
           </div>
+
+          {/* Add role filter dropdown */}
+          <div className="flex items-center">
+            <label htmlFor="role-filter" className="mr-2 text-sm text-gray-600">
+              Filter by Role:
+            </label>
+            <select
+              id="role-filter"
+              value={selectedRole}
+              onChange={(e) => setSelectedRole(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Roles</option>
+              {uniqueRoles.map(role => (
+                <option key={role} value={role}>
+                  {role}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <motion.div
@@ -61,7 +90,7 @@ export default function AdminUsersPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {users.map((user) => (
+                  {filteredUsers.map((user) => (
                     <tr key={user.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{user.fullName}</div>

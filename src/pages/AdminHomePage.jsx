@@ -2,14 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { logOut } from '../backend/firebase/authFirebase';
 import { useNavigate } from 'react-router-dom';
-import { createFunding, getAllFunding, fetchProjectsWithUsers,fetchAllUsers } from '../backend/firebase/adminAccess.jsx';
+import { createFunding, getAllFunding, fetchProjectsWithUsers, fetchAllUsers } from '../backend/firebase/adminAccess.jsx';
+import { fetchAllDocuments } from '../backend/firebase/documentsDB';
 import { ClipLoader } from 'react-spinners';
 
 export default function AdminHomePage() {
   const [stats, setStats] = useState({
     totalUsers: 0,
     activeProjects: 0,
-    fundingOpportunities: 0
+    fundingOpportunities: 0,
+    totalDocuments: 0
   });
   const [projects, setProjects] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
@@ -37,12 +39,17 @@ export default function AdminHomePage() {
         const fundingOpps = await getAllFunding();
         const fundingCount = fundingOpps.length;
 
+        // Fetch total documents
+        const documents = await fetchAllDocuments();
+        const totalDocuments = documents.length;
+
         setProjects(projectsList);
 
         setStats({
           totalUsers,
           activeProjects,
-          fundingOpportunities: fundingCount
+          fundingOpportunities: fundingCount,
+          totalDocuments
         });
 
         setLoading(false);
@@ -100,7 +107,7 @@ export default function AdminHomePage() {
         </div>
 
         {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {loading ? (
             // Loading skeletons for stats
             <>
@@ -127,6 +134,16 @@ export default function AdminHomePage() {
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.2 }}
+                className="bg-white rounded-lg shadow p-6"
+              >
+                <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2" />
+                <div className="h-8 w-16 bg-gray-300 rounded animate-pulse" />
+              </motion.div>
+
+              <motion.div 
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{ delay: 0.3 }}
                 className="bg-white rounded-lg shadow p-6"
               >
                 <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2" />
@@ -168,6 +185,18 @@ export default function AdminHomePage() {
               >
                 <h3 className="text-gray-500 text-sm">Funding Opportunities</h3>
                 <p className="text-2xl font-bold text-gray-900">{stats.fundingOpportunities}</p>
+              </motion.div>
+
+              <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.3 }}
+                className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-md transition-all"
+                onClick={() => navigate('/admin/documents')}
+                data-testid="total-documents-card"
+              >
+                <h3 className="text-gray-500 text-sm">Total Documents</h3>
+                <p className="text-2xl font-bold text-gray-900">{stats.totalDocuments}</p>
               </motion.div>
             </>
           )}

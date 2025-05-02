@@ -197,3 +197,52 @@ const downloadDocument = (downloadURL) => {
       alert("Failed to download document.");
     }
 };
+
+/**
+ * Fetches all documents across all projects
+ * @returns {Promise<Array>} Array of all documents across all projects
+ */
+export const fetchAllDocuments = async () => {
+    try {
+        const projectsRef = collection(db, "projects");
+        const projectsSnapshot = await getDocs(projectsRef);
+        
+        const allDocuments = [];
+
+        // Loop through each project
+        for (const projectDoc of projectsSnapshot.docs) {
+            const projectId = projectDoc.id;
+            const foldersRef = collection(projectDoc.ref, "folders");
+            const foldersSnapshot = await getDocs(foldersRef);
+            
+            // Loop through each folder in the project
+            for (const folderDoc of foldersSnapshot.docs) {
+                const filesRef = collection(folderDoc.ref, "files");
+                const filesSnapshot = await getDocs(filesRef);
+                
+                // Add each file to our array with project and folder context
+                filesSnapshot.docs.forEach(fileDoc => {
+                    const fileData = fileDoc.data();
+                    allDocuments.push({
+                        id: fileDoc.id,
+                        projectId: projectId,
+                        folderId: folderDoc.id,
+                        folderName: folderDoc.data().name,
+                        fileName: fileData.displayName || fileData.fileName,
+                        description: fileData.description || '',
+                        downloadURL: fileData.downloadURL,
+                        size: fileData.size,
+                        type: fileData.type,
+                        uploadedAt: fileData.uploadedAt,
+                        lastModified: fileData.lastModified
+                    });
+                });
+            }
+        }
+
+        return allDocuments;
+    } catch (error) {
+        console.error("Error fetching all documents:", error);
+        throw new Error("Failed to fetch all documents");
+    }
+};

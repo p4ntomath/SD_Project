@@ -8,7 +8,16 @@ import { ClipLoader } from 'react-spinners';
 export default function AdminProjectsPage() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedCreator, setSelectedCreator] = useState('all');
   const navigate = useNavigate();
+
+  // Get unique creators for filter dropdown
+  const uniqueCreators = [...new Set(projects.map(project => project.userFullName))];
+
+  // Filter projects based on selected creator
+  const filteredProjects = selectedCreator === 'all' 
+    ? projects 
+    : projects.filter(project => project.userFullName === selectedCreator);
 
   useEffect(() => {
     const loadProjects = async () => {
@@ -38,6 +47,26 @@ export default function AdminProjectsPage() {
             </button>
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Project Management</h1>
           </div>
+
+          {/* Add creator filter dropdown */}
+          <div className="flex items-center">
+            <label htmlFor="creator-filter" className="mr-2 text-sm text-gray-600">
+              Filter by Creator:
+            </label>
+            <select
+              id="creator-filter"
+              value={selectedCreator}
+              onChange={(e) => setSelectedCreator(e.target.value)}
+              className="px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+            >
+              <option value="all">All Creators</option>
+              {uniqueCreators.map(creator => (
+                <option key={creator} value={creator}>
+                  {creator}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
 
         <motion.div
@@ -62,7 +91,7 @@ export default function AdminProjectsPage() {
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
-                  {projects.map((project) => (
+                  {filteredProjects.map((project) => (
                     <tr key={project.id}>
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm font-medium text-gray-900">{project.title}</div>

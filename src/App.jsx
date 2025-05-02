@@ -18,6 +18,7 @@ import AdminHomePage from './pages/AdminHomePage.jsx';
 import FundingManagementPage from './pages/FundingManagementPage.jsx';
 import AdminUsersPage from './pages/AdminUsersPage.jsx';
 import AdminProjectsPage from './pages/AdminProjectsPage.jsx';
+import AdminDocumentsPage from './pages/AdminDocumentsPage.jsx';
 
 function App() {
   return (
@@ -73,6 +74,11 @@ function App() {
           <Route path="/admin/projects" element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminProjectsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/documents" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminDocumentsPage />
             </ProtectedRoute>
           } />
           <Route path="/trackfunding" element={
