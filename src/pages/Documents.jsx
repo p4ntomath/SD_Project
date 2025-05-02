@@ -345,80 +345,102 @@ export default function DocumentsPage() {
                 )}
 
                 {showUploadModal && (
-                    <section className="fixed top-0 left-0 w-full h-full bg-black/30 backdrop-blur-sm flex items-center justify-center z-[9999]">
-                        <section className="bg-white p-8 rounded-xl w-[90%] max-w-[700px] flex flex-col gap-4">
-                            <section className="file-preview">
-                                <label>File name:</label>
-                                <input
-                                    className={`font-semibold text-base px-2 py-1 border ${titleError ? 'border-red-500' : 'border-gray-300'} rounded w-full`}
-                                    type="text"
-                                    placeholder={selectedFile?.name}
-                                    value={customName}
-                                    onChange={(e) => {
-                                        setCustomName(e.target.value);
-                                        setTitleError(false);
-                                    }}
-                                />
-                            </section>
+                    <section className="fixed top-0 left-0 w-full h-full bg-black/30 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+                        <section className="bg-white p-6 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+                            <header className="mb-4">
+                                <h2 className="text-xl font-semibold text-gray-900">Upload Document</h2>
+                            </header>
+                            
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">File name:</label>
+                                    <input
+                                        className={`w-full px-3 py-2 border ${titleError ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                        type="text"
+                                        placeholder="Enter file name"
+                                        value={customName}
+                                        onChange={(e) => {
+                                            setCustomName(e.target.value);
+                                            setTitleError(false);
+                                        }}
+                                    />
+                                    {titleError && (
+                                        <p className="mt-1 text-sm text-red-500">Please enter a file name</p>
+                                    )}
+                                </div>
 
-                            <label>Description:</label>
-                            <textarea
-                                className="font-semibold text-base px-2 py-1 border border-gray-300 rounded w-full"
-                                value={customDescription}
-                                onChange={(e) => setCustomDescription(e.target.value)}
-                            />
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Description:</label>
+                                    <textarea
+                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
+                                        value={customDescription}
+                                        onChange={(e) => setCustomDescription(e.target.value)}
+                                        rows={4}
+                                        placeholder="Add a description (optional)"
+                                    />
+                                </div>
 
-                            <section className="flex justify-end gap-4">
-                                <button onClick={handleConfirmUpload} disabled={!customName.trim()} className="bg-[#0c1f77] text-white font-bold py-2 px-4 rounded-md shadow hover:bg-[#122a9c] active:bg-[#0c1f77] focus:outline-none" >
-                                    Upload
-                                </button>
-                                <button onClick={() => setShowUploadModal(false)} className="bg-[#0c1f77] text-white font-bold py-2 px-4 rounded-md shadow hover:bg-[#122a9c] active:bg-[#0c1f77] focus:outline-none"
-                                >
-                                    Cancel
-                                </button>
-                            </section>
+                                <footer className="flex justify-end gap-3 pt-4">
+                                    <button 
+                                        onClick={() => setShowUploadModal(false)}
+                                        className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
+                                        onClick={handleConfirmUpload}
+                                        disabled={!customName.trim()}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        Upload
+                                    </button>
+                                </footer>
+                            </div>
                         </section>
                     </section>
                 )}
 
                 {showFolderModal && (
-                    <section className="fixed top-0 left-0 w-full h-full bg-black/30 backdrop-blur-sm flex items-center justify-center z-[9999]">
-                        <section className="bg-white p-8 rounded-xl w-[90%] max-w-[700px] flex flex-col gap-4">
-                            <section className="file-preview">
-                                <label>Folder name:</label>
-                                <input
-                                    className={`font-semibold text-base px-2 py-1 border ${titleError ? 'border-red-500' : 'border-gray-300'} rounded w-full`}
-                                    type="text"
-                                    placeholder={selectedFile?.name}
-                                    value={newFolderName}
-                                    onChange={(e) => {
-                                        setNewFolderName(e.target.value);
-                                        setTitleError(false);
-                                    }}
-                                />
+                    <section className="fixed top-0 left-0 w-full h-full bg-black/30 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
+                        <section className="bg-white p-6 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+                            <header className="mb-4">
+                                <h2 className="text-xl font-semibold text-gray-900">Create New Folder</h2>
+                            </header>
+                            
+                            <div className="space-y-4">
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">Folder name:</label>
+                                    <input
+                                        className={`w-full px-3 py-2 border ${titleError ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
+                                        type="text"
+                                        placeholder="Enter folder name"
+                                        value={newFolderName}
+                                        onChange={(e) => {
+                                            setNewFolderName(e.target.value);
+                                            setTitleError(false);
+                                        }}
+                                    />
+                                    {titleError && (
+                                        <p className="mt-1 text-sm text-red-500">Please enter a folder name</p>
+                                    )}
+                                </div>
 
-
-                                <section className="flex gap-4">
-                                    <button
+                                <footer className="flex justify-end gap-3 pt-4">
+                                    <button 
+                                        onClick={() => setShowFolderModal(false)}
+                                        className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button 
                                         onClick={handleCreateNewFolder}
-                                        className="bg-blue-600 text-white py-2 px-4 rounded"
+                                        disabled={!newFolderName.trim()}
+                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                                     >
                                         Create
                                     </button>
-
-                                    <button
-                                        onClick={() => setShowFolderModal(false)}
-                                        className="bg-gray-300 text-black py-2 px-4 rounded">
-                                        Cancel
-                                    </button>
-
-                                    <input
-                                        type="file"
-                                        onChange={handleFileUpload}
-                                        className="bg-[#f0f0fb] text-black font-semibold border border-[#cfcfcf] rounded-lg px-4 py-2 text-sm cursor-pointer shadow-sm"
-                                    />
-                                </section>
-                            </section>
+                                </footer>
+                            </div>
                         </section>
                     </section>
                 )}

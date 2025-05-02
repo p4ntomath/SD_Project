@@ -45,6 +45,8 @@ export default function ProjectDetailsPage() {
   const [customDescription, setCustomDescription] = useState('');
   const [downloadingFile, setDownloadingFile] = useState(null);
   const [deletingFile, setDeletingFile] = useState(null);
+  const [showDeleteFolderConfirm, setShowDeleteFolderConfirm] = useState(false);
+  const [folderToDelete, setFolderToDelete] = useState(null);
 
   useEffect(() => {
     const loadProject = async () => {
@@ -397,19 +399,22 @@ export default function ProjectDetailsPage() {
     }
   };
 
-  const handleDeleteFolder = async (folderId) => {
-    const confirmed = window.confirm('Are you sure you want to delete this folder and all its contents?');
-    if (!confirmed) return;
+  const handleDeleteFolder = (folderId) => {
+    setFolderToDelete(folders.find(folder => folder.id === folderId));
+    setShowDeleteFolderConfirm(true);
+  };
 
+  const confirmDeleteFolder = async () => {
     try {
       setModalOpen(true);
       setError(false);
       setStatusMessage('Deleting folder...');
 
-      await deleteFolder(projectId, folderId);
+      await deleteFolder(projectId, folderToDelete.id);
       
-      // Update UI
-      setFolders(folders.filter(folder => folder.id !== folderId));
+      setFolders(folders.filter(folder => folder.id !== folderToDelete.id));
+      setShowDeleteFolderConfirm(false);
+      setFolderToDelete(null);
       setStatusMessage('Folder deleted successfully');
     } catch (err) {
       console.error('Error deleting folder:', err);
@@ -752,23 +757,23 @@ export default function ProjectDetailsPage() {
                 </button>
               </header>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {folders.map((folder) => (
                   <div key={folder.id} 
-                    className="group relative bg-white border border-gray-200 rounded-xl p-4 hover:border-blue-300 hover:shadow-lg transition-all duration-300">
-                    <div className="flex items-center gap-3 mb-3">
-                      <div className="p-2 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    className="group relative bg-white border border-gray-200 rounded-xl p-6 hover:border-blue-300 hover:shadow-lg transition-all duration-300">
+                    <div className="flex items-center gap-4 mb-6">
+                      <div className="p-4 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                         </svg>
                       </div>
                       <div>
-                        <h3 className="font-medium text-gray-900">{folder.name}</h3>
+                        <h3 className="text-xl font-medium text-gray-900">{folder.name}</h3>
                         <p className="text-sm text-gray-500">{folder.files.length} files</p>
                       </div>
                     </div>
 
-                    <div className="space-y-2 max-h-48 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                    <div className="space-y-3 max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 mb-4">
                       {folder.files.map((file) => (
                         <div key={file.id} 
                           className="flex items-center justify-between p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
@@ -788,7 +793,7 @@ export default function ProjectDetailsPage() {
                                 <ClipLoader size={16} color="currentColor" />
                               ) : (
                                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4 4m0 0l-4-4m4 4V4" />
                                 </svg>
                               )}
                             </button>
@@ -836,12 +841,12 @@ export default function ProjectDetailsPage() {
                           setSelectedFolder(folder);
                           document.getElementById('file-upload').click();
                         }}
-                        className="text-sm text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1"
+                        className="w-full text-sm text-blue-600 hover:text-blue-800 transition-colors flex items-center justify-center gap-1 px-2 truncate"
                       >
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4 4m0 0l-4-4m4 4V4" />
                         </svg>
-                        Upload File
+                        <span className="truncate">Upload File</span>
                       </button>
                     </div>
                   </div>
@@ -1357,6 +1362,41 @@ export default function ProjectDetailsPage() {
                 </div>
               </div>
             </div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Folder Confirmation Modal */}
+      <AnimatePresence>
+        {showDeleteFolderConfirm && (
+          <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
+            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteFolderConfirm(false)} />
+            <motion.article
+              className="relative bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200"
+              initial={{ scale: 0.8, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0.8, opacity: 0 }}
+              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            >
+              <h2 className="text-xl font-semibold mb-4 text-gray-900">Delete Folder?</h2>
+              <p className="text-gray-700 mb-6">Are you sure you want to delete this folder and all its contents? This action cannot be undone.</p>
+              <footer className="flex justify-end gap-3">
+                <button
+                  onClick={() => setShowDeleteFolderConfirm(false)}
+                  className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50/80 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  onClick={() => {
+                    confirmDeleteFolder();
+                  }}
+                  className="bg-red-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-xl hover:bg-red-700/90 transition-colors"
+                >
+                  Delete
+                </button>
+              </footer>
+            </motion.article>
           </div>
         )}
       </AnimatePresence>
