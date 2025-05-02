@@ -1,7 +1,7 @@
 import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
 import { useState, useEffect } from 'react';
-import { fetchProject, updateProject, deleteProject } from '../backend/firebase/projectDB';
+import { fetchProject, updateProject, deleteProject, assignReviewers } from '../backend/firebase/projectDB';
 import { updateProjectFunds, updateProjectExpense, getFundingHistory } from '../backend/firebase/fundingDB';
 import { uploadDocument, fetchDocumentsByFolder, deleteDocument } from '../backend/firebase/documentsDB';
 import { createFolder, updateFolderName, deleteFolder } from '../backend/firebase/folderDB';
@@ -11,6 +11,9 @@ import CreateProjectForm from '../components/CreateProjectForm';
 import { AnimatePresence, motion } from 'framer-motion';
 import { formatFirebaseDate } from '../utils/dateUtils';
 import AssignReviewersModal from '../components/ResearcherComponents/AssignReviewersModal';
+import ProjectReviews from '../components/ReviewerComponents/ProjectReviews';
+import { createReviewRequest, getReviewerRequestsForProject } from '../backend/firebase/reviewdb';
+import { auth } from '../backend/firebase/firebaseConfig';
 
 export default function ProjectDetailsPage() {
   const { projectId } = useParams();
@@ -49,6 +52,7 @@ export default function ProjectDetailsPage() {
   const [deletingFile, setDeletingFile] = useState(null);
   const [showDeleteFolderConfirm, setShowDeleteFolderConfirm] = useState(false);
   const [folderToDelete, setFolderToDelete] = useState(null);
+  const [reviewRequests, setReviewRequests] = useState([]);
 
   useEffect(() => {
     const loadProject = async () => {
@@ -140,6 +144,25 @@ export default function ProjectDetailsPage() {
 
     if (projectId) {
       loadFolders();
+    }
+  }, [projectId]);
+
+  useEffect(() => {
+    const loadReviewRequests = async () => {
+      try {
+        // Get all review requests for this project
+        const requests = await getReviewerRequestsForProject(projectId);
+        setReviewRequests(requests);
+      } catch (err) {
+        console.error('Error loading review requests:', err);
+        setError(true);
+        setModalOpen(true);
+        setStatusMessage('Failed to load reviewer requests');
+      }
+    };
+
+    if (projectId) {
+      loadReviewRequests();
     }
   }, [projectId]);
 
@@ -560,21 +583,51 @@ export default function ProjectDetailsPage() {
 
   const handleAssignReviewers = async (selectedReviewers) => {
     try {
-      await assignReviewers(projectId, selectedReviewers);
-      
-      setProject({
-        ...project,
-        reviewers: selectedReviewers
-      });
-      
       setModalOpen(true);
+      setStatusMessage(
+        <div className="flex items-center gap-3">
+          <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
+          <span>Sending reviewer requests ({selectedReviewers.length} total)...</span>
+        </div>
+      );
+      
+      // Create reviewer requests in the reviewRequests collection
+      const reviewerPromises = selectedReviewers.map(reviewer => 
+        createReviewRequest(
+          projectId, 
+          reviewer.id,
+          project.title,
+          auth.currentUser.displayName || 'Researcher'
+        )
+      );
+
+      await Promise.all(reviewerPromises);
+      
+      // Reload review requests to update UI
+      const updatedRequests = await getReviewerRequestsForProject(projectId);
+      setReviewRequests(updatedRequests);
+      
+      setShowAssignReviewersModal(false);
+      setStatusMessage(
+        <div className="flex items-center gap-2 text-green-600">
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          <span>Successfully sent {selectedReviewers.length} reviewer request{selectedReviewers.length !== 1 ? 's' : ''}</span>
+        </div>
+      );
       setError(false);
-      setStatusMessage('Reviewers assigned successfully');
     } catch (err) {
-      console.error('Error assigning reviewers:', err);
-      setModalOpen(true);
+      console.error("Error assigning reviewers:", err);
       setError(true);
-      setStatusMessage('Failed to assign reviewers: ' + err.message);
+      setStatusMessage(
+        <div className="flex items-center gap-2 text-red-600">
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <span>Failed to send reviewer requests: {err.message}</span>
+        </div>
+      );
     }
   };
 
@@ -619,6 +672,77 @@ export default function ProjectDetailsPage() {
       </main>
     );
   }
+
+  const ReviewersCard = () => (
+    <section className="bg-white rounded-lg shadow p-4 sm:p-6">
+      <div className="flex justify-between items-center mb-4">
+        <h2 className="text-lg sm:text-xl font-semibold">Project Reviewers</h2>
+        <button
+          onClick={() => setShowAssignReviewersModal(true)}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+          </svg>
+          Assign Reviewers
+        </button>
+      </div>
+
+      {project.reviewers && project.reviewers.length > 0 ? (
+        <ul className="space-y-2">
+          {project.reviewers.map((reviewer) => (
+            <li key={reviewer.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-full">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                  </svg>
+                </div>
+                <div>
+                  <p className="font-medium text-sm">{reviewer.name}</p>
+                  <p className="text-xs text-gray-500">{reviewer.expertise}</p>
+                </div>
+              </div>
+              <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                Active Reviewer
+              </span>
+            </li>
+          ))}
+        </ul>
+      ) : reviewRequests.length > 0 ? (
+        <div className="space-y-4">
+          <p className="text-sm text-blue-600">Review requests sent, waiting for responses...</p>
+          <ul className="space-y-2">
+            {reviewRequests.map((request) => (
+              <li key={request.id} className="flex items-center justify-between p-2 bg-gray-50/80 rounded-lg">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 bg-gray-100 rounded-full">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    </svg>
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">{request.reviewerName}</p>
+                    <p className="text-xs text-gray-500">Request sent {request.requestedAt?.toDate().toLocaleDateString()}</p>
+                  </div>
+                </div>
+                <span className={`px-2 py-1 text-xs rounded-full ${
+                  request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                  request.status === 'accepted' ? 'bg-green-100 text-green-800' :
+                  'bg-red-100 text-red-800'
+                }`}>
+                  {request.status === 'pending' ? 'Pending Response' :
+                   request.status === 'accepted' ? 'Accepted' : 'Declined'}
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        <p className="text-sm text-gray-500 text-center py-4">No reviewers assigned yet</p>
+      )}
+    </section>
+  );
 
   return (
     <>
@@ -718,6 +842,12 @@ export default function ProjectDetailsPage() {
                   <p className="text-gray-700">{project.description}</p>
                 </section>
               </section>
+            </article>
+
+            {/* Project Reviews Section */}
+            <article className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4">Project Reviews</h2>
+              <ProjectReviews projectId={projectId} />
             </article>
 
             {/* Goals Card */}
@@ -1162,43 +1292,8 @@ export default function ProjectDetailsPage() {
               </section>
             </section>
 
-            {/* Reviewers Card */}
-            <section className="bg-white rounded-lg shadow p-4 sm:p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-lg sm:text-xl font-semibold">Project Reviewers</h2>
-                <button
-                  onClick={() => setShowAssignReviewersModal(true)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                  </svg>
-                  Assign Reviewers
-                </button>
-              </div>
+            <ReviewersCard />
 
-              {project.reviewers && project.reviewers.length > 0 ? (
-                <ul className="space-y-2">
-                  {project.reviewers.map((reviewer) => (
-                    <li key={reviewer.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-100 rounded-full">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm">{reviewer.name}</p>
-                          <p className="text-xs text-gray-500">{reviewer.expertise}</p>
-                        </div>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-gray-500 text-center py-4">No reviewers assigned yet</p>
-              )}
-            </section>
           </section>
         </section>
       </article>

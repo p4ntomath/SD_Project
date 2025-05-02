@@ -9,7 +9,7 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
   const [availableReviewers, setAvailableReviewers] = useState([]);
   const [loading, setLoading] = useState(false);
   const [fetchingReviewers, setFetchingReviewers] = useState(true);
-  const [allReviewers, setAllReviewers] = useState([]); // Add this new state
+  const [allReviewers, setAllReviewers] = useState([]);
 
   useEffect(() => {
     const loadReviewers = async () => {
@@ -21,11 +21,11 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
           expertise: reviewer.expertise || 'Not specified',
           department: reviewer.department || 'Not specified'
         }));
-        setAllReviewers(formattedReviewers);    // Store original list
+        setAllReviewers(formattedReviewers);
         setAvailableReviewers(formattedReviewers);
-        setFetchingReviewers(false);
       } catch (error) {
         console.error('Error fetching reviewers:', error);
+      } finally {
         setFetchingReviewers(false);
       }
     };
@@ -62,12 +62,10 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
     setLoading(true);
     try {
       await onAssign(selectedReviewers);
-      onClose();
     } catch (error) {
       console.error('Error assigning reviewers:', error);
-    } finally {
-      setLoading(false);
     }
+    // Note: We don't set loading to false here since onAssign will close the modal
   };
 
   if (!isOpen) return null;
@@ -117,7 +115,14 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
             </div>
           </div>
 
-          <div className="max-h-[400px] overflow-y-auto mb-6">
+          {fetchingReviewers ? (
+            <div className="flex items-center justify-center py-12">
+              <div className="flex flex-col items-center gap-3">
+                <div className="animate-spin h-8 w-8 border-3 border-blue-500 border-t-transparent rounded-full" />
+                <p className="text-sm text-gray-500">Loading reviewers...</p>
+              </div>
+            </div>
+          ) : (
             <div className="grid grid-cols-1 gap-3">
               {availableReviewers.map((reviewer) => (
                 <div
@@ -164,10 +169,16 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
                   </div>
                 </div>
               ))}
-            </div>
-          </div>
 
-          <footer className="flex items-center justify-between">
+              {availableReviewers.length === 0 && !fetchingReviewers && (
+                <div className="text-center py-8">
+                  <p className="text-gray-500">No reviewers found</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          <footer className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
             <p className="text-sm text-gray-500">
               {selectedReviewers.length} reviewer{selectedReviewers.length !== 1 ? 's' : ''} selected
             </p>
@@ -175,21 +186,22 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
               <button
                 onClick={onClose}
                 className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
+                disabled={loading}
               >
                 Cancel
               </button>
               <button
                 onClick={handleAssign}
                 disabled={selectedReviewers.length === 0 || loading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
               >
                 {loading ? (
-                  <>
-                    <ClipLoader size={16} color="#FFFFFF" className="mr-2" />
-                    Assigning...
-                  </>
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                    <span>Sending requests...</span>
+                  </div>
                 ) : (
-                  'Confirm Assignment'
+                  <span>Confirm Assignment</span>
                 )}
               </button>
             </div>

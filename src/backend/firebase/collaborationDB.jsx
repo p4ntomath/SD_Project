@@ -105,21 +105,5 @@ export const searchReviewers = async (searchTerm, currentUserId, project) => {
 };
 
 
-export const sendReviewerInvitation = async (projectId, reviewerId, senderId) => {
-    try {
-        const invitationRef = collection(db, "invitations");
-        await addDoc(invitationRef, {
-            projectId,
-            reviewerId,
-            senderId,
-            status: "pending",
-            type: "reviewer",
-            createdAt: new Date(),
-        });
-        console.log("Invitation sent successfully");
-    } catch (error) {
-        console.error("Error sending invitation:", error.message, error.stack);
-        throw new Error("Failed to send invitation");
-    }
-};
+
 

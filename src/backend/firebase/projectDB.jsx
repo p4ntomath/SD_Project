@@ -2,8 +2,8 @@
  * The code includes functions to create, fetch, update, and delete projects in a Firestore database
  * for a specific user.
  */
-import { db,auth } from "./firebaseConfig";
-import { query, where } from "firebase/firestore";
+import { db, auth } from "./firebaseConfig";
+import { query, where, arrayUnion, serverTimestamp } from "firebase/firestore";
 import {
   collection,
   setDoc,
@@ -281,16 +281,122 @@ export const deleteProject = async (projectId) => {
 
 //Please add update methods for all the fields in the project excluding the userId
 
-export const assignReviewers = async (projectId, reviewers) => {
+export const assignReviewers = async (projectId, reviewerRequests) => {
   try {
     const projectRef = doc(db, 'projects', projectId);
+    const projectDoc = await getDoc(projectRef);
+    
+    if (!projectDoc.exists()) {
+      throw new Error('Project not found');
+    }
+
+    // Add unique IDs to reviewer requests
+    const requestsWithIds = reviewerRequests.map(request => ({
+      ...request,
+      id: crypto.randomUUID()
+    }));
+
+    // Update project with reviewer requests
     await updateDoc(projectRef, {
-      reviewers: reviewers,
+      reviewerRequests: arrayUnion(...requestsWithIds),
       updatedAt: serverTimestamp()
     });
-    return true;
+
+    return requestsWithIds;
   } catch (error) {
-    console.error("Error assigning reviewers:", error);
+    console.error('Error assigning reviewers:', error);
+    throw error;
+  }
+};
+
+// Function to get review requests for a reviewer
+export const getReviewRequests = async (reviewerId) => {
+  try {
+    // Query all projects that have review requests for this reviewer
+    const projectsRef = collection(db, 'projects');
+    const q = query(projectsRef);
+    const querySnapshot = await getDocs(q);
+    
+    const requests = [];
+    
+    querySnapshot.forEach((doc) => {
+      const project = doc.data();
+      if (project.reviewerRequests) {
+        const reviewerRequests = project.reviewerRequests.filter(
+          req => req.reviewerId === reviewerId
+        );
+        requests.push(...reviewerRequests.map(req => ({
+          ...req,
+          projectId: doc.id
+        })));
+      }
+    });
+    
+    return requests;
+  } catch (error) {
+    console.error('Error getting review requests:', error);
+    throw error;
+  }
+};
+
+// Function to update a reviewer request status
+export const updateReviewerRequest = async (projectId, requestId, status) => {
+  try {
+    const projectRef = doc(db, 'projects', projectId);
+    const projectDoc = await getDoc(projectRef);
+    
+    if (!projectDoc.exists()) {
+      throw new Error('Project not found');
+    }
+
+    const project = projectDoc.data();
+    const updatedRequests = project.reviewerRequests.map(req => 
+      req.id === requestId ? { ...req, status } : req
+    );
+
+    // If request was accepted, also add reviewer to the project's reviewers array
+    if (status === 'accepted') {
+      const acceptedRequest = project.reviewerRequests.find(req => req.id === requestId);
+      const reviewer = {
+        id: acceptedRequest.reviewerId,
+        name: acceptedRequest.reviewerName
+      };
+
+      await updateDoc(projectRef, {
+        reviewerRequests: updatedRequests,
+        reviewers: arrayUnion(reviewer),
+        updatedAt: serverTimestamp()
+      });
+    } else {
+      await updateDoc(projectRef, {
+        reviewerRequests: updatedRequests,
+        updatedAt: serverTimestamp()
+      });
+    }
+  } catch (error) {
+    console.error('Error updating reviewer request:', error);
+    throw error;
+  }
+};
+
+// Get project details
+export const getProjectDetails = async (projectId) => {
+  try {
+    const projectRef = doc(db, 'projects', projectId);
+    const projectSnap = await getDoc(projectRef);
+    
+    if (!projectSnap.exists()) {
+      throw new Error('Project not found');
+    }
+
+    const project = {
+      id: projectSnap.id,
+      ...projectSnap.data()
+    };
+
+    return project;
+  } catch (error) {
+    console.error('Error getting project details:', error);
     throw error;
   }
 };

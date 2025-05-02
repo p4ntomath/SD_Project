@@ -1,8 +1,6 @@
 import React, { useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import ResearcherHomePage from './ResearcherHomePage.jsx';
 import ResearcherHome from "./ResearcherPages/ResearcherHome.jsx";
-import ReviewerHomePage from './ReviewerHomePage.jsx';
 import AuthContext from "../context/AuthContext";
 import { ClipLoader } from "react-spinners";
 
@@ -13,13 +11,13 @@ export default function HomePage() {
     useEffect(() => {
         if (user && role == null && loading === false) {
             navigate('/complete-profile');
+        } else if (role === 'reviewer' && !loading) {
+            navigate('/reviewer/dashboard');
         }
     }, [user, role, loading, navigate]);
 
     if (role === 'researcher') {
         return <div data-testid="home-page"><ResearcherHome /></div>;
-    } else if (role === 'reviewer') {
-        return <div data-testid="home-page"><ReviewerHomePage /></div>;
     }
     
     if (loading) {

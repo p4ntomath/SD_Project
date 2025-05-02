@@ -30,7 +30,7 @@ const StatusModal = ({ isOpen, onClose, success, message }) => {
               </h2>
             </header>
             <section className="mb-6">
-              <p className="text-gray-700">{message}</p>
+              <div className="text-gray-700">{message}</div>
             </section>
             <footer className="flex justify-end">
               <button
