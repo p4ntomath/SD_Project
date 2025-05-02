@@ -6,12 +6,11 @@ import { signIn, googleSignIn ,getUserRole} from "../backend/firebase/authFireba
 import { ClipLoader } from "react-spinners";
 import AuthContext from "../context/AuthContext";
 
-
 const LoginForm = () => {
-
   const { setRole,setLoading} = useContext(AuthContext);
   const paths = {
-    success: "/home",
+    admin: "/admin",
+    home: "/home",
     completeProfile: "/complete-profile",
   };
   const navigate = useNavigate();
@@ -69,7 +68,7 @@ const LoginForm = () => {
       const user = await signIn(formData.email, formData.password);
       const role = await getUserRole(user.uid);
       setRole(role);
-      navigate(paths.success);
+      navigate(role === 'admin' ? paths.admin : paths.home);
     } catch (error) {
       if (error.code === 'auth/user-not-found') {
         setErrors({ form: 'User not found. Please sign up.' });
@@ -87,8 +86,6 @@ const LoginForm = () => {
     setIsLoading(false);
   };
 
-
-
   const handleGoogleAuth = async () => {
     setIsLoading(true);
     setLoading(true);
@@ -99,7 +96,7 @@ const LoginForm = () => {
       } else {
         const role = await getUserRole(user.uid);
         setRole(role);
-        navigate(paths.success);
+        navigate(role === 'admin' ? paths.admin : paths.home);
       }
     } catch (error) {
       setErrors({ form:'Google sign-in failed. Please try again.' });

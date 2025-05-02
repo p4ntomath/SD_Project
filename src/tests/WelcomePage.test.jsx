@@ -15,6 +15,19 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
+// Mock framer-motion to avoid animation-related issues in tests
+vi.mock('framer-motion', () => ({
+  motion: {
+    section: ({ children, ...props }) => <section {...props}>{children}</section>,
+    div: ({ children, ...props }) => <div {...props}>{children}</div>,
+    figure: ({ children, ...props }) => <figure {...props}>{children}</figure>,
+    h1: ({ children, ...props }) => <h1 {...props}>{children}</h1>,
+    h2: ({ children, ...props }) => <h2 {...props}>{children}</h2>,
+    p: ({ children, ...props }) => <p {...props}>{children}</p>,
+    button: ({ children, onClick, ...props }) => <button onClick={onClick} {...props}>{children}</button>,
+  }
+}));
+
 describe('WelcomePage Component', () => {
   const renderWelcomePage = () => {
     return render(
@@ -26,7 +39,6 @@ describe('WelcomePage Component', () => {
 
   it('renders the welcome page with main heading', () => {
     renderWelcomePage();
-
     const mainHeading = screen.getByRole('heading', { 
       level: 1,
       name: /one platform.*endless academic possibilities/i
@@ -34,16 +46,16 @@ describe('WelcomePage Component', () => {
     expect(mainHeading).toBeInTheDocument();
   });
 
-  it('displays the sign up button', () => {
+  it('displays the get started button', () => {
     renderWelcomePage();
-    const signUpButton = screen.getByRole('button', { name: /sign up!/i });
-    expect(signUpButton).toBeInTheDocument();
+    const getStartedButton = screen.getByText(/get started now/i);
+    expect(getStartedButton).toBeInTheDocument();
   });
 
-  it('navigates to signup page when sign up button is clicked', () => {
+  it('navigates to signup page when get started button is clicked', () => {
     renderWelcomePage();
-    const signUpButton = screen.getByRole('button', { name: /sign up!/i });
-    fireEvent.click(signUpButton);
+    const getStartedButton = screen.getByText(/get started now/i);
+    fireEvent.click(getStartedButton);
     expect(mockNavigate).toHaveBeenCalledWith('/signup');
   });
 
@@ -63,6 +75,27 @@ describe('WelcomePage Component', () => {
   it('renders the navigation bar', () => {
     renderWelcomePage();
     expect(screen.getByRole('banner')).toBeInTheDocument();
-    expect(screen.getByText('Re:Search')).toBeInTheDocument();
+  });
+
+  it('displays the features section', () => {
+    renderWelcomePage();
+    expect(screen.getByText('Why Choose Re:Search?')).toBeInTheDocument();
+    expect(screen.getByText('Project Management')).toBeInTheDocument();
+    expect(screen.getByText('Collaboration Tools')).toBeInTheDocument();
+    expect(screen.getByText('Fund Management')).toBeInTheDocument();
+  });
+
+  it('displays the CTA section', () => {
+    renderWelcomePage();
+    expect(screen.getByText('Ready to Transform Your Research Journey?')).toBeInTheDocument();
+    const signUpButton = screen.getByText('Sign Up Now');
+    expect(signUpButton).toBeInTheDocument();
+  });
+
+  it('navigates to signup page when CTA sign up button is clicked', () => {
+    renderWelcomePage();
+    const signUpButton = screen.getByText('Sign Up Now');
+    fireEvent.click(signUpButton);
+    expect(mockNavigate).toHaveBeenCalledWith('/signup');
   });
 });

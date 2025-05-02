@@ -14,6 +14,10 @@ import FundingTrackerPage from './pages/FundingTrackerPage.jsx';
 import ProjectDetailsPage from './pages/ProjectDetailsPage.jsx';
 import DocumentsPage from './pages/Documents.jsx';
 import MyProjects from './pages/MyProjects.jsx';
+import AdminHomePage from './pages/AdminHomePage.jsx';
+import FundingManagementPage from './pages/FundingManagementPage.jsx';
+import AdminUsersPage from './pages/AdminUsersPage.jsx';
+import AdminProjectsPage from './pages/AdminProjectsPage.jsx';
 
 function App() {
   return (
@@ -49,6 +53,24 @@ function App() {
           <Route path="/projects" element={
             <ProtectedRoute allowedRoles={['researcher']}>
               <MyProjects />
+          <Route path="/admin" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminHomePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/funding" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <FundingManagementPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/users" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminUsersPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/projects" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminProjectsPage />
             </ProtectedRoute>
           } />
           <Route path="/trackfunding" element={
@@ -56,8 +78,13 @@ function App() {
               <FundingTrackerPage />
             </ProtectedRoute>
           } />
+          <Route path="/admin/projects/:projectId" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <ProjectDetailsPage />
+            </ProtectedRoute>
+          } />
           <Route path="/projects/:projectId" element={
-            <ProtectedRoute allowedRoles={['researcher']}>
+            <ProtectedRoute allowedRoles={['researcher', 'admin']}>
               <ProjectDetailsPage />
             </ProtectedRoute>
           } />
