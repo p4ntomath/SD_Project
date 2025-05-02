@@ -116,6 +116,7 @@ export default function DocumentsPage() {
     const handleFileUpload = async () => {
         if (!selectedFile || !selectedFolder || !customName.trim()) {
             setError("Please select a file, folder and provide a name");
+            setShowUploadModal(false);
             return;
         }
 
@@ -123,6 +124,8 @@ export default function DocumentsPage() {
         const maxSize = 10 * 1024 * 1024; // 10MB in bytes
         if (selectedFile.size > maxSize) {
             setError("File size exceeds the maximum limit of 10MB");
+            setSelectedFile(null);
+            setShowUploadModal(false);
             return;
         }
 
@@ -138,6 +141,8 @@ export default function DocumentsPage() {
         ];
         if (!allowedTypes.includes(selectedFile.type)) {
             setError("Invalid file type. Please upload a PDF, Word document, text file, or image.");
+            setSelectedFile(null);
+            setShowUploadModal(false);
             return;
         }
 
