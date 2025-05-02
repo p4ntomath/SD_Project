@@ -2,454 +2,414 @@ import React, { useEffect, useState } from 'react';
 import { DocumentIcon } from "@heroicons/react/24/outline";
 import MainNav from '../components/ResearcherComponents/Navigation/MainNav';
 import MobileBottomNav from '../components/ResearcherComponents/Navigation/MobileBottomNav';
+import { ClipLoader } from 'react-spinners';
+import { auth } from '../backend/firebase/firebaseConfig';
+import { createFolder, getFolders, deleteFolder, updateFolderName } from '../backend/firebase/folderDB';
+import { uploadDocument, fetchDocumentsByFolder, deleteDocument } from '../backend/firebase/documentsDB';
+import { formatFirebaseDate } from '../utils/dateUtils';
+import { fetchProjects } from '../backend/firebase/projectDB';
 
 export default function DocumentsPage() {
-    const [documents, setDocuments] = useState([]);
-    const [downloadedDocs, setDownloadedDocs] = useState([]);
-    const [showOnlyDownloaded, setShowOnlyDownloaded] = useState(false);
-    const [lastDeleted, setLastDeleted] = useState(null);
-    const [undoTimer, setUndoTimer] = useState(null);
-    const [uploadSuccess, setUploadSuccess] = useState(false);
-    const [newDescription, setNewDescription] = useState('');
+    const [folders, setFolders] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [showFolderModal, setShowFolderModal] = useState(false);
+    const [showUploadModal, setShowUploadModal] = useState(false);
+    const [newFolderName, setNewFolderName] = useState('');
+    const [selectedFolder, setSelectedFolder] = useState(null);
     const [selectedFile, setSelectedFile] = useState(null);
     const [customName, setCustomName] = useState('');
     const [customDescription, setCustomDescription] = useState('');
-    const [showUploadModal, setShowUploadModal] = useState(false);
-    const [titleError, setTitleError] = useState(false);
-    const [sortOption, setSortOption] = useState('');
-    const [visibleDocs, setVisibleDocs] = useState(documents);
-    const [filterOption, setFilterOption] = useState('');
-    const [folders, setFolders] = useState([]);
-    const [newFolderName, setNewFolderName] = useState('');
-    const [showFolderModal, setShowFolderModal] = useState(false);
+    const [error, setError] = useState(null);
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-    const [selectedFolder, setSelectedFolder] = useState(null);
-
-    function handleDownload(url, id) {
-        const link = document.createElement('a');
-        link.href = url;
-        link.setAttribute('download', '');
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-
-        setDownloadedDocs((prev) => {
-            if (!prev.includes(id)) return [...prev, id];
-            return prev;
-        });
-    }
-
-    function toggleShowOnlyDownloaded() {
-        setShowOnlyDownloaded(prev => !prev);
-    }
-
-    function handleDelete(id) {
-        const confirmDelete = window.confirm('Are you sure you want to delete this document?');
-        if (confirmDelete) {
-            const deletedDoc = documents.find(doc => doc.id === id);
-            setDocuments(prevDocs => prevDocs.filter(doc => doc.id !== id));
-            setLastDeleted(deletedDoc);
-
-            if (undoTimer) clearTimeout(undoTimer);
-
-            const timer = setTimeout(() => {
-                setLastDeleted(null);
-            }, 5000);
-
-            setUndoTimer(timer);
-        }
-    }
-
-    function handleUndo() {
-        if (lastDeleted) {
-            setDocuments(prevDocs => [...prevDocs, lastDeleted]);
-            setLastDeleted(null);
-            if (undoTimer) clearTimeout(undoTimer);
-        }
-    }
+    const [uploadLoading, setUploadLoading] = useState(false);
+    const [sortOption, setSortOption] = useState('date');
+    const [filterOption, setFilterOption] = useState('all');
+    const [projectsMap, setProjectsMap] = useState({});
 
     useEffect(() => {
-        let filtered = showOnlyDownloaded
-            ? documents.filter(doc => downloadedDocs.includes(doc.id))
-            : documents;
+        loadFolders();
+    }, []);
 
-        if (filterOption === 'shared') {
-            filtered = filtered.filter(doc => doc.shared);
-        } else if (filterOption === 'private') {
-            filtered = filtered.filter(doc => doc.private);
+    const loadFolders = async () => {
+        try {
+            setLoading(true);
+            const user = auth.currentUser;
+            if (!user) {
+                setError("Please sign in to view documents");
+                return;
+            }
+
+            // First get all user's projects
+            const projects = await fetchProjects(user.uid);
+            
+            // Create a map of project IDs to project names
+            const projectMapping = {};
+            projects.forEach(project => {
+                projectMapping[project.id] = project.title;
+            });
+            setProjectsMap(projectMapping);
+            
+            // Then fetch documents for each project
+            const allFolders = [];
+            for (const project of projects) {
+                try {
+                    const projectFolders = await fetchDocumentsByFolder(project.id);
+                    if (projectFolders && projectFolders.length > 0) {
+                        // Add project name to each folder
+                        const foldersWithProject = projectFolders.map(folder => ({
+                            ...folder,
+                            projectName: project.title
+                        }));
+                        allFolders.push(...foldersWithProject);
+                    }
+                } catch (err) {
+                    console.error(`Error loading folders for project ${project.id}:`, err);
+                }
+            }
+
+            // Sort folders by date
+            const sortedFolders = allFolders.sort((a, b) => {
+                const dateA = a.createdAt?.seconds || 0;
+                const dateB = b.createdAt?.seconds || 0;
+                return dateB - dateA;
+            });
+
+            setFolders(sortedFolders);
+        } catch (err) {
+            setError(err.message);
+            console.error("Error loading folders:", err);
+        } finally {
+            setLoading(false);
         }
-
-        if (sortOption === 'name') {
-            filtered.sort((a, b) => a.name.localeCompare(b.name));
-        } else if (sortOption === 'date') {
-            filtered.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
-        }
-
-        setVisibleDocs(filtered);
-    }, [documents, downloadedDocs, showOnlyDownloaded, sortOption]);
-
-    function handleFileUpload(event) {
-        const file = event.target.files[0];
-        if (file && selectedFolder) {
-            const newFile = {
-                id: Date.now(),
-                name: file.name,
-                size: (file.size / 1024).toFixed(1) + ' KB',
-                url: URL.createObjectURL(file),
-                folderId: selectedFolder.id,
-            };
-
-            setFolders(folders.map(folder =>
-                folder.id === selectedFolder.id
-                    ? { ...folder, files: [...folder.files, newFile] }
-                    : folder
-            ));
-        };
-
-        setDocuments(prev => [...prev, newDoc]);
-        setNewDescription('');
-        setUploadSuccess(true);
-        setTimeout(() => setUploadSuccess(false), 3000);
     };
 
-    function handleConfirmUpload() {
+    const handleCreateFolder = async () => {
+        if (!newFolderName.trim()) return;
 
-        if (!customName.trim()) {
-            setTitleError(true);
-            alert("Please enter a document title before uploading.");
-            return;
-        }
-
-        const newDoc = {
-            id: Date.now(),
-            name: customName,
-            description: customDescription || 'No description provided',
-            shared: false,
-            url: URL.createObjectURL(selectedFile),
-            type: selectedFile.type,
-            size: (selectedFile.size / 1024).toFixed(1) + ' KB',
-            uploadDate: new Date().toLocaleDateString()
-        };
-
-        setDocuments(prev => [...prev, newDoc]);
-
-        setShowUploadModal(false);
-        setCustomName('');
-        setCustomDescription('');
-        setSelectedFile(null);
-        setUploadSuccess(true);
-        setTimeout(() => setUploadSuccess(false), 3000);
-    }
-
-    const handleSort = (option) => {
-        let sortedDocs = [...visibleDocs];
-        if (option === 'name') {
-            sortedDocs.sort((a, b) => a.name.localeCompare(b.name));
-        } else if (option === 'date') {
-            sortedDocs.sort((a, b) => new Date(b.uploadDate) - new Date(a.uploadDate));
-        }
-        setVisibleDocs(sortedDocs);
-        setSortOption(option);
-    };
-
-    const handleFilter = (option) => {
-        setFilterOption(option);
-    };
-
-    const handleCreateNewFolder = () => {
-        if (newFolderName.trim()) {
-            const newFolder = {
-                id: Date.now(),
-                name: newFolderName,
-                files: [],
-                lastModified: new Date().toLocaleDateString(),
-            };
-
-            setFolders((prevFolders) => [...prevFolders, newFolder]);
+        try {
+            setUploadLoading(true);
+            const user = auth.currentUser;
+            if (!user) throw new Error("Please sign in to create folders");
+            
+            await createFolder(user.uid, newFolderName.trim());
+            await loadFolders(); // Reload folders to get the new one
             setNewFolderName('');
             setShowFolderModal(false);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setUploadLoading(false);
         }
     };
 
-    return (
-        <main className="min-h-screen bg-[#f3f4fc]">
-            <MainNav
-                mobileMenuOpen={mobileMenuOpen}
-                setMobileMenuOpen={setMobileMenuOpen}
-                onSearch={() => { }}
-            />
+    const handleFileUpload = async () => {
+        if (!selectedFile || !selectedFolder || !customName.trim()) return;
 
-            <section className="pt-16 px-4 md:px-8 max-w-7xl mx-auto">
-                {/* Page Title */}
+        try {
+            setUploadLoading(true);
+            const user = auth.currentUser;
+            if (!user) throw new Error("Please sign in to upload files");
+
+            await uploadDocument(selectedFile, selectedFolder.id, user.uid, {
+                displayName: customName.trim(),
+                description: customDescription.trim() || 'No description provided'
+            });
+
+            await loadFolders(); // Reload to get the new file
+            setShowUploadModal(false);
+            setSelectedFile(null);
+            setCustomName('');
+            setCustomDescription('');
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setUploadLoading(false);
+        }
+    };
+
+    const handleDeleteFolder = async (folderId) => {
+        if (!window.confirm('Are you sure you want to delete this folder and all its contents?')) return;
+
+        try {
+            setUploadLoading(true);
+            await deleteFolder(auth.currentUser.uid, folderId);
+            await loadFolders();
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setUploadLoading(false);
+        }
+    };
+
+    const handleDeleteFile = async (folderId, fileId) => {
+        if (!window.confirm('Are you sure you want to delete this file?')) return;
+
+        try {
+            setUploadLoading(true);
+            await deleteDocument(fileId, auth.currentUser.uid, folderId);
+            await loadFolders();
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setUploadLoading(false);
+        }
+    };
+
+    const handleDownload = (downloadURL) => {
+        window.open(downloadURL, '_blank');
+    };
+
+    const sortFolders = (folders) => {
+        const sorted = [...folders];
+        switch (sortOption) {
+            case 'name':
+                sorted.sort((a, b) => a.name.localeCompare(b.name));
+                break;
+            case 'date':
+                sorted.sort((a, b) => b.createdAt - a.createdAt);
+                break;
+            default:
+                break;
+        }
+        return sorted;
+    };
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center min-h-screen">
+                <ClipLoader color="#3B82F6" />
+            </div>
+        );
+    }
+
+    return (
+        <main className="min-h-screen bg-gray-50">
+            <MainNav mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} />
+
+            <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 <header className="mb-8">
-                    <h1 className="text-2xl font-bold text-gray-800">My Documents</h1>
-                    <p className="text-gray-600 mt-1">Manage and organize your research documents</p>
+                    <h1 className="text-3xl font-bold text-gray-900">My Documents</h1>
+                    <p className="mt-2 text-sm text-gray-600">Manage and organize your research documents</p>
                 </header>
 
-                {uploadSuccess && (
-                    <section className="fixed top-20 left-1/2 transform -translate-x-1/2 bg-green-600 text-white px-8 py-4 rounded-xl font-semibold shadow-lg z-[1000] animate-slideDown">
-                        Document uploaded successfully!
-                    </section>
+                {error && (
+                    <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
+                        {error}
+                    </div>
                 )}
 
-                <section className="flex gap-4 my-8">
-                    <select
-                        value={sortOption}
-                        onChange={(e) => {
-                            const selected = e.target.value;
-                            setSortOption(selected);
-                            handleSort(selected);
-                        }}
-
-                        className="bg-[#f0f0fb] text-black font-semibold border border-[#cfcfcf] rounded-lg px-4 py-2 text-sm cursor-pointer shadow-sm">
-
-                        <option value="">Sort by</option>
-                        <option value="date">Date</option>
-                        <option value="name">Name</option>
-                    </select>
-
-                    <select
-                        value={filterOption}
-                        onChange={(e) => handleFilter(e.target.value)}
-                        className="bg-[#f0f0fb] text-black font-semibold border border-[#cfcfcf] rounded-lg px-4 py-2 text-sm cursor-pointer shadow-sm">
-
-                        <option value="">Filter</option>
-                        <option value="shared">Shared</option>
-                        <option value="private">Private</option>
-                    </select>
-
+                <section className="mb-6 flex flex-wrap gap-4">
                     <button
-                        onClick={toggleShowOnlyDownloaded}
-                        className="bg-gray-100 text-black font-semibold border border-[#cfcfcf] rounded-lg px-4 py-2 text-sm shadow-sm hover:bg-gray-200 focus:ring-0"
+                        onClick={() => setShowFolderModal(true)}
+                        className="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                     >
-                        {showOnlyDownloaded ? 'Show All' : 'Downloaded'}
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        New Folder
                     </button>
 
-                    {lastDeleted && (
-                        <section className="flex items-center gap-4 bg-[#fff3cd] text-[#856404] p-4 mb-4 border border-[#ffeeba] rounded-lg">
-                            <section>Document deleted.</section>
-                            <button onClick={handleUndo} className="text-[#0c1f77] font-bold">Undo</button>
-                        </section>
-                    )}
+                    <select
+                        value={sortOption}
+                        onChange={(e) => setSortOption(e.target.value)}
+                        className="px-4 py-2 bg-white border border-gray-300 rounded-lg shadow-sm text-gray-700"
+                    >
+                        <option value="date">Sort by Date</option>
+                        <option value="name">Sort by Name</option>
+                    </select>
                 </section>
 
-                <section className="flex flex-wrap gap-4 mb-8">
-                    {visibleDocs.map((doc, i) => (
-                        <article
-                            key={i}
-                            className="flex flex-col bg-white border border-[#ddd] rounded-xl shadow-md p-4 flex-1 max-w-[400px] w-full m-4 gap-2">
-                            <header className="flex justify-between items-center">
-                                <h2 className="text-base m-0">{doc.name}</h2>
-                                <p className="text-sm text-[#555]">{doc.shared ? 'Shared' : 'Private'}</p>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    {sortFolders(folders).map((folder) => (
+                        <article key={folder.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
+                            <header className="flex items-start justify-between mb-4">
+                                <div className="flex items-center">
+                                    <div className="p-2 bg-blue-50 rounded-lg mr-3">
+                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                                        </svg>
+                                    </div>
+                                    <div>
+                                        <h3 className="font-semibold text-gray-900">{folder.name}</h3>
+                                        <p className="text-sm text-gray-500">{folder.files?.length || 0} files</p>
+                                        <p className="text-xs text-blue-600 mt-1">Project: {folder.projectName}</p>
+                                    </div>
+                                </div>
+                                <button
+                                    onClick={() => handleDeleteFolder(folder.id)}
+                                    className="text-red-600 hover:text-red-800 transition-colors"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
                             </header>
 
-                            <p className="text-sm text-[#555] break-words">{doc.description}</p>
+                            <div className="space-y-2">
+                                {folder.files?.map((file) => (
+                                    <div key={file.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-sm">
+                                        <div className="flex items-center space-x-2 min-w-0">
+                                            <DocumentIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
+                                            <span className="truncate">{file.name}</span>
+                                        </div>
+                                        <div className="flex items-center space-x-2">
+                                            <button
+                                                onClick={() => handleDownload(file.downloadURL)}
+                                                className="text-blue-600 hover:text-blue-800"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                                                </svg>
+                                            </button>
+                                            <button
+                                                onClick={() => handleDeleteFile(folder.id, file.id)}
+                                                className="text-red-600 hover:text-red-800"
+                                            >
+                                                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </div>
+                                ))}
 
-                            <footer className="flex justify-between flex-wrap text-sm text-[#666] gap-2">
-                                <p>{doc.type}</p>
-                                <p>{doc.uploadDate}</p>
-                                <p>{doc.size}</p>
-                            </footer>
+                                <button
+                                    onClick={() => {
+                                        setSelectedFolder(folder);
+                                        setShowUploadModal(true);
+                                    }}
+                                    className="w-full mt-4 px-4 py-2 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition-colors flex items-center justify-center"
+                                >
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                                    </svg>
+                                    Upload File
+                                </button>
+                            </div>
 
-                            <section className="flex justify-end gap-2">
-                                {!downloadedDocs.includes(doc.id) ? (
-                                    <button onClick={() => handleDownload(doc.url, doc.id)}
-                                        className="px-3 py-1 text-sm border border-gray-300 rounded">Download</button>
-                                ) : (
-                                    <button className="text-green-600 font-semibold">Downloaded</button>
-                                )}
-                                <button onClick={() => handleDelete(doc.id)}
-                                    className="px-3 py-1 text-sm border border-gray-300 rounded">Delete</button>
-                            </section>
+                            <div className="mt-4 pt-4 border-t border-gray-100">
+                                <p className="text-xs text-gray-500">Created {formatFirebaseDate(folder.createdAt)}</p>
+                            </div>
                         </article>
                     ))}
-                </section>
+                </div>
 
-                {!showOnlyDownloaded && (
-                    <section className="flex justify-start mb-8">
-                        <input
-                            type="file"
-                            id="upload-input"
-                            className="hidden"
-                            onChange={(e) => {
-                                const file = e.target.files[0];
-                                if (file) {
-                                    setSelectedFile(file);
-                                    setCustomName(file.name);
-                                    setShowUploadModal(true);
-                                }
-                            }}
-                        />
-
-                        <button onClick={() => document.getElementById('upload-input').click()}
-                            className="bg-[#0c1f77] text-white py-2 px-4 rounded-lg font-bold">
-                            + Upload New Document
-                        </button>
-                    </section>
+                {/* Create Folder Modal */}
+                {showFolderModal && (
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                        <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+                            <h2 className="text-xl font-semibold mb-4">Create New Folder</h2>
+                            <input
+                                type="text"
+                                value={newFolderName}
+                                onChange={(e) => setNewFolderName(e.target.value)}
+                                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="Enter folder name"
+                            />
+                            <div className="mt-6 flex justify-end space-x-3">
+                                <button
+                                    onClick={() => setShowFolderModal(false)}
+                                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleCreateFolder}
+                                    disabled={!newFolderName.trim() || uploadLoading}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                                >
+                                    {uploadLoading ? (
+                                        <ClipLoader size={20} color="#ffffff" />
+                                    ) : (
+                                        'Create Folder'
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
                 )}
 
-                {!showOnlyDownloaded && (
-                    <section className="mb-12">
-                        <header className="mb-4">
-                            <h2 className="text-xl">Folders</h2>
-                        </header>
-
-                        <section className="flex gap-4 flex-wrap">
-                            {folders.map((folder) => (
-                                <article key={folder.id} className="bg-white border border-[#ddd] rounded-lg shadow-md p-4 w-[250px] flex flex-col">
-                                    <h3 className="flex items-center text-base mb-2">
-                                        <img
-                                            src="https://cdn-icons-png.flaticon.com/512/716/716784.png"
-                                            alt="folder"
-                                            className="w-6 h-6 mr-2"
-                                        />
-                                        {folder.name}
-                                    </h3>
-                                    <p className="text-sm text-[#555]">{folder.files.length} files</p>
-                                    <p className="text-sm text-[#555]">Last modified: {folder.lastModified}</p>
-
-                                    <ul className="mt-4">
-                                        {folder.files.map((file) => (
-                                            <li key={file.id} className="text-sm text-[#555]">
-                                                <a href={file.url} target="_blank" rel="noopener noreferrer">
-                                                    {file.name}
-                                                </a> - {file.size}
-                                            </li>
-                                        ))}
-                                    </ul>
-
-                                </article>
-                            ))}
-                        </section>
-
-
-                        <button
-                            onClick={() => setShowFolderModal(true)}
-                            className="mt-4 bg-[#0c1f77] text-white py-2 px-4 rounded-lg font-bold">
-                            + Create New Folder
-                        </button>
-
-                        <select
-                            onChange={(e) => {
-                                const selected = folders.find(folder => folder.id === parseInt(e.target.value))
-                                setSelectedFolder(selected);
-                            }}
-                            className="bg-[#f0f0fb] text-black font-semibold border border-[#cfcfcf] rounded-lg px-4 py-2 text-sm cursor-pointer shadow-sm">
-                            <option value="">Select Folder</option>
-                            {folders.map((folder) => (
-                                <option key={folder.id} value={folder.id}>{folder.name}</option>
-                            ))}
-                        </select>
-
-                    </section>
-                )}
-
+                {/* Upload File Modal */}
                 {showUploadModal && (
-                    <section className="fixed top-0 left-0 w-full h-full bg-black/30 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-                        <section className="bg-white p-6 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-                            <header className="mb-4">
-                                <h2 className="text-xl font-semibold text-gray-900">Upload Document</h2>
-                            </header>
+                    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+                        <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+                            <h2 className="text-xl font-semibold mb-4">Upload File to {selectedFolder?.name}</h2>
                             
                             <div className="space-y-4">
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">File name:</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Choose File
+                                    </label>
                                     <input
-                                        className={`w-full px-3 py-2 border ${titleError ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                                        type="text"
-                                        placeholder="Enter file name"
-                                        value={customName}
+                                        type="file"
                                         onChange={(e) => {
-                                            setCustomName(e.target.value);
-                                            setTitleError(false);
+                                            const file = e.target.files?.[0];
+                                            if (file) {
+                                                setSelectedFile(file);
+                                                setCustomName(file.name.split('.')[0]);
+                                            }
                                         }}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     />
-                                    {titleError && (
-                                        <p className="mt-1 text-sm text-red-500">Please enter a file name</p>
-                                    )}
                                 </div>
 
                                 <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Description:</label>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Display Name
+                                    </label>
+                                    <input
+                                        type="text"
+                                        value={customName}
+                                        onChange={(e) => setCustomName(e.target.value)}
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        placeholder="Enter display name"
+                                    />
+                                </div>
+
+                                <div>
+                                    <label className="block text-sm font-medium text-gray-700 mb-1">
+                                        Description (optional)
+                                    </label>
                                     <textarea
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none"
                                         value={customDescription}
                                         onChange={(e) => setCustomDescription(e.target.value)}
-                                        rows={4}
-                                        placeholder="Add a description (optional)"
+                                        className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                        rows={3}
+                                        placeholder="Enter file description"
                                     />
                                 </div>
-
-                                <footer className="flex justify-end gap-3 pt-4">
-                                    <button 
-                                        onClick={() => setShowUploadModal(false)}
-                                        className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button 
-                                        onClick={handleConfirmUpload}
-                                        disabled={!customName.trim()}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                        Upload
-                                    </button>
-                                </footer>
                             </div>
-                        </section>
-                    </section>
-                )}
 
-                {showFolderModal && (
-                    <section className="fixed top-0 left-0 w-full h-full bg-black/30 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-                        <section className="bg-white p-6 rounded-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
-                            <header className="mb-4">
-                                <h2 className="text-xl font-semibold text-gray-900">Create New Folder</h2>
-                            </header>
-                            
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">Folder name:</label>
-                                    <input
-                                        className={`w-full px-3 py-2 border ${titleError ? 'border-red-500' : 'border-gray-300'} rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500`}
-                                        type="text"
-                                        placeholder="Enter folder name"
-                                        value={newFolderName}
-                                        onChange={(e) => {
-                                            setNewFolderName(e.target.value);
-                                            setTitleError(false);
-                                        }}
-                                    />
-                                    {titleError && (
-                                        <p className="mt-1 text-sm text-red-500">Please enter a folder name</p>
+                            <div className="mt-6 flex justify-end space-x-3">
+                                <button
+                                    onClick={() => {
+                                        setShowUploadModal(false);
+                                        setSelectedFile(null);
+                                        setCustomName('');
+                                        setCustomDescription('');
+                                    }}
+                                    className="px-4 py-2 text-gray-700 bg-gray-100 rounded-lg hover:bg-gray-200"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={handleFileUpload}
+                                    disabled={!selectedFile || !customName.trim() || uploadLoading}
+                                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                                >
+                                    {uploadLoading ? (
+                                        <ClipLoader size={20} color="#ffffff" />
+                                    ) : (
+                                        'Upload'
                                     )}
-                                </div>
-
-                                <footer className="flex justify-end gap-3 pt-4">
-                                    <button 
-                                        onClick={() => setShowFolderModal(false)}
-                                        className="px-4 py-2 text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-lg transition-colors"
-                                    >
-                                        Cancel
-                                    </button>
-                                    <button 
-                                        onClick={handleCreateNewFolder}
-                                        disabled={!newFolderName.trim()}
-                                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                        Create
-                                    </button>
-                                </footer>
+                                </button>
                             </div>
-                        </section>
-                    </section>
+                        </div>
+                    </div>
                 )}
             </section>
 
-            <MobileBottomNav
-                showForm={showUploadModal}
-                setShowForm={setShowUploadModal}
-            />
+            <MobileBottomNav />
         </main>
     );
 }
