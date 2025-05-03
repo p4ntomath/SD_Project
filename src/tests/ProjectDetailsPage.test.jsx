@@ -1,10 +1,20 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import '@testing-library/jest-dom';
 import ProjectDetailsPage from '../pages/ProjectDetailsPage';
 import AuthContext from '../context/AuthContext';
+
+// Mock Framer Motion
+vi.mock('framer-motion', () => ({
+  motion: {
+    article: ({ children, ...props }) => <article {...props}>{children}</article>,
+    div: ({ children, ...props }) => <div {...props}>{children}</div>,
+    section: ({ children, ...props }) => <section {...props}>{children}</section>
+  },
+  AnimatePresence: ({ children }) => children
+}));
 
 // Don't mock the entire component, just mock the dependencies
 vi.mock('../backend/firebase/projectDB', () => ({
@@ -32,6 +42,27 @@ vi.mock('react-router-dom', async () => {
     useParams: () => ({ projectId: 'test-project-id' }),
     useNavigate: () => vi.fn()
   };
+});
+
+// Mock matchMedia for Framer Motion
+const mockMatchMedia = () => {
+  Object.defineProperty(window, 'matchMedia', {
+    writable: true,
+    value: vi.fn().mockImplementation(query => ({
+      matches: false,
+      media: query,
+      onchange: null,
+      addListener: vi.fn(), // Deprecated but kept for older versions
+      removeListener: vi.fn(), // Deprecated but kept for older versions
+      addEventListener: vi.fn(),
+      removeEventListener: vi.fn(),
+      dispatchEvent: vi.fn(),
+    })),
+  });
+};
+
+beforeAll(() => {
+  mockMatchMedia();
 });
 
 // Mock AuthContext

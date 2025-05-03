@@ -14,7 +14,7 @@ describe('RoleSelectionForm Component', () => {
   it('renders form fields correctly', () => {
     render(<RoleSelectionForm onSubmit={mockOnSubmit} />);
     
-    expect(screen.getByLabelText(/name/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
     expect(screen.getByRole('combobox')).toBeInTheDocument();
   });
 
@@ -29,10 +29,10 @@ describe('RoleSelectionForm Component', () => {
     expect(screen.getByText('Reviewer')).toBeInTheDocument();
   });
 
-  it('handles form submission with valid data', () => {
+  it('handles form submission with valid researcher data', () => {
     render(<RoleSelectionForm onSubmit={mockOnSubmit} />);
     
-    const nameInput = screen.getByLabelText(/name/i);
+    const nameInput = screen.getByLabelText(/full name/i);
     const roleSelect = screen.getByRole('combobox');
     const submitButton = screen.getByRole('button', { name: /continue/i });
 
@@ -41,8 +41,10 @@ describe('RoleSelectionForm Component', () => {
     fireEvent.click(submitButton);
 
     expect(mockOnSubmit).toHaveBeenCalledWith({
-      name: 'John Doe',
-      role: 'researcher'
+      fullName: 'John Doe',
+      role: 'researcher',
+      expertise: '',
+      department: ''
     });
   });
 
@@ -52,8 +54,87 @@ describe('RoleSelectionForm Component', () => {
     const submitButton = screen.getByRole('button', { name: /continue/i });
     fireEvent.click(submitButton);
 
-    expect(screen.getByText(/name is required/i)).toBeInTheDocument();
+    expect(screen.getByText(/full name is required/i)).toBeInTheDocument();
     expect(screen.getByText(/please select a role/i)).toBeInTheDocument();
   });
-  
+
+  it('displays reviewer specific fields when reviewer role is selected', () => {
+    render(<RoleSelectionForm onSubmit={mockOnSubmit} />);
+    
+    const roleSelect = screen.getByRole('combobox');
+    fireEvent.change(roleSelect, { target: { value: 'reviewer' } });
+
+    expect(screen.getByLabelText(/area of expertise/i)).toBeInTheDocument();
+    expect(screen.getByLabelText(/department/i)).toBeInTheDocument();
+  });
+
+  it('handles form submission with valid reviewer data', () => {
+    render(<RoleSelectionForm onSubmit={mockOnSubmit} />);
+    
+    const nameInput = screen.getByLabelText(/full name/i);
+    const roleSelect = screen.getByRole('combobox');
+    
+    fireEvent.change(nameInput, { target: { value: 'Jane Smith' } });
+    fireEvent.change(roleSelect, { target: { value: 'reviewer' } });
+    
+    const expertiseInput = screen.getByLabelText(/area of expertise/i);
+    const departmentInput = screen.getByLabelText(/department/i);
+    
+    fireEvent.change(expertiseInput, { target: { value: 'Computer Science' } });
+    fireEvent.change(departmentInput, { target: { value: 'Engineering' } });
+    
+    const submitButton = screen.getByRole('button', { name: /continue/i });
+    fireEvent.click(submitButton);
+
+    expect(mockOnSubmit).toHaveBeenCalledWith({
+      fullName: 'Jane Smith',
+      role: 'reviewer',
+      expertise: 'Computer Science',
+      department: 'Engineering'
+    });
+  });
+
+  it('validates reviewer specific required fields', () => {
+    render(<RoleSelectionForm onSubmit={mockOnSubmit} />);
+    
+    const nameInput = screen.getByLabelText(/full name/i);
+    const roleSelect = screen.getByRole('combobox');
+    
+    fireEvent.change(nameInput, { target: { value: 'Jane Smith' } });
+    fireEvent.change(roleSelect, { target: { value: 'reviewer' } });
+    
+    const submitButton = screen.getByRole('button', { name: /continue/i });
+    fireEvent.click(submitButton);
+
+    expect(screen.getByText(/expertise is required for reviewers/i)).toBeInTheDocument();
+    expect(screen.getByText(/department is required for reviewers/i)).toBeInTheDocument();
+  });
+
+  it('clears errors when fields are filled', () => {
+    render(<RoleSelectionForm onSubmit={mockOnSubmit} />);
+    
+    const submitButton = screen.getByRole('button', { name: /continue/i });
+    fireEvent.click(submitButton);
+    
+    expect(screen.getByText(/full name is required/i)).toBeInTheDocument();
+    
+    const nameInput = screen.getByLabelText(/full name/i);
+    fireEvent.change(nameInput, { target: { value: 'John Doe' } });
+    
+    expect(screen.queryByText(/full name is required/i)).not.toBeInTheDocument();
+  });
+
+  it('hides reviewer fields when switching back to researcher', () => {
+    render(<RoleSelectionForm onSubmit={mockOnSubmit} />);
+    
+    const roleSelect = screen.getByRole('combobox');
+    
+    // Switch to reviewer
+    fireEvent.change(roleSelect, { target: { value: 'reviewer' } });
+    expect(screen.getByLabelText(/area of expertise/i)).toBeInTheDocument();
+    
+    // Switch back to researcher
+    fireEvent.change(roleSelect, { target: { value: 'researcher' } });
+    expect(screen.queryByLabelText(/area of expertise/i)).not.toBeInTheDocument();
+  });
 });

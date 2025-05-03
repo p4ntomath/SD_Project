@@ -27,7 +27,7 @@ export const formatDate = (date) => {
 };
 
 export const formatFirebaseDate = (timestamp) => {
-  if (!timestamp) return 'Not specified';
+  if (!timestamp) return '';
   
   try {
     // Handle Firebase timestamp object
@@ -59,9 +59,9 @@ export const formatFirebaseDate = (timestamp) => {
       });
     }
     
-    return 'Not specified';
+    return '';
   } catch (error) {
     console.error('Firebase date formatting error:', error);
-    return 'Not specified';
+    return '';
   }
 };

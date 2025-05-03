@@ -92,7 +92,7 @@ export default function AdminHomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8" data-testid="admin-dashboard">
       <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
         {/* Updated header to be side by side on all screen sizes */}
         <div className="flex justify-between items-center">

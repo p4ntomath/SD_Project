@@ -31,10 +31,12 @@ import { completeProfile } from '../backend/firebase/authFirebase';
 
 describe('RoleSelectionPage', () => {
   const mockSetRole = vi.fn();
+  const mockSetLoading = vi.fn();
   
   // Default context value
   const defaultContextValue = {
     setRole: mockSetRole,
+    setLoading: mockSetLoading,
     role: null
   };
 
@@ -66,7 +68,7 @@ describe('RoleSelectionPage', () => {
   it('handles form submission successfully', async () => {
     renderWithContext();
 
-    const nameInput = screen.getByLabelText(/name/i);
+    const nameInput = screen.getByLabelText(/full name/i);
     const roleSelect = screen.getByLabelText(/your role/i);
     const submitButton = screen.getByRole('button', { name: /continue/i });
 
@@ -75,8 +77,17 @@ describe('RoleSelectionPage', () => {
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(completeProfile).toHaveBeenCalledWith('John Doe', 'researcher');
+      expect(completeProfile).toHaveBeenCalledWith(
+        'John Doe', 
+        'researcher',
+        expect.objectContaining({
+          fullName: 'John Doe',
+          role: 'researcher'
+        })
+      );
       expect(mockSetRole).toHaveBeenCalledWith('researcher');
+      expect(mockSetLoading).toHaveBeenCalledWith(true);
+      expect(mockSetLoading).toHaveBeenCalledWith(false);
       expect(mockNavigate).toHaveBeenCalledWith('/home');
     });
   });
@@ -132,5 +143,103 @@ describe('RoleSelectionPage', () => {
     fireEvent.click(submitButton);
 
     expect(await screen.findByTestId('loading-spinner')).toBeInTheDocument();
+  });
+
+  it('handles reviewer form submission with expertise and department', async () => {
+    renderWithContext();
+
+    const nameInput = screen.getByLabelText(/full name/i);
+    const roleSelect = screen.getByLabelText(/your role/i);
+    
+    // Fill in initial fields
+    fireEvent.change(nameInput, { target: { value: 'John Smith' } });
+    fireEvent.change(roleSelect, { target: { value: 'reviewer' } });
+
+    // Additional reviewer fields should appear
+    const expertiseInput = screen.getByLabelText(/area of expertise/i);
+    const departmentInput = screen.getByLabelText(/department/i);
+    
+    fireEvent.change(expertiseInput, { target: { value: 'Computer Science' } });
+    fireEvent.change(departmentInput, { target: { value: 'Engineering' } });
+    
+    const submitButton = screen.getByRole('button', { name: /continue/i });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(completeProfile).toHaveBeenCalledWith(
+        'John Smith', 
+        'reviewer', 
+        expect.objectContaining({
+          fullName: 'John Smith',
+          role: 'reviewer',
+          expertise: 'Computer Science',
+          department: 'Engineering'
+        })
+      );
+      expect(mockSetRole).toHaveBeenCalledWith('reviewer');
+      expect(mockNavigate).toHaveBeenCalledWith('/home');
+    });
+  });
+
+  it('validates reviewer specific fields', async () => {
+    renderWithContext();
+
+    const nameInput = screen.getByLabelText(/full name/i);
+    const roleSelect = screen.getByLabelText(/your role/i);
+    
+    // Fill in initial fields but leave reviewer fields empty
+    fireEvent.change(nameInput, { target: { value: 'John Smith' } });
+    fireEvent.change(roleSelect, { target: { value: 'reviewer' } });
+    
+    const submitButton = screen.getByRole('button', { name: /continue/i });
+    fireEvent.click(submitButton);
+
+    // Should show validation errors for reviewer fields
+    expect(screen.getByText(/expertise is required for reviewers/i)).toBeInTheDocument();
+    expect(screen.getByText(/department is required for reviewers/i)).toBeInTheDocument();
+  });
+
+  it('clears validation errors when fields are filled', async () => {
+    renderWithContext();
+
+    const nameInput = screen.getByLabelText(/full name/i);
+    const roleSelect = screen.getByLabelText(/your role/i);
+    const submitButton = screen.getByRole('button', { name: /continue/i });
+
+    // Submit empty form first
+    fireEvent.click(submitButton);
+    expect(screen.getByText(/full name is required/i)).toBeInTheDocument();
+    
+    // Fill the name field
+    fireEvent.change(nameInput, { target: { value: 'John Doe' } });
+    
+    // Error message should be gone
+    expect(screen.queryByText(/full name is required/i)).not.toBeInTheDocument();
+  });
+
+  it('handles setLoading in context during form submission', async () => {
+    const mockSetLoading = vi.fn();
+    const contextWithLoading = {
+      ...defaultContextValue,
+      setLoading: mockSetLoading
+    };
+
+    renderWithContext(contextWithLoading);
+
+    const nameInput = screen.getByLabelText(/full name/i);
+    const roleSelect = screen.getByLabelText(/your role/i);
+    const submitButton = screen.getByRole('button', { name: /continue/i });
+
+    fireEvent.change(nameInput, { target: { value: 'John Doe' } });
+    fireEvent.change(roleSelect, { target: { value: 'researcher' } });
+    fireEvent.click(submitButton);
+
+    await waitFor(() => {
+      expect(mockSetLoading).toHaveBeenCalledWith(true);
+    });
+
+    await waitFor(() => {
+      expect(mockSetLoading).toHaveBeenCalledWith(false);
+    });
   });
 });
