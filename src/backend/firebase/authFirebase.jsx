@@ -28,9 +28,11 @@ const signUp = async (fullName, email, password, role, additionalData = {}) => {
 
     return user;
   } catch (error) {
-    throw error;
+    console.error("Error signing up user:", error); // You can log for debugging
+    throw new Error('Failed to create user'); // Provide a specific message
   }
 };
+
 
 // 🔹 Google Sign-In
 const googleSignIn = async () => {
@@ -114,11 +116,13 @@ const resetPassword = async (email) => {
 const logOut = async () => {
   try {
     await signOut(auth);
-    console.log("User signed out");
   } catch (error) {
-    console.error("Logout error:", error.message);
+    return Promise.reject(error);
+    
   }
 };
+
+
 
 const getUserRole = async (uid) => {
   try {

@@ -21,6 +21,7 @@ import {
  * checking user authentication and required fields.
  */
 export async function createProject(newProject) {
+  console.log("Creating project:", newProject);
   const { title, description, researchField, deadline } = newProject;
   const user = auth.currentUser;
   if (!user) {
@@ -33,13 +34,16 @@ export async function createProject(newProject) {
   try {
     const projectsRef = collection(db, "projects");
     const newDocRef = doc(projectsRef);
+    const docId = newDocRef.id;
 
     // Calculate duration based on creation date and deadline
-    const creationDate = new Date();
+    const creationDate = serverTimestamp();
     const deadlineDate = new Date(deadline);
-    const durationMs = deadlineDate.getTime() - creationDate.getTime();
+    const currentDate = new Date();
+    const durationMs = deadlineDate.getTime() - currentDate.getTime();
     const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
     let duration;
+    
     if (durationDays >= 365) {
       const years = Math.floor(durationDays / 365);
       duration = `${years} year${years > 1 ? 's' : ''}`;
@@ -58,7 +62,7 @@ export async function createProject(newProject) {
       deadline: deadlineDate,
       duration: duration,
       userId: user.uid,
-      projectId: newDocRef.id,
+      projectId: docId,
       availableFunds: newProject.availableFunds || 0,
       usedFunds: newProject.usedFunds || 0,
       status: newProject.status || 'In Progress',
@@ -69,7 +73,7 @@ export async function createProject(newProject) {
     };
 
     await setDoc(newDocRef, projectWithId);
-    return newDocRef.id;
+    return docId;
   } catch (err) {
     console.error("Error creating project:", err);
     throw new Error(`Failed to create project: ${err.message}`);
@@ -274,6 +278,7 @@ export const updateProject = async (id, updatedData) => {
  */
 
 export const deleteProject = async (projectId) => {
+  // eslint-disable-next-line no-useless-catch
   try {
     const user = auth.currentUser;
     if (!user) throw new Error('You must be logged in to delete projects');

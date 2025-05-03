@@ -212,31 +212,39 @@ export const submitReviewFeedback = async (projectId, reviewerId, feedback) => {
   }
 };
 
-// Get feedback for a project
+
 export const getProjectFeedback = async (projectId) => {
   try {
     const feedbackRef = collection(db, "reviews");
     const q = query(feedbackRef, where("projectId", "==", projectId));
     const querySnapshot = await getDocs(q);
-    
+
     const feedback = [];
-    for (const doc of querySnapshot.docs) {
-      const feedbackData = doc.data();
+
+    for (const feedbackDoc of querySnapshot.docs) {
+      const feedbackData = feedbackDoc.data();
+
       // Get reviewer details
       const reviewerRef = doc(db, "users", feedbackData.reviewerId);
       const reviewerSnap = await getDoc(reviewerRef);
       const reviewerData = reviewerSnap.exists() ? reviewerSnap.data() : null;
 
       feedback.push({
-        id: doc.id,
+        id: feedbackDoc.id,
         ...feedbackData,
-        reviewer: reviewerData ? {
-          id: reviewerSnap.id,
-          name: reviewerData.fullName,
-          expertise: reviewerData.expertise
-        } : null,
-        createdAt: feedbackData.createdAt?.toDate() || null,
-        updatedAt: feedbackData.updatedAt?.toDate() || null
+        reviewer: reviewerData
+          ? {
+              id: feedbackData.reviewerId,
+              name: reviewerData.fullName,
+              expertise: reviewerData.expertise,
+            }
+          : {
+              id: feedbackData.reviewerId,
+              name: "Anonymous Reviewer",
+              expertise: "Not specified",
+            },
+        createdAt: feedbackData.createdAt?.toDate?.() || null,
+        updatedAt: feedbackData.updatedAt?.toDate?.() || null,
       });
     }
 
@@ -246,6 +254,7 @@ export const getProjectFeedback = async (projectId) => {
     throw new Error("Failed to get project feedback");
   }
 };
+
 
 // Update existing reviewer information in projects
 export const updateExistingReviewerInfo = async (projectId) => {
