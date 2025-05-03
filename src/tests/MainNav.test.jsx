@@ -1,10 +1,11 @@
 import React from 'react';
-import { render, screen, fireEvent, within } from '@testing-library/react';
+import { render, screen, fireEvent, within,act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
 import MainNav from '../components/ResearcherComponents/Navigation/MainNav';
 import { logOut } from '../backend/firebase/authFirebase';
 import { BrowserRouter } from 'react-router-dom';
+
 
 // Mock the firebase auth module
 vi.mock('../backend/firebase/authFirebase', () => ({
@@ -119,11 +120,15 @@ describe('MainNav Component', () => {
     // Find the modal and look for the logout button within it
     const modal = screen.getByRole('dialog');
     const confirmLogoutButton = within(modal).getByRole('button', { name: 'Logout' });
-    fireEvent.click(confirmLogoutButton);
+    await act(async () => {
+      fireEvent.click(confirmLogoutButton);
+    });
     
+    // Assert after state update
     expect(logOut).toHaveBeenCalled();
-    await new Promise(resolve => setTimeout(resolve, 0)); // Wait for async operations
-    expect(window.location.href).toBe('/login');
+    await waitFor(() => {
+      expect(window.location.href).toBe('/login');
+    });
   });
 
   it('displays the Research Portal heading', () => {

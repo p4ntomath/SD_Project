@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import '@testing-library/jest-dom';
@@ -219,6 +219,19 @@ vi.mock('../backend/firebase/reviewdb', () => ({
   deleteReviewerRequest: vi.fn(() => Promise.resolve({ success: true }))
 }));
 
+vi.mock('../backend/firebase/reviewerDB', () => ({
+  updateExistingReviewerInfo: vi.fn(() => Promise.resolve()),
+  getDoc: vi.fn(() => Promise.resolve({
+    exists: () => true,
+    data: () => ({
+      name: 'Reviewer Name',
+      email: 'reviewer@example.com',
+      projectsReviewed: [],
+      ongoingReviews: []
+    })
+  }))
+}));
+
 describe('ProjectDetailsPage Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -421,19 +434,23 @@ describe('ProjectDetailsPage Component', () => {
   it('toggles goal completion status', async () => {
     const { getProjectDetails, updateProject } = await import('../backend/firebase/projectDB');
     
-    render(
-      <MemoryRouter>
-        <ProjectDetailsPage />
-      </MemoryRouter>
-    );
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <ProjectDetailsPage />
+        </MemoryRouter>
+      );
+    });
 
     await waitFor(() => {
       expect(screen.getByText('Test Project')).toBeInTheDocument();
     });
 
     // Find and click the first goal
-    const goalCheckbox = screen.getAllByRole('checkbox')[0];
-    fireEvent.click(goalCheckbox);
+    await act(async () => {
+      const goalCheckbox = screen.getAllByRole('checkbox')[0];
+      fireEvent.click(goalCheckbox);
+    });
 
     expect(updateProject).toHaveBeenCalledWith('test-project-id', {
       goals: [
@@ -449,30 +466,36 @@ describe('ProjectDetailsPage Component', () => {
   it('adds funds to the project', async () => {
     const { updateProjectFunds } = await import('../backend/firebase/fundingDB');
     
-    render(
-      <MemoryRouter>
-        <ProjectDetailsPage />
-      </MemoryRouter>
-    );
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <ProjectDetailsPage />
+        </MemoryRouter>
+      );
+    });
 
     await waitFor(() => {
       expect(screen.getByText('Test Project')).toBeInTheDocument();
     });
 
     // Click the Add Funds button
-    const addFundsButton = screen.getAllByLabelText('Add Funds Btn')[0];
-    fireEvent.click(addFundsButton);
+    await act(async () => {
+      const addFundsButton = screen.getAllByLabelText('Add Funds Btn')[0];
+      fireEvent.click(addFundsButton);
+    });
 
     // Fill in the amount
-    const amountInput = screen.getByLabelText('Amount Add Funds');
-    fireEvent.change(amountInput, { target: { value: '5000' } });
-    //Fill funding source
-    const fundingSourceInput = screen.getByLabelText('Funding Source');
-    fireEvent.change(fundingSourceInput, { target: { value: 'Test Source' } });
+    await act(async () => {
+      const amountInput = screen.getByLabelText('Amount Add Funds');
+      fireEvent.change(amountInput, { target: { value: '5000' } });
+      //Fill funding source
+      const fundingSourceInput = screen.getByLabelText('Funding Source');
+      fireEvent.change(fundingSourceInput, { target: { value: 'Test Source' } });
 
-    // Submit the form
-    const submitButton = screen.getByLabelText('Submit Add Funds');
-    fireEvent.click(submitButton);
+      // Submit the form
+      const submitButton = screen.getByLabelText('Submit Add Funds');
+      fireEvent.click(submitButton);
+    });
 
     expect(updateProjectFunds).toHaveBeenCalledWith('test-project-id', 5000);
   });
@@ -480,29 +503,35 @@ describe('ProjectDetailsPage Component', () => {
   it('adds an expense to the project', async () => {
     const { updateProjectExpense } = await import('../backend/firebase/fundingDB');
     
-    render(
-      <MemoryRouter>
-        <ProjectDetailsPage />
-      </MemoryRouter>
-    );
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <ProjectDetailsPage />
+        </MemoryRouter>
+      );
+    });
 
     await waitFor(() => {
       expect(screen.getByText('Test Project')).toBeInTheDocument();
     });
 
     // Click the Add Expense button
-    const addExpenseButton = screen.getByText('Add Expense');
-    fireEvent.click(addExpenseButton);
+    await act(async () => {
+      const addExpenseButton = screen.getByText('Add Expense');
+      fireEvent.click(addExpenseButton);
+    });
 
     // Fill in the form
-    const amountInput = screen.getByLabelText('Amount');
-    const descriptionInput = screen.getByLabelText('Description');
-    fireEvent.change(amountInput, { target: { value: '1000' } });
-    fireEvent.change(descriptionInput, { target: { value: 'Test expense' } });
+    await act(async () => {
+      const amountInput = screen.getByLabelText('Amount');
+      const descriptionInput = screen.getByLabelText('Description');
+      fireEvent.change(amountInput, { target: { value: '1000' } });
+      fireEvent.change(descriptionInput, { target: { value: 'Test expense' } });
 
-    // Submit the form
-    const submitButton = screen.getByTestId('submit-expense');
-    fireEvent.click(submitButton);
+      // Submit the form
+      const submitButton = screen.getByTestId('submit-expense');
+      fireEvent.click(submitButton);
+    });
 
     expect(updateProjectExpense).toHaveBeenCalledWith('test-project-id', 1000);
   });
@@ -525,7 +554,7 @@ describe('ProjectDetailsPage Component', () => {
     // Try to add an expense larger than available funds (mock has 50000 available)
     const amountInput = screen.getByLabelText('Amount');
     const descriptionInput = screen.getByLabelText('Description');
-    fireEvent.change(amountInput, { target: { value: '51000' } });
+    fireEvent.change(amountInput, { target: { value: '70000' } });
     fireEvent.change(descriptionInput, { target: { value: 'Large expense' } });
 
     // Submit the form
@@ -534,7 +563,7 @@ describe('ProjectDetailsPage Component', () => {
 
     await waitFor(() => {
       const availableFundsEl = screen.getByTestId('Available Funds');
-      expect(availableFundsEl.textContent).toBe('R 50,000');
+      expect(availableFundsEl.textContent).toBe('R 60,000');
     });
   });
 

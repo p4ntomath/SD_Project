@@ -227,9 +227,12 @@ describe('ResearcherHome', () => {
     });
   });
 
-  it('fetches projects on mount', () => {
+  it('fetches projects on mount', async () => {
     render(<ResearcherHome />, { wrapper: MemoryRouter });
-    expect(fetchProjects).toHaveBeenCalledWith('test-user-id');
+  
+    await waitFor(() => {
+      expect(fetchProjects).toHaveBeenCalledWith('test-user-id');
+    });
   });
 
   it('handles fetch projects error gracefully', async () => {

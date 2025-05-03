@@ -1,5 +1,5 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, act } from '@testing-library/react';
 import { describe, it, expect, vi } from 'vitest';
 import '@testing-library/jest-dom';
 import RoleSelectionForm from '../components/RoleSelctionForm';
@@ -68,23 +68,27 @@ describe('RoleSelectionForm Component', () => {
     expect(screen.getByLabelText(/department/i)).toBeInTheDocument();
   });
 
-  it('handles form submission with valid reviewer data', () => {
+  it('handles form submission with valid reviewer data', async () => {
     render(<RoleSelectionForm onSubmit={mockOnSubmit} />);
     
-    const nameInput = screen.getByLabelText(/full name/i);
-    const roleSelect = screen.getByRole('combobox');
+    await act(async () => {
+      const nameInput = screen.getByLabelText(/full name/i);
+      const roleSelect = screen.getByRole('combobox');
+      
+      fireEvent.change(nameInput, { target: { value: 'Jane Smith' } });
+      fireEvent.change(roleSelect, { target: { value: 'reviewer' } });
+      
+      const expertiseInput = screen.getByLabelText(/area of expertise/i);
+      const departmentInput = screen.getByLabelText(/department/i);
+      
+      fireEvent.change(expertiseInput, { target: { value: 'Computer Science' } });
+      fireEvent.change(departmentInput, { target: { value: 'Engineering' } });
+    });
     
-    fireEvent.change(nameInput, { target: { value: 'Jane Smith' } });
-    fireEvent.change(roleSelect, { target: { value: 'reviewer' } });
-    
-    const expertiseInput = screen.getByLabelText(/area of expertise/i);
-    const departmentInput = screen.getByLabelText(/department/i);
-    
-    fireEvent.change(expertiseInput, { target: { value: 'Computer Science' } });
-    fireEvent.change(departmentInput, { target: { value: 'Engineering' } });
-    
-    const submitButton = screen.getByRole('button', { name: /continue/i });
-    fireEvent.click(submitButton);
+    await act(async () => {
+      const submitButton = screen.getByRole('button', { name: /continue/i });
+      fireEvent.click(submitButton);
+    });
 
     expect(mockOnSubmit).toHaveBeenCalledWith({
       fullName: 'Jane Smith',

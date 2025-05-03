@@ -68,10 +68,13 @@ describe('MyProjects Component', () => {
     );
   };
 
-  it('renders loading state initially', () => {
+  it('renders loading state initially', async () => {
     renderWithContext(<MyProjects />);
-    expect(screen.getByTestId('my-projects')).toBeInTheDocument();
-    expect(screen.getByText('Create Project')).toBeInTheDocument();
+
+    await waitFor(() => {
+      expect(screen.getByTestId('my-projects')).toBeInTheDocument();
+      expect(screen.getByText('Create Project')).toBeInTheDocument();
+    });
   });
 
   it('displays projects after loading', async () => {
