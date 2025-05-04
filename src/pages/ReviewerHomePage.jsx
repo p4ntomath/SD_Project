@@ -89,11 +89,13 @@ export default function ReviewerHomePage() {
                 <div>
                   <p className="text-purple-100">Review Requests</p>
                   {loading ? (
-                    <div className="h-9 flex items-center">
-                      <ClipLoader color="#ffffff" size={24} />
+                    <div className="h-9 flex items-center" data-testid="loading-spinner">
+                      <ClipLoader  color="#ffffff" size={24} />
                     </div>
                   ) : (
-                    <h3 className="text-3xl font-bold">{stats.requests}</h3>
+                    <h3 className="text-3xl font-bold"
+                    data-testid="review-requests-count"
+                    >{stats.requests}</h3>
                   )}
                 </div>
                 <ClipboardDocumentListIcon className="h-12 w-12 opacity-20" />
@@ -112,7 +114,9 @@ export default function ReviewerHomePage() {
                       <ClipLoader color="#ffffff" size={24} />
                     </div>
                   ) : (
-                    <h3 className="text-3xl font-bold">{stats.pending}</h3>
+                    <h3 className="text-3xl font-bold" 
+                    data-testid="pending-reviews-count"
+                    >{stats.pending}</h3>
                   )}
                 </div>
                 <ClipboardDocumentListIcon className="h-12 w-12 opacity-20" />
@@ -131,7 +135,9 @@ export default function ReviewerHomePage() {
                       <ClipLoader color="#ffffff" size={24} />
                     </div>
                   ) : (
-                    <h3 className="text-3xl font-bold">{stats.completed}</h3>
+                    <h3 className="text-3xl font-bold"
+                    data-testid="completed-reviews-count"
+                    >{stats.completed}</h3>
                   )}
                 </div>
                 <DocumentTextIcon className="h-12 w-12 opacity-20" />
@@ -147,7 +153,9 @@ export default function ReviewerHomePage() {
                       <ClipLoader color="#ffffff" size={24} />
                     </div>
                   ) : (
-                    <h3 className="text-3xl font-bold">{stats.totalReviews}</h3>
+                    <h3 className="text-3xl font-bold"
+                    data-testid="total-reviews-count"
+                    >{stats.totalReviews}</h3>
                   )}
                 </div>
                 <ChartBarIcon className="h-12 w-12 opacity-20" />
@@ -158,6 +166,7 @@ export default function ReviewerHomePage() {
           {/* Quick Actions */}
           <section className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <button
+            data-testid="view-requests-button"
               onClick={handleViewPendingReviews}
               className="flex items-center justify-center gap-2 bg-white p-4 rounded-xl shadow-md border border-gray-200 hover:border-blue-400 transition-colors"
             >

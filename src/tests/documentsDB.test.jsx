@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 import { 
   uploadDocument,
   fetchDocumentsByFolder,
@@ -7,6 +7,73 @@ import {
   fetchAllDocuments
 } from '../backend/firebase/documentsDB';
 import { auth } from '../backend/firebase/firebaseConfig';
+
+// Suppress expected error messages and console output during tests
+const originalError = console.error;
+const originalLog = console.log;
+const originalWarn = console.warn;
+
+beforeAll(() => {
+  console.error = (...args) => {
+    // Skip all expected test-related error messages
+    const skipMessages = [
+      'Error uploading document',
+      'Storage file not found',
+      'Failed to upload document',
+      'Object not found',
+      'Error deleting document',
+      'Failed to delete document',
+      'Storage file might already be deleted'
+    ];
+
+    // Check both the message and any nested error messages
+    const shouldSkip = skipMessages.some(msg => 
+      (typeof args[0] === 'string' && args[0].includes(msg)) ||
+      (args[0]?.message && args[0].message.includes(msg)) ||
+      (args[1] && typeof args[1] === 'string' && args[1].includes(msg))
+    );
+
+    if (shouldSkip) {
+      return;
+    }
+    originalError.call(console, ...args);
+  };
+
+  console.log = (...args) => {
+    // Skip logging downloadURL and metadata
+    const skipValues = ['downloadURL', 'metadata'];
+    if (skipValues.some(val => 
+      (typeof args[0] === 'string' && args[0].includes(val)) ||
+      (args[0] && typeof args[0] === 'object' && Object.keys(args[0]).some(key => skipValues.includes(key)))
+    )) {
+      return;
+    }
+    originalLog.call(console, ...args);
+  };
+
+  console.warn = (...args) => {
+    // Skip all storage-related warnings 
+    const skipMessages = [
+      'Storage file not found',
+      'Object not found',
+      'continuing with document deletion'
+    ];
+
+    if (skipMessages.some(msg => 
+      (typeof args[0] === 'string' && args[0].includes(msg)) ||
+      (args[0]?.message && args[0].message.includes(msg))
+    )) {
+      return;
+    }
+    originalWarn.call(console, ...args);
+  };
+});
+
+afterAll(() => {
+  console.error = originalError;
+  console.log = originalLog;
+  console.warn = originalWarn;
+});
 
 // Get hoisted mock functions for storage
 const { deleteObject, uploadBytes, getDownloadURL } = vi.hoisted(() => ({
@@ -118,25 +185,16 @@ describe('Document Database Operations', () => {
 
       await expect(
         uploadDocument(largeFile, 'test-project', 'test-folder')
-      ).rejects.toThrow('File size exceeds the maximum limit');
+      ).rejects.toThrow('Failed to upload document: File size exceeds the maximum limit of 10MB');
     });
 
     it('throws error for unauthorized access', async () => {
       // Simulate no authenticated user
       vi.mocked(auth).currentUser = null;
     
-      // Mock project access check (for example, the project ID check)
-      vi.mocked(getDoc).mockResolvedValue({
-        exists: () => true,
-        data: () => ({
-          userId: 'different-user-id',
-          reviewers: []
-        })
-      });
-    
       await expect(
         uploadDocument(new File(['test'], 'test.pdf'), 'test-project', 'test-folder')
-      ).rejects.toThrow("You don't have permission");
+      ).rejects.toThrow('Failed to upload document: You don\'t have permission');
     });
 
   });
@@ -288,9 +346,9 @@ describe('Document Database Operations', () => {
       };
   
       vi.mocked(getDoc).mockResolvedValue(mockSnap);
-      vi.mocked(deleteObject).mockRejectedValue(new Error('File not found'));
+      vi.mocked(deleteObject).mockRejectedValue(new Error('Object not found'));
       vi.mocked(deleteDoc).mockResolvedValue(undefined);
-  
+
       const result = await deleteDocument(
         'test-doc-id',
         'test-project-id',

@@ -1,11 +1,28 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 import { 
   fetchFunding,
   updateProjectFunds,
   updateProjectExpense,
   getFundingHistory
 } from '../backend/firebase/fundingDB';
-import { getDocs, getDoc, updateDoc ,addDoc} from 'firebase/firestore';
+import { getDocs, getDoc, updateDoc, addDoc } from 'firebase/firestore';
+
+// Suppress expected error messages during error handling tests
+const originalError = console.error;
+beforeAll(() => {
+  console.error = (...args) => {
+    if (args[0]?.includes('Error fetching funding data') ||
+        args[0]?.includes('Error updating funds') ||
+        args[0]?.includes('Error updating expense')) {
+      return;
+    }
+    originalError.call(console, ...args);
+  };
+});
+
+afterAll(() => {
+  console.error = originalError;
+});
 
 // Mock Firebase Auth
 vi.mock('../backend/firebase/firebaseConfig', () => ({
@@ -176,7 +193,7 @@ describe('Funding Database Operations', () => {
 
       await expect(updateProjectExpense('test-project-id', 1000, 'Test'))
         .rejects
-        .toThrow('Insufficient funds');
+        .toThrow('Insufficient funds to cover the expense');
     });
   });
 

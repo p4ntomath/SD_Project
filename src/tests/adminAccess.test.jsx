@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 import { 
   createFunding,
   getAllFunding,
@@ -7,6 +7,37 @@ import {
   getAllProjects
 } from '../backend/firebase/adminAccess';
 import { getDocs, deleteDoc, updateDoc, addDoc, doc, collection } from 'firebase/firestore';
+
+// Suppress console errors
+const originalError = console.error;
+
+beforeAll(() => {
+  console.error = (...args) => {
+    const skipMessages = [
+      'Error creating funding',
+      'Error fetching funding',
+      'Error updating funding',
+      'Error deleting funding',
+      'Error fetching projects',
+      'Database error',
+      'Update failed',
+      'Delete failed',
+      'Failed to load projects'
+    ];
+
+    if (skipMessages.some(msg => 
+      (typeof args[0] === 'string' && args[0].includes(msg)) ||
+      (args[0]?.message && args[0].message.includes(msg))
+    )) {
+      return;
+    }
+    originalError.call(console, ...args);
+  };
+});
+
+afterAll(() => {
+  console.error = originalError;
+});
 
 // Mock Firebase Firestore
 vi.mock('../backend/firebase/firebaseConfig', () => ({
@@ -59,7 +90,6 @@ describe('Admin Access Operations', () => {
           funding_name: mockFunding.name,
           expected_funds: mockFunding.expectedFunds,
           external_link: mockFunding.externalLink
-          // Ignoring createdAt since it's a dynamic timestamp
         })
       );
     });
@@ -69,7 +99,7 @@ describe('Admin Access Operations', () => {
 
       await expect(createFunding({}))
         .rejects
-        .toThrow('Database error');
+        .toThrow('Error creating funding: Database error');
     });
   });
 
@@ -93,7 +123,11 @@ describe('Admin Access Operations', () => {
       vi.mocked(getDocs).mockResolvedValue({
         docs: mockFunding.map(fund => ({
           id: fund.id,
-          data: () => fund
+          data: () => ({
+            funding_name: fund.funding_name,
+            expected_funds: fund.expected_funds,
+            external_link: fund.external_link
+          })
         }))
       });
 
@@ -140,7 +174,6 @@ describe('Admin Access Operations', () => {
           funding_name: updatedData.name,
           expected_funds: updatedData.expectedFunds,
           external_link: updatedData.externalLink
-          // Ignoring updatedAt since it's a dynamic timestamp
         })
       );
     });
@@ -150,7 +183,7 @@ describe('Admin Access Operations', () => {
 
       await expect(updateFunding('funding1', {}))
         .rejects
-        .toThrow('Update failed');
+        .toThrow('Error updating funding: Update failed');
     });
   });
 
@@ -171,7 +204,7 @@ describe('Admin Access Operations', () => {
 
       await expect(deleteFunding('funding1'))
         .rejects
-        .toThrow('Delete failed');
+        .toThrow('Error deleting funding: Delete failed');
     });
   });
 
@@ -209,7 +242,7 @@ describe('Admin Access Operations', () => {
 
       await expect(getAllProjects())
         .rejects
-        .toThrow('Failed to load projects');
+        .toThrow('Error fetching projects: Failed to load projects');
     });
 
     it('returns empty array when no projects exist', async () => {
@@ -218,7 +251,6 @@ describe('Admin Access Operations', () => {
       });
 
       const result = await getAllProjects();
-
       expect(result).toEqual([]);
     });
   });

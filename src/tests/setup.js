@@ -7,6 +7,7 @@ globalThis.React = React;
 
 
 
+
 vi.mock('../backend/firebase/projectDB', () => ({
   createProject: vi.fn().mockResolvedValue('new-project-id')
 }));

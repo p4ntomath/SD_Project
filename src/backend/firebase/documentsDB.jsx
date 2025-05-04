@@ -167,8 +167,7 @@ export const reuploadDocument = async (file, documentId, projectId, folderId) =>
     await uploadBytes(storageRef, file);
 
     const downloadURL = await getDownloadURL(storageRef);
-    console.log('downloadURL:', downloadURL); // Debugging step
-
+    
     const projectRef = doc(db, "projects", projectId);
     const folderRef = doc(projectRef, "folders", folderId);
     const filesCollectionRef = collection(folderRef, "files");
@@ -180,17 +179,12 @@ export const reuploadDocument = async (file, documentId, projectId, folderId) =>
       uploadedAt: serverTimestamp(),
     };
 
-    console.log('metadata:', metadata); // Debugging step
-
     await updateDoc(docRef, metadata);
-
     return documentId;
   } catch (error) {
-    console.error("Error re-uploading document:", error);
-    throw new Error("Failed to re-upload document");
+    throw new Error("Failed to re-upload document: " + error.message);
   }
 };
-
 
 /**
  * Delete a document from Firebase Storage and Firestore
@@ -200,30 +194,29 @@ export const reuploadDocument = async (file, documentId, projectId, folderId) =>
  * @returns {Promise<boolean>} - Returns true if document was deleted successfully
  */
 export const deleteDocument = async (documentId, projectId, folderId) => {
+  try {
+    const folderRef = doc(db, "projects", projectId, "folders", folderId);
+    const filesCollectionRef = collection(folderRef, "files");
+    const docRef = doc(filesCollectionRef, documentId);
+
+    const docSnap = await getDoc(docRef);  // Fetch the document
+    if (!docSnap.exists()) throw new Error("Document not found");
+
+    const data = docSnap.data();
+    // Use storageFileName instead of fileName for deletion
+    const fileRef = ref(storage, `projects/${projectId}/folders/${folderId}/${data.storageFileName}`);
+
     try {
-      const folderRef = doc(db, "projects", projectId, "folders", folderId);
-      const filesCollectionRef = collection(folderRef, "files");
-      const docRef = doc(filesCollectionRef, documentId);
-
-      const docSnap = await getDoc(docRef);  // Fetch the document
-      if (!docSnap.exists()) throw new Error("Document not found");
-
-      const data = docSnap.data();
-      // Use storageFileName instead of fileName for deletion
-      const fileRef = ref(storage, `projects/${projectId}/folders/${folderId}/${data.storageFileName}`);
-
-      try {
-        await deleteObject(fileRef);  // Delete the file from Firebase Storage
-      } catch (storageError) {
-        console.warn("Storage file not found, continuing with document deletion:", storageError);
-      }
-      
-      await deleteDoc(docRef);  // Delete the document from Firestore
-      return true;
-    } catch (error) {
-      console.error("Error deleting document:", error);
-      throw new Error("Failed to delete document");
+      await deleteObject(fileRef);  // Delete the file from Firebase Storage
+    } catch (storageError) {
+      // Storage file might already be deleted or not exist, continue with document deletion
     }
+    
+    await deleteDoc(docRef);  // Delete the document from Firestore
+    return true;
+  } catch (error) {
+    throw new Error("Failed to delete document: " + error.message);
+  }
 };
 
 /**

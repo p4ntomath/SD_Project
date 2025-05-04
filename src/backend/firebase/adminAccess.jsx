@@ -84,8 +84,7 @@ export const createFunding = async (fundingData) => {
     });
     return { id: docRef.id, ...fundingData };
   } catch (error) {
-    console.error("Error creating funding:", error);
-    throw error;
+    throw new Error(`Error creating funding: ${error.message}`);
   }
 };
 
@@ -100,8 +99,7 @@ export const getAllFunding = async () => {
       externalLink: doc.data().external_link
     }));
   } catch (error) {
-    console.error("Error fetching funding:", error);
-    throw error;
+    throw new Error(`Error fetching funding: ${error.message}`);
   }
 };
 
@@ -117,8 +115,7 @@ export const updateFunding = async (id, fundingData) => {
     });
     return { id, ...fundingData };
   } catch (error) {
-    console.error("Error updating funding:", error);
-    throw error;
+    throw new Error(`Error updating funding: ${error.message}`);
   }
 };
 
@@ -129,8 +126,7 @@ export const deleteFunding = async (id) => {
     await deleteDoc(fundingRef);
     return id;
   } catch (error) {
-    console.error("Error deleting funding:", error);
-    throw error;
+    throw new Error(`Error deleting funding: ${error.message}`);
   }
 };
 
@@ -148,7 +144,6 @@ export const getAllProjects = async () => {
       ...doc.data()
     }));
   } catch (error) {
-    console.error("Error fetching projects:", error);
-    throw new Error("Failed to load projects");
+    throw new Error(`Error fetching projects: ${error.message}`);
   }
 };

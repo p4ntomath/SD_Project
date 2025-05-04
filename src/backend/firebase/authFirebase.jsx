@@ -15,7 +15,6 @@ const signUp = async (fullName, email, password, role, additionalData = {}) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
-    console.log("User signed up:", user);
     
     await setDoc(doc(db, "users", user.uid), {
       userId: user.uid,
@@ -28,8 +27,7 @@ const signUp = async (fullName, email, password, role, additionalData = {}) => {
 
     return user;
   } catch (error) {
-    console.error("Error signing up user:", error); // You can log for debugging
-    throw new Error('Failed to create user'); // Provide a specific message
+    throw error; // Throw the original error to preserve the error code
   }
 };
 
@@ -58,7 +56,7 @@ const googleSignIn = async () => {
       return { isNewUser: false, user };
     }
   } catch (error) {
-    console.error("Google sign-in error:", error.message);
+    throw error; // Re-throw to handle in the component
   }
 };
 
