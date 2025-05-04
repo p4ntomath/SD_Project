@@ -159,7 +159,7 @@ export default function AdminHomePage() {
                 transition={{ delay: 0.2 }}
                 className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-md transition-all flex flex-col justify-between"
                 onClick={() => {
-                  setShowAddFunding(true);
+                  navigate('/admin/funding');
                 }}
                 data-testid="funding-opportunities-card"
               >
