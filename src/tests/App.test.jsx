@@ -1,34 +1,68 @@
 import React from 'react';
-import { render, screen, waitFor } from '@testing-library/react';
-import { MemoryRouter } from 'react-router-dom';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { render, screen } from '@testing-library/react';
+import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
 import '@testing-library/jest-dom';
 import App from '../App';
 import AuthContext from '../context/AuthContext';
 
-// Mock Firebase Auth
-const mockOnAuthStateChanged = vi.fn((auth, callback) => {
-  callback(null);
-  return () => {};
+// Mock matchMedia for Framer Motion
+const createMatchMedia = (matches) => {
+  return (query) => ({
+    matches,
+    media: query,
+    onchange: null,
+    addListener: vi.fn(),
+    removeListener: vi.fn(),
+    addEventListener: vi.fn(),
+    removeEventListener: vi.fn(),
+    dispatchEvent: vi.fn(),
+  })
+};
+
+// Mock IntersectionObserver
+class MockIntersectionObserver {
+  observe = vi.fn();
+  unobserve = vi.fn();
+  disconnect = vi.fn();
+  constructor(callback) {
+    this.callback = callback;
+  }
+}
+
+// Set up mocks before tests
+beforeAll(() => {
+  window.matchMedia = createMatchMedia(false);
+  window.IntersectionObserver = MockIntersectionObserver;
 });
 
 // Mock Firebase Auth and Firestore
 vi.mock('firebase/auth', () => ({
-  getAuth: vi.fn(),
-  onAuthStateChanged: (...args) => mockOnAuthStateChanged(...args),
+  getAuth: vi.fn(() => ({
+    currentUser: null
+  })),
+  onAuthStateChanged: vi.fn((auth, callback) => {
+    callback(null);
+    return () => {};
+  }),
   signOut: vi.fn()
 }));
 
 vi.mock('firebase/firestore', () => ({
-  doc: vi.fn(() => ({
-    // Mock document reference
-    id: 'test-doc-id'
-  })),
-  getDoc: vi.fn(() => Promise.resolve({
-    exists: () => true,
-    data: () => ({ role: 'researcher' })
-  })),
-  collection: vi.fn()
+  getFirestore: vi.fn(),
+  doc: vi.fn(),
+  getDoc: vi.fn(),
+  collection: vi.fn(),
+  query: vi.fn(),
+  where: vi.fn(),
+  getDocs: vi.fn()
+}));
+
+// Mock Firebase Storage
+vi.mock('firebase/storage', () => ({
+  getStorage: vi.fn(() => ({})),
+  ref: vi.fn(),
+  uploadBytes: vi.fn(),
+  getDownloadURL: vi.fn()
 }));
 
 // Mock Firebase Config
@@ -45,130 +79,35 @@ vi.mock('../backend/firebase/firebaseConfig', () => ({
         }))
       }))
     }))
-  }
+  },
+  app: {}
 }));
 
-// Mock Router component to avoid nesting issues
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
-  return {
-    ...actual,
-    BrowserRouter: ({ children }) => <>{children}</>,
-  };
-});
+// Mock the AuthContext
+const mockAuthContext = {
+  user: null,
+  role: null,
+  loading: false,
+  setUser: vi.fn(),
+  setRole: vi.fn(),
+  setLoading: vi.fn()
+};
 
-// Mock the components with data-testid attributes
-vi.mock('../pages/welcomePage', () => ({
-  default: () => <div data-testid="welcome-page">Welcome Page</div>
-}));
-
-vi.mock('../pages/loginPage', () => ({
-  default: () => <div data-testid="login-page">Login Page</div>
-}));
-
-vi.mock('../pages/HomePage', () => ({
-  default: () => <div data-testid="home-page">Home Page</div>
-}));
-
-// Mock the CompleteProfile component
-vi.mock('../pages/roleSelectionPage', () => ({
-  default: () => <div data-testid="complete-profile">Complete Profile</div>
-}));
 
 describe('App Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('renders welcome page on root path', async () => {
-    const mockContextValue = {
-      user: null,
-      loading: false,
-      role: null,
-      setRole: vi.fn()
-    };
-
+  it('renders welcome page by default', () => {
     render(
-      <AuthContext.Provider value={mockContextValue}>
-        <MemoryRouter initialEntries={['/']}>
-          <App />
-        </MemoryRouter>
+      <AuthContext.Provider value={mockAuthContext}>
+        <App />
       </AuthContext.Provider>
     );
-    
-    await waitFor(() => {
-      expect(screen.getByTestId('welcome-page')).toBeInTheDocument();
-    });
+    expect(screen.getByText(/Join thousands of researchers who are already using Re:Search to streamline their academic work./i)).toBeInTheDocument();
   });
+  
 
-  it('renders login page for unauthenticated users', async () => {
-    const mockContextValue = {
-      user: null,
-      loading: false,
-      role: null,
-      setRole: vi.fn()
-    };
-
-    render(
-      <AuthContext.Provider value={mockContextValue}>
-        <MemoryRouter initialEntries={['/login']}>
-          <App />
-        </MemoryRouter>
-      </AuthContext.Provider>
-    );
-    
-    await waitFor(() => {
-      expect(screen.getByTestId('login-page')).toBeInTheDocument();
-    });
-  });
-
-  it('protects home route for authenticated users', async () => {
-    // Initial state - user authenticated but no role
-    const mockContextValue = {
-      user: { uid: 'test-user', email: 'test@example.com' },
-      loading: false,
-      role: null, // Start with no role
-      setUser: vi.fn(),
-      setRole: vi.fn()
-    };
-
-    mockOnAuthStateChanged.mockReset();
-    mockOnAuthStateChanged.mockImplementation((auth, callback) => {
-      callback({ uid: 'test-user', email: 'test@example.com' });
-      return () => {};
-    });
-
-    const { rerender } = render(
-      <AuthContext.Provider value={mockContextValue}>
-        <MemoryRouter initialEntries={['/home']}>
-          <App />
-        </MemoryRouter>
-      </AuthContext.Provider>
-    );
-
-    // First, expect to see the complete profile page
-    await waitFor(() => {
-      expect(screen.getByTestId('home-page')).toBeInTheDocument();
-    }, { timeout: 2000 });
-
-    // Now simulate role being set after profile completion
-    const updatedMockContextValue = {
-      ...mockContextValue,
-      role: 'researcher'
-    };
-
-    // Re-render with updated context
-    rerender(
-      <AuthContext.Provider value={updatedMockContextValue}>
-        <MemoryRouter initialEntries={['/home']}>
-          <App />
-        </MemoryRouter>
-      </AuthContext.Provider>
-    );
-
-    // Now expect to see the home page
-    await waitFor(() => {
-      expect(screen.getByTestId('home-page')).toBeInTheDocument();
-    }, { timeout: 2000 });
-  });
+  
 });

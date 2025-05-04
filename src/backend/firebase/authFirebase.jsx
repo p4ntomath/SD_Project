@@ -15,7 +15,6 @@ const signUp = async (fullName, email, password, role, additionalData = {}) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
-    console.log("User signed up:", user);
     
     await setDoc(doc(db, "users", user.uid), {
       userId: user.uid,
@@ -28,9 +27,10 @@ const signUp = async (fullName, email, password, role, additionalData = {}) => {
 
     return user;
   } catch (error) {
-    throw error;
+    throw error; // Throw the original error to preserve the error code
   }
 };
+
 
 // 🔹 Google Sign-In
 const googleSignIn = async () => {
@@ -56,7 +56,7 @@ const googleSignIn = async () => {
       return { isNewUser: false, user };
     }
   } catch (error) {
-    console.error("Google sign-in error:", error.message);
+    throw error; // Re-throw to handle in the component
   }
 };
 
@@ -86,6 +86,7 @@ const signIn = async (email, password) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return userCredential.user;
   } catch (error) {
+    console.error("Error signing in:", error.message);
     throw error; // Re-throw the error for handling in the calling function
   }
 };
@@ -114,11 +115,13 @@ const resetPassword = async (email) => {
 const logOut = async () => {
   try {
     await signOut(auth);
-    console.log("User signed out");
   } catch (error) {
-    console.error("Logout error:", error.message);
+    return Promise.reject(error);
+    
   }
 };
+
+
 
 const getUserRole = async (uid) => {
   try {

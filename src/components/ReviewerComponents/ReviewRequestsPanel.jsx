@@ -90,7 +90,11 @@ export default function ReviewRequestsPanel() {
     if (loading) {
         return (
             <div className="flex justify-center items-center py-8">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <div 
+                    className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
+                    role="status"
+                    aria-label="Loading review requests"
+                />
             </div>
         );
     }
@@ -132,7 +136,7 @@ export default function ReviewRequestsPanel() {
 
                     <div className="flex flex-col sm:flex-row gap-3">
                         <button
-                            onClick={() => handleAccept(request.id, request.project.id)}
+                            onClick={() => handleAccept(request.id, request.projectId)}
                             className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
                         >
                             Accept Request

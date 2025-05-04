@@ -25,22 +25,23 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
     status: 'In Progress',
     createdAt: new Date()
   });
-
-  const getTodayFormatted = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
-  };
-
+  
   // Pre-fill form data if projectToUpdate is provided
   useEffect(() => {
     if (isUpdateMode && projectToUpdate) {
       setFormData({
         ...projectToUpdate,
+        goals: projectToUpdate.goals || [],
         deadline: formatDateForInput(projectToUpdate.deadline),
         goalInput: '',
       });
     }
   }, [isUpdateMode, projectToUpdate]);
+
+  const getTodayFormatted = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
 
   const [errors, setErrors] = useState({});
 
@@ -240,12 +241,11 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
           {/* Display chips for added goals */}
           <ul className="flex flex-wrap mb-2" role="list" aria-label="Added goals">
             {formData.goals.map((goal, index) => (
-              <li key={index}>
-                <ChipComponent
-                  goal={goal}
-                  onDelete={() => deleteGoal(goal)}
-                />
-              </li>
+              <ChipComponent
+                key={index}
+                goal={goal}
+                onDelete={() => deleteGoal(goal)}
+              />
             ))}
           </ul>
 

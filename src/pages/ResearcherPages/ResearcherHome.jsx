@@ -57,7 +57,7 @@ export default function ResearcherHome() {
   };
 
   const SkeletonCard = () => (
-    <div className="bg-white p-6 rounded-lg shadow-md border border-gray-100 animate-pulse">
+    <div data-testid="skeleton-card" className="bg-white p-6 rounded-lg shadow-md border border-gray-100 animate-pulse">
       <div className="flex items-center mb-4">
         <div className="w-8 h-8 bg-gray-200 rounded-full mr-2"></div>
         <div className="h-6 w-32 bg-gray-200 rounded"></div>
@@ -200,7 +200,7 @@ export default function ResearcherHome() {
                       <section 
                         key={project.id}
                         className="p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors"
-                        onClick={() => navigate(`/projects/${project.id}`)}
+                        onClick={() => navigate(`/projects/${project.id}`, { state: project })}
                       >
                         <p className="font-medium text-gray-800">{project.title}</p>
                         <p className="text-sm text-gray-600">Status: {project.status}</p>

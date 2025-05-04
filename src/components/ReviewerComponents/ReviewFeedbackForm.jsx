@@ -52,13 +52,22 @@ export default function ReviewFeedbackForm({ projectId, reviewerId, onSubmitComp
                 <label htmlFor="rating" className="block text-sm font-medium text-gray-700">
                     Rating (1-5)
                 </label>
-                <div className="flex items-center space-x-2 mt-1">
+                <input 
+                    type="hidden"
+                    id="rating"
+                    value={feedback.rating}
+                    aria-label="Current rating value"
+                />
+                <div className="flex items-center space-x-2 mt-1" role="radiogroup" aria-label="Star rating buttons">
                     {[1, 2, 3, 4, 5].map((star) => (
                         <button
                             key={star}
                             type="button"
                             onClick={() => setFeedback({ ...feedback, rating: star })}
                             className={`p-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full`}
+                            aria-label={`Rate ${star} stars`}
+                            aria-pressed={star <= feedback.rating}
+                            aria-controls="rating"
                         >
                             <svg
                                 className={`h-8 w-8 ${

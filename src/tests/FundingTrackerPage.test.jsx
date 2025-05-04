@@ -113,18 +113,22 @@ describe('FundingTrackerPage', () => {
   });
 
   it('filters projects based on search query', async () => {
-    render(
-      <MemoryRouter>
-        <FundingTrackerPage />
-      </MemoryRouter>
-    );
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <FundingTrackerPage />
+        </MemoryRouter>
+      );
+    });
 
     await waitFor(() => {
       expect(screen.getByText('Test Project 1')).toBeInTheDocument();
     });
 
-    const searchInput = screen.getByPlaceholderText('Search projects...');
-    fireEvent.change(searchInput, { target: { value: 'Test Project 2' } });
+    await act(async () => {
+      const searchInput = screen.getByPlaceholderText('Search projects...');
+      fireEvent.change(searchInput, { target: { value: 'Test Project 2' } });
+    });
 
     expect(screen.queryByText('Test Project 1')).not.toBeInTheDocument();
     expect(screen.getByText('Test Project 2')).toBeInTheDocument();

@@ -48,7 +48,7 @@ export default function ReviewRequestsSection() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center p-8">
+      <div aria-label='loading-effect' className="flex justify-center items-center p-8">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
@@ -98,6 +98,8 @@ export default function ReviewRequestsSection() {
             </p>
             <div className="flex flex-col sm:flex-row gap-3">
               <button
+              aria-label='accept review task'
+              name='accept review task'
                 onClick={() => handleResponse(request.invitationId, true)}
                 disabled={respondingTo === request.invitationId}
                 className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -112,6 +114,8 @@ export default function ReviewRequestsSection() {
                 )}
               </button>
               <button
+              name='decline review task'
+              aria-label='decline review task'
                 onClick={() => handleResponse(request.invitationId, false)}
                 disabled={respondingTo === request.invitationId}
                 className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"

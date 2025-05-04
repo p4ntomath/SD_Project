@@ -13,7 +13,7 @@ export default function ReviewRequests() {
   const [error, setError] = useState(null);
   const [statusMessage, setStatusMessage] = useState(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [processingId, setProcessingId] = useState(null); // Track which request is being processed
+  const [processingId, setProcessingId] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,21 +35,32 @@ export default function ReviewRequests() {
         const requestsWithProjects = await Promise.all(
           pendingRequests.map(async (request) => {
             try {
-              const projectData = await fetchProject(request.projectId);
+              let projectData;
+              // If project data is already present (for testing), use it
+              if (request.project) {
+                projectData = request.project;
+              } else {
+                projectData = await fetchProject(request.projectId);
+                console.log('Fetched project data:', projectData);
+              }
               return {
                 ...request,
-                project: projectData
+                project: projectData,
+                projectTitle: projectData.title || request.projectTitle
               };
             } catch (err) {
               console.error(`Error fetching project ${request.projectId}:`, err);
-              return request;
+              return {
+                ...request,
+                project: null,
+                projectTitle: request.projectTitle
+              };
             }
           })
         );
         
         setRequests(requestsWithProjects);
       } catch (err) {
-        console.error('Error loading requests:', err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -109,7 +120,7 @@ export default function ReviewRequests() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <ClipLoader color="#3B82F6" />
+        <ClipLoader color="#3B82F6" aria-label="Loading" role="status" />
       </div>
     );
   }

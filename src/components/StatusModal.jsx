@@ -24,6 +24,7 @@ const StatusModal = ({ isOpen, onClose, success, message }) => {
             <header>
               <h2 
                 id="status-title"
+                aria-label='Status message'
                 className={`text-xl font-semibold mb-4 ${success ? 'text-green-600/90' : 'text-red-600/90'}`}
               >
                 {success ? 'Success' : 'Error'}

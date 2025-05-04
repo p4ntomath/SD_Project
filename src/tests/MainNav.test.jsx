@@ -1,10 +1,11 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within,act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
 import MainNav from '../components/ResearcherComponents/Navigation/MainNav';
 import { logOut } from '../backend/firebase/authFirebase';
 import { BrowserRouter } from 'react-router-dom';
+
 
 // Mock the firebase auth module
 vi.mock('../backend/firebase/authFirebase', () => ({
@@ -14,6 +15,27 @@ vi.mock('../backend/firebase/authFirebase', () => ({
 // Mock window.location
 delete window.location;
 window.location = { href: '' };
+
+// Mock matchMedia for Framer Motion
+window.matchMedia = vi.fn().mockImplementation(query => ({
+  matches: false,
+  media: query,
+  onchange: null,
+  addListener: vi.fn(),
+  removeListener: vi.fn(),
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+  dispatchEvent: vi.fn(),
+}));
+
+// Mock framer-motion
+vi.mock('framer-motion', () => ({
+  motion: {
+    article: ({ children, ...props }) => <article {...props}>{children}</article>,
+    div: ({ children, ...props }) => <div {...props}>{children}</div>
+  },
+  AnimatePresence: ({ children }) => children
+}));
 
 const renderWithRouter = (component) => {
   return render(
@@ -88,14 +110,25 @@ describe('MainNav Component', () => {
     expect(profileButton).toBeInTheDocument();
   });
 
-  it('handles logout button click', () => {
+  it('handles logout button click', async () => {
     renderWithRouter(<MainNav {...defaultProps} />);
     
-    const logoutButton = screen.getByText('Logout');
-    fireEvent.click(logoutButton);
+    // Click the initial logout button in the nav bar
+    const navLogoutButton = screen.getAllByLabelText('Logout')[0];
+    fireEvent.click(navLogoutButton);
+
+    // Find the modal and look for the logout button within it
+    const modal = screen.getByRole('dialog');
+    const confirmLogoutButton = within(modal).getByRole('button', { name: 'Logout' });
+    await act(async () => {
+      fireEvent.click(confirmLogoutButton);
+    });
     
+    // Assert after state update
     expect(logOut).toHaveBeenCalled();
-    expect(window.location.href).toBe('/login');
+    await waitFor(() => {
+      expect(window.location.href).toBe('/login');
+    });
   });
 
   it('displays the Research Portal heading', () => {

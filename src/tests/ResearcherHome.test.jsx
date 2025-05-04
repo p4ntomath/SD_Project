@@ -11,6 +11,19 @@ import { fetchProjects } from '../backend/firebase/projectDB';
 // Mock navigate function
 const mockNavigate = vi.fn();
 
+// Mock matchMedia for Framer Motion
+const mockMatchMedia = vi.fn().mockImplementation(query => ({
+  matches: false,
+  media: query,
+  onchange: null,
+  addListener: vi.fn(), // Deprecated
+  removeListener: vi.fn(), // Deprecated
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+  dispatchEvent: vi.fn(),
+}));
+window.matchMedia = mockMatchMedia;
+
 // Mock useNavigate hook
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -27,7 +40,8 @@ vi.mock('../backend/firebase/firebaseConfig', () => ({
       callback({ uid: 'test-user-id' });
       return vi.fn(); // unsubscribe mock
     }),
-  },
+    currentUser: { uid: 'test-user-id' }
+  }
 }));
 
 // Mock projectDB
@@ -166,7 +180,9 @@ describe('ResearcherHome', () => {
     render(<ResearcherHome />, { wrapper: MemoryRouter });
     
     expect(screen.getByTestId('researcher-home')).toBeInTheDocument();
-    expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
+    // Look for skeleton cards
+    const skeletonCards = screen.getAllByTestId('skeleton-card');
+    expect(skeletonCards.length).toBe(6);
   });
 
   it('displays empty state messages when no projects exist', async () => {
@@ -179,6 +195,57 @@ describe('ResearcherHome', () => {
       expect(screen.getByText('No recent activity')).toBeInTheDocument();
       expect(screen.getByText('No team members yet')).toBeInTheDocument();
     });
+  });
+
+  it('navigates to project details when clicking a project', async () => {
+    render(<ResearcherHome />, { wrapper: MemoryRouter });
+
+    await waitFor(() => {
+      const projectTitle = screen.getByText('Test Project 1');
+      fireEvent.click(projectTitle.closest('section'));
+      expect(mockNavigate).toHaveBeenCalledWith('/projects/1', { state: mockProjects[0] });
+    });
+  });
+
+  it('navigates to track funding page when clicking track funding button', async () => {
+    render(<ResearcherHome />, { wrapper: MemoryRouter });
+
+    await waitFor(() => {
+      const trackFundingButton = screen.getByText('Track Funding');
+      fireEvent.click(trackFundingButton);
+      expect(mockNavigate).toHaveBeenCalledWith('/trackfunding');
+    });
+  });
+
+  it('navigates to projects page when clicking view projects button', async () => {
+    render(<ResearcherHome />, { wrapper: MemoryRouter });
+
+    await waitFor(() => {
+      const viewProjectsButton = screen.getByText('View Projects');
+      fireEvent.click(viewProjectsButton);
+      expect(mockNavigate).toHaveBeenCalledWith('/projects');
+    });
+  });
+
+  it('fetches projects on mount', async () => {
+    render(<ResearcherHome />, { wrapper: MemoryRouter });
+  
+    await waitFor(() => {
+      expect(fetchProjects).toHaveBeenCalledWith('test-user-id');
+    });
+  });
+
+  it('handles fetch projects error gracefully', async () => {
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    fetchProjects.mockRejectedValueOnce(new Error('Failed to fetch'));
+    
+    render(<ResearcherHome />, { wrapper: MemoryRouter });
+
+    await waitFor(() => {
+      expect(consoleError).toHaveBeenCalledWith('Error fetching projects:', expect.any(Error));
+    });
+
+    consoleError.mockRestore();
   });
 });
 
@@ -208,12 +275,12 @@ describe('CreateProjectForm', () => {
         target: { value: 'Physics' }
       });
   
-      fireEvent.change(screen.getByLabelText(/duration/i), {
-        target: { value: '6 months' }
+      // Set deadline
+      fireEvent.change(screen.getByLabelText(/deadline/i), {
+        target: { value: '2025-12-31' }
       });
   
       const goalInput = screen.getByLabelText(/Goals\* \(Press Enter or comma to add\)/i);
-
   
       fireEvent.change(goalInput, { target: { value: 'Goal 1' } });
       fireEvent.keyDown(goalInput, { key: 'Enter', code: 'Enter' });
@@ -231,6 +298,9 @@ describe('CreateProjectForm', () => {
       expect(createdProject.title).toBe('Test Research Project');
       expect(createdProject.goals).toHaveLength(2);
       expect(createdProject.researchField).toBe('Physics');
-      expect(createdProject.duration).toBe('6 months');
+      // Check that the date is in ISO format
+      expect(createdProject.deadline instanceof Date || typeof createdProject.deadline === 'string').toBeTruthy();
+      const deadlineDate = new Date(createdProject.deadline);
+      expect(deadlineDate.toISOString().split('T')[0]).toBe('2025-12-31');
     });
   });

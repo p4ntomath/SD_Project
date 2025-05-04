@@ -1192,7 +1192,8 @@ export default function ProjectDetailsPage() {
                 <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div>
                     <dt className="text-sm text-gray-500">Available Funds</dt>
-                    <dd className="text-xl sm:text-2xl font-bold text-green-600">
+                    <dd data-testid = "Available Funds"
+                     className="text-xl sm:text-2xl font-bold text-green-600">
                       R {(project.availableFunds || 0).toLocaleString()}
                     </dd>
                   </div>
@@ -1218,6 +1219,7 @@ export default function ProjectDetailsPage() {
 
                 <div className="grid grid-cols-3 gap-3">
                   <button
+                    aria-label='Add Funds Btn'
                     onClick={() => setShowAddFundsModal(true)}
                     className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
                   >
@@ -1397,6 +1399,7 @@ export default function ProjectDetailsPage() {
                       <label className="block text-sm font-medium text-gray-700">Amount (R)</label>
                       <input
                         type="number"
+                        aria-label='Amount Add Funds'
                         value={fundAmount}
                         onChange={(e) => setFundAmount(e.target.value)}
                         className="mt-1 block w-full h-12 px-4 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -1409,6 +1412,7 @@ export default function ProjectDetailsPage() {
                       <label className="block text-sm font-medium text-gray-700">Source</label>
                       <input
                         type="text"
+                        aria-label='Funding Source'
                         value={fundingSource}
                         onChange={(e) => setFundingSource(e.target.value)}
                         className="mt-1 block w-full h-12 px-4 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -1427,6 +1431,7 @@ export default function ProjectDetailsPage() {
                     </button>
                     <button
                       type="submit"
+                      aria-label='Submit Add Funds'
                       className="bg-blue-600/90 text-white px-4 py-2 rounded-xl hover:bg-blue-700/90 transition-colors flex items-center justify-center disabled:opacity-50"
                       disabled={addFundsLoading}
                     >
@@ -1460,6 +1465,7 @@ export default function ProjectDetailsPage() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Amount (R)</label>
                       <input
+                        aria-label='Amount'
                         type="number"
                         value={expenseAmount}
                         onChange={(e) => setExpenseAmount(e.target.value)}
@@ -1473,6 +1479,7 @@ export default function ProjectDetailsPage() {
                       <label className="block text-sm font-medium text-gray-700">Description</label>
                       <input
                         type="text"
+                        aria-label='Description'
                         value={expenseDescription}
                         onChange={(e) => setExpenseDescription(e.target.value)}
                         className="mt-1 block w-full h-12 px-4 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
@@ -1483,6 +1490,7 @@ export default function ProjectDetailsPage() {
                   <div className="mt-6 flex justify-end gap-3">
                     <button
                       type="button"
+                      name = 'Cancel'
                       onClick={() => setShowAddExpenseModal(false)}
                       className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50/80 transition-colors"
                       disabled={addExpenseLoading}
@@ -1490,6 +1498,8 @@ export default function ProjectDetailsPage() {
                       Cancel
                     </button>
                     <button
+                      aria-label='Submit Expense'
+                      data-testid='submit-expense'
                       type="submit"
                       className="bg-blue-600/90 text-white px-4 py-2 rounded-xl hover:bg-blue-700/90 transition-colors flex items-center justify-center disabled:opacity-50"
                       disabled={addExpenseLoading}

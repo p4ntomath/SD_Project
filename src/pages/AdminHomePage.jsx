@@ -92,7 +92,7 @@ export default function AdminHomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 p-4 md:p-8">
+    <div className="min-h-screen bg-gray-50 p-4 md:p-8" data-testid="admin-dashboard">
       <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
         {/* Updated header to be side by side on all screen sizes */}
         <div className="flex justify-between items-center">
@@ -117,6 +117,7 @@ export default function AdminHomePage() {
               {[...Array(4)].map((_, index) => (
                 <motion.div 
                   key={index}
+                  data-testid="loading-skeleton"
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ delay: index * 0.1 }}
@@ -158,7 +159,7 @@ export default function AdminHomePage() {
                 transition={{ delay: 0.2 }}
                 className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-md transition-all flex flex-col justify-between"
                 onClick={() => {
-                  setShowAddFunding(true);
+                  navigate('/admin/funding');
                 }}
                 data-testid="funding-opportunities-card"
               >
@@ -363,6 +364,7 @@ export default function AdminHomePage() {
                   <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                     <button
                       type="button"
+                      data-testid="confirm-logout"
                       className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
                       onClick={handleLogout}
                     >

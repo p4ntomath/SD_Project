@@ -5,7 +5,7 @@ import { describe, it, expect, vi } from 'vitest';
 import '@testing-library/jest-dom';
 import WelcomePage from '../pages/welcomePage';
 
-// Mock navigation
+// ✅ Mock navigation
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -15,16 +15,35 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// Mock framer-motion to avoid animation-related issues in tests
+// ✅ Utility to remove framer-motion-only props
+const omitMotionProps = (props) => {
+  const {
+    whileHover,
+    whileTap,
+    whileInView,
+    animate,
+    initial,
+    exit,
+    transition,
+    variants,
+    layout,
+    ...rest
+  } = props;
+  return rest;
+};
+
+// ✅ Mock framer-motion to avoid animation-related warnings/errors
 vi.mock('framer-motion', () => ({
   motion: {
-    section: ({ children, ...props }) => <section {...props}>{children}</section>,
-    div: ({ children, ...props }) => <div {...props}>{children}</div>,
-    figure: ({ children, ...props }) => <figure {...props}>{children}</figure>,
-    h1: ({ children, ...props }) => <h1 {...props}>{children}</h1>,
-    h2: ({ children, ...props }) => <h2 {...props}>{children}</h2>,
-    p: ({ children, ...props }) => <p {...props}>{children}</p>,
-    button: ({ children, onClick, ...props }) => <button onClick={onClick} {...props}>{children}</button>,
+    section: ({ children, ...props }) => <section {...omitMotionProps(props)}>{children}</section>,
+    div: ({ children, ...props }) => <div {...omitMotionProps(props)}>{children}</div>,
+    figure: ({ children, ...props }) => <figure {...omitMotionProps(props)}>{children}</figure>,
+    h1: ({ children, ...props }) => <h1 {...omitMotionProps(props)}>{children}</h1>,
+    h2: ({ children, ...props }) => <h2 {...omitMotionProps(props)}>{children}</h2>,
+    p: ({ children, ...props }) => <p {...omitMotionProps(props)}>{children}</p>,
+    button: ({ children, onClick, ...props }) => (
+      <button onClick={onClick} {...omitMotionProps(props)}>{children}</button>
+    ),
   }
 }));
 
@@ -39,7 +58,7 @@ describe('WelcomePage Component', () => {
 
   it('renders the welcome page with main heading', () => {
     renderWelcomePage();
-    const mainHeading = screen.getByRole('heading', { 
+    const mainHeading = screen.getByRole('heading', {
       level: 1,
       name: /one platform.*endless academic possibilities/i
     });
