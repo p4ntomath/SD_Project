@@ -69,8 +69,8 @@ export default function AdminDocumentsPage() {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-gray-50 p-4">
-                <div className="flex justify-center items-center h-64">
+            <div aria-label='loading' className="min-h-screen bg-gray-50 p-4">
+                <div  className="flex justify-center items-center h-64">
                     <ClipLoader color="#3B82F6" />
                 </div>
             </div>

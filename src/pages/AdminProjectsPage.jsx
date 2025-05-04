@@ -25,7 +25,6 @@ export default function AdminProjectsPage() {
         const data = await fetchProjectsWithUsers();
         setProjects(data);
       } catch (error) {
-        console.error('Error loading projects:', error);
       } finally {
         setLoading(false);
       }
@@ -76,7 +75,7 @@ export default function AdminProjectsPage() {
         >
           {loading ? (
             <div className="min-h-[200px] flex items-center justify-center">
-              <ClipLoader color="#3B82F6" />
+              <ClipLoader color="#3B82F6" aria-label="loading" />
             </div>
           ) : (
             <div className="overflow-x-auto">
