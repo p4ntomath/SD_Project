@@ -114,7 +114,7 @@ describe('ReviewRequests Component', () => {
     id: 'request-1',
     projectId: 'project-1',
     status: 'pending',
-    requestedAt: new Date(),
+    requestedAt: '3 May 2025 at 22:20:24 UTC+2',
     researcherName: 'Test Researcher',
     projectTitle: 'Test Project', // Add projectTitle as fallback
     project: {
@@ -122,7 +122,7 @@ describe('ReviewRequests Component', () => {
       title: 'Test Project',
       description: 'Test Description',
       researchField: 'Computer Science',
-      deadline: new Date()
+      deadline: '20 May 2025 at 22:20:24 UTC+2'
     }
   };
 
@@ -230,6 +230,19 @@ describe('ReviewRequests Component', () => {
       expect(mockNavigate).toHaveBeenCalledWith('/login');
     });
   });
+
+
+
+  it('handles mobile menu state', async () => {
+    renderWithRouter(<ReviewRequests />);
+
+    await waitFor(() => {
+      expect(screen.getByText(/mock reviewermainnav/i)).toBeInTheDocument();
+      expect(screen.getByText(/mock reviewermobilebottomnav/i)).toBeInTheDocument();
+    });
+  });
+
+  
 
  
 });
