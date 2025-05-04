@@ -86,6 +86,7 @@ const signIn = async (email, password) => {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return userCredential.user;
   } catch (error) {
+    console.error("Error signing in:", error.message);
     throw error; // Re-throw the error for handling in the calling function
   }
 };
