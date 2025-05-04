@@ -119,7 +119,7 @@ describe('LogInForm Component', () => {
     // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /login/i }));
 
-    expect(await screen.findByText(/user not found/i)).toBeInTheDocument();
+    expect(await screen.findByText(/No account found with this email. Please sign up./i)).toBeInTheDocument();
   });
 
   it('handles successful Google sign in', async () => {
