@@ -49,7 +49,6 @@ export default function ReviewRequests() {
         
         setRequests(requestsWithProjects);
       } catch (err) {
-        console.error('Error loading requests:', err);
         setError(err.message);
       } finally {
         setLoading(false);
@@ -109,7 +108,7 @@ export default function ReviewRequests() {
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
-        <ClipLoader color="#3B82F6" />
+        <ClipLoader color="#3B82F6" aria-label="Loading" role="status" />
       </div>
     );
   }
