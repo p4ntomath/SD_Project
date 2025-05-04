@@ -136,7 +136,7 @@ describe('AdminHomePage', () => {
         });
     });
 
-    it('handles adding new funding opportunity', async () => {
+    it('navigate to funding page', async () => {
         render(
             <BrowserRouter>
                 <AdminHomePage />
@@ -147,25 +147,8 @@ describe('AdminHomePage', () => {
         const fundingCard = await screen.findByTestId('funding-opportunities-card');
         fireEvent.click(fundingCard);
 
-        // Fill out the form
-        const nameInput = screen.getByLabelText('Funding Name');
-        const fundsInput = screen.getByLabelText('Expected Funds (R)');
-        const linkInput = screen.getByLabelText('External Link');
-
-        fireEvent.change(nameInput, { target: { value: 'New Grant' } });
-        fireEvent.change(fundsInput, { target: { value: '30000' } });
-        fireEvent.change(linkInput, { target: { value: 'https://example.com' } });
-
-        // Submit the form
-        const submitButton = screen.getByText('Add Funding');
-        fireEvent.click(submitButton);
-
         await waitFor(() => {
-            expect(createFunding).toHaveBeenCalledWith({
-                name: 'New Grant',
-                expectedFunds: '30000',
-                externalLink: 'https://example.com'
-            });
+            expect(mockNavigate).toHaveBeenCalledWith('/admin/funding');
         });
     });
 
