@@ -12,7 +12,9 @@ const AuthProtectRoute = ({ children }) => {
             if (user && role === null) {
                 navigate("/complete-profile", { replace: true });
             } else if (user) {
-                navigate("/home", { replace: true });
+                // Redirect to appropriate dashboard based on role
+                const path = role === 'admin' ? '/admin' : '/home';
+                navigate(path, { replace: true });
             }
         }
     }, [user, role, loading, navigate]);

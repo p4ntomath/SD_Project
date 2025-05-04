@@ -1,9 +1,11 @@
 import React from 'react';
-import { render, screen, fireEvent } from '@testing-library/react';
+import { render, screen, fireEvent, within,act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
 import MainNav from '../components/ResearcherComponents/Navigation/MainNav';
 import { logOut } from '../backend/firebase/authFirebase';
+import { BrowserRouter } from 'react-router-dom';
+
 
 // Mock the firebase auth module
 vi.mock('../backend/firebase/authFirebase', () => ({
@@ -13,6 +15,35 @@ vi.mock('../backend/firebase/authFirebase', () => ({
 // Mock window.location
 delete window.location;
 window.location = { href: '' };
+
+// Mock matchMedia for Framer Motion
+window.matchMedia = vi.fn().mockImplementation(query => ({
+  matches: false,
+  media: query,
+  onchange: null,
+  addListener: vi.fn(),
+  removeListener: vi.fn(),
+  addEventListener: vi.fn(),
+  removeEventListener: vi.fn(),
+  dispatchEvent: vi.fn(),
+}));
+
+// Mock framer-motion
+vi.mock('framer-motion', () => ({
+  motion: {
+    article: ({ children, ...props }) => <article {...props}>{children}</article>,
+    div: ({ children, ...props }) => <div {...props}>{children}</div>
+  },
+  AnimatePresence: ({ children }) => children
+}));
+
+const renderWithRouter = (component) => {
+  return render(
+    <BrowserRouter>
+      {component}
+    </BrowserRouter>
+  );
+};
 
 describe('MainNav Component', () => {
   const defaultProps = {
@@ -28,25 +59,24 @@ describe('MainNav Component', () => {
   });
 
   it('renders all desktop navigation buttons', () => {
-    render(<MainNav {...defaultProps} />);
+    renderWithRouter(<MainNav {...defaultProps} />);
     
-    // Test navigation buttons by their text content since it's more reliable
-    expect(screen.getByText('Home')).toBeInTheDocument();
-    expect(screen.getByText('My Projects')).toBeInTheDocument();
-    expect(screen.getByText('Documents')).toBeInTheDocument();
-    expect(screen.getByText('Alerts')).toBeInTheDocument();
-    expect(screen.getByText('Account')).toBeInTheDocument();
+    expect(screen.getByLabelText('Home')).toBeInTheDocument();
+    expect(screen.getByLabelText('My Projects')).toBeInTheDocument();
+    expect(screen.getByLabelText('Documents')).toBeInTheDocument();
+    expect(screen.getByLabelText('View alerts')).toBeInTheDocument();
+    expect(screen.getByLabelText('View profile')).toBeInTheDocument();
   });
 
   it('renders the search bar', () => {
-    render(<MainNav {...defaultProps} />);
+    renderWithRouter(<MainNav {...defaultProps} />);
     
     const searchInput = screen.getByPlaceholderText('Search projects...');
     expect(searchInput).toBeInTheDocument();
   });
 
   it('handles search form submission', () => {
-    render(<MainNav {...defaultProps} />);
+    renderWithRouter(<MainNav {...defaultProps} />);
     
     const searchInput = screen.getByPlaceholderText('Search projects...');
     const searchForm = searchInput.closest('form');
@@ -58,14 +88,14 @@ describe('MainNav Component', () => {
   });
 
   it('renders mobile menu toggle button on mobile view', () => {
-    render(<MainNav {...defaultProps} />);
+    renderWithRouter(<MainNav {...defaultProps} />);
     
     const menuButton = screen.getByLabelText('Toggle menu');
     expect(menuButton).toBeInTheDocument();
   });
 
   it('toggles mobile menu when menu button is clicked', () => {
-    render(<MainNav {...defaultProps} />);
+    renderWithRouter(<MainNav {...defaultProps} />);
     
     const menuButton = screen.getByLabelText('Toggle menu');
     fireEvent.click(menuButton);
@@ -74,32 +104,45 @@ describe('MainNav Component', () => {
   });
 
   it('shows mobile menu content when mobileMenuOpen is true', () => {
-    render(<MainNav {...defaultProps} mobileMenuOpen={true} />);
+    renderWithRouter(<MainNav {...defaultProps} mobileMenuOpen={true} />);
     
-    expect(screen.getByText('My Profile')).toBeInTheDocument();
+    const profileButton = screen.getByText('My Profile');
+    expect(profileButton).toBeInTheDocument();
   });
 
-  it('handles logout button click', () => {
-    render(<MainNav {...defaultProps} />);
+  it('handles logout button click', async () => {
+    renderWithRouter(<MainNav {...defaultProps} />);
     
-    const logoutButton = screen.getByText('Logout');
-    fireEvent.click(logoutButton);
+    // Click the initial logout button in the nav bar
+    const navLogoutButton = screen.getAllByLabelText('Logout')[0];
+    fireEvent.click(navLogoutButton);
+
+    // Find the modal and look for the logout button within it
+    const modal = screen.getByRole('dialog');
+    const confirmLogoutButton = within(modal).getByRole('button', { name: 'Logout' });
+    await act(async () => {
+      fireEvent.click(confirmLogoutButton);
+    });
     
+    // Assert after state update
     expect(logOut).toHaveBeenCalled();
-    expect(window.location.href).toBe('/login');
+    await waitFor(() => {
+      expect(window.location.href).toBe('/login');
+    });
   });
 
   it('displays the Research Portal heading', () => {
-    render(<MainNav {...defaultProps} />);
+    renderWithRouter(<MainNav {...defaultProps} />);
     
     expect(screen.getByText('Research Portal')).toBeInTheDocument();
   });
 
-  it('applies hover styles to navigation buttons', () => {
-    render(<MainNav {...defaultProps} />);
+  it('applies correct classes to navigation buttons', () => {
+    renderWithRouter(<MainNav {...defaultProps} />);
     
     const homeButton = screen.getByLabelText('Home');
     expect(homeButton).toHaveClass('group');
     expect(homeButton).toHaveClass('hover:bg-blue-50');
+    expect(homeButton).toHaveClass('text-gray-600');
   });
 });

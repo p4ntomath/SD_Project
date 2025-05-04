@@ -3,34 +3,45 @@ import ChipComponent from './ResearcherComponents/ChipComponent';
 import { ClipLoader } from "react-spinners";
 
 export default function CreateProjectForm({ loading, onUpdate, onCreate, onCancel, projectToUpdate, isUpdateMode }) {
+  const formatDateForInput = (timestamp) => {
+    if (!timestamp) return '';
+    if (timestamp.seconds) {
+      // Handle Firebase Timestamp
+      return new Date(timestamp.seconds * 1000).toISOString().split('T')[0];
+    }
+    // Handle regular Date object or string
+    return new Date(timestamp).toISOString().split('T')[0];
+  };
+
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     researchField: '',
-    duration: '',
+    deadline: '',
     goals: [],
     goalInput: '',
     availableFunds: 0,
     usedFunds: 0,
-    status: 'In Progress'
+    status: 'In Progress',
+    createdAt: new Date()
   });
-
+  
   // Pre-fill form data if projectToUpdate is provided
   useEffect(() => {
     if (isUpdateMode && projectToUpdate) {
       setFormData({
-        title: projectToUpdate.title || '',
-        description: projectToUpdate.description || '',
-        researchField: projectToUpdate.researchField || '',
-        duration: projectToUpdate.duration || '',
+        ...projectToUpdate,
         goals: projectToUpdate.goals || [],
+        deadline: formatDateForInput(projectToUpdate.deadline),
         goalInput: '',
-        availableFunds: projectToUpdate.availableFunds || 0,
-        usedFunds: projectToUpdate.usedFunds || 0,
-        status: projectToUpdate.status || 'In Progress'
       });
     }
   }, [isUpdateMode, projectToUpdate]);
+
+  const getTodayFormatted = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
 
   const [errors, setErrors] = useState({});
 
@@ -55,8 +66,16 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
       newErrors.researchField = 'Research field must be at least 3 characters';
     }
 
-    if (!formData.duration) {
-      newErrors.duration = 'Duration is required';
+    if (!formData.deadline) {
+      newErrors.deadline = 'Deadline is required';
+    } else {
+      const selectedDate = new Date(formData.deadline);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0); // Reset time part for accurate date comparison
+      
+      if (selectedDate < today) {
+        newErrors.deadline = 'Deadline cannot be in the past';
+      }
     }
 
     if (formData.goals.length < 2) {
@@ -99,10 +118,9 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
         goals: formData.goals.map(goal => 
           typeof goal === 'string' ? { text: goal, completed: false } : goal
         ),
-        availableFunds: projectToUpdate?.availableFunds || formData.availableFunds,
-        usedFunds: projectToUpdate?.usedFunds || formData.usedFunds,
-        status: projectToUpdate?.status || formData.status,
+        deadline: new Date(formData.deadline),
         createdAt: projectToUpdate?.createdAt || new Date(),
+        updatedAt: new Date()
       };
 
       if (isUpdateMode) {
@@ -192,25 +210,25 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
           )}
         </div>
 
-        {/* Duration Field */}
-        <div role="group" aria-labelledby="duration-label">
-          <label htmlFor="duration" className="block text-sm font-medium mb-1">Duration*</label>
+        {/* Deadline Field */}
+        <div role="group" aria-labelledby="deadline-label">
+          <label htmlFor="deadline" className="block text-sm font-medium mb-1">Deadline*</label>
           <input
-            id='duration'
-            type="text"
-            name="duration"
-            value={formData.duration}
+            id='deadline'
+            type="date"
+            name="deadline"
+            value={formData.deadline}
             onChange={handleChange}
+            min={getTodayFormatted()}
             className={`w-full p-2 border rounded-md ${
-              errors.duration ? 'border-red-500' : 'border-gray-300'
+              errors.deadline ? 'border-red-500' : 'border-gray-300'
             }`}
-            placeholder="e.g., 3 months, 6 weeks, 1 year"
             aria-required="true"
-            aria-invalid={!!errors.duration}
-            aria-describedby={errors.duration ? "duration-error" : undefined}
+            aria-invalid={!!errors.deadline}
+            aria-describedby={errors.deadline ? "deadline-error" : undefined}
           />
-          {errors.duration && (
-            <p id="duration-error" className="mt-1 text-sm text-red-600" role="alert">{errors.duration}</p>
+          {errors.deadline && (
+            <p id="deadline-error" className="mt-1 text-sm text-red-600" role="alert">{errors.deadline}</p>
           )}
         </div>
 
@@ -223,12 +241,11 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
           {/* Display chips for added goals */}
           <ul className="flex flex-wrap mb-2" role="list" aria-label="Added goals">
             {formData.goals.map((goal, index) => (
-              <li key={index}>
-                <ChipComponent
-                  goal={goal}
-                  onDelete={() => deleteGoal(goal)}
-                />
-              </li>
+              <ChipComponent
+                key={index}
+                goal={goal}
+                onDelete={() => deleteGoal(goal)}
+              />
             ))}
           </ul>
 
@@ -275,11 +292,11 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
             test-id="submit-button"
             type="submit"
             disabled={loading}
-            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
+            className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors flex items-center justify-center min-w-[120px]"
             aria-busy={loading}
           >
             {loading ? (
-              <ClipLoader color="#ffffff" loading={loading} size={20} />
+              <ClipLoader data-testid="create-loading-indicator" color="#ffffff" loading={loading} size={20} />
             ) : isUpdateMode ? 'Update Project' : 'Create Project'}
           </button>
         </footer>

@@ -7,6 +7,7 @@ globalThis.React = React;
 
 
 
+
 vi.mock('../backend/firebase/projectDB', () => ({
   createProject: vi.fn().mockResolvedValue('new-project-id')
 }));
@@ -62,4 +63,11 @@ vi.mock('firebase/firestore', () => ({
   deleteDoc: vi.fn(),
   query: vi.fn(),
   where: vi.fn(),
+}));
+
+vi.mock('firebase/storage', () => ({
+  getStorage: vi.fn(),
+  ref: vi.fn(),
+  uploadBytes: vi.fn(),
+  getDownloadURL: vi.fn(),
 }));

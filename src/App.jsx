@@ -12,6 +12,18 @@ import AuthProtectRoute from './components/AuthProtectRoute';
 import HomePage from './pages/HomePage.jsx';
 import FundingTrackerPage from './pages/FundingTrackerPage.jsx';
 import ProjectDetailsPage from './pages/ProjectDetailsPage.jsx';
+import DocumentsPage from './pages/Documents.jsx';
+import MyProjects from './pages/MyProjects.jsx';
+import AdminHomePage from './pages/AdminHomePage.jsx';
+import FundingManagementPage from './pages/FundingManagementPage.jsx';
+import AdminUsersPage from './pages/AdminUsersPage.jsx';
+import AdminProjectsPage from './pages/AdminProjectsPage.jsx';
+import AdminDocumentsPage from './pages/AdminDocumentsPage.jsx';
+import ReviewerHomePage from './pages/ReviewerHomePage.jsx';
+import ReviewerProjects from './pages/reviewer/ReviewerProjects.jsx';
+import ReviewRequests from './pages/reviewer/ReviewRequests.jsx';
+import ReviewerHistory from './pages/ReviewerPages/ReviewerHistory.jsx';
+import ReviewProjectPage from './pages/ReviewerPages/ReviewProjectPage.jsx';
 
 function App() {
   return (
@@ -44,14 +56,89 @@ function App() {
               <HomePage />
             </ProtectedRoute>
           } />
+          <Route path="/projects" element={
+            <ProtectedRoute allowedRoles={['researcher']}>
+              <MyProjects />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminHomePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/funding" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <FundingManagementPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/users" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminUsersPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/projects" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminProjectsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/documents" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminDocumentsPage />
+            </ProtectedRoute>
+          } />
           <Route path="/trackfunding" element={
             <ProtectedRoute allowedRoles={['researcher']}>
               <FundingTrackerPage />
             </ProtectedRoute>
           } />
-          <Route path="/projects/:projectId" element={
-            <ProtectedRoute allowedRoles={['researcher']}>
+          <Route path="/admin/projects/:projectId" element={
+            <ProtectedRoute allowedRoles={['admin']}>
               <ProjectDetailsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/projects/:projectId" element={
+            <ProtectedRoute allowedRoles={['researcher', 'admin']}>
+              <ProjectDetailsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/documents" element={
+            <ProtectedRoute allowedRoles={['researcher', 'reviewer']}>
+              <DocumentsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/reviewer/review/:projectId" element={
+            <ProtectedRoute allowedRoles={['reviewer']}>
+              <ReviewProjectPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/reviewer/dashboard" element={
+            <ProtectedRoute allowedRoles={['reviewer']}>
+              <ReviewerHomePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/reviewer/requests" element={
+            <ProtectedRoute allowedRoles={['reviewer']}>
+              <ReviewRequests />
+            </ProtectedRoute>
+          } />
+          <Route path="/reviewer/assigned" element={
+            <ProtectedRoute allowedRoles={['reviewer']}>
+              <ReviewerProjects />
+            </ProtectedRoute>
+          } />
+          <Route path="/reviewer/history" element={
+            <ProtectedRoute allowedRoles={['reviewer']}>
+              <ReviewerHistory />
+            </ProtectedRoute>
+          } />
+          <Route path="/reviewer/analytics" element={
+            <ProtectedRoute allowedRoles={['reviewer']}>
+              <ReviewerHomePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/reviewer/settings" element={
+            <ProtectedRoute allowedRoles={['reviewer']}>
+              <ReviewerHomePage />
             </ProtectedRoute>
           } />
         </Routes>

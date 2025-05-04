@@ -6,92 +6,120 @@ const NavBar = () => {
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <header className="bg-white fixed w-full z-20 top-0 start-0">
-      <nav className="max-w-screen-xl flex flex-wrap items-center justify-between mx-auto p-4" aria-label="Main navigation">
-        <a href="/" className="flex items-center space-x-3 rtl:space-x-reverse">
-          <img src={appLogo} className="h-8" alt="app Logo" />
-          <h1 className="text-2xl font-semibold whitespace-nowrap">Re:Search</h1>
-        </a>
-  
-        <section className="flex md:order-2 space-x-3 md:space-x-2 rtl:space-x-reverse">
-          <Link to="/login">
-            <button
-              type="button"
-              className="text-white bg-blue-700 hover:bg-blue-800 font-bold rounded-lg text-sm px-6 py-2 text-center"
-            >
-              Login
-            </button>
+    <header className="fixed w-full z-50 bg-white shadow-md">
+      <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Main navigation">
+        <div className="flex justify-between items-center h-16">
+          {/* Logo and Brand */}
+          <Link to="/" className="flex items-center space-x-3 group">
+            <img 
+              src={appLogo} 
+              className="h-10 w-auto transition-transform duration-300 group-hover:scale-105" 
+              alt="Re:Search Logo" 
+            />
+            <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Re:Search
+            </span>
           </Link>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-8">
+            <div className="flex space-x-8">
+              {[
+                { name: 'Home', path: '/' },
+                { name: 'Features', path: '/#features' },
+                { name: 'About', path: '/#about' },
+                { name: 'Contact', path: '/#contact' },
+              ].map((item) => (
+                <a
+                  key={item.name}
+                  href={item.path}
+                  className="relative px-2 py-1 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors duration-200 group"
+                >
+                  {item.name}
+                  <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 transform origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100" />
+                </a>
+              ))}
+            </div>
+
+            {/* Auth Buttons */}
+            <div className="flex items-center space-x-4">
+              <Link to="/signup">
+                <button className="px-4 py-2 text-sm font-semibold text-blue-600 hover:text-blue-700 transition-colors duration-200">
+                  Sign Up
+                </button>
+              </Link>
+              <Link to="/login">
+                <button className="px-5 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-md hover:shadow-lg transform hover:-translate-y-0.5 transition-all duration-200">
+                  Login
+                </button>
+              </Link>
+            </div>
+          </div>
+
+          {/* Mobile menu button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            type="button"
-            className="inline-flex items-center p-2 w-10 h-10 justify-center text-sm text-gray-500 rounded-lg md:hidden hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-gray-200"
-            aria-controls="navbar-sticky"
+            className="md:hidden rounded-lg p-2 inline-flex items-center justify-center text-gray-700 hover:text-blue-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors duration-200"
             aria-expanded={isOpen}
           >
-            <p className="sr-only">Open main menu</p>
+            <span className="sr-only">Open main menu</span>
             <svg
-              className="w-5 h-5"
-              aria-hidden="true"
+              className={`${isOpen ? 'hidden' : 'block'} h-6 w-6`}
               xmlns="http://www.w3.org/2000/svg"
               fill="none"
-              viewBox="0 0 17 14"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
             >
-              <path
-                stroke="currentColor"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth="2"
-                d="M1 1h15M1 7h15M1 13h15"
-              />
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
+            </svg>
+            <svg
+              className={`${isOpen ? 'block' : 'hidden'} h-6 w-6`}
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
-        </section>
-  
-        <section
-          className={`items-center justify-between ${isOpen ? "block" : "hidden"} w-full md:flex md:w-auto md:order-1`}
-          id="navbar-sticky"
-        >
-          <ul className="flex flex-col p-4 md:p-0 mt-4 font-medium border border-gray-100 rounded-lg bg-gray-50 md:space-x-8 rtl:space-x-reverse md:flex-row md:mt-0 md:border-0 md:bg-white">
-            <li>
+        </div>
+
+        {/* Mobile menu */}
+        <div className={`${isOpen ? 'block' : 'hidden'} md:hidden bg-white mt-2 rounded-lg shadow-xl border border-gray-100`}>
+          <div className="px-2 pt-2 pb-3 space-y-1">
+            {[
+              { name: 'Home', path: '/' },
+              { name: 'Features', path: '/#features' },
+              { name: 'About', path: '/#about' },
+              { name: 'Contact', path: '/#contact' },
+            ].map((item) => (
               <a
-                href="/"
-                className="block py-2 px-3 text-white bg-blue-700 rounded-sm md:bg-transparent md:text-blue-700 md:p-0"
-                aria-current="page"
+                key={item.name}
+                href={item.path}
+                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition-colors duration-200"
               >
-                Home
+                {item.name}
               </a>
-            </li>
-            <li>
-              <a
-                href="/"
-                className="block py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0"
-              >
-                About
-              </a>
-            </li>
-            <li>
-              <a
-                href="/"
-                className="block py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0"
-              >
-                Services
-              </a>
-            </li>
-            <li>
-              <a
-                href="/"
-                className="block py-2 px-3 text-gray-900 rounded-sm hover:bg-gray-100 md:hover:bg-transparent md:hover:text-blue-700 md:p-0"
-              >
-                Contact
-              </a>
-            </li>
-          </ul>
-        </section>
+            ))}
+            <div className="pt-4 pb-2 border-t border-gray-200">
+              <div className="flex items-center px-3 space-x-3">
+                <Link to="/signup" className="block w-1/2">
+                  <button className="w-full px-4 py-2 text-sm font-semibold text-blue-600 hover:text-blue-700 border border-blue-600 rounded-lg transition-colors duration-200">
+                    Sign Up
+                  </button>
+                </Link>
+                <Link to="/login" className="block w-1/2">
+                  <button className="w-full px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors duration-200">
+                    Login
+                  </button>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
       </nav>
     </header>
   );
-  
 };
 
 export default NavBar;

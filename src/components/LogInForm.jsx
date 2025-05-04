@@ -6,12 +6,11 @@ import { signIn, googleSignIn ,getUserRole} from "../backend/firebase/authFireba
 import { ClipLoader } from "react-spinners";
 import AuthContext from "../context/AuthContext";
 
-
 const LoginForm = () => {
-
-  const { setRole,setLoading} = useContext(AuthContext);
+  
   const paths = {
-    success: "/home",
+    admin: "/admin",
+    home: "/home",
     completeProfile: "/complete-profile",
   };
   const navigate = useNavigate();
@@ -20,6 +19,8 @@ const LoginForm = () => {
     password: '',
     rememberMe: false
   });
+
+  const { setRole, setLoading } = useContext(AuthContext);
 
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
@@ -30,82 +31,78 @@ const LoginForm = () => {
       ...prev,
       [name]: type === 'checkbox' ? checked : value
     }));
-    // Clear error when user starts typing
-    if (errors[name]) {
-      setErrors(prev => ({ ...prev, [name]: '' }));
-    }
+    // Clear field-specific and form-level errors when typing
+    setErrors(prev => ({ ...prev, [name]: '', form: '' }));
   };
 
   const validateForm = () => {
-    let isValid = true;
-    const newErrors = { email: '', password: '' };
+    const newErrors = {};
 
     if (!formData.email.trim()) {
       newErrors.email = 'Email is required';
-      isValid = false;
     } else if (!/^\S+@\S+\.\S+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email';
-      isValid = false;
     }
 
     if (!formData.password) {
       newErrors.password = 'Password is required';
-      isValid = false;
-    } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters';
-      isValid = false;
     }
 
     setErrors(newErrors);
-    return isValid;
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-    setIsLoading(true);
-    setLoading(true);
+    
     try {
+      setIsLoading(true);
       const user = await signIn(formData.email, formData.password);
       const role = await getUserRole(user.uid);
       setRole(role);
-      navigate(paths.success);
+      navigate(role === 'admin' ? paths.admin : paths.home);
     } catch (error) {
-      if (error.code === 'auth/user-not-found') {
-        setErrors({ form: 'User not found. Please sign up.' });
-      }
-      else if (error.code === 'auth/invalid-credential') {
-        setErrors({ form: 'Invalid Credentials' });
-      }
-      else if (error.code === 'auth/wrong-password') {
-        setErrors({ form: 'Wrong Password' });
-      }
-      else{
-        setErrors({ form: error.code });}
+      const errorMessages = {
+        'auth/user-not-found': 'No account found with this email. Please sign up.',
+        'auth/wrong-password': 'Incorrect password. Please try again.',
+        'auth/invalid-credential': 'Invalid email or password. Please check your credentials.',
+        'auth/too-many-requests': 'Too many failed attempts. Please try again later.',
+        'auth/network-request-failed': 'Network error. Please check your internet connection.'
+      };
+      
+      setErrors({ 
+        form: errorMessages[error.code] || 'Login failed. Please try again.' 
+      });
+    } finally {
+      setIsLoading(false);
     }
-    setLoading(false);
-    setIsLoading(false);
   };
 
-
-
   const handleGoogleAuth = async () => {
-    setIsLoading(true);
-    setLoading(true);
     try {
-      const { isNewUser,user } = await googleSignIn();
+      setIsLoading(true);
+      setLoading(true);
+      const { isNewUser, user } = await googleSignIn();
       if (isNewUser) {
         navigate(paths.completeProfile);
       } else {
         const role = await getUserRole(user.uid);
         setRole(role);
-        navigate(paths.success);
+        navigate(role === 'admin' ? paths.admin : paths.home);
       }
     } catch (error) {
-      setErrors({ form:'Google sign-in failed. Please try again.' });
+      setErrors({ 
+        form: error.code === 'auth/popup-closed-by-user' 
+          ? 'Google sign-in was closed before completion.'
+          : error.code === 'auth/popup-blocked'
+          ? 'Google sign-in popup was blocked.'
+          : 'Google sign-in failed. Please try again.' 
+      });
+    } finally {
+      setIsLoading(false);
+      setLoading(false);
     }
-    setLoading(false);
-    setIsLoading(false);
   };
 
   return (
@@ -115,7 +112,11 @@ const LoginForm = () => {
         <p className="text-lg font-semibold text-gray-600 mt-1">Login.</p>
       </header>
   
-      {errors.form && <p className="text-red-600 mb-4">{errors.form}</p>}
+      {errors.form && (
+        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+          {errors.form}
+        </div>
+      )}
   
       <form onSubmit={handleSubmit} className="space-y-4" aria-label="Login Form">
         <FormInput
