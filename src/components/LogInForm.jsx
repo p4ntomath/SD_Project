@@ -59,8 +59,14 @@ const LoginForm = () => {
     try {
       setIsLoading(true);
       const user = await signIn(formData.email, formData.password);
-      const role = await getUserRole(user.uid);
-      setRole(role);
+      if(user){
+        setIsLoading(false);
+        setLoading(true);
+        const role = await getUserRole(user.uid);
+        setRole(role);
+      }
+      
+      
       navigate(role === 'admin' ? paths.admin : paths.home);
     } catch (error) {
       const errorMessages = {
@@ -75,7 +81,7 @@ const LoginForm = () => {
         form: errorMessages[error.code] || 'Login failed. Please try again.' 
       });
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   };
 
