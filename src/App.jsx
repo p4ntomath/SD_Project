@@ -10,6 +10,7 @@ import { AuthProvider } from './context/AuthContext'; // Import AuthProvider
 import ProtectedRoute from './components/ProtectedRoute'; // Import the ProtectedRoute component
 import HomePage from './pages/HomePage.jsx';
 import AuthProtectRoute from './components/AuthProtectRoute'; // Import the AuthProtectRoute component
+import MyProfilePage from './pages/MyProfilePage.jsx';
 
 //mport { fetchProjects, updateProject, deleteProject } from './backend/firebase/projectDB'; was just for testing
 function App() {
@@ -44,10 +45,10 @@ function App() {
           {/* AuthHomeTest requires both authentication and completed profile */}
           <Route path="/home" element={
             <ProtectedRoute>
-              <HomePage/>
+              <HomePage />
             </ProtectedRoute>
-          }/>
-
+          } />
+          <Route path="/myprofile" element={<MyProfilePage />} />
         </Routes>
       </AuthProvider>
     </Router>
