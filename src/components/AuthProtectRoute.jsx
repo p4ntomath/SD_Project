@@ -1,29 +1,34 @@
-import React, { useContext, useState, useEffect } from "react";
-import { useNavigate, useLocation } from "react-router-dom";
+import React, { useContext, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 import AuthContext from "../context/AuthContext";
-import ClipLoader from "react-spinners/ClipLoader"; // Assuming you’re using this spinner
+import ClipLoader from "react-spinners/ClipLoader";
 
 const AuthProtectRoute = ({ children }) => {
-    const [loading, setLoading] = useState(true);
-    const { user, role } = useContext(AuthContext);
+    const { user, role, loading } = useContext(AuthContext);
     const navigate = useNavigate();
-    const location = useLocation();
 
     useEffect(() => {
-        if (user && role === null) {
-            navigate("/complete-profile", { replace: true });
-        } else if (user) {
-            navigate("/home", { replace: true });
-        } else {
-            setLoading(false);
+        if (!loading) {
+            if (user && role === null) {
+                navigate("/complete-profile", { replace: true });
+            } else if (user) {
+                // Redirect to appropriate dashboard based on role
+                const path = role === 'admin' ? '/admin' : '/home';
+                navigate(path, { replace: true });
+            }
         }
-    }, [user, role, navigate]);
+    }, [user, role, loading, navigate]);
 
     if (loading) {
         return (
-            <section className="flex justify-center items-center h-screen bg-gray-50">
-                <ClipLoader color="#3498db" size={50} />
-            </section>
+            <div role="status" className="flex justify-center items-center h-screen bg-gray-50">
+                <ClipLoader
+                    data-testid="loading-spinner"
+                    aria-label="Loading"
+                    color="#3498db" 
+                    size={50}
+                />
+            </div>
         );
     }
 

@@ -3,42 +3,56 @@ import { completeProfile } from '../backend/firebase/authFirebase';
 import RoleSelectionForm from '../components/RoleSelctionForm';
 import { ClipLoader } from 'react-spinners';
 import { useNavigate } from 'react-router-dom';
-import AuthContext from '../context/AuthContext';'../context/AuthContext';// Importing useNavigate for redirection
+import AuthContext from '../context/AuthContext';
 
 const RoleSelectionPage = () => {
-  const {setRole,role} = useContext(AuthContext); // Importing setRole from AuthContext
-  const [loading, setLoading] = useState(false);
-  const [profileCompleted, setProfileCompleted] = useState(false); // Track profile completion
-  const navigate = useNavigate(); // Initialize useNavigate hook
+  const { setRole, role, setLoading } = useContext(AuthContext);
+  const [localLoading, setLocalLoading] = useState(false);
+  const [profileCompleted, setProfileCompleted] = useState(false);
+  const navigate = useNavigate();
 
   const handleSubmit = async (formData) => {
-    setLoading(true); // Set loading to true when profile completion starts
+    setLocalLoading(true);
+    setLoading(true);
     try {
-      await completeProfile(formData.name, formData.role);
-      setRole(formData.role); // Set the role in the context
-      setProfileCompleted(true); // Mark profile as completed after the form is submitted
+      const profileData = {
+        fullName: formData.fullName,
+        role: formData.role,
+        ...(formData.role === 'reviewer' && {
+          expertise: formData.expertise,
+          department: formData.department
+        })
+      };
+      await completeProfile(formData.fullName, formData.role, profileData);
+      setRole(formData.role);
+      setProfileCompleted(true);
     } catch (error) {
       console.error("Error completing profile:", error.message);
     } finally {
-        setLoading(false); // Set loading to false once the process is done
+      setLocalLoading(false);
+      setLoading(false);
     }
   };
 
-  // Effect to handle redirection once the profile is completed
   useEffect(() => {
     if (profileCompleted) {
-      navigate('/home'); // Redirect to the home page after profile completion
+      navigate('/home');
     }
     if(role){
-      navigate('/home'); // Redirect to the home page if role is already set
+      navigate('/home');
     }
-  }, [profileCompleted, navigate,role]); // Trigger this effect only when profileCompleted changes
+  }, [profileCompleted, navigate, role]);
 
   return (
     <section className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      {loading ? (
-        <section className="flex justify-center items-center h-screen bg-gray-50">
-          <ClipLoader color="#3498db" size={50} />
+      {localLoading ? (
+        <section className="flex justify-center items-center h-screen bg-gray-50" role="status">
+          <ClipLoader 
+            color="#3498db" 
+            size={50} 
+            data-testid="loading-spinner"
+            aria-label="Loading"
+          />
         </section>
       ) : (
         <RoleSelectionForm onSubmit={handleSubmit} />

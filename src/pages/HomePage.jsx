@@ -1,9 +1,8 @@
 import React, { useContext, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import ResearcherHomePage from './ResearcherHomePage.jsx';
-import ReviewerHomePage from './ReviewerHomePage.jsx';
-import AuthContext from "../context/AuthContext"; // Import the AuthContext
-import { ClipLoader } from "react-spinners"; // Import the ClipLoader component
+import ResearcherHome from "./ResearcherPages/ResearcherHome.jsx";
+import AuthContext from "../context/AuthContext";
+import { ClipLoader } from "react-spinners";
 
 export default function HomePage() {
     const { role, loading, user } = useContext(AuthContext);
@@ -12,19 +11,24 @@ export default function HomePage() {
     useEffect(() => {
         if (user && role == null && loading === false) {
             navigate('/complete-profile');
+        } else if (role === 'reviewer' && !loading) {
+            navigate('/reviewer/dashboard');
         }
     }, [user, role, loading, navigate]);
 
     if (role === 'researcher') {
-        return <ResearcherHomePage />;
-    } else if (role === 'reviewer') {
-        return <ReviewerHomePage />;
+        return <div data-testid="home-page"><ResearcherHome /></div>;
     }
+    
     if (loading) {
         return (
-            <div className="flex items-center justify-center min-h-screen">
-                <ClipLoader color="#36d7b7" size={50} />
-            </div>
+            <main className="min-h-screen">
+                <section className="flex items-center justify-center min-h-screen" aria-label="Loading">
+                    <ClipLoader color="#36d7b7" size={50} aria-label="Loading" />
+                </section>
+            </main>
         );
     }
+    
+    return null;
 }

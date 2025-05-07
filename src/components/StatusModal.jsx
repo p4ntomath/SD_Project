@@ -6,30 +6,42 @@ const StatusModal = ({ isOpen, onClose, success, message }) => {
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          className="fixed inset-0 m-2 bg-opacity-40 flex items-center justify-center z-50"
+          className="fixed inset-0 flex items-center justify-center z-[9999] backdrop-blur-sm bg-black/30"
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
         >
           <motion.div
-            className="bg-white p-6 rounded-2xl shadow-2xl w-full max-w-md"
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.8, opacity: 0 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+            className="bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200"
+            initial={{ scale: 0.8, opacity: 0, y: -20 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.8, opacity: 0, y: 20 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 25 }}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="status-title"
           >
-            <h2 className={`text-xl font-semibold mb-4 ${success ? 'text-green-600' : 'text-red-600'}`}>
-              {success ? 'Success' : 'Error'}
-            </h2>
-            <p className="text-gray-700 mb-6">{message}</p>
-            <div className="flex justify-end">
+            <header>
+              <h2 
+                id="status-title"
+                aria-label='Status message'
+                className={`text-xl font-semibold mb-4 ${success ? 'text-green-600/90' : 'text-red-600/90'}`}
+              >
+                {success ? 'Success' : 'Error'}
+              </h2>
+            </header>
+            <section className="mb-6">
+              <div className="text-gray-700">{message}</div>
+            </section>
+            <footer className="flex justify-end">
               <button
                 onClick={onClose}
-                className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700"
+                className={`${success ? 'bg-green-600/90' : 'bg-red-600/90'} backdrop-blur-sm text-white px-4 py-2 rounded-xl hover:${success ? 'bg-green-700/90' : 'bg-red-700/90'} transition-colors`}
+                aria-label="Close modal"
               >
                 Close
               </button>
-            </div>
+            </footer>
           </motion.div>
         </motion.div>
       )}

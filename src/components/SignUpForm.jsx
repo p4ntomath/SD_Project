@@ -13,11 +13,13 @@ const SignUpForm = () => {
   };
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    name: "",
+    fullName: "",
     email: "",
     password: "",
     confirmPassword: "",
     role: "",
+    expertise: "",
+    department: ""
   });
   
 
@@ -40,7 +42,7 @@ const SignUpForm = () => {
   const validateForm = () => {
     const newErrors = {};
 
-    if (!formData.name.trim()) newErrors.name = "Name is required";
+    if (!formData.fullName.trim()) newErrors.fullName = "Full name is required";
 
     if (!formData.email.trim()) {
       newErrors.email = "Email is required";
@@ -68,6 +70,15 @@ const SignUpForm = () => {
 
     if (!formData.role) newErrors.role = "Please select a role";
 
+    if (formData.role === 'reviewer') {
+      if (!formData.expertise?.trim()) {
+        newErrors.expertise = 'Expertise is required for reviewers';
+      }
+      if (!formData.department?.trim()) {
+        newErrors.department = 'Department is required for reviewers';
+      }
+    }
+
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -77,13 +88,32 @@ const SignUpForm = () => {
     if (!validateForm()) return;
     setIsLoading(true);
     try {
-      await signUp(formData.name, formData.email, formData.password, formData.role);
-      navigate(paths.sucess);
+      const additionalData = formData.role === 'reviewer' ? {
+        expertise: formData.expertise,
+        department: formData.department
+      } : {};
+      
+      await signUp(formData.fullName, formData.email, formData.password, formData.role, additionalData);
+      setRole(formData.role);
+      navigate(paths.success);
     } catch (error) {
-      if (error.code === "auth/email-already-in-use") {
-        setErrors({ email: "Email already exists,try logging in or use a different email" });
+      
+      // Map Firebase error codes to user-friendly messages
+      const errorMessages = {
+        'auth/email-already-in-use': 'Email Already Exists: This email address is already registered. Please try logging in or use a different email.',
+        'auth/invalid-email': 'Invalid Email: Please enter a valid email address.',
+        'auth/weak-password': 'Weak Password: Please choose a stronger password.',
+        'auth/operation-not-allowed': 'Sign up is temporarily disabled. Please try again later.',
+        'auth/network-request-failed': 'Network error. Please check your internet connection and try again.'
+      };
+      
+      const errorMessage = errorMessages[error.code] || `Sign up failed: ${error.message || 'An unexpected error occurred'}`;
+      
+      // Only set the form-level error for non-field-specific errors
+      if (error.code === 'auth/email-already-in-use') {
+        setErrors({ email: errorMessage });
       } else {
-        setErrors({ form: error.message });
+        setErrors({ form: errorMessage });
       }
     }
     setIsLoading(false);
@@ -121,7 +151,7 @@ const SignUpForm = () => {
   return (
     <main className="w-full max-w-md">
       <header>
-        <h2 className="text-5xl font-bold text-gray-800 mb-2">Create Account</h2>
+        <h2 aria-label="heading" className="text-5xl font-bold text-gray-800 mb-2">Create Account</h2>
         <p className="text-gray-600 mb-6 text-sm">
           Already have an account?{" "}
           <a href="/login" className="text-sm text-green-600 hover:underline">
@@ -130,7 +160,11 @@ const SignUpForm = () => {
         </p>
       </header>
   
-      {errors.form && <p className="text-red-600">{errors.form}</p>}
+      {errors.form && (
+        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+          {errors.form}
+        </div>
+      )}
   
       <form onSubmit={handleSubmit} className="space-y-4">
         <fieldset>
@@ -138,10 +172,10 @@ const SignUpForm = () => {
   
           <FormInput
             label="Full Name"
-            name="name"
-            value={formData.name}
+            name="fullName"
+            value={formData.fullName}
             onChange={handleChange}
-            error={errors.name}
+            error={errors.fullName}
           />
           <FormInput
             label="Email Address"
@@ -178,6 +212,47 @@ const SignUpForm = () => {
             </select>
             {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role}</p>}
           </section>
+
+          {/* Reviewer specific fields */}
+          {formData.role === 'reviewer' && (
+            <>
+              <section className="mb-4">
+                <label htmlFor="expertise" className="block text-sm font-medium text-gray-700 mb-1">
+                  Area of Expertise
+                </label>
+                <input
+                  type="text"
+                  id="expertise"
+                  name="expertise"
+                  value={formData.expertise}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    errors.expertise ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="e.g., Computer Science, Data Science"
+                />
+                {errors.expertise && <p className="mt-1 text-sm text-red-600">{errors.expertise}</p>}
+              </section>
+
+              <section className="mb-4">
+                <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">
+                  Department
+                </label>
+                <input
+                  type="text"
+                  id="department"
+                  name="department"
+                  value={formData.department}
+                  onChange={handleChange}
+                  className={`w-full px-3 py-2 border rounded-md ${
+                    errors.department ? 'border-red-500' : 'border-gray-300'
+                  }`}
+                  placeholder="e.g., Computing, Engineering"
+                />
+                {errors.department && <p className="mt-1 text-sm text-red-600">{errors.department}</p>}
+              </section>
+            </>
+          )}
   
           <FormInput
             label="Password"
