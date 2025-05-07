@@ -54,7 +54,7 @@ export const searchResearchers = async (searchTerm, currentUserId, project) => {
         // Query all invitations for this project and type "researcher"
         const invitationsQuery = query(
             collection(db, "invitations"),
-            where("projectId", "==", project.id || project.projectId),
+            where("projectId", "==", project.projectId),
             where("type", "==", "researcher"),
             where("status", "==", "pending")
         );
@@ -275,13 +275,17 @@ export const getAllCollaboratorTaskSummaries = async (projectId) => {
 
         // Fetch collaborator user info
         const usersCollection = collection(db, "users");
-        const userQuery = query(usersCollection, where("__name__", "in", collaboratorIds));
-        const userSnapshot = await getDocs(userQuery);
-
         const userMap = {};
-        userSnapshot.forEach((doc) => {
-            userMap[doc.id] = doc.data().fullName || "Unnamed";
-        });
+        // Split collaboratorIds into chunks of 10
+        const chunkSize = 10;
+        for (let i = 0; i < collaboratorIds.length; i += chunkSize) {
+            const chunk = collaboratorIds.slice(i, i + chunkSize);
+            const userQuery = query(usersCollection, where("__name__", "in", chunk));
+            const userSnapshot = await getDocs(userQuery);
+            userSnapshot.forEach((doc) => {
+                userMap[doc.id] = doc.data().fullName || "Unnamed";
+            });
+        }
 
         // Format result
         const results = collaboratorIds.map((collaboratorId) => {
