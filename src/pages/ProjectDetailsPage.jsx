@@ -406,10 +406,7 @@ export default function ProjectDetailsPage() {
     if (!newFolderName.trim()) return;
 
     try {
-      setModalOpen(true);
-      setError(false);
-      setStatusMessage('Creating folder...');
-
+      setUploadLoading(true);
       const folderId = await createFolder(projectId, newFolderName);
       
       const newFolder = {
@@ -423,11 +420,16 @@ export default function ProjectDetailsPage() {
       setFolders([...folders, newFolder]);
       setNewFolderName('');
       setShowFolderModal(false);
+      setModalOpen(true);
+      setError(false);
       setStatusMessage('Folder created successfully');
     } catch (err) {
       console.error('Error creating folder:', err);
+      setModalOpen(true);
       setError(true);
       setStatusMessage('Failed to create folder: ' + err.message);
+    } finally {
+      setUploadLoading(false);
     }
   };
 
@@ -459,20 +461,22 @@ export default function ProjectDetailsPage() {
 
   const confirmDeleteFolder = async () => {
     try {
-      setModalOpen(true);
-      setError(false);
-      setStatusMessage('Deleting folder...');
-
+      setUploadLoading(true);
       await deleteFolder(projectId, folderToDelete.id);
       
       setFolders(folders.filter(folder => folder.id !== folderToDelete.id));
       setShowDeleteFolderConfirm(false);
       setFolderToDelete(null);
+      setModalOpen(true);
+      setError(false);
       setStatusMessage('Folder deleted successfully');
     } catch (err) {
       console.error('Error deleting folder:', err);
+      setModalOpen(true);
       setError(true);
       setStatusMessage('Failed to delete folder: ' + err.message);
+    } finally {
+      setUploadLoading(false);
     }
   };
 
@@ -1103,10 +1107,17 @@ export default function ProjectDetailsPage() {
                           </button>
                           <button
                             onClick={handleCreateFolder}
-                            disabled={!newFolderName.trim()}
+                            disabled={!newFolderName.trim() || uploadLoading}
                             className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50"
                           >
-                            Create Folder
+                            {uploadLoading ? (
+                              <>
+                                <ClipLoader size={16} color="#FFFFFF" className="mr-2" />
+                                Creating...
+                              </>
+                            ) : (
+                              'Create Folder'
+                            )}
                           </button>
                         </div>
                       </div>
@@ -1595,16 +1606,23 @@ export default function ProjectDetailsPage() {
                 <button
                   onClick={() => setShowDeleteFolderConfirm(false)}
                   className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50/80 transition-colors"
+                  disabled={uploadLoading}
                 >
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    confirmDeleteFolder();
-                  }}
-                  className="bg-red-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-xl hover:bg-red-700/90 transition-colors"
+                  onClick={() => confirmDeleteFolder()}
+                  disabled={uploadLoading}
+                  className="bg-red-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-xl hover:bg-red-700/90 transition-colors flex items-center gap-2"
                 >
-                  Delete
+                  {uploadLoading ? (
+                    <>
+                      <ClipLoader size={16} color="#FFFFFF" />
+                      Deleting...
+                    </>
+                  ) : (
+                    'Delete'
+                  )}
                 </button>
               </footer>
             </motion.article>
