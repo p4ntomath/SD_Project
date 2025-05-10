@@ -735,79 +735,94 @@ export default function ProjectDetailsPage() {
     );
   }
 
-  const ReviewersCard = () => (
-    <section className="bg-white rounded-lg shadow p-4 sm:p-6">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg sm:text-xl font-semibold">Project Reviewers</h2>
-        <button
-          onClick={() => setShowAssignReviewersModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-          </svg>
-          Assign Reviewers
-        </button>
-      </div>
-
-      {project.reviewers && project.reviewers.length > 0 ? (
-        <ul className="space-y-2">
-          {project.reviewers.map((reviewer) => (
-            <li key={reviewer.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="p-2 bg-blue-100 rounded-full">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                  </svg>
-                </div>
-                <div>
-                  <p className="font-medium text-sm">{reviewer.name}</p>
-                  <p className="text-xs text-gray-500">{reviewer.expertise || 'Reviewer'}</p>
-                </div>
-              </div>
-              <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                Active Reviewer
-              </span>
-            </li>
-          ))}
-        </ul>
-      ) : reviewRequests.length > 0 ? (
-        <div className="space-y-4">
-          <p className="text-sm text-blue-600">Review requests sent, waiting for responses...</p>
-          <ul className="space-y-2">
-            {reviewRequests.map((request) => (
-              <li key={request.id} className="flex items-center justify-between p-2 bg-gray-50/80 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gray-100 rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
-                  </div>
-                  <div>
-                    <p className="font-medium text-sm">{request.reviewerName}</p>
-                    <p className="text-xs text-gray-500">{formatDate(request.requestedAt)}</p>
-                  </div>
-                </div>
-                <span className={`px-2 py-1 text-xs rounded-full ${
-                  request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                  request.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                  request.status === 'accepted' ? 'bg-green-100 text-green-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {request.status === 'pending' ? 'Pending Response' :
-                   request.status === 'rejected' ? 'Request Declined' :
-                   request.status === 'accepted' ? 'Request Accepted' :
-                   'Unknown Status'}
-                </span>
-              </li>
-            ))}
-          </ul>
+  const ReviewersCard = () => {
+    // Only use project.reviewers for active reviewers since accepted requests are already added there
+    const activeReviewers = project.reviewers || [];
+  
+    // Filter out accepted requests from review requests display
+    const pendingRequests = reviewRequests.filter(request => request.status !== 'accepted');
+  
+    return (
+      <section className="bg-white rounded-lg shadow p-4 sm:p-6">
+        <div className="flex justify-between items-center mb-4">
+          <h2 className="text-lg sm:text-xl font-semibold">Project Reviewers</h2>
+          <button
+            onClick={() => setShowAssignReviewersModal(true)}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
+            Assign Reviewers
+          </button>
         </div>
-      ) : (
-        <p className="text-sm text-gray-500 text-center py-4">No reviewers assigned yet</p>
-      )}
-    </section>
-  );
+  
+        {/* Active Reviewers Section */}
+        {activeReviewers.length > 0 && (
+          <div className="mb-6">
+            <h3 className="text-sm font-medium text-gray-700 mb-3">Active Reviewers</h3>
+            <ul className="space-y-2">
+              {activeReviewers.map((reviewer) => (
+                <li key={reviewer.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-full">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{reviewer.name}</p>
+                      <p className="text-xs text-gray-500">{reviewer.expertise || 'Reviewer'}</p>
+                    </div>
+                  </div>
+                  <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+                    Active Reviewer
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+  
+        {/* Review Requests Section */}
+        {pendingRequests.length > 0 && (
+          <div className="space-y-4">
+            <h3 className="text-sm font-medium text-gray-700">Review Requests</h3>
+            <ul className="space-y-2">
+              {pendingRequests.map((request) => (
+                <li key={request.id} className="flex items-center justify-between p-2 bg-gray-50/80 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gray-100 rounded-full">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm">{request.reviewerName}</p>
+                      <p className="text-xs text-gray-500">Requested: {formatDate(request.requestedAt)}</p>
+                    </div>
+                  </div>
+                  <span className={`px-2 py-1 text-xs rounded-full ${
+                    request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    request.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {request.status === 'pending' ? 'Pending Response' :
+                     request.status === 'rejected' ? 'Request Declined' :
+                     'Unknown Status'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+  
+        {activeReviewers.length === 0 && pendingRequests.length === 0 && (
+          <p className="text-sm text-gray-500 text-center py-4">No reviewers assigned yet</p>
+        )}
+      </section>
+    );
+  };
 
   return (
     <>
@@ -835,16 +850,7 @@ export default function ProjectDetailsPage() {
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
-                  Edit
-                </button>
-                <button
-                  onClick={() => setShowDeleteConfirm(true)}
-                  className="bg-red-600 text-white py-2 px-3 sm:px-4 rounded-lg hover:bg-red-700 transition-colors flex items-center text-sm sm:text-base"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                  Delete
+                  Edit Project
                 </button>
               </nav>
           </section>
@@ -997,41 +1003,42 @@ export default function ProjectDetailsPage() {
                     <div className="space-y-3 max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100 mb-4">
                       {folder.files && folder.files.length > 0 ? (
                         folder.files.map((file) => (
-                          <div key={file.id} 
-                            className="flex items-center justify-between p-2 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <svg className="h-4 w-4 text-gray-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                          <div key={file.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                            <div className="flex items-center gap-2 flex-1 min-w-0">
+                              <svg className="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                               </svg>
-                              <span className="truncate text-sm text-gray-700">{file.name}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => handleDownloadFile(file)}
-                                className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
-                                disabled={downloadingFile === file.id}
-                              >
-                                {downloadingFile === file.id ? (
-                                  <ClipLoader size={16} color="currentColor" />
-                                ) : (
-                                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4 4m0 0l-4-4m4 4V4" />
-                                  </svg>
-                                )}
-                              </button>
-                              <button
-                                onClick={() => handleDeleteFile(file, folder)}
-                                className="p-1 text-red-600 hover:text-red-800 transition-colors"
-                                disabled={deletingFile === file.id}
-                              >
-                                {deletingFile === file.id ? (
-                                  <ClipLoader size={16} color="currentColor" />
-                                ) : (
-                                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                  </svg>
-                                )}
-                              </button>
+                              <div className="flex-1 min-w-0">
+                                <span className="truncate text-sm text-gray-700">{file.name}</span>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <button
+                                  onClick={() => handleDownloadFile(file)}
+                                  className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
+                                  disabled={downloadingFile === file.id}
+                                >
+                                  {downloadingFile === file.id ? (
+                                    <ClipLoader size={16} color="currentColor" />
+                                  ) : (
+                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4 4m0 0l-4-4m4 4V4" />
+                                    </svg>
+                                  )}
+                                </button>
+                                <button
+                                  onClick={() => handleDeleteFile(file, folder)}
+                                  className="p-1 text-red-600 hover:text-red-800 transition-colors"
+                                  disabled={deletingFile === file.id}
+                                >
+                                  {deletingFile === file.id ? (
+                                    <ClipLoader size={16} color="currentColor" />
+                                  ) : (
+                                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                  )}
+                                </button>
+                              </div>
                             </div>
                           </div>
                         ))
@@ -1340,7 +1347,7 @@ export default function ProjectDetailsPage() {
                   className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 text-blue-600 rounded-lg bg-blue-50 opacity-50 cursor-not-allowed text-sm sm:text-base"
                 >
                   <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18-9-2zm0 0v-8" />
                   </svg>
                   Start Discussion (Coming Soon)
                 </button>
@@ -1380,7 +1387,7 @@ export default function ProjectDetailsPage() {
                   disabled
                   className="text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm font-medium w-full flex items-center justify-center"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 inline mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                   </svg>
                   Add Collaborators (Coming Soon)
