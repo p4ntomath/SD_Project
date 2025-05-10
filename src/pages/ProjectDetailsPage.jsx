@@ -1403,7 +1403,7 @@ export default function ProjectDetailsPage() {
         {/* Project Reviews Card - Full Width */}
         <article className="bg-white rounded-lg shadow p-4 sm:p-6 mt-6">
           <h2 className="text-lg sm:text-xl font-semibold mb-4">Project Reviews</h2>
-          <ProjectReviews projectId={projectId} />
+          <ProjectReviews projectId={projectId} formatDate={formatDate} />
         </article>
 
       </article>

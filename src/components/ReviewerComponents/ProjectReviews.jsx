@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { getProjectReviews } from '../../backend/firebase/reviewdb';
 
-export default function ProjectReviews({ projectId }) {
+export default function ProjectReviews({ projectId,formatDate}) {
     const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -94,7 +94,7 @@ export default function ProjectReviews({ projectId }) {
                                 </div>
                             </div>
                             <div className="text-sm text-gray-500">
-                                {new Date(review.createdAt?.seconds * 1000).toLocaleDateString()}
+                                {formatDate(review.createdAt)}
                             </div>
                         </div>
                     </div>
