@@ -21,6 +21,7 @@ export default function ProjectDetailsPage() {
   const navigate = useNavigate();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [foldersLoading, setFoldersLoading] = useState(false);
   const [error, setError] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
@@ -38,6 +39,7 @@ export default function ProjectDetailsPage() {
   const [addFundsLoading, setAddFundsLoading] = useState(false);
   const [addExpenseLoading, setAddExpenseLoading] = useState(false);
   const [showAssignReviewersModal, setShowAssignReviewersModal] = useState(false);
+  const [sendingReviewRequests, setSendingReviewRequests] = useState(false);
 
   // New state for documents and folders
   const [folders, setFolders] = useState([]);
@@ -123,9 +125,19 @@ export default function ProjectDetailsPage() {
           // Reload project to get updated reviewer info
           const refreshedProject = await getProjectDetails(projectId);
           setProject(refreshedProject);
+          // Get all review requests and process them
+          const requests = await getReviewerRequestsForProject(projectId);
+          if (requests && Array.isArray(requests)) {
+            const processedRequests = requests.map(request => ({
+              id: request.id,
+              reviewerId: request.reviewerId,
+              reviewerName: request.reviewerName || 'Anonymous Reviewer',
+              status: request.status || 'pending',
+              requestedAt: request.requestedAt || new Date(),
+            }));
+            setReviewRequests(processedRequests);
+          }
         }
-        const requests = await getReviewerRequestsForProject(projectId);
-        setReviewRequests(requests);
       } catch (err) {
         console.error('Error loading project:', err);
         setError(err.message);
@@ -142,6 +154,7 @@ export default function ProjectDetailsPage() {
   useEffect(() => {
     const loadFolders = async () => {
       try {
+        setFoldersLoading(true);
         const folderData = await fetchDocumentsByFolder(projectId);
         if (!folderData || folderData.length === 0) {
           setFolders([]);
@@ -167,6 +180,8 @@ export default function ProjectDetailsPage() {
         setError(true);
         setModalOpen(true);
         setStatusMessage('Failed to load project documents');
+      } finally {
+        setFoldersLoading(false);
       }
     };
 
@@ -180,7 +195,15 @@ export default function ProjectDetailsPage() {
       try {
         // Get all review requests for this project
         const requests = await getReviewerRequestsForProject(projectId);
-        setReviewRequests(requests);
+        // Make sure each request has the required properties
+        const processedRequests = requests.map(request => ({
+          id: request.id,
+          reviewerId: request.reviewerId,
+          reviewerName: request.reviewerName || 'Anonymous Reviewer',
+          status: request.status || 'pending',
+          requestedAt: request.requestedAt || new Date(),
+        }));
+        setReviewRequests(processedRequests);
       } catch (err) {
         console.error('Error loading review requests:', err);
         setError(true);
@@ -193,6 +216,13 @@ export default function ProjectDetailsPage() {
       loadReviewRequests();
     }
   }, [projectId]);
+
+  useEffect(() => {
+    if (!showAssignReviewersModal) {
+      // Reset loading state when modal closes
+      setSendingReviewRequests(false);
+    }
+  }, [showAssignReviewersModal]);
 
   const handleDelete = async () => {
     try {
@@ -755,29 +785,19 @@ export default function ProjectDetailsPage() {
                   </div>
                   <div>
                     <p className="font-medium text-sm">{request.reviewerName}</p>
-                    <p className="text-xs text-gray-500">Request sent {formatFirebaseDate(request.requestedAt)}</p>
+                    <p className="text-xs text-gray-500">{formatDate(request.requestedAt)}</p>
                   </div>
                 </div>
                 <span className={`px-2 py-1 text-xs rounded-full ${
                   request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                  request.status === 'completed' ? (
-                    request.reviewStatus === 'approved' ? 'bg-green-100 text-green-800' :
-                    request.reviewStatus === 'rejected' ? 'bg-red-100 text-red-800' :
-                    request.reviewStatus === 'needs_revision' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-blue-100 text-blue-800'
-                  ) :
+                  request.status === 'rejected' ? 'bg-red-100 text-red-800' :
                   request.status === 'accepted' ? 'bg-green-100 text-green-800' :
-                  'bg-red-100 text-red-800'
+                  'bg-gray-100 text-gray-800'
                 }`}>
                   {request.status === 'pending' ? 'Pending Response' :
-                   request.status === 'completed' ? (
-                     request.reviewStatus === 'approved' ? 'Approved' :
-                     request.reviewStatus === 'rejected' ? 'Rejected' :
-                     request.reviewStatus === 'needs_revision' ? 'Needs Revision' :
-                     'Completed'
-                   ) :
-                   request.status === 'accepted' ? 'In Progress' :
-                   'Declined'}
+                   request.status === 'rejected' ? 'Request Declined' :
+                   request.status === 'accepted' ? 'Request Accepted' :
+                   'Unknown Status'}
                 </span>
               </li>
             ))}
@@ -952,9 +972,15 @@ export default function ProjectDetailsPage() {
                 </button>
               </header>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {folders.map((folder) => (
-                  <div key={folder.id} 
+              {foldersLoading ? (
+                <div className="flex flex-col items-center justify-center py-12 bg-gray-50/50 rounded-lg">
+                  <ClipLoader color="#3B82F6" />
+                  <p className="mt-4 text-sm text-gray-500">Loading Folders...</p>
+                </div>
+              ) : (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {folders.map((folder) => (
+                    <div key={folder.id} 
                     className="group relative bg-white border border-gray-200 rounded-xl p-6 hover:border-blue-300 hover:shadow-lg transition-all duration-300">
                     <div className="flex items-center gap-4 mb-6">
                       <div className="p-4 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
@@ -1066,27 +1092,28 @@ export default function ProjectDetailsPage() {
                       </button>
                     </div>
                   </div>
-                ))}
-              </div>
+                  ))}
 
-              {folders.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-                    <svg className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
-                    </svg>
-                  </div>
-                  <h3 className="text-lg font-medium text-gray-900 mb-1">No folders yet</h3>
-                  <p className="text-sm text-gray-500 mb-4">Create a new folder to start organizing your project documents</p>
-                  <button
-                    onClick={() => setShowFolderModal(true)}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                    </svg>
-                    Create First Folder
-                  </button>
+                  {folders.length === 0 && (
+                    <div className="text-center py-12">
+                      <div className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+                        <svg className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                        </svg>
+                      </div>
+                      <h3 className="text-lg font-medium text-gray-900 mb-1">No folders yet</h3>
+                      <p className="text-sm text-gray-500 mb-4">Create a new folder to start organizing your project documents</p>
+                      <button
+                        onClick={() => setShowFolderModal(true)}
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Create First Folder
+                      </button>
+                    </div>
+                  )}
                 </div>
               )}
 

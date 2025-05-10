@@ -35,6 +35,15 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
     }
   }, [isOpen]);
 
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset states when modal closes
+      setSelectedReviewers([]);
+      setSearchQuery('');
+      setLoading(false);
+    }
+  }, [isOpen]);
+
   const handleSearch = (query) => {
     setSearchQuery(query);
     if (query.trim() === '') {
@@ -62,10 +71,12 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
     setLoading(true);
     try {
       await onAssign(selectedReviewers);
+      setSelectedReviewers([]); // Clear selection after successful assignment
     } catch (error) {
       console.error('Error assigning reviewers:', error);
+    } finally {
+      setLoading(false); // Always reset loading state
     }
-    // Note: We don't set loading to false here since onAssign will close the modal
   };
 
   if (!isOpen) return null;
