@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { auth } from '../../backend/firebase/firebaseConfig';
-import { getReviewerRequests } from '../../backend/firebase/reviewdb';
+import { getReviewerRequests } from '../../backend/firebase/reviewerDB';
 import { ClipLoader } from 'react-spinners';
 import ReviewerMainNav from '../../components/ReviewerComponents/Navigation/ReviewerMainNav';
 import ReviewerMobileBottomNav from '../../components/ReviewerComponents/Navigation/ReviewerMobileBottomNav';

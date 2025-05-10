@@ -449,6 +449,14 @@ export const getProjectDetails = async (projectId) => {
       throw new Error('You do not have permission to access this project');
     }
 
+    // Fetch project owner's details
+    const ownerRef = doc(db, "users", projectData.userId);
+    const ownerSnap = await getDoc(ownerRef);
+    if (ownerSnap.exists()) {
+      const ownerData = ownerSnap.data();
+      projectData.researcherName = ownerData.fullName || 'Unknown';
+    }
+
     // Add the review request to the project data if it exists
     if (!isOwner && (isInReviewersArray || isAcceptedReviewer)) {
       if (!requestSnap.empty) {

@@ -5,7 +5,7 @@ import { BrowserRouter, useNavigate, useLocation } from 'react-router-dom';
 import '@testing-library/jest-dom';
 import ReviewRequests from '../pages/reviewer/ReviewRequests';
 import { auth } from '../backend/firebase/firebaseConfig';
-import { getReviewerRequests, updateReviewRequestStatus } from '../backend/firebase/reviewdb';
+import { getReviewerRequests, updateReviewRequestStatus } from '../backend/firebase/reviewerDB';
 import { fetchProject } from '../backend/firebase/projectDB';
 
 // Save original console methods

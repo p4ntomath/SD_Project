@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { getProjectReviews } from '../../backend/firebase/reviewdb';
+import { getProjectReviews } from '../../backend/firebase/reviewerDB';
 
-export default function ProjectReviews({ projectId,formatDate}) {
+export default function ProjectReviews({ projectId, formatDate }) {
     const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);

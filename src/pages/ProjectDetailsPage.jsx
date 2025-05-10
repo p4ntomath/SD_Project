@@ -12,7 +12,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { formatFirebaseDate } from '../utils/dateUtils';
 import AssignReviewersModal from '../components/ResearcherComponents/AssignReviewersModal';
 import ProjectReviews from '../components/ReviewerComponents/ProjectReviews';
-import { createReviewRequest, getReviewerRequestsForProject } from '../backend/firebase/reviewdb';
+import { createReviewRequest, getReviewerRequestsForProject } from '../backend/firebase/reviewerDB';
 import { auth } from '../backend/firebase/firebaseConfig';
 import { updateExistingReviewerInfo } from '../backend/firebase/reviewerDB';
 
@@ -736,12 +736,36 @@ export default function ProjectDetailsPage() {
   }
 
   const ReviewersCard = () => {
-    // Only use project.reviewers for active reviewers since accepted requests are already added there
     const activeReviewers = project.reviewers || [];
-  
-    // Filter out accepted requests from review requests display
-    const pendingRequests = reviewRequests.filter(request => request.status !== 'accepted');
-  
+    const pendingRequests = reviewRequests.filter(
+      request => request.status !== 'accepted' && request.status !== 'completed'
+    );
+    
+
+    const getStatusBadge = (status) => {
+      switch (status) {
+
+        case 'pending_feedback':
+          return (
+            <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+              Pending Feedback
+            </span>
+          );
+        case 'feedback_submitted':
+          return (
+            <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+              Feedback Submitted
+            </span>
+          );
+        default:
+          return (
+            <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
+              Status Unknown
+            </span>
+          );
+      }
+    };
+
     return (
       <section className="bg-white rounded-lg shadow p-4 sm:p-6">
         <div className="flex justify-between items-center mb-4">
@@ -756,8 +780,7 @@ export default function ProjectDetailsPage() {
             Assign Reviewers
           </button>
         </div>
-  
-        {/* Active Reviewers Section */}
+
         {activeReviewers.length > 0 && (
           <div className="mb-6">
             <h3 className="text-sm font-medium text-gray-700 mb-3">Active Reviewers</h3>
@@ -775,16 +798,13 @@ export default function ProjectDetailsPage() {
                       <p className="text-xs text-gray-500">{reviewer.expertise || 'Reviewer'}</p>
                     </div>
                   </div>
-                  <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-                    Active Reviewer
-                  </span>
+                  {getStatusBadge(reviewer.reviewStatus)}
                 </li>
               ))}
             </ul>
           </div>
         )}
-  
-        {/* Review Requests Section */}
+
         {pendingRequests.length > 0 && (
           <div className="space-y-4">
             <h3 className="text-sm font-medium text-gray-700">Review Requests</h3>
@@ -816,7 +836,7 @@ export default function ProjectDetailsPage() {
             </ul>
           </div>
         )}
-  
+
         {activeReviewers.length === 0 && pendingRequests.length === 0 && (
           <p className="text-sm text-gray-500 text-center py-4">No reviewers assigned yet</p>
         )}

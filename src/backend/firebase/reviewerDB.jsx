@@ -28,88 +28,349 @@ export const getAvailableReviewers = async () => {
   }
 };
 
-// Fetch review requests for a reviewer
-export const fetchReviewRequests = async (userId) => {
+// Create a review request
+export const createReviewRequest = async (projectId, reviewerId, projectTitle, researcherName) => {
   try {
-    // Step 1: Fetch all reviewer invitations for the user
-    const invitationsRef = collection(db, "invitations");
-    const invitationQuery = query(
-      invitationsRef,
-      where("reviewerId", "==", userId),
-      where("type", "==", "reviewer")
-    );
+    const reviewRequest = {
+      projectId,
+      projectTitle,
+      reviewerId,
+      researcherName,
+      status: "pending", // pending, accepted, rejected
+      requestedAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
 
-    const invitationSnapshot = await getDocs(invitationQuery);
-
-    // Step 2: Fetch corresponding projects
-    const reviewRequests = await Promise.all(
-      invitationSnapshot.docs.map(async (docSnap) => {
-        const invitationData = docSnap.data();
-        const projectRef = doc(db, "projects", invitationData.projectId);
-        const projectSnap = await getDoc(projectRef);
-        const projectData = projectSnap.exists() ? projectSnap.data() : null;
-
-        return {
-          invitationId: docSnap.id,
-          status: invitationData.status,
-          senderId: invitationData.senderId,
-          createdAt: invitationData.createdAt?.toDate?.() || null,
-          project: projectData ? { id: projectSnap.id, ...projectData } : null,
-        };
-      })
-    );
-
-    return reviewRequests.filter((req) => req.project !== null);
+    const requestRef = await addDoc(collection(db, "reviewRequests"), reviewRequest);
+    return { id: requestRef.id, ...reviewRequest };
   } catch (error) {
-    console.error("Error fetching review requests:", error);
-    throw new Error("Failed to fetch review requests");
+    console.error("Error creating review request:", error);
+    throw new Error("Failed to create review request");
   }
 };
 
-// Assign reviewers to a project
-export const assignReviewers = async (projectId, reviewerIds) => {
+// Get review requests for a reviewer
+export const getReviewerRequests = async (reviewerId) => {
   try {
-    const projectRef = doc(db, 'projects', projectId);
-
-    // Fetch reviewer details first
-    const reviewerPromises = reviewerIds.map(async (reviewerId) => {
-      const reviewerDoc = await getDoc(doc(db, "users", reviewerId));
-      if (!reviewerDoc.exists()) {
-        throw new Error(`Reviewer ${reviewerId} not found`);
-      }
-      const reviewerData = reviewerDoc.data();
-      return {
-        id: reviewerId,
-        name: reviewerData.fullName,
-        expertise: reviewerData.expertise || null
+    const requestsQuery = query(
+      collection(db, "reviewRequests"),
+      where("reviewerId", "==", reviewerId)
+    );
+    
+    const querySnapshot = await getDocs(requestsQuery);
+    const requests = [];
+    
+    for (const docSnapshot of querySnapshot.docs) {
+      const request = {
+        id: docSnapshot.id,
+        ...docSnapshot.data(),
+        requestedAt: docSnapshot.data().requestedAt?.toDate() || null,
+        updatedAt: docSnapshot.data().updatedAt?.toDate() || null
       };
-    });
+      
+      // Fetch project details
+      const projectDoc = await getDoc(doc(db, "projects", request.projectId));
+      if (projectDoc.exists()) {
+        request.project = {
+          id: projectDoc.id,
+          ...projectDoc.data()
+        };
+      }
+      
+      requests.push(request);
+    }
+    
+    return requests;
+  } catch (error) {
+    console.error("Error getting review requests:", error);
+    throw new Error("Failed to get review requests");
+  }
+};
 
-    const reviewers = await Promise.all(reviewerPromises);
+// Update review request status
+export const updateReviewRequestStatus = async (requestId, status) => {
+  try {
+    const requestRef = doc(db, "reviewRequests", requestId);
+    const requestSnap = await getDoc(requestRef);
+    
+    if (!requestSnap.exists()) {
+      throw new Error('Review request not found');
+    }
 
-    // Update project with reviewer details
-    await updateDoc(projectRef, {
-      reviewers: reviewers,
-      status: 'Under Review',
+    const requestData = requestSnap.data();
+    const projectId = requestData.projectId;
+    
+    // Update request status
+    await updateDoc(requestRef, {
+      status,
       updatedAt: serverTimestamp()
     });
 
+    // If accepted, add reviewer to project's reviewers array with pending feedback status
+    if (status === 'accepted') {
+      const projectRef = doc(db, 'projects', projectId);
+      const projectSnap = await getDoc(projectRef);
+      
+      if (!projectSnap.exists()) {
+        throw new Error('Project not found');
+      }
+
+      // Get reviewer details from users collection
+      const reviewerDoc = await getDoc(doc(db, "users", requestData.reviewerId));
+      if (!reviewerDoc.exists()) {
+        throw new Error('Reviewer not found');
+      }
+
+      const reviewerData = reviewerDoc.data();
+      const reviewer = {
+        id: requestData.reviewerId,
+        name: reviewerData.fullName,
+        expertise: reviewerData.expertise || "",
+        reviewStatus: 'pending_feedback'  // Make sure this is always included
+      };
+
+      // Get current reviewers array
+      const currentReviewers = projectSnap.data().reviewers || [];
+      
+      // Remove any existing entry for this reviewer
+      const updatedReviewers = currentReviewers.filter(r => r.id !== reviewer.id);
+      
+      // Add the reviewer with updated information
+      updatedReviewers.push(reviewer);
+
+      await updateDoc(projectRef, {
+        reviewers: updatedReviewers,
+        updatedAt: serverTimestamp()
+      });
+    }
+
     return true;
   } catch (error) {
-    console.error('Error assigning reviewers:', error);
+    console.error('Error updating review request:', error);
     throw error;
   }
 };
+
+// Submit review feedback
+export const submitReviewFeedback = async (projectId, reviewerId, feedback) => {
+  try {
+    const reviewData = {
+      projectId,
+      reviewerId,
+      feedback: feedback.comment,
+      rating: feedback.rating,
+      status: feedback.status,
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+
+    // Add review to reviews collection
+    const reviewRef = await addDoc(collection(db, "reviews"), reviewData);
+
+    // Update project's reviews array and status, and update reviewer status
+    const projectRef = doc(db, "projects", projectId);
+    const projectSnap = await getDoc(projectRef);
+    
+    if (projectSnap.exists()) {
+      const currentReviewers = projectSnap.data().reviewers || [];
+      const updatedReviewers = currentReviewers.map(reviewer => {
+        if (reviewer.id === reviewerId) {
+          return {
+            ...reviewer,
+            reviewStatus: 'feedback_submitted', // Set to feedback_submitted when review is submitted
+            lastFeedback: {
+              date: new Date(),
+              status: feedback.status
+            }
+          };
+        }
+        return reviewer;
+      });
+
+      await updateDoc(projectRef, {
+        reviews: arrayUnion(reviewRef.id),
+        reviewers: updatedReviewers,
+        updatedAt: serverTimestamp()
+      });
+    }
+
+    // Update review request status to completed
+    const requestsQuery = query(
+      collection(db, "reviewRequests"),
+      where("projectId", "==", projectId),
+      where("reviewerId", "==", reviewerId)
+    );
+    const querySnapshot = await getDocs(requestsQuery);
+    
+    if (!querySnapshot.empty) {
+      const requestDoc = querySnapshot.docs[0];
+      await updateDoc(requestDoc.ref, {
+        status: "completed",
+        updatedAt: serverTimestamp(),
+        reviewId: reviewRef.id,
+        reviewStatus: feedback.status, // Update review request status to feedback_submitted
+        reviewRating: feedback.rating,
+        reviewComment: feedback.comment
+      });
+    }
+
+    return { success: true, reviewId: reviewRef.id };
+  } catch (error) {
+    console.error("Error submitting review feedback:", error);
+    throw new Error("Failed to submit review feedback");
+  }
+};
+
+// Get all reviews for a project
+export const getProjectReviews = async (projectId) => {
+  try {
+    const reviewsQuery = query(
+      collection(db, "reviews"),
+      where("projectId", "==", projectId)
+    );
+    const querySnapshot = await getDocs(reviewsQuery);
+    
+    const reviews = [];
+    for (const docSnapshot of querySnapshot.docs) {
+      const review = { id: docSnapshot.id, ...docSnapshot.data() };
+      // Get reviewer details
+      const reviewerDoc = await getDoc(doc(db, "users", review.reviewerId));
+      if (reviewerDoc.exists()) {
+        review.reviewer = { id: reviewerDoc.id, ...reviewerDoc.data() };
+      }
+      reviews.push(review);
+    }
+    
+    return reviews;
+  } catch (error) {
+    console.error("Error getting project reviews:", error);
+    throw new Error("Failed to get project reviews");
+  }
+};
+
+// Get review by ID
+export const getReviewById = async (reviewId) => {
+  try {
+    const reviewDoc = await getDoc(doc(db, "reviews", reviewId));
+    if (!reviewDoc.exists()) {
+      throw new Error("Review not found");
+    }
+    
+    const review = { id: reviewDoc.id, ...reviewDoc.data() };
+    
+    // Get reviewer details
+    const reviewerDoc = await getDoc(doc(db, "users", review.reviewerId));
+    if (reviewerDoc.exists()) {
+      review.reviewer = { id: reviewerDoc.id, ...reviewerDoc.data() };
+    }
+    
+    return review;
+  } catch (error) {
+    console.error("Error getting review:", error);
+    throw new Error("Failed to get review");
+  }
+};
+
+// Update review feedback
+export const updateReviewFeedback = async (reviewId, feedback) => {
+  try {
+    const reviewRef = doc(db, "reviews", reviewId);
+    await updateDoc(reviewRef, {
+      feedback: feedback.comment,
+      rating: feedback.rating,
+      status: feedback.status,
+      updatedAt: serverTimestamp()
+    });
+    return true;
+  } catch (error) {
+    console.error("Error updating review feedback:", error);
+    throw new Error("Failed to update review feedback");
+  }
+};
+
+// Get all reviews by a reviewer
+export const getReviewerReviews = async (reviewerId) => {
+  try {
+    const reviewsQuery = query(
+      collection(db, "reviews"),
+      where("reviewerId", "==", reviewerId)
+    );
+    const querySnapshot = await getDocs(reviewsQuery);
+    
+    const reviews = [];
+    for (const docSnapshot of querySnapshot.docs) {
+      const review = { id: docSnapshot.id, ...docSnapshot.data() };
+      // Get project details
+      const projectDoc = await getDoc(doc(db, "projects", review.projectId));
+      if (projectDoc.exists()) {
+        review.project = { id: projectDoc.id, ...projectDoc.data() };
+      }
+      reviews.push(review);
+    }
+    
+    return reviews;
+  } catch (error) {
+    console.error("Error getting reviewer reviews:", error);
+    throw new Error("Failed to get reviewer reviews");
+  }
+};
+
+// Get all review requests for a project
+export const getReviewerRequestsForProject = async (projectId) => {
+  try {
+    const requestsQuery = query(
+      collection(db, "reviewRequests"),
+      where("projectId", "==", projectId)
+    );
+    const querySnapshot = await getDocs(requestsQuery);
+    
+    const requests = [];
+    for (const docSnapshot of querySnapshot.docs) {
+      const request = { id: docSnapshot.id, ...docSnapshot.data() };
+      // Get reviewer details
+      const reviewerDoc = await getDoc(doc(db, "users", request.reviewerId));
+      if (reviewerDoc.exists()) {
+        request.reviewerName = reviewerDoc.data().fullName;
+        requests.push(request);
+      }
+    }
+    
+    return requests;
+  } catch (error) {
+    console.error("Error getting project review requests:", error);
+    throw new Error("Failed to get project review requests");
+  }
+};
+
 
 // Add a single reviewer to project
 export const addReviewerToProject = async (projectId, reviewerId) => {
   try {
     const projectRef = doc(db, "projects", projectId);
+    
+    // Get reviewer details first
+    const reviewerDoc = await getDoc(doc(db, "users", reviewerId));
+    if (!reviewerDoc.exists()) {
+      throw new Error('Reviewer not found');
+    }
+
+    const reviewerData = reviewerDoc.data();
+    const reviewer = {
+      id: reviewerId,
+      name: reviewerData.fullName,
+      expertise: reviewerData.expertise || "",
+      reviewStatus: 'pending_feedback'
+    };
+
+    // Get current reviewers array and update it
+    const projectDoc = await getDoc(projectRef);
+    const currentReviewers = projectDoc.exists() ? (projectDoc.data().reviewers || []) : [];
+    const updatedReviewers = [...currentReviewers.filter(r => r.id !== reviewerId), reviewer];
+
     await updateDoc(projectRef, {
-      reviewer: arrayUnion(reviewerId),
+      reviewers: updatedReviewers,
       updatedAt: serverTimestamp()
     });
-    console.log("Reviewer added successfully");
   } catch (error) {
     console.error("Error adding reviewer:", error.message, error.stack);
     throw new Error("Failed to add reviewer");
@@ -128,130 +389,6 @@ export const removeReviewer = async (projectId, reviewerId) => {
   } catch (error) {
     console.error('Error removing reviewer:', error);
     throw error;
-  }
-};
-
-// Handle invitation response
-export const respondToInvitation = async (invitationId, accepted) => {
-  try {
-    const invitationRef = doc(db, "invitations", invitationId);
-    const invitationSnap = await getDoc(invitationRef);
-
-    if (!invitationSnap.exists()) {
-      throw new Error("Invitation not found");
-    }
-
-    const invitation = invitationSnap.data();
-    const { projectId, reviewerId } = invitation;
-
-    if (accepted) {
-      await addReviewerToProject(projectId, reviewerId);
-      await updateDoc(invitationRef, { 
-        status: "accepted",
-        updatedAt: serverTimestamp()
-      });
-    } else {
-      await updateDoc(invitationRef, { 
-        status: "declined",
-        updatedAt: serverTimestamp()
-      });
-    }
-
-    return { success: true, message: `Invitation ${accepted ? "accepted" : "declined"} successfully` };
-  } catch (error) {
-    console.error("Error responding to invitation:", error.message);
-    throw new Error("Failed to respond to invitation");
-  }
-};
-
-// Send reviewer invitation
-export const sendReviewerInvitation = async (projectId, reviewerId, senderId) => {
-  try {
-    const invitationRef = collection(db, "invitations");
-    await addDoc(invitationRef, {
-      projectId,
-      reviewerId,
-      senderId,
-      status: "pending",
-      type: "reviewer",
-      createdAt: serverTimestamp(),
-    });
-    return { success: true, message: "Invitation sent successfully" };
-  } catch (error) {
-    console.error("Error sending invitation:", error.message, error.stack);
-    throw new Error("Failed to send invitation");
-  }
-};
-
-// Submit review feedback for a project
-export const submitReviewFeedback = async (projectId, reviewerId, feedback) => {
-  try {
-    // Create a new feedback document
-    const feedbackRef = collection(db, "reviews");
-    const newFeedback = await addDoc(feedbackRef, {
-      projectId,
-      reviewerId,
-      feedback: feedback.comment,
-      rating: feedback.rating,
-      status: feedback.status,
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp()
-    });
-
-    // Update the project's reviews array
-    const projectRef = doc(db, "projects", projectId);
-    await updateDoc(projectRef, {
-      reviews: arrayUnion(newFeedback.id),
-      updatedAt: serverTimestamp()
-    });
-
-    return { success: true, feedbackId: newFeedback.id };
-  } catch (error) {
-    console.error("Error submitting review feedback:", error);
-    throw new Error("Failed to submit review feedback");
-  }
-};
-
-
-export const getProjectFeedback = async (projectId) => {
-  try {
-    const feedbackRef = collection(db, "reviews");
-    const q = query(feedbackRef, where("projectId", "==", projectId));
-    const querySnapshot = await getDocs(q);
-
-    const feedback = [];
-
-    for (const feedbackDoc of querySnapshot.docs) {
-      const feedbackData = feedbackDoc.data();
-
-      // Get reviewer details
-      const reviewerRef = doc(db, "users", feedbackData.reviewerId);
-      const reviewerSnap = await getDoc(reviewerRef);
-      const reviewerData = reviewerSnap.exists() ? reviewerSnap.data() : null;
-
-      feedback.push({
-        id: feedbackDoc.id,
-        ...feedbackData,
-        reviewer: reviewerData
-          ? {
-              id: feedbackData.reviewerId,
-              name: reviewerData.fullName,
-              expertise: reviewerData.expertise,
-            }
-          : {
-              id: feedbackData.reviewerId,
-              name: "Anonymous Reviewer",
-              expertise: "Not specified",
-            },
-        createdAt: feedbackData.createdAt?.toDate?.() || null,
-        updatedAt: feedbackData.updatedAt?.toDate?.() || null,
-      });
-    }
-
-    return feedback;
-  } catch (error) {
-    console.error("Error getting project feedback:", error);
-    throw new Error("Failed to get project feedback");
   }
 };
 
@@ -279,7 +416,8 @@ export const updateExistingReviewerInfo = async (projectId) => {
       return {
         id: reviewer.id,
         name: reviewerData.fullName,
-        expertise: reviewerData.expertise || null
+        expertise: reviewerData.expertise || null,
+        reviewStatus: reviewer.reviewStatus || 'pending_feedback' // Maintain existing status or set default
       };
     });
 

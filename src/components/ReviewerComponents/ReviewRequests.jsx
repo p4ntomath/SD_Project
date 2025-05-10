@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { ClipLoader } from 'react-spinners';
-import { getReviewerRequests, updateReviewRequestStatus } from '../../backend/firebase/reviewdb';
+import { getReviewerRequests, updateReviewRequestStatus } from '../../backend/firebase/reviewerDB';
 import { auth } from '../../backend/firebase/firebaseConfig';
 import { useNavigate } from 'react-router-dom';
 
