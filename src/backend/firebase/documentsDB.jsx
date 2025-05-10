@@ -138,12 +138,12 @@ export const fetchDocumentsByFolder = async (projectId) => {
           id: folderDoc.id,
           name: folderData.name,
           createdAt: folderData.createdAt,
-          files
+          files: files || [] // Ensure files is always an array
         };
       })
     );
 
-    return folders.filter(folder => folder.files && folder.files.length > 0);
+    return folders; // Return all folders, including empty ones
   } catch (error) {
     console.error("Error fetching documents:", error);
     throw error;
