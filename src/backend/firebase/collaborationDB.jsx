@@ -278,14 +278,19 @@ export const getAllCollaboratorTaskSummaries = async (projectId) => {
         const userMap = {};
         // Split collaboratorIds into chunks of 10
         const chunkSize = 10;
+        const chunkedQueries = [];
         for (let i = 0; i < collaboratorIds.length; i += chunkSize) {
             const chunk = collaboratorIds.slice(i, i + chunkSize);
             const userQuery = query(usersCollection, where("__name__", "in", chunk));
-            const userSnapshot = await getDocs(userQuery);
+            chunkedQueries.push(getDocs(userQuery));
+        }
+
+        const queryResults = await Promise.all(chunkedQueries);
+        queryResults.forEach((userSnapshot) => {
             userSnapshot.forEach((doc) => {
                 userMap[doc.id] = doc.data().fullName || "Unnamed";
             });
-        }
+        });
 
         // Format result
         const results = collaboratorIds.map((collaboratorId) => {
