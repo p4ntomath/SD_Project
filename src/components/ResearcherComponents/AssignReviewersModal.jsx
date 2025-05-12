@@ -93,11 +93,23 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
           transition={{ type: 'spring', bounce: 0.3 }}
         >
           <header className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold">Assign Reviewers</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-semibold">
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
+                    <span>Sending reviewer requests...</span>
+                  </div>
+                ) : (
+                  'Assign Reviewers'
+                )}
+              </h2>
+            </div>
             <button 
               onClick={onClose} 
               className="text-gray-500 hover:text-gray-700"
               aria-label="Close modal"
+              disabled={loading}
             >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

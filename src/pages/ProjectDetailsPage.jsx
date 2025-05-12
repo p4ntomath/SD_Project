@@ -735,6 +735,8 @@ export default function ProjectDetailsPage() {
     );
   }
 
+  {/* Reviwer's Card */}
+
   const ReviewersCard = () => {
     const activeReviewers = project.reviewers || [];
     const pendingRequests = reviewRequests.filter(
