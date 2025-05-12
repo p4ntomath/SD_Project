@@ -1,5 +1,4 @@
 import React from 'react';
-import { ClipLoader } from 'react-spinners';
 
 export default function ReviewersCard({ project, reviewRequests, formatDate, setShowAssignReviewersModal }) {
   const activeReviewers = project.reviewers || [];

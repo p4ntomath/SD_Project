@@ -1,15 +1,12 @@
-import { useLocation, useNavigate, useParams } from 'react-router-dom';
+import {  useNavigate, useParams } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
 import { useState, useEffect } from 'react';
 import { fetchProject, updateProject, deleteProject, getProjectDetails } from '../backend/firebase/projectDB';
-import { updateProjectFunds, updateProjectExpense, getFundingHistory } from '../backend/firebase/fundingDB';
-import { uploadDocument, fetchDocumentsByFolder, deleteDocument } from '../backend/firebase/documentsDB';
-import { createFolder, updateFolderName, deleteFolder } from '../backend/firebase/folderDB';
+import {  fetchDocumentsByFolder } from '../backend/firebase/documentsDB';
 import { ClipLoader } from 'react-spinners';
 import StatusModal from '../components/StatusModal';
 import CreateProjectForm from '../components/CreateProjectForm';
 import { AnimatePresence, motion } from 'framer-motion';
-import { formatFirebaseDate } from '../utils/dateUtils';
 import AssignReviewersModal from '../components/ResearcherComponents/AssignReviewersModal';
 import ProjectReviews from '../components/ReviewerComponents/ProjectReviews';
 import { createReviewRequest, getReviewerRequestsForProject } from '../backend/firebase/reviewerDB';
@@ -19,6 +16,7 @@ import ReviewersCard from '../components/ProjectDetailsPage/ReviewersCard';
 import DocumentsCard from '../components/ProjectDetailsPage/DocumentsCard';
 import FundingCard from '../components/ProjectDetailsPage/FundingCard';
 import GoalsCard from '../components/ProjectDetailsPage/GoalsCard';
+import BasicInfoCard from '../components/ProjectDetailsPage/BasicInfoCard';
 
 export default function ProjectDetailsPage() {
   const { projectId } = useParams();
@@ -32,33 +30,11 @@ export default function ProjectDetailsPage() {
   const [isEditing, setIsEditing] = useState(false);
   const [updateLoading, setUpdateLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
-  const [showAddFundsModal, setShowAddFundsModal] = useState(false);
-  const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
-  const [showFundingHistory, setShowFundingHistory] = useState(false);
-  const [fundingHistory, setFundingHistory] = useState([]);
-  const [fundAmount, setFundAmount] = useState('');
-  const [expenseAmount, setExpenseAmount] = useState('');
-  const [expenseDescription, setExpenseDescription] = useState('');
-  const [fundingSource, setFundingSource] = useState('');
-  const [addFundsLoading, setAddFundsLoading] = useState(false);
-  const [addExpenseLoading, setAddExpenseLoading] = useState(false);
   const [showAssignReviewersModal, setShowAssignReviewersModal] = useState(false);
   const [sendingReviewRequests, setSendingReviewRequests] = useState(false);
 
   // New state for documents and folders
   const [folders, setFolders] = useState([]);
-  const [showFolderModal, setShowFolderModal] = useState(false);
-  const [newFolderName, setNewFolderName] = useState('');
-  const [selectedFolder, setSelectedFolder] = useState(null);
-  const [showUploadModal, setShowUploadModal] = useState(false);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [uploadLoading, setUploadLoading] = useState(false);
-  const [customName, setCustomName] = useState('');
-  const [customDescription, setCustomDescription] = useState('');
-  const [downloadingFile, setDownloadingFile] = useState(null);
-  const [deletingFile, setDeletingFile] = useState(null);
-  const [showDeleteFolderConfirm, setShowDeleteFolderConfirm] = useState(false);
-  const [folderToDelete, setFolderToDelete] = useState(null);
   const [reviewRequests, setReviewRequests] = useState([]);
 
   useEffect(() => {
@@ -390,11 +366,7 @@ export default function ProjectDetailsPage() {
     }
   };
 
-  useEffect(() => {
-    if (showFundingHistory) {
-      loadFundingHistory();
-    }
-  }, [showFundingHistory]);
+
 
   if (loading) {
     return (
@@ -471,57 +443,10 @@ export default function ProjectDetailsPage() {
         <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
           {/* Left Column - Main Info */}
           <section className="space-y-4 sm:space-y-6">
-            {/* Basic Info Card */}
-            <article className="bg-white rounded-lg shadow p-4 sm:p-6">
-              <h2 className="text-lg sm:text-xl font-semibold mb-4">Project Overview</h2>
-              <section className="space-y-4">
-                {/* Progress Bar */}
-                <section className="mb-4 sm:mb-6">
-                  <header className="flex justify-between items-center mb-2">
-                    <p className="text-sm text-gray-500">Overall Progress</p>
-                    <p className="text-sm text-gray-600">{calculateProgress()}%</p>
-                  </header>
-                  <section className="w-full bg-gray-200 rounded-full h-2">
-                    <section 
-                      className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                      style={{ width: `${calculateProgress()}%` }}
-                    />
-                  </section>
-                </section>
-
-                <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div>
-                    <dt className="text-sm text-gray-500">Research Field</dt>
-                    <dd className="font-medium">{project.researchField}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm text-gray-500">Duration</dt>
-                    <dd className="font-medium">{project.duration}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm text-gray-500">Created</dt>
-                    <dd className="font-medium">{formatFirebaseDate(project.createdAt)}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm text-gray-500">Deadline</dt>
-                    <dd className="font-medium">{formatFirebaseDate(project.deadline)}</dd>
-                  </div>
-                  <div>
-                    <dt className="text-sm text-gray-500">Status</dt>
-                    <dd>
-                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        {project.status || 'In Progress'}
-                      </span>
-                    </dd>
-                  </div>
-                </dl>
-
-                <section>
-                  <h3 className="text-sm text-gray-500 mb-1">Description</h3>
-                  <p className="text-gray-700">{project.description}</p>
-                </section>
-              </section>
-            </article>
+            <BasicInfoCard 
+              project={project}
+              calculateProgress={calculateProgress}
+            />
 
             <GoalsCard 
               project={project}
