@@ -1,10 +1,65 @@
-import React from 'react';
+import React, { useState } from 'react';
+import AssignReviewersModal from '../ResearcherComponents/AssignReviewersModal';
+import { auth } from '../../backend/firebase/firebaseConfig';
+import { createReviewRequest, getReviewerRequestsForProject } from '../../backend/firebase/reviewerDB';
 
-export default function ReviewersCard({ project, reviewRequests, formatDate, setShowAssignReviewersModal }) {
+export default function ReviewersCard({ project, reviewRequests, formatDate, setReviewRequests, projectId , setModalOpen, setStatusMessage, setError }) {
+  const [showAssignReviewersModal, setShowAssignReviewersModal] = useState(false);
+  const [sendingReviewRequests, setSendingReviewRequests] = useState(false);
   const activeReviewers = project.reviewers || [];
   const pendingRequests = reviewRequests.filter(
     request => request.status !== 'accepted' && request.status !== 'completed'
   );
+
+
+  const handleAssignReviewers = async (selectedReviewers) => {
+    try {
+      setSendingReviewRequests(true);
+      // Create reviewer requests in the reviewRequests collection
+      const reviewerPromises = selectedReviewers.map(reviewer => 
+        createReviewRequest(
+          projectId, 
+          reviewer.id,
+          project.title,
+          auth.currentUser.displayName || 'Researcher'
+        )
+      );
+
+      await Promise.all(reviewerPromises);
+      
+      // Reload review requests to update UI
+      const updatedRequests = await getReviewerRequestsForProject(projectId);
+      setReviewRequests(updatedRequests);
+
+      setShowAssignReviewersModal(false);
+      setModalOpen(true);
+      setStatusMessage(
+        <div className="flex items-center gap-2 text-green-600">
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          <span>Successfully sent {selectedReviewers.length} reviewer request{selectedReviewers.length !== 1 ? 's' : ''}</span>
+        </div>
+      );
+      setError(false);
+    } catch (err) {
+      console.error("Error assigning reviewers:", err);
+      setError(true);
+      setStatusMessage(
+        <div className="flex items-center gap-2 text-red-600">
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <span>Failed to send reviewer requests: {err.message}</span>
+        </div>
+      );
+    } finally {
+      setSendingReviewRequests(false);
+    }
+  };
+
+
+
 
   const getStatusBadge = (status) => {
     switch (status) {
@@ -35,7 +90,8 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
         <h2 className="text-lg sm:text-xl font-semibold">Project Reviewers</h2>
         <button
           onClick={() => setShowAssignReviewersModal(true)}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2"
+          disabled={sendingReviewRequests}
+          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
@@ -43,6 +99,13 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
           Assign Reviewers
         </button>
       </div>
+
+      <AssignReviewersModal
+        isOpen={showAssignReviewersModal}
+        onClose={() => setShowAssignReviewersModal(false)}
+        onAssign={handleAssignReviewers}
+        projectId={projectId}
+      />
 
       {activeReviewers.length > 0 && (
         <div className="mb-6">

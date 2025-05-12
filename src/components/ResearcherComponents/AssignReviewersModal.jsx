@@ -71,11 +71,8 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
     setLoading(true);
     try {
       await onAssign(selectedReviewers);
-      setSelectedReviewers([]); // Clear selection after successful assignment
     } catch (error) {
       console.error('Error assigning reviewers:', error);
-    } finally {
-      setLoading(false); // Always reset loading state
     }
   };
 

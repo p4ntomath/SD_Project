@@ -1,22 +1,22 @@
-import {  useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
 import { useState, useEffect } from 'react';
 import { fetchProject, updateProject, deleteProject, getProjectDetails } from '../backend/firebase/projectDB';
-import {  fetchDocumentsByFolder } from '../backend/firebase/documentsDB';
+import { fetchDocumentsByFolder } from '../backend/firebase/documentsDB';
 import { ClipLoader } from 'react-spinners';
 import StatusModal from '../components/StatusModal';
 import CreateProjectForm from '../components/CreateProjectForm';
 import { AnimatePresence, motion } from 'framer-motion';
 import AssignReviewersModal from '../components/ResearcherComponents/AssignReviewersModal';
 import ProjectReviews from '../components/ReviewerComponents/ProjectReviews';
-import { createReviewRequest, getReviewerRequestsForProject } from '../backend/firebase/reviewerDB';
-import { auth } from '../backend/firebase/firebaseConfig';
+import { getReviewerRequestsForProject, createReviewRequest } from '../backend/firebase/reviewerDB';
 import { updateExistingReviewerInfo } from '../backend/firebase/reviewerDB';
 import ReviewersCard from '../components/ProjectDetailsPage/ReviewersCard';
 import DocumentsCard from '../components/ProjectDetailsPage/DocumentsCard';
 import FundingCard from '../components/ProjectDetailsPage/FundingCard';
 import GoalsCard from '../components/ProjectDetailsPage/GoalsCard';
 import BasicInfoCard from '../components/ProjectDetailsPage/BasicInfoCard';
+import { auth } from '../backend/firebase/firebaseConfig';
 
 export default function ProjectDetailsPage() {
   const { projectId } = useParams();
@@ -323,51 +323,6 @@ export default function ProjectDetailsPage() {
   };
 
 
-  const handleAssignReviewers = async (selectedReviewers) => {
-    try {
-      // Create reviewer requests in the reviewRequests collection
-      const reviewerPromises = selectedReviewers.map(reviewer => 
-        createReviewRequest(
-          projectId, 
-          reviewer.id,
-          project.title,
-          auth.currentUser.displayName || 'Researcher'
-        )
-      );
-
-      await Promise.all(reviewerPromises);
-      
-      // Reload review requests to update UI
-      const updatedRequests = await getReviewerRequestsForProject(projectId);
-      setReviewRequests(updatedRequests);
-      
-      setShowAssignReviewersModal(false);
-      setModalOpen(true);
-      setStatusMessage(
-        <div className="flex items-center gap-2 text-green-600">
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-          <span>Successfully sent {selectedReviewers.length} reviewer request{selectedReviewers.length !== 1 ? 's' : ''}</span>
-        </div>
-      );
-      setError(false);
-    } catch (err) {
-      console.error("Error assigning reviewers:", err);
-      setError(true);
-      setStatusMessage(
-        <div className="flex items-center gap-2 text-red-600">
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-          <span>Failed to send reviewer requests: {err.message}</span>
-        </div>
-      );
-    }
-  };
-
-
-
   if (loading) {
     return (
       <main className="flex justify-center items-center min-h-screen">
@@ -567,8 +522,14 @@ export default function ProjectDetailsPage() {
             <ReviewersCard 
               project={project}
               reviewRequests={reviewRequests}
+              setReviewRequests={setReviewRequests}
               formatDate={formatDate}
               setShowAssignReviewersModal={setShowAssignReviewersModal}
+              showAssignReviewersModal={showAssignReviewersModal}
+              projectId={projectId}
+              setModalOpen={setModalOpen}
+              setError={setError}
+              setStatusMessage={setStatusMessage}
             />
             
           </section>
@@ -625,13 +586,6 @@ export default function ProjectDetailsPage() {
         )}
       </AnimatePresence>
 
-
-      <AssignReviewersModal
-        isOpen={showAssignReviewersModal}
-        onClose={() => setShowAssignReviewersModal(false)}
-        onAssign={handleAssignReviewers}
-        projectId={projectId}
-      />
     </main>
   </>
   );
