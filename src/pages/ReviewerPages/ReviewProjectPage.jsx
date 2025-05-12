@@ -33,7 +33,7 @@ export default function ReviewProjectPage() {
     };
 
     const handleFeedbackSubmitted = () => {
-        navigate('/reviewer/dashboard', {
+        navigate('/reviewer/history', {
             state: { message: 'Review submitted successfully' }
         });
     };

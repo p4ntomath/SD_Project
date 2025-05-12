@@ -10,7 +10,8 @@ import {
   addDoc,
   query, 
   where,
-  serverTimestamp
+  serverTimestamp,
+  orderBy
 } from 'firebase/firestore';
 
 // Get all available reviewers
@@ -433,5 +434,39 @@ export const updateExistingReviewerInfo = async (projectId) => {
   } catch (error) {
     console.error('Error updating reviewer information:', error);
     throw error;
+  }
+};
+
+// Get review history for a reviewer
+export const getReviewerHistory = async (reviewerId) => {
+  try {
+    const reviewsQuery = query(
+      collection(db, "reviews"),
+      where("reviewerId", "==", reviewerId)
+    );
+    const querySnapshot = await getDocs(reviewsQuery);
+    
+    const reviews = [];
+    for (const docSnapshot of querySnapshot.docs) {
+      const review = { id: docSnapshot.id, ...docSnapshot.data() };
+      // Get project details
+      const projectDoc = await getDoc(doc(db, "projects", review.projectId));
+      if (projectDoc.exists()) {
+        const projectData = projectDoc.data();
+        review.projectTitle = projectData.title;
+        review.researcherName = projectData.researcherName;
+      }
+      reviews.push(review);
+    }
+    
+    // Sort the reviews by createdAt timestamp after fetching
+    return reviews.sort((a, b) => {
+      const dateA = a.createdAt?.seconds || 0;
+      const dateB = b.createdAt?.seconds || 0;
+      return dateB - dateA; // Sort in descending order (newest first)
+    });
+  } catch (error) {
+    console.error("Error getting reviewer history:", error);
+    throw new Error("Failed to get reviewer history");
   }
 };
