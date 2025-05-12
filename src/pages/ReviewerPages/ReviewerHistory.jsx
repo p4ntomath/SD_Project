@@ -125,12 +125,12 @@ export default function ReviewerHistory() {
                     <div className="flex justify-between items-start">
                       <div>
                         <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                          {review.projectTitle}
+                          {review.projectTitle || 'Untitled Project'}
                         </h2>
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
                             <h3 className="font-medium text-gray-500">Researcher</h3>
-                            <p className="text-gray-900">{review.researcherName}</p>
+                            <p className="text-gray-900">{review.researcherName || 'Unknown Researcher'}</p>
                           </div>
                           <div>
                             <h3 className="font-medium text-gray-500">Review Date</h3>
@@ -151,9 +151,7 @@ export default function ReviewerHistory() {
                             {[1, 2, 3, 4, 5].map((star) => (
                               <svg
                                 key={star}
-                                className={`h-5 w-5 ${
-                                  star <= review.rating ? 'text-yellow-400' : 'text-gray-300'
-                                }`}
+                                className={`h-5 w-5 ${star <= review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
                                 fill="currentColor"
                                 viewBox="0 0 20 20"
                               >

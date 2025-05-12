@@ -440,6 +440,10 @@ export const updateExistingReviewerInfo = async (projectId) => {
 // Get review history for a reviewer
 export const getReviewerHistory = async (reviewerId) => {
   try {
+    if (!reviewerId) {
+      throw new Error('Reviewer ID is required');
+    }
+
     const reviewsQuery = query(
       collection(db, "reviews"),
       where("reviewerId", "==", reviewerId)
@@ -448,15 +452,49 @@ export const getReviewerHistory = async (reviewerId) => {
     
     const reviews = [];
     for (const docSnapshot of querySnapshot.docs) {
-      const review = { id: docSnapshot.id, ...docSnapshot.data() };
-      // Get project details
-      const projectDoc = await getDoc(doc(db, "projects", review.projectId));
-      if (projectDoc.exists()) {
-        const projectData = projectDoc.data();
-        review.projectTitle = projectData.title;
-        review.researcherName = projectData.researcherName;
+      try {
+        const reviewData = docSnapshot.data();
+        const review = { 
+          id: docSnapshot.id,
+          ...reviewData,
+          status: reviewData.status || 'pending',
+          rating: reviewData.rating || 0,
+          feedback: reviewData.feedback || '',
+          createdAt: reviewData.createdAt || null,
+          updatedAt: reviewData.updatedAt || null
+        };
+
+        // Only process if projectId exists
+        if (review.projectId) {
+          const projectDoc = await getDoc(doc(db, "projects", review.projectId));
+          if (projectDoc.exists()) {
+            const projectData = projectDoc.data();
+            review.projectTitle = projectData.title || 'Untitled Project';
+            
+            // Only attempt to get researcher details if createdBy exists
+            if (projectData.userId) {
+              const researcherDoc = await getDoc(doc(db, "users", projectData.userId));
+              review.researcherName = researcherDoc.exists() 
+                ? researcherDoc.data().fullName 
+                : "Unknown Researcher";
+            } else {
+              review.researcherName = "Unknown Researcher";
+            }
+          } else {
+            review.projectTitle = "Project Not Found";
+            review.researcherName = "Unknown Researcher";
+          }
+        } else {
+          review.projectTitle = "Project Not Found";
+          review.researcherName = "Unknown Researcher";
+        }
+        
+        reviews.push(review);
+      } catch (innerError) {
+        console.error("Error processing review document:", innerError);
+        // Continue with next review instead of failing completely
+        continue;
       }
-      reviews.push(review);
     }
     
     // Sort the reviews by createdAt timestamp after fetching
