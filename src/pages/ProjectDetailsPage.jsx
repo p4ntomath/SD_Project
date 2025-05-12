@@ -645,14 +645,6 @@ export default function ProjectDetailsPage() {
 
   const handleAssignReviewers = async (selectedReviewers) => {
     try {
-      setModalOpen(true);
-      setStatusMessage(
-        <div className="flex items-center gap-3">
-          <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
-          <span>Sending reviewer requests ({selectedReviewers.length} total)...</span>
-        </div>
-      );
-      
       // Create reviewer requests in the reviewRequests collection
       const reviewerPromises = selectedReviewers.map(reviewer => 
         createReviewRequest(
@@ -670,6 +662,7 @@ export default function ProjectDetailsPage() {
       setReviewRequests(updatedRequests);
       
       setShowAssignReviewersModal(false);
+      setModalOpen(true);
       setStatusMessage(
         <div className="flex items-center gap-2 text-green-600">
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
