@@ -1,6 +1,50 @@
 import React from 'react';
 
-export default function GoalsCard({ project, calculateProgress, toggleGoalStatus }) {
+export default function GoalsCard({ 
+  project, 
+  calculateProgress, 
+  updateProject, 
+  projectId, 
+  setProject,
+  setModalOpen, 
+  setStatusMessage, 
+  setError 
+}) {
+  const toggleGoalStatus = async (goalIndex) => {
+    try {
+      const updatedGoals = project.goals.map((goal, index) => {
+        if (index === goalIndex) {
+          return { ...goal, completed: !goal.completed };
+        }
+        return goal;
+      });
+      
+      // Check if all goals are completed
+      const allGoalsCompleted = updatedGoals.every(goal => goal.completed);
+      
+      // Update both goals and status if all goals are completed
+      await updateProject(projectId, { 
+        goals: updatedGoals,
+        status: allGoalsCompleted ? 'Complete' : 'In Progress'
+      });
+      
+      setProject({ 
+        ...project, 
+        goals: updatedGoals,
+        status: allGoalsCompleted ? 'Complete' : 'In Progress'
+      });
+      
+      if (allGoalsCompleted) {
+        setModalOpen(true);
+        setStatusMessage("All goals completed! Project status set to Complete.");
+      }
+    } catch (err) {
+      setError(err.message);
+      setModalOpen(true);
+      setStatusMessage("Failed to update goal status: " + err.message);
+    }
+  };
+
   return (
     <section className="bg-white rounded-lg shadow p-4 sm:p-6">
       <header className="flex justify-between items-center mb-4">

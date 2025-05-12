@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState,useEffect } from 'react';
 import AssignReviewersModal from '../ResearcherComponents/AssignReviewersModal';
 import { auth } from '../../backend/firebase/firebaseConfig';
 import { createReviewRequest, getReviewerRequestsForProject } from '../../backend/firebase/reviewerDB';
@@ -11,6 +11,13 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
     request => request.status !== 'accepted' && request.status !== 'completed'
   );
 
+
+    useEffect(() => {
+      if (!showAssignReviewersModal) {
+        // Reset sending state when modal is closed
+        setSendingReviewRequests(false);
+      }
+    }, [showAssignReviewersModal]);
 
   const handleAssignReviewers = async (selectedReviewers) => {
     try {

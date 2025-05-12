@@ -7,16 +7,14 @@ import { ClipLoader } from 'react-spinners';
 import StatusModal from '../components/StatusModal';
 import CreateProjectForm from '../components/CreateProjectForm';
 import { AnimatePresence, motion } from 'framer-motion';
-import AssignReviewersModal from '../components/ResearcherComponents/AssignReviewersModal';
-import ProjectReviews from '../components/ReviewerComponents/ProjectReviews';
-import { getReviewerRequestsForProject, createReviewRequest } from '../backend/firebase/reviewerDB';
+import ProjectReviews from '../components/ProjectDetailsPage/ProjectReviews';
+import { getReviewerRequestsForProject } from '../backend/firebase/reviewerDB';
 import { updateExistingReviewerInfo } from '../backend/firebase/reviewerDB';
 import ReviewersCard from '../components/ProjectDetailsPage/ReviewersCard';
 import DocumentsCard from '../components/ProjectDetailsPage/DocumentsCard';
 import FundingCard from '../components/ProjectDetailsPage/FundingCard';
 import GoalsCard from '../components/ProjectDetailsPage/GoalsCard';
 import BasicInfoCard from '../components/ProjectDetailsPage/BasicInfoCard';
-import { auth } from '../backend/firebase/firebaseConfig';
 
 export default function ProjectDetailsPage() {
   const { projectId } = useParams();
@@ -31,7 +29,7 @@ export default function ProjectDetailsPage() {
   const [updateLoading, setUpdateLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAssignReviewersModal, setShowAssignReviewersModal] = useState(false);
-  const [sendingReviewRequests, setSendingReviewRequests] = useState(false);
+
 
   // New state for documents and folders
   const [folders, setFolders] = useState([]);
@@ -197,12 +195,7 @@ export default function ProjectDetailsPage() {
     }
   }, [projectId]);
 
-  useEffect(() => {
-    if (!showAssignReviewersModal) {
-      // Reset loading state when modal closes
-      setSendingReviewRequests(false);
-    }
-  }, [showAssignReviewersModal]);
+
 
   const handleDelete = async () => {
     try {
@@ -255,41 +248,7 @@ export default function ProjectDetailsPage() {
     }
   };
 
-  const toggleGoalStatus = async (goalIndex) => {
-    try {
-      const updatedGoals = project.goals.map((goal, index) => {
-        if (index === goalIndex) {
-          return { ...goal, completed: !goal.completed };
-        }
-        return goal;
-      });
-      
-      // Check if all goals are completed
-      const allGoalsCompleted = updatedGoals.every(goal => goal.completed);
-      
-      // Update both goals and status if all goals are completed
-      await updateProject(projectId, { 
-        goals: updatedGoals,
-        status: allGoalsCompleted ? 'Complete' : 'In Progress'
-      });
-      
-      setProject({ 
-        ...project, 
-        goals: updatedGoals,
-        status: allGoalsCompleted ? 'Complete' : 'In Progress'
-      });
-      
-      if (allGoalsCompleted) {
-        setModalOpen(true);
-        setStatusMessage("All goals completed! Project status set to Complete.");
-      }
-    } catch (err) {
-      setError(err.message);
-      setModalOpen(true);
-      setStatusMessage("Failed to update goal status: " + err.message);
-    }
-  };
-
+  
   const formatDate = (timestamp) => {
     if (!timestamp || typeof timestamp !== 'object') return 'Not specified';
     if (timestamp.seconds) {
@@ -406,7 +365,12 @@ export default function ProjectDetailsPage() {
             <GoalsCard 
               project={project}
               calculateProgress={calculateProgress}
-              toggleGoalStatus={toggleGoalStatus}
+              setProject={setProject}
+              projectId={projectId}
+              setModalOpen={setModalOpen}
+              setError={setError}
+              setStatusMessage={setStatusMessage}
+              updateProject={updateProject}
             />
 
             <DocumentsCard 
