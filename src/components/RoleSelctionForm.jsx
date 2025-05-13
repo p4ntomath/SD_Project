@@ -19,7 +19,7 @@ const RoleSelectionForm = ({ onSubmit }) => {
     department: '',
     fieldOfResearch: '',
     bio: '',
-    tags: []
+    tags: []  // Will now store only tag labels as strings
   });
 
   const [errors, setErrors] = useState({});
@@ -55,10 +55,10 @@ const RoleSelectionForm = ({ onSubmit }) => {
   const handleTagsChange = (selectedOptions) => {
     // Limit to first 3 selections if more than 3 are selected
     const limitedOptions = selectedOptions.slice(0, 3);
-    setSelectedTags(limitedOptions);
+    setSelectedTags(limitedOptions); // Keep full objects for Select component
     setFormData(prev => ({
       ...prev,
-      tags: limitedOptions // Store the full tag objectsv
+      tags: limitedOptions.map(tag => tag.label) // Store only the labels
     }));
     if (errors.tags) {
       setErrors(prev => ({ ...prev, tags: '' }));
@@ -133,16 +133,8 @@ const RoleSelectionForm = ({ onSubmit }) => {
       setIsSubmitting(true);
       try {
         // Complete user profile in Firebase
-        await completeProfile(formData.fullName, formData.role, {
-          institution: formData.institution,
-          department: formData.department,
-          fieldOfResearch: formData.fieldOfResearch,
-          researchTags: formData.tags,
-          bio: formData.bio || ''
-        });
-        
-        // Call the onSubmit handler passed from parent
-        onSubmit(formData);
+        await onSubmit(formData);
+
       } catch (error) {
         console.error('Error completing profile:', error);
         setErrors(prev => ({

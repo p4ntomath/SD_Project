@@ -70,14 +70,14 @@ const completeProfile = async (fullName, role, profileData) => {
       throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
     }
 
-    // Use profileData if provided, otherwise fallback to basic data
+    // Clean and validate the data before saving
     const userData = {
-      fullName,
-      role,
-      institution: profileData.institution,
-      department: profileData.department,
-      fieldOfResearch: profileData.fieldOfResearch,
-      researchTags: profileData.researchTags || [],
+      fullName: fullName || '',
+      role: role || '',
+      institution: profileData.institution || '',
+      department: profileData.department || '',
+      fieldOfResearch: profileData.fieldOfResearch || '',
+      researchTags: Array.isArray(profileData.researchTags) ? profileData.researchTags : [],
       bio: profileData.bio || '',
       updatedAt: new Date()
     };
