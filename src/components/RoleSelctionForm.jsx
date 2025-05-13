@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Select from 'react-select';
 import { getAllTags, getFaculties, getTagsByFaculty } from '../utils/tagSuggestions';
+import { fetchUniversities } from '../utils/universityOptions';
 import { completeProfile } from '../backend/firebase/authFirebase';
 import { ClipLoader } from 'react-spinners';
 
@@ -26,6 +27,8 @@ const RoleSelectionForm = ({ onSubmit }) => {
   const [selectedTags, setSelectedTags] = useState([]);
   const [filteredTags, setFilteredTags] = useState(getAllTags());
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [universities, setUniversities] = useState([]);
+  const [institutionLoading, setInstitutionLoading] = useState(true);
   const faculties = ['all', ...getFaculties()];
 
   const roles = [
@@ -59,6 +62,16 @@ const RoleSelectionForm = ({ onSubmit }) => {
     }));
     if (errors.tags) {
       setErrors(prev => ({ ...prev, tags: '' }));
+    }
+  };
+
+  const handleInstitutionChange = (selectedOption) => {
+    setFormData(prev => ({ 
+      ...prev, 
+      institution: selectedOption?.value || '' 
+    }));
+    if (errors.institution) {
+      setErrors(prev => ({ ...prev, institution: '' }));
     }
   };
 
@@ -102,6 +115,17 @@ const RoleSelectionForm = ({ onSubmit }) => {
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
+
+  useEffect(() => {
+    const loadUniversities = async () => {
+      setInstitutionLoading(true);
+      const uniOptions = await fetchUniversities();
+      setUniversities(uniOptions);
+      setInstitutionLoading(false);
+    };
+
+    loadUniversities();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -190,16 +214,27 @@ const RoleSelectionForm = ({ onSubmit }) => {
             <label htmlFor="institution" className="block text-sm font-medium text-gray-700 mb-1">
               Institution
             </label>
-            <input
-              type="text"
-              id="institution"
+            <Select
+              inputId="institution"
               name="institution"
-              value={formData.institution}
-              onChange={handleChange}
-              placeholder="e.g., University of Cape Town"
-              className={`w-full px-3 py-2 border rounded-md ${
-                errors.institution ? 'border-red-500' : 'border-gray-300'
-              }`}
+              value={universities.find(uni => uni.value === formData.institution)}
+              onChange={handleInstitutionChange}
+              options={universities}
+              className={errors.institution ? 'react-select-error' : ''}
+              classNamePrefix="select"
+              placeholder={institutionLoading ? 'Loading universities...' : 'Select your institution...'}
+              isLoading={institutionLoading}
+              noOptionsMessage={() => "No matching institutions found"}
+              styles={{
+                control: (base, state) => ({
+                  ...base,
+                  borderColor: errors.institution ? '#ef4444' : state.isFocused ? '#3b82f6' : '#d1d5db',
+                  boxShadow: state.isFocused ? '0 0 0 1px #3b82f6' : 'none',
+                  '&:hover': {
+                    borderColor: state.isFocused ? '#3b82f6' : '#d1d5db'
+                  }
+                })
+              }}
             />
             {errors.institution && <p className="mt-1 text-sm text-red-600">{errors.institution}</p>}
           </article>
@@ -312,7 +347,7 @@ const RoleSelectionForm = ({ onSubmit }) => {
         <button
           type="submit"
           disabled={isSubmitting}
-          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mt-6"
         >
           {isSubmitting ? (
             <>
