@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 
 const RoleSelectionPage = () => {
-  const { setRole, role, setLoading } = useContext(AuthContext);
+  const { setRole, role, setLoading ,loading} = useContext(AuthContext);
   const [localLoading, setLocalLoading] = useState(false);
   const [profileCompleted, setProfileCompleted] = useState(false);
   const navigate = useNavigate();
@@ -45,7 +45,7 @@ const RoleSelectionPage = () => {
 
   return (
     <section className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      {localLoading ? (
+      {(localLoading || loading)? (
         <section className="flex justify-center items-center h-screen bg-gray-50" role="status">
           <ClipLoader 
             color="#3498db" 

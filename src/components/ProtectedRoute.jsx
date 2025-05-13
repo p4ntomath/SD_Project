@@ -9,7 +9,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     const location = useLocation();
 
     useEffect(() => {
-        if (loading || location.pathname === '/login') {
+        if (loading) {
             return;
         }
 
@@ -18,7 +18,9 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
             return;
         }
 
-        if (!role && location.pathname !== '/complete-profile') {
+        // Only redirect to complete-profile for Google sign-in users who don't have a role
+        const isFromGoogle = user.providerData?.[0]?.providerId === 'google.com';
+        if (!role && isFromGoogle && location.pathname !== '/complete-profile') {
             navigate('/complete-profile');
             return;
         }
@@ -30,7 +32,8 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
         }
     }, [user, role, loading, navigate, location.pathname, allowedRoles]);
 
-    if (loading && location.pathname !== '/login') {
+    // Show loading spinner while authentication state is being determined
+    if (loading) {
         return (
             <main className="flex justify-center items-center h-screen bg-gray-50">
                 <ClipLoader data-testid="clip-loader" color="#3498db" size={50} />
@@ -38,7 +41,6 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
         );
     }
 
-    // If we got here, the route is authorized
     return children;
 };
 

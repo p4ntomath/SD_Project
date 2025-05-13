@@ -8,7 +8,7 @@ import AuthContext from "../context/AuthContext";
 
 const SignUpForm = () => {
   const paths = {
-    success: "/complete-profile",  // Changed from /home to /complete-profile
+    success: "/home",  // Changed from /home to /complete-profile
     successGoogle: "/complete-profile",
   };
   const navigate = useNavigate();
@@ -86,23 +86,24 @@ const SignUpForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-    setIsLoading(true);
+
     try {
+      setIsLoading(true);
       const additionalData = formData.role === 'reviewer' ? {
         expertise: formData.expertise,
         department: formData.department
       } : {
         role: formData.role,
-        profileCompleted: false  // Add this flag
       };
-      
-      await signUp(formData.fullName, formData.email, formData.password, formData.role, additionalData);
-      setLoading(true);
-      setRole(formData.role);
-      setIsLoading(false);
+      const user = await signUp(formData.fullName, formData.email, formData.password, formData.role, additionalData);
+      if(user){
+        console.log("User created successfully:", user);
+        setLoading(true);
+        setIsLoading(false);
+        setRole(formData.role);
+      }
       navigate(paths.success);
     } catch (error) {
-      
       // Map Firebase error codes to user-friendly messages
       const errorMessages = {
         'auth/email-already-in-use': 'Email Already Exists: This email address is already registered. Please try logging in or use a different email.',
@@ -120,19 +121,29 @@ const SignUpForm = () => {
       } else {
         setErrors({ form: errorMessage });
       }
+      setIsLoading(false);
+    }finally {
+      setLoading(false);
     }
-    setIsLoading(false);
   };
 
   const handleGoogleAuth = async () => {
     setIsLoading(true);
-    setLoading(true);
+    
     try {
+      setLoading(true);
       const { isNewUser, user } = await googleSignIn();
       const role = await getUserRole(user.uid);
+      if(!user){
+        setIsLoading(false);
+        setLoading(false);
+        navigate(paths.successGoogle);
+        return;
+      }
+
       setRole(role);
       if (isNewUser) {
-        navigate(paths.succesGoogle, { state: { userId: user.uid, email: user.email, name: user.displayName } });
+        navigate(paths.successGoogle, { state: { userId: user.uid, email: user.email, name: user.displayName } });
       } else {
         navigate(paths.success);
       }
@@ -148,9 +159,11 @@ const SignUpForm = () => {
       }
       else{
       setErrors({ form: 'Google sign-up failed. Please try again.' });}
+    }finally {
+      setIsLoading(false);
+      setLoading(false);
     }
-    setLoading(false);
-    setIsLoading(false);
+
   };
 
   return (
