@@ -18,22 +18,24 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
             return;
         }
 
-        // Only redirect to complete-profile for Google sign-in users who don't have a role
-        const isFromGoogle = user.providerData?.[0]?.providerId === 'google.com';
-        if (!role && isFromGoogle && location.pathname !== '/complete-profile') {
-            navigate('/complete-profile');
+        // If user is authenticated but has no role, redirect to complete profile
+        // unless they're already on the complete-profile page
+        if (!role && location.pathname !== '/complete-profile') {
+            navigate('/complete-profile', { state: { from: location.pathname } });
             return;
         }
 
-        // Check if route requires specific roles
+        // Only check role requirements if the route has allowedRoles specified
         if (allowedRoles && !allowedRoles.includes(role)) {
-            navigate('/home');
+            // Redirect to appropriate home page based on role
+            const homePath = role === 'admin' ? '/admin' : '/home';
+            navigate(homePath);
             return;
         }
     }, [user, role, loading, navigate, location.pathname, allowedRoles]);
 
     // Show loading spinner while authentication state is being determined
-    if (loading) {
+    if (loading && location.pathname !== '/login') {
         return (
             <main className="flex justify-center items-center h-screen bg-gray-50">
                 <ClipLoader data-testid="clip-loader" color="#3498db" size={50} />
@@ -41,6 +43,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
         );
     }
 
+    // If we got here, the route is authorized
     return children;
 };
 

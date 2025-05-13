@@ -1,14 +1,32 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import Select from 'react-select';
+import { getAllTags, getFaculties, getTagsByFaculty } from '../utils/tagSuggestions';
+import { completeProfile } from '../backend/firebase/authFirebase';
+import { ClipLoader } from 'react-spinners';
 
 const RoleSelectionForm = ({ onSubmit }) => {
+  const location = useLocation();
+  const { state } = location;
+  const isEmailSignup = state?.isEmailSignup;
+  const isGoogleSignup = state?.isGoogleSignup;
+
   const [formData, setFormData] = useState({
-    fullName: '',
+    fullName: state?.name || '',
     role: '',
-    expertise: '',
-    department: ''
+    institution: '',
+    department: '',
+    fieldOfResearch: '',
+    bio: '',
+    tags: []
   });
 
   const [errors, setErrors] = useState({});
+  const [selectedFaculty, setSelectedFaculty] = useState('all');
+  const [selectedTags, setSelectedTags] = useState([]);
+  const [filteredTags, setFilteredTags] = useState(getAllTags());
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const faculties = ['all', ...getFaculties()];
 
   const roles = [
     { value: '', label: 'Select your role', disabled: true },
@@ -16,19 +34,48 @@ const RoleSelectionForm = ({ onSubmit }) => {
     { value: 'reviewer', label: 'Reviewer' }
   ];
 
+  const handleFacultyChange = (e) => {
+    const faculty = e.target.value;
+    setSelectedFaculty(faculty);
+    // Only update the filtered/available tags, not the selected ones
+    setFilteredTags(faculty === 'all' ? getAllTags() : getTagsByFaculty(faculty));
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
-    // Clear error when user starts typing
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: '' }));
     }
   };
 
+  const handleTagsChange = (selectedOptions) => {
+    // Limit to first 3 selections if more than 3 are selected
+    const limitedOptions = selectedOptions.slice(0, 3);
+    setSelectedTags(limitedOptions);
+    setFormData(prev => ({
+      ...prev,
+      tags: limitedOptions.map(option => option.label)
+    }));
+    if (errors.tags) {
+      setErrors(prev => ({ ...prev, tags: '' }));
+    }
+  };
+
+  // Get all available options by combining filtered tags and selected tags
+  const getAvailableOptions = () => {
+    const selectedOptions = selectedTags;
+    const filteredOptions = filteredTags.filter(tag => 
+      !selectedOptions.some(selected => selected.label === tag.label)
+    );
+    return [...selectedOptions, ...filteredOptions];
+  };
+
   const validateForm = () => {
     const newErrors = {};
     
-    if (!formData.fullName.trim()) {
+    // Only validate fullName if it wasn't provided during signup
+    if (!formData.fullName?.trim() && !isEmailSignup) {
       newErrors.fullName = 'Full name is required';
     }
 
@@ -36,23 +83,51 @@ const RoleSelectionForm = ({ onSubmit }) => {
       newErrors.role = 'Please select a role';
     }
 
-    if (formData.role === 'reviewer') {
-      if (!formData.expertise?.trim()) {
-        newErrors.expertise = 'Expertise is required for reviewers';
-      }
-      if (!formData.department?.trim()) {
-        newErrors.department = 'Department is required for reviewers';
-      }
+    if (!formData.institution?.trim()) {
+      newErrors.institution = 'Institution is required';
+    }
+
+    if (!formData.department?.trim()) {
+      newErrors.department = 'Department is required';
+    }
+
+    if (!formData.fieldOfResearch?.trim()) {
+      newErrors.fieldOfResearch = 'Field of research is required';
+    }
+
+    if (formData.tags.length < 3) {
+      newErrors.tags = 'Please select at least 3 research tags';
     }
 
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (validateForm()) {
-      onSubmit(formData);
+      setIsSubmitting(true);
+      try {
+        // Complete user profile in Firebase
+        await completeProfile(formData.fullName, formData.role, {
+          institution: formData.institution,
+          department: formData.department,
+          fieldOfResearch: formData.fieldOfResearch,
+          researchTags: formData.tags,
+          bio: formData.bio || ''
+        });
+        
+        // Call the onSubmit handler passed from parent
+        onSubmit(formData);
+      } catch (error) {
+        console.error('Error completing profile:', error);
+        setErrors(prev => ({
+          ...prev,
+          submit: error.message
+        }));
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
@@ -64,26 +139,30 @@ const RoleSelectionForm = ({ onSubmit }) => {
         <fieldset>
           <legend className="sr-only">Profile Information</legend>
   
-          <article>
-            <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
-              Full Name
-            </label>
-            <input
-              type="text"
-              id="fullName"
-              name="fullName"
-              value={formData.fullName}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md ${
-                errors.fullName ? 'border-red-500' : 'border-gray-300'
-              }`}
-            />
-            {errors.fullName && <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>}
-          </article>
-  
-          <article>
+          {/* Only show full name field if not provided during email signup */}
+          {!isEmailSignup && (
+            <article>
+              <label htmlFor="fullName" className="block text-sm font-medium text-gray-700 mb-1">
+                Full Name
+              </label>
+              <input
+                type="text"
+                id="fullName"
+                name="fullName"
+                value={formData.fullName}
+                onChange={handleChange}
+                placeholder="e.g., John Smith"
+                className={`w-full px-3 py-2 border rounded-md ${
+                  errors.fullName ? 'border-red-500' : 'border-gray-300'
+                }`}
+              />
+              {errors.fullName && <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>}
+            </article>
+          )}
+
+          <article className="mt-4">
             <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-              Your Role
+              Role
             </label>
             <select
               id="role"
@@ -99,7 +178,6 @@ const RoleSelectionForm = ({ onSubmit }) => {
                   key={role.value}
                   value={role.value}
                   disabled={role.disabled}
-                  className={role.disabled ? 'text-gray-400' : ''}
                 >
                   {role.label}
                 </option>
@@ -108,52 +186,142 @@ const RoleSelectionForm = ({ onSubmit }) => {
             {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role}</p>}
           </article>
 
-          {formData.role === 'reviewer' && (
-            <>
-              <article>
-                <label htmlFor="expertise" className="block text-sm font-medium text-gray-700 mb-1">
-                  Area of Expertise
-                </label>
-                <input
-                  type="text"
-                  id="expertise"
-                  name="expertise"
-                  value={formData.expertise}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-md ${
-                    errors.expertise ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="e.g., Computer Science, Data Science"
-                />
-                {errors.expertise && <p className="mt-1 text-sm text-red-600">{errors.expertise}</p>}
-              </article>
+          <article className="mt-4">
+            <label htmlFor="institution" className="block text-sm font-medium text-gray-700 mb-1">
+              Institution
+            </label>
+            <input
+              type="text"
+              id="institution"
+              name="institution"
+              value={formData.institution}
+              onChange={handleChange}
+              placeholder="e.g., University of Cape Town"
+              className={`w-full px-3 py-2 border rounded-md ${
+                errors.institution ? 'border-red-500' : 'border-gray-300'
+              }`}
+            />
+            {errors.institution && <p className="mt-1 text-sm text-red-600">{errors.institution}</p>}
+          </article>
 
-              <article>
-                <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">
-                  Department
-                </label>
-                <input
-                  type="text"
-                  id="department"
-                  name="department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-md ${
-                    errors.department ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="e.g., Computing, Engineering"
-                />
-                {errors.department && <p className="mt-1 text-sm text-red-600">{errors.department}</p>}
-              </article>
-            </>
-          )}
+          <article className="mt-4">
+            <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">
+              Department
+            </label>
+            <input
+              type="text"
+              id="department"
+              name="department"
+              value={formData.department}
+              onChange={handleChange}
+              placeholder="e.g., Computer Science, Engineering"
+              className={`w-full px-3 py-2 border rounded-md ${
+                errors.department ? 'border-red-500' : 'border-gray-300'
+              }`}
+            />
+            {errors.department && <p className="mt-1 text-sm text-red-600">{errors.department}</p>}
+          </article>
+
+          <article className="mt-4">
+            <label htmlFor="fieldOfResearch" className="block text-sm font-medium text-gray-700 mb-1">
+              Field of Research/Expertise
+            </label>
+            <input
+              type="text"
+              id="fieldOfResearch"
+              name="fieldOfResearch"
+              value={formData.fieldOfResearch}
+              onChange={handleChange}
+              placeholder="e.g., Machine Learning, Data Science, Software Engineering"
+              className={`w-full px-3 py-2 border rounded-md ${
+                errors.fieldOfResearch ? 'border-red-500' : 'border-gray-300'
+              }`}
+            />
+            {errors.fieldOfResearch && <p className="mt-1 text-sm text-red-600">{errors.fieldOfResearch}</p>}
+          </article>
+
+          <article className="mt-4">
+            <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">
+              Research Tags (Select 3)
+            </label>
+            <div className="mb-2">
+              <label htmlFor="faculty" className="block text-xs text-gray-600 mb-1">
+                Filter by Faculty
+              </label>
+              <select
+                id="faculty"
+                value={selectedFaculty}
+                onChange={handleFacultyChange}
+                className="w-full px-3 py-2 border rounded-md border-gray-300 text-sm"
+              >
+                {faculties.map(faculty => (
+                  <option key={faculty} value={faculty}>
+                    {faculty === 'all' ? 'All Faculties' : faculty}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <Select
+              isMulti
+              name="tags"
+              options={getAvailableOptions()}
+              className={`${errors.tags ? 'react-select-error' : ''}`}
+              classNamePrefix="select"
+              value={selectedTags}
+              onChange={handleTagsChange}
+              placeholder="Select exactly 3 research tags..."
+              noOptionsMessage={() => "No matching tags found"}
+              isOptionDisabled={() => selectedTags.length >= 3}
+              styles={{
+                control: (base, state) => ({
+                  ...base,
+                  borderColor: errors.tags ? '#ef4444' : state.isFocused ? '#3b82f6' : '#d1d5db',
+                  boxShadow: state.isFocused ? '0 0 0 1px #3b82f6' : 'none',
+                  '&:hover': {
+                    borderColor: state.isFocused ? '#3b82f6' : '#d1d5db'
+                  }
+                }),
+                menu: (base) => ({
+                  ...base,
+                  zIndex: 9999
+                })
+              }}
+            />
+            <p className="mt-1 text-xs text-gray-500">
+              {selectedTags.length}/3 tags selected
+            </p>
+            {errors.tags && <p className="mt-1 text-sm text-red-600">{errors.tags}</p>}
+          </article>
+
+          <article className="mt-4">
+            <label htmlFor="bio" className="block text-sm font-medium text-gray-700 mb-1">
+              Bio (Optional)
+            </label>
+            <textarea
+              id="bio"
+              name="bio"
+              value={formData.bio}
+              onChange={handleChange}
+              rows={4}
+              placeholder="e.g., I am a researcher with 5 years of experience in machine learning and artificial intelligence. My current research focuses on developing novel deep learning architectures..."
+              className="w-full px-3 py-2 border rounded-md border-gray-300 resize-none"
+            />
+          </article>
         </fieldset>
-  
+
         <button
           type="submit"
-          className="w-full py-2 px-4 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-md transition"
+          disabled={isSubmitting}
+          className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
         >
-          Continue
+          {isSubmitting ? (
+            <>
+              <ClipLoader color="#ffffff" size={20} className="mr-2" />
+              <span>Completing Profile...</span>
+            </>
+          ) : (
+            'Complete Profile'
+          )}
         </button>
       </form>
     </section>

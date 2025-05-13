@@ -2,14 +2,15 @@ import React, { useState, useEffect, useContext } from 'react';
 import { completeProfile } from '../backend/firebase/authFirebase';
 import RoleSelectionForm from '../components/RoleSelctionForm';
 import { ClipLoader } from 'react-spinners';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 
 const RoleSelectionPage = () => {
-  const { setRole, role, setLoading ,loading} = useContext(AuthContext);
+  const { setRole, role, setLoading } = useContext(AuthContext);
   const [localLoading, setLocalLoading] = useState(false);
   const [profileCompleted, setProfileCompleted] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (formData) => {
     setLocalLoading(true);
@@ -18,11 +19,13 @@ const RoleSelectionPage = () => {
       const profileData = {
         fullName: formData.fullName,
         role: formData.role,
-        ...(formData.role === 'reviewer' && {
-          expertise: formData.expertise,
-          department: formData.department
-        })
+        institution: formData.institution,
+        department: formData.department,
+        fieldOfResearch: formData.fieldOfResearch,
+        researchTags: formData.tags,
+        bio: formData.bio || ''
       };
+
       await completeProfile(formData.fullName, formData.role, profileData);
       setRole(formData.role);
       setProfileCompleted(true);
@@ -38,14 +41,14 @@ const RoleSelectionPage = () => {
     if (profileCompleted) {
       navigate('/home');
     }
-    if(role){
+    if (role) {
       navigate('/home');
     }
   }, [profileCompleted, navigate, role]);
 
   return (
     <section className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-      {(localLoading || loading)? (
+      {localLoading ? (
         <section className="flex justify-center items-center h-screen bg-gray-50" role="status">
           <ClipLoader 
             color="#3498db" 
