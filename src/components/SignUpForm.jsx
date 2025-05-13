@@ -2,13 +2,13 @@ import { useState,useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import FormInput from "./FormInput";
 import googleLogo from "../assets/googleLogo.png";
-import { signUp, googleSignIn,getUserRole } from "../backend/firebase/authFirebase";
+import { signUp, googleSignIn,getUserRole } from "../backend/firebase/authFirebase.jsx";
 import { ClipLoader } from "react-spinners"; // Import the spinner
 import AuthContext from "../context/AuthContext";
 
 const SignUpForm = () => {
   const paths = {
-    success: "/home",
+    success: "/complete-profile",  // Changed from /home to /complete-profile
     successGoogle: "/complete-profile",
   };
   const navigate = useNavigate();
@@ -91,10 +91,15 @@ const SignUpForm = () => {
       const additionalData = formData.role === 'reviewer' ? {
         expertise: formData.expertise,
         department: formData.department
-      } : {};
+      } : {
+        role: formData.role,
+        profileCompleted: false  // Add this flag
+      };
       
       await signUp(formData.fullName, formData.email, formData.password, formData.role, additionalData);
+      setLoading(true);
       setRole(formData.role);
+      setIsLoading(false);
       navigate(paths.success);
     } catch (error) {
       
@@ -253,15 +258,6 @@ const SignUpForm = () => {
               </section>
             </>
           )}
-  
-          <FormInput
-            label="Password"
-            type="password"
-            name="password"
-            value={formData.password}
-            onChange={handleChange}
-            error={errors.password}
-          />
           {!errors.password && (
             <p className="mt-1 text-xs text-gray-500">
               Make it strong! Include:
@@ -270,6 +266,15 @@ const SignUpForm = () => {
               <br />• Symbols like (@,!,#)
             </p>
           )}
+          <FormInput
+            label="Password"
+            type="password"
+            name="password"
+            value={formData.password}
+            onChange={handleChange}
+            error={errors.password}
+          />
+          
           <FormInput
             label="Confirm Password"
             type="password"
