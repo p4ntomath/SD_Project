@@ -382,6 +382,12 @@ export default function ProjectDetailsPage() {
               setError={setError}
               setStatusMessage={setStatusMessage}
             />
+
+            {/* Project Reviews Card */}
+            <article className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <h2 className="text-lg sm:text-xl font-semibold mb-4">Project Reviews</h2>
+              <ProjectReviews projectId={projectId} formatDate={formatDate} />
+            </article>
           </section>
 
           {/* Right Column - Additional Info */}
@@ -498,12 +504,6 @@ export default function ProjectDetailsPage() {
             
           </section>
         </section>
-
-        {/* Project Reviews Card - Full Width */}
-        <article className="bg-white rounded-lg shadow p-4 sm:p-6 mt-6">
-          <h2 className="text-lg sm:text-xl font-semibold mb-4">Project Reviews</h2>
-          <ProjectReviews projectId={projectId} formatDate={formatDate} />
-        </article>
 
       </article>
 
