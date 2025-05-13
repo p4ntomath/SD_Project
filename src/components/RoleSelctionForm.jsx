@@ -58,7 +58,7 @@ const RoleSelectionForm = ({ onSubmit }) => {
     setSelectedTags(limitedOptions);
     setFormData(prev => ({
       ...prev,
-      tags: limitedOptions.map(option => option.label)
+      tags: limitedOptions // Store the full tag objectsv
     }));
     if (errors.tags) {
       setErrors(prev => ({ ...prev, tags: '' }));
@@ -159,7 +159,7 @@ const RoleSelectionForm = ({ onSubmit }) => {
     <section className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-bold text-center mb-6">Complete Your Profile</h2>
   
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-4" data-testid="role-selection-form">
         <fieldset>
           <legend className="sr-only">Profile Information</legend>
   
@@ -173,6 +173,7 @@ const RoleSelectionForm = ({ onSubmit }) => {
                 type="text"
                 id="fullName"
                 name="fullName"
+                data-testid="fullname-input"
                 value={formData.fullName}
                 onChange={handleChange}
                 placeholder="e.g., John Smith"
@@ -180,7 +181,7 @@ const RoleSelectionForm = ({ onSubmit }) => {
                   errors.fullName ? 'border-red-500' : 'border-gray-300'
                 }`}
               />
-              {errors.fullName && <p className="mt-1 text-sm text-red-600">{errors.fullName}</p>}
+              {errors.fullName && <p data-testid="fullname-error" className="mt-1 text-sm text-red-600">{errors.fullName}</p>}
             </article>
           )}
 
@@ -191,6 +192,7 @@ const RoleSelectionForm = ({ onSubmit }) => {
             <select
               id="role"
               name="role"
+              data-testid="role-select"
               value={formData.role}
               onChange={handleChange}
               className={`w-full px-3 py-2 border rounded-md ${
@@ -202,22 +204,24 @@ const RoleSelectionForm = ({ onSubmit }) => {
                   key={role.value}
                   value={role.value}
                   disabled={role.disabled}
+                  data-testid={`role-option-${role.value}`}
                 >
                   {role.label}
                 </option>
               ))}
             </select>
-            {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role}</p>}
+            {errors.role && <p data-testid="role-error" className="mt-1 text-sm text-red-600">{errors.role}</p>}
           </article>
 
           <article className="mt-4">
-            <label htmlFor="institution" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="select-institution" className="block text-sm font-medium text-gray-700 mb-1">
               Institution
             </label>
             <Select
-              inputId="institution"
+              inputId="select-institution"
               name="institution"
-              value={universities.find(uni => uni.value === formData.institution)}
+              data-testid="institution-select"
+              value={universities?.length ? universities.find(uni => uni.value === formData.institution) : null}
               onChange={handleInstitutionChange}
               options={universities}
               className={errors.institution ? 'react-select-error' : ''}
@@ -236,7 +240,7 @@ const RoleSelectionForm = ({ onSubmit }) => {
                 })
               }}
             />
-            {errors.institution && <p className="mt-1 text-sm text-red-600">{errors.institution}</p>}
+            {errors.institution && <p data-testid="institution-error" className="mt-1 text-sm text-red-600">{errors.institution}</p>}
           </article>
 
           <article className="mt-4">
@@ -247,6 +251,7 @@ const RoleSelectionForm = ({ onSubmit }) => {
               type="text"
               id="department"
               name="department"
+              data-testid="department-input"
               value={formData.department}
               onChange={handleChange}
               placeholder="e.g., Computer Science, Engineering"
@@ -254,7 +259,7 @@ const RoleSelectionForm = ({ onSubmit }) => {
                 errors.department ? 'border-red-500' : 'border-gray-300'
               }`}
             />
-            {errors.department && <p className="mt-1 text-sm text-red-600">{errors.department}</p>}
+            {errors.department && <p data-testid="department-error" className="mt-1 text-sm text-red-600">{errors.department}</p>}
           </article>
 
           <article className="mt-4">
@@ -265,6 +270,7 @@ const RoleSelectionForm = ({ onSubmit }) => {
               type="text"
               id="fieldOfResearch"
               name="fieldOfResearch"
+              data-testid="field-of-research-input"
               value={formData.fieldOfResearch}
               onChange={handleChange}
               placeholder="e.g., Machine Learning, Data Science, Software Engineering"
@@ -272,11 +278,11 @@ const RoleSelectionForm = ({ onSubmit }) => {
                 errors.fieldOfResearch ? 'border-red-500' : 'border-gray-300'
               }`}
             />
-            {errors.fieldOfResearch && <p className="mt-1 text-sm text-red-600">{errors.fieldOfResearch}</p>}
+            {errors.fieldOfResearch && <p data-testid="field-of-research-error" className="mt-1 text-sm text-red-600">{errors.fieldOfResearch}</p>}
           </article>
 
           <article className="mt-4">
-            <label htmlFor="tags" className="block text-sm font-medium text-gray-700 mb-1">
+            <label htmlFor="select-tags" className="block text-sm font-medium text-gray-700 mb-1">
               Research Tags (Select 3)
             </label>
             <div className="mb-2">
@@ -287,18 +293,21 @@ const RoleSelectionForm = ({ onSubmit }) => {
                 id="faculty"
                 value={selectedFaculty}
                 onChange={handleFacultyChange}
+                data-testid="faculty-select"
                 className="w-full px-3 py-2 border rounded-md border-gray-300 text-sm"
               >
                 {faculties.map(faculty => (
-                  <option key={faculty} value={faculty}>
+                  <option key={faculty} value={faculty} data-testid={`faculty-option-${faculty}`}>
                     {faculty === 'all' ? 'All Faculties' : faculty}
                   </option>
                 ))}
               </select>
             </div>
             <Select
+              inputId="select-tags"
               isMulti
               name="tags"
+              data-testid="tags-select"
               options={getAvailableOptions()}
               className={`${errors.tags ? 'react-select-error' : ''}`}
               classNamePrefix="select"
@@ -322,10 +331,10 @@ const RoleSelectionForm = ({ onSubmit }) => {
                 })
               }}
             />
-            <p className="mt-1 text-xs text-gray-500">
+            <p className="mt-1 text-xs text-gray-500" data-testid="tags-count">
               {selectedTags.length}/3 tags selected
             </p>
-            {errors.tags && <p className="mt-1 text-sm text-red-600">{errors.tags}</p>}
+            {errors.tags && <p data-testid="tags-error" className="mt-1 text-sm text-red-600">{errors.tags}</p>}
           </article>
 
           <article className="mt-4">
@@ -335,6 +344,7 @@ const RoleSelectionForm = ({ onSubmit }) => {
             <textarea
               id="bio"
               name="bio"
+              data-testid="bio-input"
               value={formData.bio}
               onChange={handleChange}
               rows={4}
@@ -347,6 +357,7 @@ const RoleSelectionForm = ({ onSubmit }) => {
         <button
           type="submit"
           disabled={isSubmitting}
+          data-testid="submit-button"
           className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center mt-6"
         >
           {isSubmitting ? (

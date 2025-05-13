@@ -108,7 +108,7 @@ const SignUpForm = () => {
     try {
       const { isNewUser, user } = await googleSignIn();
       if (isNewUser) {
-        navigate(paths.successGoogle, { 
+        navigate("/complete-profile", { 
           state: { 
             userId: user.uid, 
             email: user.email, 
