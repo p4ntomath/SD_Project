@@ -7,9 +7,9 @@ export default function BasicInfoCard({ project, calculateProgress }) {
   
   return (
     <article className="bg-white rounded-lg shadow p-4 sm:p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-4">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:items-center sm:justify-between mb-4">
         <h2 className="text-lg sm:text-xl font-semibold">Project Details</h2>
-        <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
+        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs sm:text-sm max-w-fit ${
           project.status === 'Complete' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
         }`}>
           {project.status}
