@@ -49,7 +49,7 @@ export default function BasicInfoCard({ project, calculateProgress }) {
 
         <section>
           <h3 className="text-sm text-gray-500 mb-1">Description</h3>
-          <p className="text-gray-700">{project.description}</p>
+          <p className="text-gray-700 whitespace-pre-wrap break-words">{project.description}</p>
         </section>
       </section>
     </article>

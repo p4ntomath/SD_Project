@@ -190,8 +190,8 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
                     </svg>
                   </div>
                   <div>
-                    <p className="font-medium text-sm">{reviewer.name}</p>
-                    <p className="text-xs text-gray-500">{reviewer.expertise || 'Reviewer'}</p>
+                    <p className="font-medium text-sm break-words">{reviewer.name}</p>
+                    <p className="text-xs text-gray-500 break-words">{reviewer.fieldOfResearch || 'No field of research specified'}</p>
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
@@ -232,8 +232,8 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
                     </svg>
                   </div>
                   <div>
-                    <p className="font-medium text-sm">{request.reviewerName}</p>
-                    <p className="text-xs text-gray-500">Requested: {formatDate(request.requestedAt)}</p>
+                    <p className="font-medium text-sm break-words">{request.reviewerName}</p>
+                    <p className="text-xs text-gray-500 break-words">Requested: {formatDate(request.requestedAt)}</p>
                   </div>
                 </div>
                 <span className={`px-2 py-1 text-xs rounded-full ${

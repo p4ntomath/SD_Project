@@ -286,7 +286,7 @@ export default function DocumentsCard({
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                           </svg>
                           <div className="flex-1 min-w-0">
-                            <span className="truncate text-sm text-gray-700">{file.name}</span>
+                            <span className="truncate text-sm text-gray-700 break-all">{file.name}</span>
                           </div>
                           <div className="flex items-center gap-2">
                             <button

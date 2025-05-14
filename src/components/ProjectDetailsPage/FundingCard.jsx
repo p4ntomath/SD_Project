@@ -346,11 +346,11 @@ export default function FundingCard({
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                             {formatFirebaseDate(entry.updatedAt)}
                           </td>
-                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 break-all">
                             {entry.type === 'expense' ? 'Expense' : 'Funds Added'}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <span className={entry.amount < 0 ? 'text-red-600' : 'text-green-600'}>
+                            <span className={`break-words ${entry.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
                               R {Math.abs(entry.amount).toLocaleString()}
                             </span>
                           </td>

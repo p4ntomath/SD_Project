@@ -99,7 +99,7 @@ export default function ProjectReviews({ projectId, formatDate }) {
                         </div>
                     </div>
 
-                    <p className="text-gray-700 whitespace-pre-wrap">{review.feedback}</p>
+                    <p className="text-gray-700 whitespace-pre-wrap break-words">{review.feedback}</p>
                 </div>
             ))}
         </div>

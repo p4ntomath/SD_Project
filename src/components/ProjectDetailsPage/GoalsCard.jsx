@@ -69,7 +69,7 @@ export default function GoalsCard({
                 className="h-4 w-4 text-blue-600 rounded"
                 onChange={() => {}}
               />
-              <span className={`${goal.completed ? 'line-through text-gray-400' : 'text-gray-700'} text-sm sm:text-base break-words flex-1`}>
+              <span className={`${goal.completed ? 'line-through text-gray-400' : 'text-gray-700'} text-sm sm:text-base break-all flex-1`}>
                 {goal.text}
               </span>
             </div>

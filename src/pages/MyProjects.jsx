@@ -155,7 +155,7 @@ export default function MyProjects() {
                         <section className="flex justify-between items-start">
                           <section>
                             <h2 className="text-xl font-semibold text-gray-800">{project.title}</h2>
-                            <p className="mt-2 text-gray-600">{project.description}</p>
+                            <p className="mt-2 text-gray-600 break-all">{project.description}</p>
                           </section>
                         </section>
                         <section className="flex items-center justify-between mt-4">

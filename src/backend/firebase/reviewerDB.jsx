@@ -126,7 +126,7 @@ export const updateReviewRequestStatus = async (requestId, status) => {
       const reviewer = {
         id: requestData.reviewerId,
         name: reviewerData.fullName,
-        expertise: reviewerData.expertise || "",
+        fieldOfResearch: reviewerData.fieldOfResearch || "",
         reviewStatus: 'pending_feedback'  // Make sure this is always included
       };
 
@@ -359,7 +359,7 @@ export const addReviewerToProject = async (projectId, reviewerId) => {
     const reviewer = {
       id: reviewerId,
       name: reviewerData.fullName,
-      expertise: reviewerData.expertise || "",
+      fieldOfResearch: reviewerData.fieldOfResearch || "",
       reviewStatus: 'pending_feedback'
     };
 
@@ -417,7 +417,7 @@ export const updateExistingReviewerInfo = async (projectId) => {
       return {
         id: reviewer.id,
         name: reviewerData.fullName,
-        expertise: reviewerData.expertise || null,
+        fieldOfResearch: reviewerData.fieldOfResearch || null,
         reviewStatus: reviewer.reviewStatus || 'pending_feedback' // Maintain existing status or set default
       };
     });
