@@ -1,17 +1,14 @@
-
 import React, { useState, useEffect } from 'react';
-import '../styling/myProfilePage.css';
 import accountIcon from '../assets/accountIcon.png';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { auth, db } from '../backend/firebase/firebaseConfig';
 import handleImageUpload from '../components/HandleImageUpload';
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
-
-
+import { getStorage } from "firebase/storage";
+import Cropper from 'react-easy-crop';
+import getCroppedImg from '../components/CropImage';
 
 export default function MyProfilePage() {
-
   const storage = getStorage();
 
   const [formData, setFormData] = useState({
@@ -21,9 +18,46 @@ export default function MyProfilePage() {
     role: '',
     bio: '',
     photoURL: '',
+    joined: '',
+    institution: ''
   });
 
   const [draftData, setDraftData] = useState({ ...formData });
+  const [previewURL, setPreviewURL] = useState('');
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [openCropModal, setOpenCropModal] = useState(false);
+  const [open, setOpen] = useState(false);
+
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setSelectedFile(reader.result);
+        setOpenCropModal(true);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const onCropComplete = (_, area) => {
+    setCroppedAreaPixels(area);
+  };
+
+  const handleCropDone = async () => {
+    if (!croppedAreaPixels || !selectedFile) return;
+    try {
+      const croppedImg = await getCroppedImg(selectedFile, croppedAreaPixels);
+      setPreviewURL(croppedImg);
+      setDraftData(prev => ({ ...prev, photoURL: croppedImg }));
+      setOpenCropModal(false);
+    } catch (err) {
+      console.error('Crop failed:', err);
+    }
+  };
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
@@ -31,140 +65,193 @@ export default function MyProfilePage() {
         try {
           const docRef = doc(db, "users", user.uid);
           const docSnap = await getDoc(docRef);
-
           if (docSnap.exists()) {
             const userData = docSnap.data();
+            const joinDate = user.metadata?.creationTime
+              ? new Date(user.metadata.creationTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+              : '';
             const updated = {
               name: userData.fullName || '',
               email: userData.email || '',
               phone: user.phoneNumber || '',
-              role: userData.role || '',
+              role: userData.role || 'Researcher',
               bio: userData.bio || '',
               photoURL: userData.photoURL || '',
+              joined: joinDate,
+              institution: userData.institution || ''
             };
             setFormData(updated);
             setDraftData(updated);
-
-          } else {
-            console.log("No user data found.");
           }
         } catch (error) {
           console.error("Error fetching user profile:", error);
         }
       }
     });
-
     return () => unsubscribe();
   }, []);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
 
   const handleSubmit = (e) => {
     e.preventDefault();
     setFormData(draftData);
-    alert('Profile updated!'); // replace with actual save logic later
+    alert('Profile updated!');
   };
 
-  // Converted JSX structure with Tailwind CSS
+
   return (
-    <main className="flex flex-col min-h-screen bg-[#f3f4fc] font-segoe">
-      <header className="bg-[#0c1f77] flex items-center p-[15pt_35pt] text-white">
-        <button className="bg-none border-none text-[1.5rem] cursor-pointer">≡</button>
-        <h1 className="ml-[15pt] text-[20pt] font-medium">My Profile</h1>
+    <main className="min-h-screen bg-gray-100 p-8">
+      <header className="relative flex items-center gap-3 mb-6">
+        <nav className="relative" aria-label="User navigation">
+          <button
+            onClick={() => setOpen(!open)}
+            className="bg-black text-white px-2 py-1 rounded"
+            aria-expanded={open}
+            aria-haspopup="true"
+            aria-label="Open user menu"
+          >
+            ▼
+          </button>
+          {open && (
+            <ul
+              className="absolute left-0 top-8 w-48 bg-gray-800 text-white rounded-lg shadow-lg p-2 z-50"
+              role="menu"
+            >
+              <li><button className="w-full text-left px-4 py-2 hover:bg-gray-700 rounded" role="menuitem">My Profile</button></li>
+              <li><button className="w-full text-left px-4 py-2 hover:bg-gray-700 rounded" role="menuitem">Settings</button></li>
+              <li><button className="w-full text-left px-4 py-2 hover:bg-gray-700 rounded" role="menuitem">Help</button></li>
+              <li><button className="w-full text-left px-4 py-2 hover:text-red-400 rounded" role="menuitem">Logout</button></li>
+            </ul>
+          )}
+        </nav>
+        <h1 className="text-4xl font-bold">My Profile</h1>
       </header>
 
-      <section className="flex flex-wrap justify-between items-stretch flex-1 p-[32pt] gap-[32pt] min-h-[400px]">
-        {/* Left Card */}
-        <aside className="flex flex-col items-center text-center max-w-[500px] p-[32pt] bg-white rounded-[12px] shadow-md flex-1">
-          <input
-            type="file"
-            accept="image/*"
-            onChange={handleImageUpload}
-            className="mb-4"
-          />
-          <img
-            src={formData.photoURL || accountIcon}
-            alt="Profile Avatar"
-            className="w-[155px] h-[150px] object-cover mb-[12pt]"
-          />
+      <section className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-7xl mx-auto">
+        <aside className="bg-white p-6 rounded-2xl shadow flex flex-col items-center">
+          <input id="profile-image-input" type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+          <button
+            type="button"
+            onClick={() => document.getElementById('profile-image-input').click()}
+            className="focus:outline-none mb-4"
+            title="Click to upload new profile image"
+          >
+            <img
+              src={previewURL || draftData.photoURL || accountIcon}
+              alt="Profile Avatar"
+              className="w-40 h-40 rounded-full object-cover border-4 border-gray-300 hover:opacity-90"
+            />
+          </button>
+          <h1 className="text-xl font-bold mt-2 mb-2">{formData.name}</h1>
+          <p className="text-gray-600 mb-4">{formData.role}</p>
+          <section className="text-center w-full text-sm text-gray-800 space-y-4">
+            <address className="not-italic">
+              <p className="flex items-center justify-center gap-2">
+                <strong>📧</strong> {formData.email}
+              </p>
+              <p className="flex items-center justify-center gap-2">
+                <strong>📞</strong> {formData.phone}
+              </p>
+            </address>
 
-          {formData.name && (
-            <h1 className="text-xl font-bold mb-2">{formData.name}</h1>
-          )}
+            <section aria-labelledby="joined-label">
+              <h2 id="joined-label" className="font-bold">Date joined</h2>
+              <p>{formData.joined}</p>
+            </section>
 
-          {formData.role && (
-            <p className="italic text-black mb-[15pt]">
-              {formData.role.charAt(0).toUpperCase() + formData.role.slice(1)}
-            </p>
-          )}
+            <section aria-labelledby="institution-label">
+              <h2 id="institution-label" className="font-bold">Institution/Department</h2>
+              <p>{formData.institution}</p>
+            </section>
 
-          <section className="text-black text-[12pt]">
-            {formData.email && <p><strong>Email:</strong> {formData.email}</p>}
-            {formData.phone && <p><strong>Phone:</strong> {formData.phone}</p>}
-            <p><strong>Account Status:</strong> Active</p>
+            <section aria-labelledby="bio-label">
+              <h2 id="bio-label" className="font-bold">Biography</h2>
+              <p>{formData.bio}</p>
+            </section>
           </section>
 
-          {formData.bio && (
-            <div className="mt-4">
-              <p className="text-black"><strong>Biography:</strong> {formData.bio}</p>
-            </div>
-          )}
         </aside>
 
-        {/* Right Form */}
-        <section className="flex flex-col bg-white rounded-[12px] shadow-md p-[32pt] min-w-[300px] flex-2">
-          <h2 className="text-[23pt] font-bold mb-[60px]">Edit Your Information</h2>
-          <form onSubmit={handleSubmit} className="flex flex-col font-medium text-black">
-            <label className="flex flex-col mb-4">
-              Name
+        <section className="bg-white p-6 rounded-2xl shadow">
+          <h2 className="text-xl font-bold mb-6">Edit Your Information</h2>
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <fieldset>
+              <legend className="sr-only">Edit your profile</legend>
+
+              <label htmlFor="name" className="block text-sm font-semibold mb-1">Name</label>
               <input
+                id="name"
+                type="text"
                 name="name"
                 value={draftData.name}
                 onChange={(e) => setDraftData({ ...draftData, name: e.target.value })}
-                className="p-2 border border-gray-300 rounded-[8px] text-[12pt]"
+                className="w-full p-2 border border-gray-300 rounded"
               />
-            </label>
-            <label className="flex flex-col mb-4">
-              Email
+
+              <label htmlFor="email" className="block text-sm font-semibold mb-1 mt-4">Email</label>
               <input
-                name="email"
+                id="email"
                 type="email"
+                name="email"
                 value={draftData.email}
                 onChange={(e) => setDraftData({ ...draftData, email: e.target.value })}
-                className="p-2 border border-gray-300 rounded-[8px] text-[12pt]"
+                className="w-full p-2 border border-gray-300 rounded"
               />
-            </label>
-            <label className="flex flex-col mb-4">
-              Phone
+
+              <label htmlFor="phone" className="block text-sm font-semibold mb-1 mt-4">Phone</label>
               <input
+                id="phone"
+                type="tel"
                 name="phone"
-                type="number"
                 value={draftData.phone}
                 onChange={(e) => setDraftData({ ...draftData, phone: e.target.value })}
-                className="p-2 border border-gray-300 rounded-[8px] text-[12pt]"
+                className="w-full p-2 border border-gray-300 rounded"
               />
-            </label>
-            <label className="flex flex-col mb-6">
-              Biography
+
+              <label htmlFor="institution" className="block text-sm font-semibold mb-1 mt-4">Institution/Department</label>
+              <input
+                id="institution"
+                type="text"
+                name="institution"
+                value={draftData.institution}
+                onChange={(e) => setDraftData({ ...draftData, institution: e.target.value })}
+                className="w-full p-2 border border-gray-300 rounded"
+              />
+
+              <label htmlFor="bio" className="block text-sm font-semibold mb-1 mt-4">Biography</label>
               <textarea
+                id="bio"
+                name="bio"
                 value={draftData.bio}
                 onChange={(e) => setDraftData({ ...draftData, bio: e.target.value })}
-                className="p-2 border border-gray-300 rounded-[8px] text-[12pt]"
-              />
-            </label>
+                className="w-full p-2 border border-gray-300 rounded h-24"
+              ></textarea>
+            </fieldset>
+
             <button
               type="submit"
-              className="bg-[#0c1f77] text-white font-bold p-2 rounded-[8px] hover:bg-[#0a1761]"
+              className="w-full bg-blue-700 text-white font-semibold py-2 rounded hover:bg-blue-800"
             >
               Save Changes
             </button>
           </form>
+
         </section>
       </section>
+
+      {openCropModal && selectedFile && (
+        <dialog open className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
+          <section className="bg-white rounded-xl p-6 w-[90vw] max-w-[500px] shadow-lg max-h-[90vh] overflow-y-auto">
+            <header className="mb-4"><h2 className="text-xl font-bold text-center">Crop your profile photo</h2></header>
+            <section className="relative h-[400px] sm:h-[500px] mb-6">
+              <Cropper image={selectedFile} crop={crop} zoom={zoom} aspect={1} onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={onCropComplete} />
+            </section>
+            <footer className="flex justify-end gap-2">
+              <button onClick={() => setOpenCropModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300">Cancel</button>
+              <button onClick={handleCropDone} className="px-4 py-2 text-sm font-medium text-white bg-blue-700 rounded hover:bg-blue-800">Crop & Save</button>
+            </footer>
+          </section>
+        </dialog>
+      )}
     </main>
   );
 }
-

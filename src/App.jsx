@@ -24,6 +24,7 @@ import ReviewerProjects from './pages/reviewer/ReviewerProjects.jsx';
 import ReviewRequests from './pages/reviewer/ReviewRequests.jsx';
 import ReviewerHistory from './pages/ReviewerPages/ReviewerHistory.jsx';
 import ReviewProjectPage from './pages/ReviewerPages/ReviewProjectPage.jsx';
+import MyProfilePage from './pages/MyProfilePage.jsx';
 
 function App() {
   return (
@@ -141,6 +142,7 @@ function App() {
               <ReviewerHomePage />
             </ProtectedRoute>
           } />
+          <Route path="/myprofile" element={<MyProfilePage />} />
         </Routes>
       </AuthProvider>
     </Router>
