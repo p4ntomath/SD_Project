@@ -15,6 +15,9 @@ import DocumentsCard from '../components/ProjectDetailsPage/DocumentsCard';
 import FundingCard from '../components/ProjectDetailsPage/FundingCard';
 import GoalsCard from '../components/ProjectDetailsPage/GoalsCard';
 import BasicInfoCard from '../components/ProjectDetailsPage/BasicInfoCard';
+import AssignCollaboratorsModal from '../components/ResearcherComponents/AssignCollaboratorsModal';
+import { sendResearcherInvitation } from '../backend/firebase/collaborationDB';
+import { auth } from '../backend/firebase/firebaseConfig';
 
 export default function ProjectDetailsPage() {
   const { projectId } = useParams();
@@ -29,6 +32,7 @@ export default function ProjectDetailsPage() {
   const [updateLoading, setUpdateLoading] = useState(false);
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAssignReviewersModal, setShowAssignReviewersModal] = useState(false);
+  const [showCollaboratorsModal, setShowCollaboratorsModal] = useState(false);
 
 
   // New state for documents and folders
@@ -282,6 +286,46 @@ export default function ProjectDetailsPage() {
   };
 
 
+  const handleAssignCollaborators = async (selectedResearchers) => {
+    try {
+      // Send invitations to all selected researchers
+      const invitationPromises = selectedResearchers.map(researcher => 
+        sendResearcherInvitation(
+          projectId, 
+          researcher.id,
+          auth.currentUser.uid
+        )
+      );
+
+      await Promise.all(invitationPromises);
+      
+      setShowCollaboratorsModal(false);
+      setModalOpen(true);
+      setError(false);
+      setStatusMessage(
+        <div className="flex items-center gap-2 text-green-600">
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          <span>Successfully sent {selectedResearchers.length} collaboration invitation{selectedResearchers.length !== 1 ? 's' : ''}</span>
+        </div>
+      );
+    } catch (err) {
+      console.error("Error inviting collaborators:", err);
+      setModalOpen(true);
+      setError(true);
+      setStatusMessage(
+        <div className="flex items-center gap-2 text-red-600">
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <span>Failed to send collaborator invitations: {err.message}</span>
+        </div>
+      );
+    }
+  };
+
+
   if (loading) {
     return (
       <main className="flex justify-center items-center min-h-screen">
@@ -450,44 +494,57 @@ export default function ProjectDetailsPage() {
 
             {/* Collaborators Card */}
             <section className="bg-white rounded-lg shadow p-4 sm:p-6">
-              <h2 className="text-lg sm:text-xl font-semibold mb-4">Project Collaborators</h2>
-              <section className="space-y-4">
-                <article className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                  <p className="text-blue-700 text-xs sm:text-sm mb-2">
-                    Collaboration features are coming soon! You'll be able to:
-                  </p>
-                  <ul className="mt-2 space-y-1 text-xs sm:text-sm text-gray-600">
-                    <li className="flex items-center">
-                      <svg className="h-4 w-4 mr-2 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>Invite researchers to collaborate</span>
-                    </li>
-                    <li className="flex items-center">
-                      <svg className="h-4 w-4 mr-2 text-blue-500 flex-shrink-0" fill="none" viewBox="0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>Share project documents</span>
-                    </li>
-                    <li className="flex items-center">
-                      <svg className="h-4 w-4 mr-2 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>Track shared progress</span>
-                    </li>
-                  </ul>
-                </article>
+              <div className="flex justify-between items-center mb-4">
+                <h2 className="text-lg sm:text-xl font-semibold">Project Collaborators</h2>
                 <button
-                  disabled
-                  className="text-blue-600 hover:text-blue-800 disabled:opacity-50 disabled:cursor-not-allowed text-xs sm:text-sm font-medium w-full flex items-center justify-center"
+                  onClick={() => setShowCollaboratorsModal(true)}
+                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2"
                 >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
                   </svg>
-                  Add Collaborators (Coming Soon)
+                  Add Collaborator
                 </button>
-              </section>
+              </div>
+
+              {project.collaborators && project.collaborators.length > 0 ? (
+                <ul className="space-y-2">
+                  {project.collaborators.map((collaborator) => (
+                    <li key={collaborator.id} className="flex items-center justify-between p-2 bg-gray-50/80 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-blue-100 rounded-full">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                          </svg>
+                        </div>
+                        <div>
+                          <p className="font-medium text-sm break-words">{collaborator.name}</p>
+                          <p className="text-xs text-gray-500 break-words">{collaborator.institution || 'No institution specified'}</p>
+                        </div>
+                      </div>
+                      <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                        {collaborator.accessLevel}
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-gray-500 text-center py-4">No collaborators yet</p>
+              )}
             </section>
+
+            {/* Add Collaborator Modal */}
+            <AnimatePresence>
+              {showCollaboratorsModal && (
+                <AssignCollaboratorsModal
+                  isOpen={showCollaboratorsModal}
+                  onClose={() => setShowCollaboratorsModal(false)}
+                  onAssign={handleAssignCollaborators}
+                  projectId={projectId}
+                  project={project}
+                />
+              )}
+            </AnimatePresence>
 
             <ReviewersCard 
               project={project}

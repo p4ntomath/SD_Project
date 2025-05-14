@@ -1,5 +1,5 @@
 import { db, auth } from "./firebaseConfig";
-import { query, where } from "firebase/firestore";
+import { query, where, serverTimestamp } from "firebase/firestore";
 import {
     collection,
     addDoc,
@@ -7,9 +7,7 @@ import {
     getDoc,
     doc,
     updateDoc,
-    deleteDoc,
     arrayUnion,
-    onSnapshot,
     arrayRemove,
 } from "firebase/firestore";
 
@@ -260,177 +258,128 @@ export const respondToResearcherInvitation = async (invitationId, accepted) => {
     }
 };
 
-/*export const assignTaskToCollaborator = async (projectId, collaboratorId, taskText) => {
+/**
+ * Get all pending collaboration invitations for a project
+ * @param {string} projectId - The ID of the project to check invitations for
+ * @returns {Promise<Array>} Array of pending invitations with researcher details
+ */
+export const getPendingCollaboratorInvitations = async (projectId) => {
     try {
-        const projectRef = doc(db, "projects", projectId);
-        const task = { text: taskText, completed: false };
-
-        // Use Firestore dot notation for nested fields
-        await updateDoc(projectRef, {
-            [`collaboratorTasks.${collaboratorId}`]: arrayUnion(task),
-        });
-
-        console.log("Task assigned successfully");
-    } catch (error) {
-        console.error("Error assigning task:", error.message);
-        throw new Error("Failed to assign task");
-    }
-};
-
-export const markTaskCompleted = async (projectId, collaboratorId, taskText) => {
-    const projectRef = doc(db, "projects", projectId);
-    const projectSnap = await getDoc(projectRef);
-
-    if (projectSnap.exists()) {
-        const tasks = projectSnap.data()?.collaboratorTasks?.[collaboratorId] || [];
-        const updatedTasks = tasks.map(task =>
-            task.text === taskText ? { ...task, completed: true } : task
+        const invitationsQuery = query(
+            collection(db, "invitations"),
+            where("projectId", "==", projectId),
+            where("type", "==", "researcher"),
+            where("status", "==", "pending")
         );
-
-        await updateDoc(projectRef, {
-            [`collaboratorTasks.${collaboratorId}`]: updatedTasks
-        });
-
-        console.log("Task marked as completed");
-    } else {
-        throw new Error("Project not found");
+        
+        const invitationsSnapshot = await getDocs(invitationsQuery);
+        const pendingInvitations = await Promise.all(
+            invitationsSnapshot.docs.map(async (doc) => {
+                const invitationData = doc.data();
+                const researcherDoc = await getDoc(doc(db, "users", invitationData.researcherId));
+                const researcherData = researcherDoc.data();
+                
+                return {
+                    invitationId: doc.id,
+                    researcherId: invitationData.researcherId,
+                    researcherName: researcherData?.fullName || "Unknown Researcher",
+                    researcherInstitution: researcherData?.institution || "Unknown Institution",
+                    sentAt: invitationData.createdAt,
+                    status: invitationData.status
+                };
+            })
+        );
+        
+        return pendingInvitations;
+    } catch (error) {
+        console.error("Error fetching pending invitations:", error);
+        throw new Error("Failed to fetch pending invitations");
     }
 };
 
-export const editCollaboratorTask = async (projectId, collaboratorId, taskIndex, updatedTask) => {
+/**
+ * Get all pending collaboration invitations sent by a researcher
+ * @param {string} senderId - The ID of the researcher who sent the invitations
+ * @returns {Promise<Array>} Array of pending invitations with researcher details
+ */
+export const getSentInvitations = async (senderId) => {
     try {
-        const projectRef = doc(db, "projects", projectId);
-        const projectSnap = await getDoc(projectRef);
-
-        if (!projectSnap.exists()) {
-            throw new Error("Project not found");
-        }
-
-        const data = projectSnap.data();
-        const tasks = data.collaboratorTasks?.[collaboratorId];
-
-        if (!tasks || !Array.isArray(tasks) || taskIndex >= tasks.length) {
-            throw new Error("Invalid collaborator or task index");
-        }
-
-        // Replace the specific task with the updated task
-        tasks[taskIndex] = {
-            ...tasks[taskIndex],
-            ...updatedTask, // allows updating just `text`, or `completed`, or both
-        };
-
-        await updateDoc(projectRef, {
-            [`collaboratorTasks.${collaboratorId}`]: tasks
-        });
-
-        return { success: true, message: "Task updated successfully" };
+        const invitationsQuery = query(
+            collection(db, "invitations"),
+            where("senderId", "==", senderId),
+            where("type", "==", "researcher"),
+            where("status", "==", "pending")
+        );
+        
+        const invitationsSnapshot = await getDocs(invitationsQuery);
+        const pendingInvitations = await Promise.all(
+            invitationsSnapshot.docs.map(async (doc) => {
+                const invitationData = doc.data();
+                const researcherDoc = await getDoc(doc(db, "users", invitationData.researcherId));
+                const researcherData = researcherDoc.data();
+                const projectDoc = await getDoc(doc(db, "projects", invitationData.projectId));
+                const projectData = projectDoc.data();
+                
+                return {
+                    invitationId: doc.id,
+                    researcherId: invitationData.researcherId,
+                    researcherName: researcherData?.fullName || "Unknown Researcher",
+                    researcherInstitution: researcherData?.institution || "Unknown Institution",
+                    projectTitle: projectData?.title || "Unknown Project",
+                    sentAt: invitationData.createdAt,
+                    status: invitationData.status
+                };
+            })
+        );
+        
+        return pendingInvitations;
     } catch (error) {
-        console.error("Error editing collaborator task:", error.message);
-        throw new Error("Failed to edit task");
+        console.error("Error fetching sent invitations:", error);
+        throw new Error("Failed to fetch sent invitations");
     }
 };
 
-export const deleteCollaboratorTask = async (projectId, collaboratorId, taskIndex) => {
+/**
+ * Get all pending collaboration invitations received by a researcher
+ * @param {string} researcherId - The ID of the researcher who received the invitations
+ * @returns {Promise<Array>} Array of pending invitations with project and sender details
+ */
+export const getReceivedInvitations = async (researcherId) => {
     try {
-        const projectRef = doc(db, "projects", projectId);
-        const projectSnap = await getDoc(projectRef);
-
-        if (!projectSnap.exists()) {
-            throw new Error("Project not found");
-        }
-
-        const data = projectSnap.data();
-        const tasks = data.collaboratorTasks?.[collaboratorId];
-
-        if (!tasks || taskIndex < 0 || taskIndex >= tasks.length) {
-            throw new Error("Invalid task index or collaborator");
-        }
-
-        // Remove task at the given index
-        tasks.splice(taskIndex, 1);
-
-        await updateDoc(projectRef, {
-            [`collaboratorTasks.${collaboratorId}`]: tasks,
-        });
-
-        return { success: true, message: "Task deleted successfully" };
+        const invitationsQuery = query(
+            collection(db, "invitations"),
+            where("researcherId", "==", researcherId),
+            where("type", "==", "researcher"),
+            where("status", "==", "pending")
+        );
+        
+        const invitationsSnapshot = await getDocs(invitationsQuery);
+        const pendingInvitations = await Promise.all(
+            invitationsSnapshot.docs.map(async (docSnapshot) => {
+                const invitationData = docSnapshot.data();
+                const senderDoc = await getDoc(doc(db, "users", invitationData.senderId));
+                const senderData = senderDoc.data();
+                const projectDoc = await getDoc(doc(db, "projects", invitationData.projectId));
+                const projectData = projectDoc.data();
+                
+                return {
+                    invitationId: docSnapshot.id,
+                    senderId: invitationData.senderId,
+                    senderName: senderData?.fullName || "Unknown Sender",
+                    senderInstitution: senderData?.institution || "Unknown Institution",
+                    projectId: invitationData.projectId,
+                    projectTitle: projectData?.title || "Unknown Project",
+                    projectDescription: projectData?.description || "No description available",
+                    projectMilestones: projectData?.goals || [],
+                    sentAt: invitationData.createdAt,
+                    status: invitationData.status
+                };
+            })
+        );
+        
+        return pendingInvitations;
     } catch (error) {
-        console.error("Error deleting task:", error.message);
-        throw new Error("Failed to delete task");
+        console.error("Error fetching received invitations:", error);
+        throw new Error("Failed to fetch received invitations");
     }
 };
-
-// Get tasks for a specific collaborator in a project
-export const getTasksForCollaborator = async (projectId, collaboratorId) => {
-    try {
-        const projectRef = doc(db, "projects", projectId);
-        const projectSnap = await getDoc(projectRef);
-
-        if (!projectSnap.exists()) {
-            throw new Error("Project not found");
-        }
-
-        const data = projectSnap.data();
-        const tasks = data.collaboratorTasks?.[collaboratorId] || [];
-
-        return tasks;
-    } catch (error) {
-        console.error("Error fetching tasks:", error.message);
-        throw new Error("Failed to get tasks");
-    }
-};
-
-export const getAllCollaboratorTaskSummaries = async (projectId) => {
-    try {
-        const projectRef = doc(db, "projects", projectId);
-        const projectSnap = await getDoc(projectRef);
-
-        if (!projectSnap.exists()) {
-            throw new Error("Project not found");
-        }
-
-        const data = projectSnap.data();
-        const collaboratorTasks = data.collaboratorTasks || {};
-        const collaboratorIds = Object.keys(collaboratorTasks);
-
-        if (collaboratorIds.length === 0) return [];
-
-        // Fetch collaborator user info
-        const usersCollection = collection(db, "users");
-        const userMap = {};
-        // Split collaboratorIds into chunks of 10
-        const chunkSize = 10;
-        const chunkedQueries = [];
-        for (let i = 0; i < collaboratorIds.length; i += chunkSize) {
-            const chunk = collaboratorIds.slice(i, i + chunkSize);
-            const userQuery = query(usersCollection, where("__name__", "in", chunk));
-            chunkedQueries.push(getDocs(userQuery));
-        }
-
-        const queryResults = await Promise.all(chunkedQueries);
-        queryResults.forEach((userSnapshot) => {
-            userSnapshot.forEach((doc) => {
-                userMap[doc.id] = doc.data().fullName || "Unnamed";
-            });
-        });
-
-        // Format result
-        const results = collaboratorIds.map((collaboratorId) => {
-            const tasks = collaboratorTasks[collaboratorId];
-            const total = tasks.length;
-            const completed = tasks.filter(task => task.completed).length;
-
-            return {
-                collaboratorId,
-                fullName: userMap[collaboratorId] || "Unknown",
-                tasks,
-                completionStatus: `${completed}/${total} completed`,
-            };
-        });
-
-        return results;
-    } catch (error) {
-        console.error("Error getting collaborator task summaries:", error.message);
-        throw new Error("Failed to get task summaries");
-    }
-};*/

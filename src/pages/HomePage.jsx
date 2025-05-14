@@ -7,8 +7,6 @@ import { ClipLoader } from "react-spinners";
 export default function HomePage() {
     const { role, loading, user } = useContext(AuthContext);
     const navigate = useNavigate();
-    console.log("HomePage role:", role);
-    console.log("HomePage loading:", loading);
     
     useEffect(() => {
         // Only redirect to complete-profile if we have a user but no role

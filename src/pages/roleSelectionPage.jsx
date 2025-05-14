@@ -26,7 +26,7 @@ const RoleSelectionPage = () => {
         bio: formData.bio || ''
       };
 
-      await completeProfile(formData.fullName, formData.role, profileData);
+      await completeProfile(profileData);
       setRole(formData.role);
       setProfileCompleted(true);
     } catch (error) {
