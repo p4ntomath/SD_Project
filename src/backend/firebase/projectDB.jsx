@@ -9,6 +9,7 @@ import {
   setDoc,
   getDocs,
   getDoc,
+  addDoc,
   doc,
   updateDoc,
   deleteDoc
@@ -474,5 +475,138 @@ export const getProjectDetails = async (projectId) => {
   } catch (error) {
     console.error('Error fetching project:', error);
     throw error;
+  }
+};
+
+// Functions to send a notification to user
+/**
+ * The function `notifyGoalCompletion` sends a notification to the user when a goal is completed.
+ * @param {number} goalIndex - The index of the completed goal.
+ * @param {string} goalText - The text of the completed goal.
+ * @param {string} projectId - The ID of the project associated with the goal.
+ */
+export const notifyGoalCompletion = async ( goalIndex, goalText, projectId, projectTitle) => {
+  try {
+    console.log("projectId:", projectId); // Debugging line
+    if (!projectId) {
+      console.error("Project ID is undefined. Cannot send notification.");
+      return;
+    }
+
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      console.error("User not authenticated");
+      return;
+    }
+
+    const message = `You completed the goal: "${goalText}" on project: "${projectTitle}".`;
+    const notificationsRef = collection(db, "notifications");
+    await addDoc(notificationsRef, {
+      userId,
+      projectId,
+      message,
+      type: "Goal Completion",
+      timestamp: new Date().toISOString(),
+      readStatus: false,
+    });
+
+    console.log(`Notification sent for goal completion: "${goalText}" on project: "${projectTitle}"`);
+  } catch (err) {
+    console.error("Failed to send notification:", err);
+  }
+};
+
+
+/** 
+  * The function `notifyProjectCompletion` sends a notification to the user when a project is completed.
+  * @param {string} projectId - The ID of the completed project.
+  * @param {string} projectTitle - The title of the completed project.
+  */
+export const notifyProjectCompletion = async (projectId, projectTitle) => {
+  try {
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      console.error("User not authenticated");
+      return;
+    }
+
+    const message = `Congratulations! Your project "${projectTitle}" is now complete.`;
+    const notificationsRef = collection(db, "notifications");
+    await addDoc(notificationsRef, {
+      userId,
+      projectId,
+      message,
+      type: "Project Completion",
+      timestamp: new Date().toISOString(),
+      readStatus: false,
+    });
+
+    console.log(`Notification sent for project completion: "${projectTitle}"`);
+  } catch (err) {
+    console.error("Failed to send project completion notification:", err);
+  }
+};
+
+// Function to notify user when funds are added to a project
+/**
+ * The function `notifyFundsAdded` sends a notification to the user when funds are added to a project.
+ * @param {string} projectId - The ID of the project.
+ * @param {string} projectTitle - The title of the project.
+ * @param {number} amount - The amount of funds added.
+ */
+export const notifyFundsAdded = async (projectId, projectTitle, amount) => {
+  try {
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      console.error("User not authenticated");
+      return;
+    }
+
+    const message = `Funds of R${amount.toLocaleString()} have been added to your project "${projectTitle}".`;
+    const notificationsRef = collection(db, "notifications");
+    await addDoc(notificationsRef, {
+      userId,
+      projectId,
+      message,
+      type: "Funds Added",
+      timestamp: new Date().toISOString(),
+      readStatus: false,
+    });
+
+    console.log(`Notification sent for funds added: "${message}"`);
+  } catch (err) {
+    console.error("Failed to send funds added notification:", err);
+  }
+};
+
+// Function to notify user when funds are used in a project
+/**
+ * The function `notifyFundsUsed` sends a notification to the user when funds are used in a project.
+ * @param {string} projectId - The ID of the project.
+ * @param {string} projectTitle - The title of the project.
+ * @param {number} amount - The amount of funds used.
+ */
+export const notifyExpenseAdded = async (projectId, projectTitle, amount, description) => {
+  try {
+    const userId = auth.currentUser?.uid;
+    if (!userId) {
+      console.error("User not authenticated");
+      return;
+    }
+
+    const message = `An expense of R${amount.toLocaleString()} (${description}) has been recorded for your project "${projectTitle}".`;
+    const notificationsRef = collection(db, "notifications");
+    await addDoc(notificationsRef, {
+      userId,
+      projectId,
+      message,
+      type: "Expense Added",
+      timestamp: new Date().toISOString(),
+      readStatus: false,
+    });
+
+    console.log(`Notification sent for expense added: "${message}"`);
+  } catch (err) {
+    console.error("Failed to send expense added notification:", err);
   }
 };

@@ -1,7 +1,9 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
 import { useState, useEffect } from 'react';
-import { fetchProject, updateProject, deleteProject, getProjectDetails } from '../backend/firebase/projectDB';
+import { fetchProject, updateProject, deleteProject, getProjectDetails, 
+        notifyGoalCompletion, notifyProjectCompletion,
+       } from '../backend/firebase/projectDB';
 import { fetchDocumentsByFolder } from '../backend/firebase/documentsDB';
 import { ClipLoader } from 'react-spinners';
 import StatusModal from '../components/StatusModal';
@@ -49,7 +51,9 @@ export default function ProjectDetailsPage() {
         
         if (projectData.goals) {
           projectData.goals = projectData.goals.map(goal =>
-            typeof goal === 'string' ? { text: goal, completed: false } : goal
+            typeof goal === 'string'
+              ? { text: goal, completed: false, notified: false }
+              : { ...goal, notified: goal.notified || false }
           );
         }
         
@@ -274,10 +278,13 @@ export default function ProjectDetailsPage() {
     const completed = project.goals.filter(goal => goal.completed).length;
     if(Math.round((completed / project.goals.length) * 100) === 100){
       project.status = 'Complete';
+       
     }
     else{
       project.status = 'In Progress';
     }
+
+ 
     return Math.round((completed / project.goals.length) * 100);
   };
 
@@ -392,6 +399,7 @@ export default function ProjectDetailsPage() {
 
           {/* Right Column - Additional Info */}
           <section className="space-y-4 sm:space-y-6">
+
             <FundingCard
               projectId={projectId}
               project={project}
