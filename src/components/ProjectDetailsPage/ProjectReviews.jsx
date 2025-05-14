@@ -59,7 +59,7 @@ export default function ProjectReviews({ projectId, formatDate }) {
                                 {review.reviewer?.fullName || 'Anonymous Reviewer'}
                             </h3>
                             <p className="text-sm text-gray-500">
-                                {review.reviewer?.expertise || 'Expertise not specified'}
+                                {review.reviewer?.fieldOfResearch || 'Expertise not specified'}
                             </p>
                         </div>
                         <div className="flex items-center">
