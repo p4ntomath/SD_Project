@@ -55,7 +55,13 @@ export const updateProjectFunds = async (projectId, additionalFunds) => {
   
       const projectData = projectSnap.data();
   
-      if (projectData.userId !== user.uid) {
+      // Check if user is owner or collaborator
+      const isOwner = projectData.userId === user.uid;
+      const isCollaborator = projectData.collaborators?.some(collab => 
+        collab.id === user.uid && collab.permissions?.canAddFunds
+      );
+
+      if (!isOwner && !isCollaborator) {
         throw new Error("Not authorized to update funding for this project");
       }
   
@@ -100,7 +106,14 @@ export const getFundingHistory = async (projectId) => {
     if (!projectSnap.exists()) throw new Error("Project not found");
 
     const projectData = projectSnap.data();
-    if (projectData.userId !== user.uid) {
+    
+    // Check if user is owner or collaborator
+    const isOwner = projectData.userId === user.uid;
+    const isCollaborator = projectData.collaborators?.some(collab => 
+      collab.id === user.uid && collab.permissions?.canAddFunds
+    );
+
+    if (!isOwner && !isCollaborator) {
       throw new Error("Not authorized to view this funding history");
     }
 
@@ -140,7 +153,13 @@ export const updateProjectExpense = async (projectId, expenseAmount) => {
 
     const projectData = projectSnap.data();
 
-    if (projectData.userId !== user.uid) {
+    // Check if user is owner or collaborator
+    const isOwner = projectData.userId === user.uid;
+    const isCollaborator = projectData.collaborators?.some(collab => 
+      collab.id === user.uid && collab.permissions?.canAddFunds
+    );
+
+    if (!isOwner && !isCollaborator) {
       throw new Error("Not authorized to update expenses for this project");
     }
 
@@ -195,7 +214,13 @@ export const getCurrentFunds = async (projectId) => {
 
     const projectData = projectSnap.data();
 
-    if (projectData.userId !== user.uid) {
+    // Check if user is owner or collaborator
+    const isOwner = projectData.userId === user.uid;
+    const isCollaborator = projectData.collaborators?.some(collab => 
+      collab.id === user.uid && collab.permissions?.canAddFunds
+    );
+
+    if (!isOwner && !isCollaborator) {
       throw new Error("Not authorized to view this project");
     }
 
@@ -223,7 +248,13 @@ export const getUsedFunds = async (projectId) => {
 
     const projectData = projectSnap.data();
 
-    if (projectData.userId !== user.uid) {
+    // Check if user is owner or collaborator
+    const isOwner = projectData.userId === user.uid;
+    const isCollaborator = projectData.collaborators?.some(collab => 
+      collab.id === user.uid && collab.permissions?.canAddFunds
+    );
+
+    if (!isOwner && !isCollaborator) {
       throw new Error("Not authorized to view this project");
     }
 

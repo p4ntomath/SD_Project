@@ -30,6 +30,7 @@ export const addCollaboratorToProject = async (projectId, collaboratorId) => {
             id: collaboratorId,
             fullName: collaboratorDoc.data().fullName,
             institution: collaboratorDoc.data().institution,
+            fieldOfResearch: collaboratorDoc.data().fieldOfResearch,
             accessLevel: "Collaborator",
             permissions: {
                 canUploadFiles: true,
@@ -226,13 +227,11 @@ const addResearcherToProject = async (projectId, researcherId) => {
 
         const researcherData = researcherDoc.data();
         const collaborator = {
-            id: researcherId,
-            fullName: researcherData.fullName,
+            id: researcherId, // This is the critical field for querying
+            researcherId: researcherId, // Keep for backward compatibility
             name: researcherData.fullName,
+            fullName: researcherData.fullName,
             institution: researcherData.institution,
-            fieldOfResearch: researcherData.fieldOfResearch,
-            department: researcherData.department,
-            biography: researcherData.biography,
             accessLevel: "Collaborator",
             permissions: {
                 canUploadFiles: true,
