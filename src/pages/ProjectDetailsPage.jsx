@@ -16,7 +16,7 @@ import FundingCard from '../components/ProjectDetailsPage/FundingCard';
 import GoalsCard from '../components/ProjectDetailsPage/GoalsCard';
 import BasicInfoCard from '../components/ProjectDetailsPage/BasicInfoCard';
 import AssignCollaboratorsModal from '../components/ResearcherComponents/AssignCollaboratorsModal';
-import { sendResearcherInvitation } from '../backend/firebase/collaborationDB';
+import { sendResearcherInvitation, getPendingCollaboratorInvitations } from '../backend/firebase/collaborationDB';
 import { auth } from '../backend/firebase/firebaseConfig';
 
 export default function ProjectDetailsPage() {
@@ -33,7 +33,7 @@ export default function ProjectDetailsPage() {
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
   const [showAssignReviewersModal, setShowAssignReviewersModal] = useState(false);
   const [showCollaboratorsModal, setShowCollaboratorsModal] = useState(false);
-
+  const [pendingInvitations, setPendingInvitations] = useState([]);
 
   // New state for documents and folders
   const [folders, setFolders] = useState([]);
@@ -199,6 +199,21 @@ export default function ProjectDetailsPage() {
     }
   }, [projectId]);
 
+  useEffect(() => {
+    const loadPendingInvitations = async () => {
+      try {
+        const invitations = await getPendingCollaboratorInvitations(projectId);
+        setPendingInvitations(invitations);
+      } catch (err) {
+        console.error('Error loading pending invitations:', err);
+        // Don't show error modal for this as it's not critical
+      }
+    };
+
+    if (projectId) {
+      loadPendingInvitations();
+    }
+  }, [projectId]);
 
 
   const handleDelete = async () => {
@@ -452,7 +467,7 @@ export default function ProjectDetailsPage() {
                 <article className="bg-blue-50 border border-blue-100 rounded-lg p-4">
                   <header className="flex items-center mb-3">
                     <svg className="h-4 w-4 mr-2 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <h3 className="text-blue-700 font-medium text-sm sm:text-base">Project Discussion Coming Soon!</h3>
                   </header>
@@ -507,28 +522,58 @@ export default function ProjectDetailsPage() {
                 </button>
               </div>
 
-              {project.collaborators && project.collaborators.length > 0 ? (
-                <ul className="space-y-2">
-                  {project.collaborators.map((collaborator) => (
-                    <li key={collaborator.id} className="flex items-center justify-between p-2 bg-gray-50/80 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-blue-100 rounded-full">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                          </svg>
-                        </div>
-                        <div>
-                          <p className="font-medium text-sm break-words">{collaborator.name}</p>
-                          <p className="text-xs text-gray-500 break-words">{collaborator.institution || 'No institution specified'}</p>
+              {/* Active Collaborators */}
+              {project.collaborators && project.collaborators.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">Active Collaborators</h3>
+                  <div className="space-y-3">
+                    {project.collaborators.map((collaborator) => (
+                      <div key={collaborator.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-blue-100 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{collaborator.fullName}</p>
+                            <p className="text-xs text-gray-500">{collaborator.institution || 'No institution specified'}</p>
+                          </div>
                         </div>
                       </div>
-                      <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-                        {collaborator.accessLevel}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Pending Invitations */}
+              {pendingInvitations && pendingInvitations.length > 0 && (
+                <div className="mb-6">
+                  <h3 className="text-sm font-medium text-gray-700 mb-3">Pending Invitations</h3>
+                  <div className="space-y-3">
+                    {pendingInvitations.map((invitation) => (
+                      <div key={invitation.invitationId} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                        <div className="flex items-center gap-3">
+                          <div className="p-2 bg-gray-100 rounded-full">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                          </div>
+                          <div>
+                            <p className="font-medium text-sm">{invitation.researcherName}</p>
+                            <p className="text-xs text-gray-500">Invited: {formatDate(invitation.createdAt)}</p>
+                          </div>
+                        </div>
+                        <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
+                          Pending Response
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {(!project.collaborators || project.collaborators.length === 0) && (!pendingInvitations || pendingInvitations.length === 0) && (
                 <p className="text-sm text-gray-500 text-center py-4">No collaborators yet</p>
               )}
             </section>

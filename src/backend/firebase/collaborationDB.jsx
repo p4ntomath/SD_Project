@@ -274,17 +274,17 @@ export const getPendingCollaboratorInvitations = async (projectId) => {
         
         const invitationsSnapshot = await getDocs(invitationsQuery);
         const pendingInvitations = await Promise.all(
-            invitationsSnapshot.docs.map(async (doc) => {
-                const invitationData = doc.data();
+            invitationsSnapshot.docs.map(async (docSnapshot) => {
+                const invitationData = docSnapshot.data();
                 const researcherDoc = await getDoc(doc(db, "users", invitationData.researcherId));
                 const researcherData = researcherDoc.data();
                 
                 return {
-                    invitationId: doc.id,
+                    invitationId: docSnapshot.id,
                     researcherId: invitationData.researcherId,
                     researcherName: researcherData?.fullName || "Unknown Researcher",
                     researcherInstitution: researcherData?.institution || "Unknown Institution",
-                    sentAt: invitationData.createdAt,
+                    createdAt: invitationData.createdAt,
                     status: invitationData.status
                 };
             })
