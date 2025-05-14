@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { getSentInvitations, getReceivedInvitations, respondToResearcherInvitation } from '../../backend/firebase/collaborationDB';
 import { auth } from '../../backend/firebase/firebaseConfig';
 
 export default function CollaborationRequestsSection() {
+  const navigate = useNavigate();
   const [sentInvitations, setSentInvitations] = useState([]);
   const [receivedInvitations, setReceivedInvitations] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -40,6 +42,18 @@ export default function CollaborationRequestsSection() {
     try {
       setRespondingTo(invitationId);
       await respondToResearcherInvitation(invitationId, accepted);
+      
+      if (accepted) {
+        // Find the invitation that was accepted to get the project ID
+        const invitation = receivedInvitations.find(inv => inv.invitationId === invitationId);
+        if (invitation) {
+          // Navigate to the project page with the correct path
+          navigate(`/projects/${invitation.projectId}`);
+          return; // Return early since we're navigating away
+        }
+      }
+      
+      // Only update the invitations list if we're not navigating away
       setReceivedInvitations(receivedInvitations.filter(inv => inv.invitationId !== invitationId));
     } catch (err) {
       console.error('Error responding to invitation:', err);
@@ -122,7 +136,7 @@ export default function CollaborationRequestsSection() {
 
                 <div className="mt-4 flex justify-end space-x-2">
                   <button
-                    onClick={() => handleResponse(invitation.invitationId, true)}
+                    onClick={() => handleResponse(invitation.invitationId, true, invitation.projectId)}
                     disabled={respondingTo === invitation.invitationId}
                     className="px-4 py-1 text-sm font-medium text-white bg-green-600 rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
                   >

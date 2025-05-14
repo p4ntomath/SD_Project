@@ -533,6 +533,7 @@ export default function ProjectDetailsPage() {
                   <h3 className="text-sm font-medium text-gray-700 mb-3">Active Collaborators</h3>
                   <div className="space-y-3">
                     {project.collaborators.map((collaborator) => (
+                      
                       <div key={collaborator.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
                         <div className="flex items-center gap-3">
                           <div className="p-2 bg-blue-100 rounded-full">
@@ -541,10 +542,27 @@ export default function ProjectDetailsPage() {
                             </svg>
                           </div>
                           <div>
-                            <p className="font-medium text-sm">{collaborator.fullName}</p>
-                            <p className="text-xs text-gray-500">{collaborator.institution || 'No institution specified'}</p>
+                            <p className="font-medium text-sm">{collaborator.fullName || collaborator.name}</p>
+                            {(collaborator.institution ) && (
+                              <p className="text-xs text-gray-500">
+                                {collaborator.fieldOfResearch ? (
+                                  <span>{collaborator.fieldOfResearch}</span>
+                                ) : collaborator.department ? (
+                                  <span>{collaborator.department}</span>
+                                ) : collaborator.institution ? (
+                                  <span>{collaborator.institution}</span>
+                                ) : (
+                                  <span>No additional info</span>
+                                )}
+                              </p>
+                            )}
                           </div>
                         </div>
+                        {collaborator.accessLevel && (
+                          <span className="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                            {collaborator.accessLevel}
+                          </span>
+                        )}
                       </div>
                     ))}
                   </div>

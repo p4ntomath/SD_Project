@@ -227,8 +227,21 @@ const addResearcherToProject = async (projectId, researcherId) => {
         const researcherData = researcherDoc.data();
         const collaborator = {
             id: researcherId,
+            fullName: researcherData.fullName,
             name: researcherData.fullName,
-            accessLevel: "Viewer"
+            institution: researcherData.institution,
+            fieldOfResearch: researcherData.fieldOfResearch,
+            department: researcherData.department,
+            biography: researcherData.biography,
+            accessLevel: "Collaborator",
+            permissions: {
+                canUploadFiles: true,
+                canCompleteGoals: true,
+                canAddFunds: true,
+                canEditProjectDetails: false,
+                canManageGoals: false,
+                canManageCollaborators: false
+            }
         };
 
         const projectRef = doc(db, "projects", projectId);
