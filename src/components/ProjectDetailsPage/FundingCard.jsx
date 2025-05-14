@@ -3,6 +3,7 @@ import { ClipLoader } from 'react-spinners';
 import { AnimatePresence } from 'framer-motion';
 import { updateProjectFunds, updateProjectExpense, getFundingHistory } from '../../backend/firebase/fundingDB';
 import { formatFirebaseDate } from '../../utils/dateUtils';
+import { checkPermission } from '../../utils/permissions';
 
 export default function FundingCard({ 
   projectId, 
@@ -36,6 +37,10 @@ export default function FundingCard({
   const handleAddFunds = async (e) => {
     e.preventDefault();
     try {
+      if (!checkPermission(project, 'canAddFunds')) {
+        throw new Error('You do not have permission to add funds');
+      }
+      
       setAddFundsLoading(true);
       const amount = parseFloat(fundAmount);
       if (isNaN(amount) || amount <= 0) {
@@ -51,10 +56,11 @@ export default function FundingCard({
       setFundAmount('');
       setFundingSource('');
       setModalOpen(true);
+      setError(false);
       setStatusMessage('Funds added successfully');
       loadFundingHistory();
     } catch (err) {
-      setError(err.message);
+      setError(true);
       setModalOpen(true);
       setStatusMessage('Failed to add funds: ' + err.message);
     } finally {
@@ -65,29 +71,21 @@ export default function FundingCard({
   const handleAddExpense = async (e) => {
     e.preventDefault();
     try {
+      if (!checkPermission(project, 'canAddFunds')) {
+        throw new Error('You do not have permission to add expenses');
+      }
+
       setAddExpenseLoading(true);
       const amount = parseFloat(expenseAmount);
       if (isNaN(amount) || amount <= 0) {
-        setShowAddExpenseModal(false);
-        setModalOpen(true);
-        setError(true);
-        setStatusMessage('Please enter a valid amount');
-        return;
+        throw new Error('Please enter a valid amount');
       }
       if (!expenseDescription.trim()) {
-        setShowAddExpenseModal(false);
-        setModalOpen(true);
-        setError(true);
-        setStatusMessage('Please enter an expense description');
-        return;
+        throw new Error('Please enter an expense description');
       }
 
       if (amount > (project.availableFunds || 0)) {
-        setShowAddExpenseModal(false);
-        setModalOpen(true);
-        setError(true);
-        setStatusMessage('Insufficient funds to cover the expense');
-        return;
+        throw new Error('Insufficient funds to cover the expense');
       }
 
       await updateProjectExpense(projectId, amount);
@@ -104,9 +102,8 @@ export default function FundingCard({
       setStatusMessage('Expense added successfully');
       loadFundingHistory();
     } catch (err) {
-      setShowAddExpenseModal(false);
-      setModalOpen(true);
       setError(true);
+      setModalOpen(true);
       setStatusMessage(err.message);
     } finally {
       setAddExpenseLoading(false);
@@ -122,58 +119,70 @@ export default function FundingCard({
   return (
     <>
       <section className="bg-white rounded-lg shadow p-4 sm:p-6">
-        <h2 className="text-lg sm:text-xl font-semibold mb-4">Funding Details</h2>
-        <section className="space-y-4">
-          <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <dt className="text-sm text-gray-500">Available Funds</dt>
-              <dd data-testid="Available Funds"
-                className="text-xl sm:text-2xl font-bold text-green-600">
-                R {(project.availableFunds || 0).toLocaleString()}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-sm text-gray-500">Used Funds</dt>
-              <dd className="text-lg sm:text-xl font-semibold text-red-600">
-                R {(project.usedFunds || 0).toLocaleString()}
-              </dd>
-            </div>
-          </dl>
-          
-          <section className="pt-2">
-            <section className="w-full bg-gray-200 rounded-full h-2">
-              <section 
-                className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-                style={{ width: `${((project.usedFunds || 0) / ((project.availableFunds || 0) + (project.usedFunds || 0)) * 100) || 0}%` }}
-              />
-            </section>
-            <p className="text-xs text-gray-500 text-right mt-1">
-              {(((project.usedFunds || 0) / ((project.availableFunds || 0) + (project.usedFunds || 0)) * 100) || 0).toFixed(1)}% utilized
+        <header className="flex justify-between items-center mb-4">
+          <h2 className="text-lg sm:text-xl font-semibold">Project Funding</h2>
+          <div className="text-right">
+            <p className="text-sm text-gray-500">Total Funds</p>
+            <p className="text-lg font-semibold">
+              R {((project.availableFunds || 0) + (project.usedFunds || 0)).toLocaleString()}
             </p>
-          </section>
+          </div>
+        </header>
 
-          <div className="grid grid-cols-3 gap-3">
-            <button
-              aria-label="Add Funds Btn"
-              onClick={() => setShowAddFundsModal(true)}
-              className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
-            >
-              Add Funds
-            </button>
-            <button
-              onClick={() => setShowAddExpenseModal(true)}
-              className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base"
-            >
-              Add Expense
-            </button>
-            <button
-              onClick={() => setShowFundingHistory(true)}
-              className="bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors text-sm sm:text-base"
-            >
-              View History
-            </button>
+        <section className="grid grid-cols-2 gap-4 mb-6">
+          <div className="bg-green-50 p-4 rounded-lg">
+            <p className="text-sm text-gray-600 mb-1">Available</p>
+            <p className="text-xl font-semibold text-green-600">
+              R {(project.availableFunds || 0).toLocaleString()}
+            </p>
+          </div>
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <p className="text-sm text-gray-600 mb-1">Used</p>
+            <p className="text-xl font-semibold text-blue-600">
+              R {(project.usedFunds || 0).toLocaleString()}
+            </p>
           </div>
         </section>
+
+        <section className="mb-6">
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
+              className="bg-blue-600 h-2 rounded-full transition-all duration-500"
+              style={{ 
+                width: `${(((project.usedFunds || 0) / ((project.availableFunds || 0) + (project.usedFunds || 0)) * 100) || 0)}%` 
+              }}
+            />
+          </div>
+          <p className="text-sm text-gray-500 mt-2">
+            {(((project.usedFunds || 0) / ((project.availableFunds || 0) + (project.usedFunds || 0)) * 100) || 0).toFixed(1)}% utilized
+          </p>
+        </section>
+
+        <div className="grid grid-cols-3 gap-3">
+          {checkPermission(project, 'canAddFunds') && (
+            <>
+              <button
+                aria-label="Add Funds Btn"
+                onClick={() => setShowAddFundsModal(true)}
+                className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
+              >
+                Add Funds
+              </button>
+              <button
+                onClick={() => setShowAddExpenseModal(true)}
+                className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base"
+              >
+                Add Expense
+              </button>
+            </>
+          )}
+          <button
+            onClick={() => setShowFundingHistory(true)}
+            className="bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors text-sm sm:text-base"
+          >
+            View History
+          </button>
+        </div>
       </section>
 
       {/* Add Funds Modal */}

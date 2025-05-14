@@ -3,9 +3,11 @@ import { ClipLoader } from 'react-spinners';
 import { AnimatePresence, motion } from 'framer-motion';
 import { createFolder, updateFolderName, deleteFolder } from '../../backend/firebase/folderDB';
 import { uploadDocument, deleteDocument } from '../../backend/firebase/documentsDB';
+import { checkPermission, isProjectOwner } from '../../utils/permissions';
 
 export default function DocumentsCard({ 
   projectId, 
+  project, // Add project prop
   folders, 
   setFolders, 
   foldersLoading, 
@@ -135,6 +137,10 @@ export default function DocumentsCard({
     try {
       setUploadLoading(true);
 
+      if (!checkPermission(project, 'canUploadFiles')) {
+        throw new Error('You do not have permission to upload files');
+      }
+
       const documentId = await uploadDocument(selectedFile, projectId, selectedFolder.id, {
         displayName: finalFileName,
         description: customDescription || 'No description provided'
@@ -202,6 +208,10 @@ export default function DocumentsCard({
 
   const handleDeleteFile = async (file, folder) => {
     try {
+      if (!isProjectOwner(project)) {
+        throw new Error('Only project owners can delete documents');
+      }
+
       setDeletingFile(file.id);
       await deleteDocument(file.documentId, projectId, folder.id);
       
@@ -244,15 +254,17 @@ export default function DocumentsCard({
               <p className="text-sm text-gray-500">{folders.length} folders • {folders.reduce((acc, folder) => acc + folder.files.length, 0)} files</p>
             </div>
           </div>
-          <button
-            onClick={() => setShowFolderModal(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 active:scale-95"
-          >
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-            </svg>
-            New Folder
-          </button>
+          {checkPermission(project, 'canUploadFiles') && (
+            <button
+              onClick={() => setShowFolderModal(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all transform hover:scale-105 active:scale-95"
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+              </svg>
+              New Folder
+            </button>
+          )}
         </header>
 
         {foldersLoading ? (
@@ -298,23 +310,25 @@ export default function DocumentsCard({
                                 <ClipLoader size={16} color="currentColor" />
                               ) : (
                                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4 4m0 0l-4-4m4 4V4" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4V4" />
                                 </svg>
                               )}
                             </button>
-                            <button
-                              onClick={() => handleDeleteFile(file, folder)}
-                              className="p-1 text-red-600 hover:text-red-800 transition-colors"
-                              disabled={deletingFile === file.id}
-                            >
-                              {deletingFile === file.id ? (
-                                <ClipLoader size={16} color="currentColor" />
-                              ) : (
-                                <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                </svg>
-                              )}
-                            </button>
+                            {isProjectOwner(project) && (
+                              <button
+                                onClick={() => handleDeleteFile(file, folder)}
+                                className="p-1 text-red-600 hover:text-red-800 transition-colors"
+                                disabled={deletingFile === file.id}
+                              >
+                                {deletingFile === file.id ? (
+                                  <ClipLoader size={16} color="currentColor" />
+                                ) : (
+                                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                )}
+                              </button>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -325,18 +339,20 @@ export default function DocumentsCard({
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                       </svg>
                       <p className="text-sm text-gray-500 mb-2">This folder is empty</p>
-                      <button
-                        onClick={() => {
-                          setSelectedFolder(folder);
-                          document.getElementById('file-upload').click();
-                        }}
-                        className="text-sm text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1"
-                      >
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-                        </svg>
-                        Upload a file
-                      </button>
+                      {checkPermission(project, 'canUploadFiles') && (
+                        <button
+                          onClick={() => {
+                            setSelectedFolder(folder);
+                            document.getElementById('file-upload').click();
+                          }}
+                          className="text-sm text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1"
+                        >
+                          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
+                          </svg>
+                          Upload a file
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>
@@ -362,18 +378,20 @@ export default function DocumentsCard({
                       Delete
                     </button>
                   </div>
-                  <button
-                    onClick={() => {
-                      setSelectedFolder(folder);
-                      document.getElementById('file-upload').click();
-                    }}
-                    className="w-full text-sm text-blue-600 hover:text-blue-800 transition-colors flex items-center justify-center gap-1 px-2 truncate"
-                  >
-                    <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4 4m0 0l-4-4m4 4V4" />
-                    </svg>
-                    <span className="truncate">Upload File</span>
-                  </button>
+                  {checkPermission(project, 'canUploadFiles') && (
+                    <button
+                      onClick={() => {
+                        setSelectedFolder(folder);
+                        document.getElementById('file-upload').click();
+                      }}
+                      className="w-full text-sm text-blue-600 hover:text-blue-800 transition-colors flex items-center justify-center gap-1 px-2 truncate"
+                    >
+                      <svg className="h-4 w-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4V4" />
+                      </svg>
+                      <span className="truncate">Upload File</span>
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
@@ -387,15 +405,17 @@ export default function DocumentsCard({
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-1">No folders yet</h3>
                 <p className="text-sm text-gray-500 mb-4">Create a new folder to start organizing your project documents</p>
-                <button
-                  onClick={() => setShowFolderModal(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  Create First Folder
-                </button>
+                {checkPermission(project, 'canUploadFiles') && (
+                  <button
+                    onClick={() => setShowFolderModal(true)}
+                    className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Create First Folder
+                  </button>
+                )}
               </div>
             )}
           </div>

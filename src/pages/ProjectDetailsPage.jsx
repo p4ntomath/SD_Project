@@ -18,6 +18,7 @@ import BasicInfoCard from '../components/ProjectDetailsPage/BasicInfoCard';
 import AssignCollaboratorsModal from '../components/ResearcherComponents/AssignCollaboratorsModal';
 import { sendResearcherInvitation, getPendingCollaboratorInvitations } from '../backend/firebase/collaborationDB';
 import { auth } from '../backend/firebase/firebaseConfig';
+import { checkPermission, isProjectOwner } from '../utils/permissions';
 
 export default function ProjectDetailsPage() {
   const { projectId } = useParams();
@@ -419,6 +420,7 @@ export default function ProjectDetailsPage() {
             <BasicInfoCard 
               project={project}
               calculateProgress={calculateProgress}
+              isEditable={isProjectOwner(project)}
             />
 
             <GoalsCard 
@@ -434,6 +436,7 @@ export default function ProjectDetailsPage() {
 
             <DocumentsCard 
               projectId={projectId}
+              project={project} // Add project prop
               folders={folders}
               setFolders={setFolders}
               foldersLoading={foldersLoading}
@@ -511,15 +514,17 @@ export default function ProjectDetailsPage() {
             <section className="bg-white rounded-lg shadow p-4 sm:p-6">
               <div className="flex justify-between items-center mb-4">
                 <h2 className="text-lg sm:text-xl font-semibold">Project Collaborators</h2>
-                <button
-                  onClick={() => setShowCollaboratorsModal(true)}
-                  className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-                  </svg>
-                  Add Collaborator
-                </button>
+                {isProjectOwner(project) && (
+                  <button
+                    onClick={() => setShowCollaboratorsModal(true)}
+                    className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+                    </svg>
+                    Add Collaborator
+                  </button>
+                )}
               </div>
 
               {/* Active Collaborators */}

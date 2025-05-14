@@ -12,7 +12,7 @@ import {
 } from "firebase/firestore";
 
 /**
- * Adds a collaborator to a project with default "Viewer" access.
+ * Adds a collaborator to a project with default "Collaborator" access and specific permissions.
  * @param {string} projectId - The ID of the project.
  * @param {string} collaboratorId - The ID of the collaborator to add.
  * @returns {Promise<void>}
@@ -20,17 +20,33 @@ import {
 export const addCollaboratorToProject = async (projectId, collaboratorId) => {
     try {
         const projectRef = doc(db, "projects", projectId);
+        const collaboratorDoc = await getDoc(doc(db, "users", collaboratorId));
+        
+        if (!collaboratorDoc.exists()) {
+            throw new Error("Collaborator not found");
+        }
 
         const collaboratorData = {
             id: collaboratorId,
-            accessLevel: "Viewer",
+            fullName: collaboratorDoc.data().fullName,
+            institution: collaboratorDoc.data().institution,
+            accessLevel: "Collaborator",
+            permissions: {
+                canUploadFiles: true,
+                canCompleteGoals: true,
+                canAddFunds: true,
+                canEditProjectDetails: false,
+                canManageGoals: false,
+                canManageCollaborators: false
+            }
         };
 
         await updateDoc(projectRef, {
             collaborators: arrayUnion(collaboratorData),
+            updatedAt: serverTimestamp()
         });
 
-        console.log("Collaborator with access level added successfully");
+        console.log("Collaborator with permissions added successfully");
     } catch (error) {
         console.error("Error adding collaborator:", error.message, error.stack);
         throw new Error("Failed to add collaborator");
@@ -194,6 +210,37 @@ export const searchResearchers = async (searchTerm, currentUserId, project) => {
     }
 };
 
+/**
+ * Adds a researcher as a collaborator to a project
+ * @param {string} projectId - The ID of the project
+ * @param {string} researcherId - The ID of the researcher to add
+ * @returns {Promise<void>}
+ */
+const addResearcherToProject = async (projectId, researcherId) => {
+    try {
+        // Get researcher details
+        const researcherDoc = await getDoc(doc(db, "users", researcherId));
+        if (!researcherDoc.exists()) {
+            throw new Error("Researcher not found");
+        }
+
+        const researcherData = researcherDoc.data();
+        const collaborator = {
+            id: researcherId,
+            name: researcherData.fullName,
+            accessLevel: "Viewer"
+        };
+
+        const projectRef = doc(db, "projects", projectId);
+        await updateDoc(projectRef, {
+            collaborators: arrayUnion(collaborator),
+            updatedAt: serverTimestamp()
+        });
+    } catch (error) {
+        console.error("Error adding researcher to project:", error.message);
+        throw new Error("Failed to add researcher to project");
+    }
+};
 
 /**
  * Sends an invitation to a researcher for a project.
