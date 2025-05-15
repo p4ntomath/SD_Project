@@ -244,6 +244,55 @@ export default function ResearcherHome() {
                   <p className="text-gray-500 text-center py-4">No team members yet</p>
                 )}
               </article>
+
+              {/* Collaborations Section */}
+              <section className="bg-white rounded-lg shadow p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-semibold mb-4">My Collaborations</h2>
+                {projects.some(p => p.collaborators?.some(c => c.id === auth.currentUser?.uid)) ? (
+                  <div className="space-y-4">
+                    {projects.filter(p => p.collaborators?.some(c => c.id === auth.currentUser?.uid))
+                      .map(project => (
+                        <div key={project.id} className="p-4 bg-gray-50 rounded-lg">
+                          <div className="flex justify-between items-start mb-2">
+                            <h3 className="font-medium text-gray-900">{project.title}</h3>
+                            <span className={`px-2 py-1 text-xs rounded-full ${
+                              project.collaborators.find(c => c.id === auth.currentUser?.uid)?.accessLevel === 'Editor' 
+                                ? 'bg-blue-100 text-blue-800'
+                                : project.collaborators.find(c => c.id === auth.currentUser?.uid)?.accessLevel === 'Viewer'
+                                ? 'bg-gray-100 text-gray-800'
+                                : 'bg-green-100 text-green-800'
+                            }`}>
+                              {project.collaborators.find(c => c.id === auth.currentUser?.uid)?.accessLevel || 'Collaborator'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-3">{project.description}</p>
+                          <div className="text-xs text-gray-500">
+                            <h4 className="font-medium mb-1">Your Permissions:</h4>
+                            <ul className="grid grid-cols-2 gap-1">
+                              {Object.entries(project.collaborators.find(c => c.id === auth.currentUser?.uid)?.permissions || {})
+                                .map(([key, value]) => (
+                                  <li key={key} className="flex items-center">
+                                    {value ? (
+                                      <svg className="h-3 w-3 text-green-500 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    ) : (
+                                      <svg className="h-3 w-3 text-red-500 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                      </svg>
+                                    )}
+                                    {key.replace(/([A-Z])/g, ' $1').toLowerCase()}
+                                  </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-4">You're not collaborating on any projects yet</p>
+                )}
+              </section>
             </section>
           )}
         </section>

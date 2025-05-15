@@ -61,7 +61,7 @@ export const addCollaboratorToProject = async (projectId, collaboratorId) => {
  * @param {string} [newAccessLevel="FullControlEditor"] - The new access level to assign.
  * @returns {Promise<void>}
  */
-export const updateCollaboratorAccessLevel = async (projectId, collaboratorId, newAccessLevel = "FullControlEditor") => {
+export const updateCollaboratorAccessLevel = async (projectId, collaboratorId, newAccessLevel) => {
     try {
         const projectRef = doc(db, "projects", projectId);
         const projectSnap = await getDoc(projectRef);
@@ -72,16 +72,52 @@ export const updateCollaboratorAccessLevel = async (projectId, collaboratorId, n
 
         const projectData = projectSnap.data();
         const currentCollaborators = projectData.collaborators || [];
+        
+        // Define permissions based on access level
+        const accessLevelPermissions = {
+            Viewer: {
+                canViewProject: true,
+                canCompleteGoals: false,
+                canAddFunds: false,
+                canUploadFiles: false,
+                canManageGoals: false,
+                canManageCollaborators: false,
+                canEditProjectDetails: false
+            },
+            Editor: {
+                canViewProject: true,
+                canCompleteGoals: true,
+                canAddFunds: false,
+                canUploadFiles: true,
+                canManageGoals: true,
+                canManageCollaborators: false,
+                canEditProjectDetails: true
+            },
+            Collaborator: {
+                canViewProject: true,
+                canCompleteGoals: true,
+                canAddFunds: true,
+                canUploadFiles: true,
+                canManageGoals: true,
+                canManageCollaborators: false,
+                canEditProjectDetails: false
+            }
+        };
 
         const updatedCollaborators = currentCollaborators.map(collab =>
-            collab.id === collaboratorId ? { ...collab, accessLevel: newAccessLevel } : collab
+            collab.id === collaboratorId ? { 
+                ...collab, 
+                accessLevel: newAccessLevel,
+                permissions: accessLevelPermissions[newAccessLevel] || accessLevelPermissions.Viewer
+            } : collab
         );
 
         await updateDoc(projectRef, {
-            collaborators: updatedCollaborators
+            collaborators: updatedCollaborators,
+            updatedAt: serverTimestamp()
         });
 
-        console.log("Collaborator access level updated successfully");
+        console.log("Collaborator access level and permissions updated successfully");
     } catch (error) {
         console.error("Error updating collaborator access level:", error.message, error.stack);
         throw new Error("Failed to update collaborator access level");

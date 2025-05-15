@@ -201,6 +201,24 @@ export default function MyProjects() {
                           <section>
                             <h2 className="text-xl font-semibold text-gray-800">{project.title}</h2>
                             <p className="mt-2 text-gray-600 break-all">{project.description}</p>
+                            <div className="flex items-center gap-2 mt-2">
+                              {project.collaborators?.length > 0 && (
+                                <span className="text-sm text-gray-500 flex items-center gap-1">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                  </svg>
+                                  {project.collaborators.length} Collaborator{project.collaborators.length !== 1 ? 's' : ''}
+                                </span>
+                              )}
+                              {project.pendingInvitations?.length > 0 && (
+                                <span className="text-sm text-yellow-600 flex items-center gap-1">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                  {project.pendingInvitations.length} Pending
+                                </span>
+                              )}
+                            </div>
                           </section>
                           <div 
                             className={`h-4 w-4 rounded-full border-2 ${

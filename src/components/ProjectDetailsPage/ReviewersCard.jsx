@@ -1,9 +1,10 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import AssignReviewersModal from '../ResearcherComponents/AssignReviewersModal';
 import { auth } from '../../backend/firebase/firebaseConfig';
 import { createReviewRequest, getReviewerRequestsForProject } from '../../backend/firebase/reviewerDB';
+import { isProjectOwner, checkPermission } from '../../utils/permissions';
 
-export default function ReviewersCard({ project, reviewRequests, formatDate, setReviewRequests, projectId , setModalOpen, setStatusMessage, setError }) {
+export default function ReviewersCard({ project, reviewRequests, formatDate, setReviewRequests, projectId, setModalOpen, setStatusMessage, setError }) {
   const [showAssignReviewersModal, setShowAssignReviewersModal] = useState(false);
   const [sendingReviewRequests, setSendingReviewRequests] = useState(false);
   const [processingReRequest, setProcessingReRequest] = useState(null);
@@ -11,6 +12,9 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
   const pendingRequests = reviewRequests.filter(
     request => request.status !== 'accepted' && request.status !== 'completed'
   );
+
+  // Check if current user can manage reviewers
+  const canManageReviewers = isProjectOwner(project) || checkPermission(project, 'canManageReviewers');
 
   // Helper function to check if a reviewer has pending requests
   const hasReviewerPendingRequest = (reviewerId) => {
@@ -157,16 +161,18 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
     <section className="bg-white rounded-lg shadow p-4 sm:p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg sm:text-xl font-semibold">Project Reviewers</h2>
-        <button
-          onClick={() => setShowAssignReviewersModal(true)}
-          disabled={sendingReviewRequests}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-          </svg>
-          Assign Reviewers
-        </button>
+        {canManageReviewers && (
+          <button
+            onClick={() => setShowAssignReviewersModal(true)}
+            disabled={sendingReviewRequests}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
+            Assign Reviewers
+          </button>
+        )}
       </div>
 
       <AssignReviewersModal
@@ -196,7 +202,7 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
                 </div>
                 <div className="flex items-center gap-2">
                   {getStatusBadge(reviewer.reviewStatus)}
-                  {reviewer.reviewStatus === 'feedback_submitted' && (
+                  {canManageReviewers && reviewer.reviewStatus === 'feedback_submitted' && (
                     <button
                       onClick={() => handleReRequest(reviewer)}
                       disabled={processingReRequest === reviewer.id || sendingReviewRequests}
