@@ -1,4 +1,4 @@
-import { FiHome, FiList, FiUser, FiMenu, FiX, FiSearch, FiClock, FiInbox } from 'react-icons/fi';
+import { FiHome, FiList, FiUser, FiMenu, FiX, FiSearch, FiClock, FiInbox, FiMessageSquare } from 'react-icons/fi';
 import { useState } from 'react';
 import { ClipboardDocumentCheckIcon } from "@heroicons/react/24/outline";
 import { logOut } from '../../../backend/firebase/authFirebase';
@@ -66,6 +66,15 @@ export default function ReviewerMainNav({ setMobileMenuOpen, mobileMenuOpen, onS
               >
                 <FiClock className="h-6 w-6 group-hover:text-blue-600" />
                 <p className="text-xs mt-1 group-hover:text-blue-600">History</p>
+              </button>
+
+              <button 
+                onClick={() => navigate('/reviewer/messages')}
+                className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/messages' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
+                aria-label="View messages"
+              >
+                <FiMessageSquare className="h-6 w-6 group-hover:text-blue-600" />
+                <p className="text-xs mt-1 group-hover:text-blue-600">Messages</p>
               </button>
 
               <button 
