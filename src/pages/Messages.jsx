@@ -10,7 +10,9 @@ import {
   FiMoreVertical,
   FiPaperclip,
   FiSmile,
-  FiSend
+  FiSend,
+  FiMenu,
+  FiX
 } from 'react-icons/fi';
 
 const groups = [
@@ -73,6 +75,21 @@ const MessageLayout = () => {
   const navigate = useNavigate();
   const [selectedChat, setSelectedChat] = useState(people[0]);
   const [messageInput, setMessageInput] = useState('');
+  const [showSidebar, setShowSidebar] = useState(true);
+  const [isMobileView, setIsMobileView] = useState(window.innerWidth < 768);
+
+  // Handle window resize
+  useState(() => {
+    const handleResize = () => {
+      setIsMobileView(window.innerWidth < 768);
+      if (window.innerWidth >= 768) {
+        setShowSidebar(true);
+      }
+    };
+
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   // Filter chats based on active filter
   const filteredChats = () => {
@@ -98,13 +115,30 @@ const MessageLayout = () => {
 
   return (
     <div className="flex h-screen overflow-hidden bg-gray-50">
+      {/* Mobile Menu Button */}
+      {isMobileView && (
+        <button
+          onClick={() => setShowSidebar(!showSidebar)}
+          className="fixed top-4 left-4 z-50 p-2 bg-white rounded-lg shadow-lg md:hidden"
+        >
+          {showSidebar ? <FiX className="h-6 w-6" /> : <FiMenu className="h-6 w-6" />}
+        </button>
+      )}
+
       {/* Left Sidebar */}
-      <aside className="w-[320px] bg-white border-r border-gray-200 flex flex-col">
+      <aside className={`${
+        showSidebar ? 'translate-x-0' : '-translate-x-full'
+      } fixed md:static w-full md:w-[320px] bg-white border-r border-gray-200 flex flex-col h-screen z-40 transition-transform duration-300 ease-in-out`}>
         {/* User Profile Header */}
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between mb-4">
             <button 
-              onClick={() => navigate('/home')}
+              onClick={() => {
+                if (isMobileView) {
+                  setShowSidebar(false);
+                }
+                navigate('/home');
+              }}
               className="text-gray-600 hover:text-gray-800 font-medium flex items-center"
             >
               ← Back to Dashboard
@@ -263,9 +297,17 @@ const MessageLayout = () => {
       </aside>
 
       {/* Main Chat Area */}
-      <main className="flex-1 flex flex-col bg-white">
+      <main className={`flex-1 flex flex-col bg-white ${showSidebar && isMobileView ? 'hidden' : 'block'}`}>
         {/* Chat Header */}
-        <header className="h-16 border-b border-gray-200 flex items-center justify-between px-6 bg-white">
+        <header className="h-16 border-b border-gray-200 flex items-center justify-between px-4 md:px-6 bg-white">
+          {isMobileView && (
+            <button
+              onClick={() => setShowSidebar(true)}
+              className="mr-3"
+            >
+              <FiMenu className="h-6 w-6" />
+            </button>
+          )}
           <div className="flex items-center space-x-4">
             <div className="relative">
               <div className="w-10 h-10 bg-purple-600 text-white rounded-full flex items-center justify-center font-medium">
@@ -344,7 +386,7 @@ const MessageLayout = () => {
         </div>
 
         {/* Message Input */}
-        <div className="p-4 bg-white border-t border-gray-200">
+        <div className="p-3 md:p-4 bg-white border-t border-gray-200">
           <div className="flex items-end space-x-2">
             <div className="flex-1 bg-gray-100 rounded-lg">
               <textarea
@@ -388,6 +430,14 @@ const MessageLayout = () => {
           </div>
         </div>
       </main>
+
+      {/* Overlay for mobile when sidebar is open */}
+      {showSidebar && isMobileView && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-50 z-30"
+          onClick={() => setShowSidebar(false)}
+        />
+      )}
     </div>
   );
 };
