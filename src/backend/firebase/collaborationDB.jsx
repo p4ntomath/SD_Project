@@ -251,9 +251,10 @@ export const searchResearchers = async (searchTerm, currentUserId, project) => {
  * Adds a researcher as a collaborator to a project
  * @param {string} projectId - The ID of the project
  * @param {string} researcherId - The ID of the researcher to add
+ * @param {string} [role="Collaborator"] - The role to assign to the researcher
  * @returns {Promise<void>}
  */
-const addResearcherToProject = async (projectId, researcherId) => {
+const addResearcherToProject = async (projectId, researcherId, role = 'Collaborator') => {
     try {
         // Get researcher details
         const researcherDoc = await getDoc(doc(db, "users", researcherId));
@@ -262,21 +263,44 @@ const addResearcherToProject = async (projectId, researcherId) => {
         }
 
         const researcherData = researcherDoc.data();
+        const permissions = {
+            Viewer: {
+                canViewProject: true,
+                canCompleteGoals: false,
+                canAddFunds: false,
+                canUploadFiles: false,
+                canManageGoals: false,
+                canManageCollaborators: false,
+                canEditProjectDetails: false
+            },
+            Editor: {
+                canViewProject: true,
+                canCompleteGoals: true,
+                canAddFunds: false,
+                canUploadFiles: true,
+                canManageGoals: true,
+                canManageCollaborators: false,
+                canEditProjectDetails: true
+            },
+            Collaborator: {
+                canViewProject: true,
+                canCompleteGoals: true,
+                canAddFunds: true,
+                canUploadFiles: true,
+                canManageGoals: true,
+                canManageCollaborators: false,
+                canEditProjectDetails: false
+            }
+        };
+
         const collaborator = {
-            id: researcherId, // This is the critical field for querying
-            researcherId: researcherId, // Keep for backward compatibility
+            id: researcherId,
+            researcherId: researcherId,
             name: researcherData.fullName,
             fullName: researcherData.fullName,
             institution: researcherData.institution,
-            accessLevel: "Collaborator",
-            permissions: {
-                canUploadFiles: true,
-                canCompleteGoals: true,
-                canAddFunds: true,
-                canEditProjectDetails: false,
-                canManageGoals: false,
-                canManageCollaborators: false
-            }
+            accessLevel: role,
+            permissions: permissions[role] || permissions.Viewer
         };
 
         const projectRef = doc(db, "projects", projectId);
@@ -295,10 +319,42 @@ const addResearcherToProject = async (projectId, researcherId) => {
  * @param {string} projectId - The ID of the project.
  * @param {string} researcherId - The ID of the researcher to invite.
  * @param {string} senderId - The ID of the user sending the invitation.
+ * @param {string} [role="Collaborator"] - The role to assign to the researcher.
  * @returns {Promise<Object>} - Result object with success status and message.
  */
-export const sendResearcherInvitation = async (projectId, researcherId, senderId) => {
+export const sendResearcherInvitation = async (projectId, researcherId, senderId, role = 'Collaborator') => {
     try {
+        // Check if there's already a pending invitation for this researcher and project
+        const existingInvitationQuery = query(
+            collection(db, "invitations"),
+            where("projectId", "==", projectId),
+            where("researcherId", "==", researcherId),
+            where("type", "==", "researcher"),
+            where("status", "==", "pending")
+        );
+        
+        const existingInvitations = await getDocs(existingInvitationQuery);
+        if (!existingInvitations.empty) {
+            throw new Error("An invitation has already been sent to this researcher");
+        }
+
+        // Check if researcher is already a collaborator
+        const projectRef = doc(db, "projects", projectId);
+        const projectSnap = await getDoc(projectRef);
+        if (!projectSnap.exists()) {
+            throw new Error("Project not found");
+        }
+
+        const projectData = projectSnap.data();
+        const isAlreadyCollaborator = projectData.collaborators?.some(
+            collaborator => collaborator.id === researcherId
+        );
+
+        if (isAlreadyCollaborator) {
+            throw new Error("This researcher is already a collaborator on this project");
+        }
+
+        // If no existing invitation or collaboration, create new invitation
         const invitationRef = collection(db, "invitations");
         await addDoc(invitationRef, {
             projectId,
@@ -306,12 +362,14 @@ export const sendResearcherInvitation = async (projectId, researcherId, senderId
             senderId,
             status: "pending",
             type: "researcher",
+            role: role,
             createdAt: serverTimestamp(),
         });
+
         return { success: true, message: "Invitation sent successfully" };
     } catch (error) {
         console.error("Error sending researcher invitation:", error.message, error.stack);
-        throw new Error("Failed to send researcher invitation");
+        throw error; // Throw the original error to preserve the message
     }
 };
 
@@ -331,10 +389,10 @@ export const respondToResearcherInvitation = async (invitationId, accepted) => {
         }
 
         const invitation = invitationSnap.data();
-        const { projectId, researcherId } = invitation;
+        const { projectId, researcherId, role } = invitation;
 
         if (accepted) {
-            await addResearcherToProject(projectId, researcherId);
+            await addResearcherToProject(projectId, researcherId, role);
             await updateDoc(invitationRef, {
                 status: "accepted",
                 updatedAt: serverTimestamp()

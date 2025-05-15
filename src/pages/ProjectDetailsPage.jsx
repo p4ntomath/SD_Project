@@ -305,12 +305,13 @@ export default function ProjectDetailsPage() {
 
   const handleAssignCollaborators = async (selectedResearchers) => {
     try {
-      // Send invitations to all selected researchers
+      // Send invitations to all selected researchers with their assigned roles
       const invitationPromises = selectedResearchers.map(researcher => 
         sendResearcherInvitation(
           projectId, 
           researcher.id,
-          auth.currentUser.uid
+          auth.currentUser.uid,
+          researcher.role // Pass the assigned role
         )
       );
 
@@ -336,7 +337,7 @@ export default function ProjectDetailsPage() {
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
-          <span>Failed to send collaborator invitations: {err.message}</span>
+          <span>{err.message || "Failed to send collaborator invitations"}</span>
         </div>
       );
     }

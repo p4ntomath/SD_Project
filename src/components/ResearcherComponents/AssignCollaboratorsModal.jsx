@@ -9,6 +9,7 @@ export default function AssignCollaboratorsModal({ isOpen, onClose, onAssign, pr
   const [searchResults, setSearchResults] = useState([]);
   const [selectedResearchers, setSelectedResearchers] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedRoles, setSelectedRoles] = useState({});
 
   useEffect(() => {
     const searchForResearchers = async () => {
@@ -29,22 +30,42 @@ export default function AssignCollaboratorsModal({ isOpen, onClose, onAssign, pr
     } else {
       setSearchResults([]);
     }
-  }, [searchTerm, projectId]);
+  }, [searchTerm, projectId, project]);
 
   const handleToggleResearcher = (researcher) => {
     setSelectedResearchers(prev => {
       const isSelected = prev.some(r => r.id === researcher.id);
       if (isSelected) {
+        setSelectedRoles(prevRoles => {
+          const { [researcher.id]: _, ...rest } = prevRoles;
+          return rest;
+        });
         return prev.filter(r => r.id !== researcher.id);
       } else {
+        setSelectedRoles(prevRoles => ({
+          ...prevRoles,
+          [researcher.id]: 'Collaborator' // Default role
+        }));
         return [...prev, researcher];
       }
     });
   };
 
+  const handleRoleChange = (researcherId, role) => {
+    setSelectedRoles(prev => ({
+      ...prev,
+      [researcherId]: role
+    }));
+  };
+
   const handleAssign = () => {
-    onAssign(selectedResearchers);
+    const researchersWithRoles = selectedResearchers.map(researcher => ({
+      ...researcher,
+      role: selectedRoles[researcher.id]
+    }));
+    onAssign(researchersWithRoles);
     setSelectedResearchers([]);
+    setSelectedRoles({});
     setSearchTerm('');
   };
 
@@ -83,20 +104,31 @@ export default function AssignCollaboratorsModal({ isOpen, onClose, onAssign, pr
                   {searchResults.map((researcher) => (
                     <li 
                       key={researcher.id}
-                      className="flex items-center justify-between p-4 hover:bg-gray-50 cursor-pointer"
-                      onClick={() => handleToggleResearcher(researcher)}
+                      className="flex items-center justify-between p-4 hover:bg-gray-50"
                     >
-                      <div className="flex items-center">
+                      <div className="flex items-center flex-1">
                         <input
                           type="checkbox"
                           checked={selectedResearchers.some(r => r.id === researcher.id)}
                           onChange={() => handleToggleResearcher(researcher)}
                           className="h-4 w-4 text-blue-600 rounded"
                         />
-                        <div className="ml-3">
+                        <div className="ml-3 flex-1">
                           <p className="text-sm font-medium text-gray-900">{researcher.fullName}</p>
                           <p className="text-xs text-gray-500">{researcher.institution || 'No institution specified'}</p>
                         </div>
+                        {selectedResearchers.some(r => r.id === researcher.id) && (
+                          <select
+                            value={selectedRoles[researcher.id] || 'Collaborator'}
+                            onChange={(e) => handleRoleChange(researcher.id, e.target.value)}
+                            className="ml-4 text-sm bg-white border border-gray-300 rounded-md px-2 py-1"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <option value="Collaborator">Collaborator</option>
+                            <option value="Editor">Editor</option>
+                            <option value="Viewer">Viewer</option>
+                          </select>
+                        )}
                       </div>
                     </li>
                   ))}
