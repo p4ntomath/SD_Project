@@ -70,16 +70,16 @@ export const uploadUserProfilePicture = async (file) => {
   const user = auth.currentUser;
   if (!user) throw new Error("User not logged in");
 
-  // 1. Reference for the file in storage
+  
   const fileRef = ref(storage, `profilePictures/${user.uid}/profile.jpg`);
 
-  // 2. Upload the file
+  
   await uploadBytes(fileRef, file);
 
-  // 3. Get the download URL
+  
   const url = await getDownloadURL(fileRef);
 
-  // 4. Update the Firestore document for the user
+  
   const userDocRef = doc(db, "users", user.uid);
   await updateDoc(userDocRef, {
     profilePicture: url,
@@ -101,7 +101,7 @@ export const deleteProfilePicture = async () => {
     // Remove the profilePicture field from Firestore
     const userDocRef = doc(db, "users", user.uid);
     await updateDoc(userDocRef, {
-      profilePicture: "", // or use deleteField() if you want to remove the field entirely
+      profilePicture: "", 
     });
 
     return true;
@@ -120,7 +120,7 @@ export const updateProfilePicture = async (file) => {
   // Overwrite the file
   await uploadBytes(fileRef, file);
 
-  // Get new download URL
+  
   const downloadURL = await getDownloadURL(fileRef);
 
   // Update Firestore
