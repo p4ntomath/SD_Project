@@ -18,6 +18,7 @@ export const addCollaboratorToProject = async (projectId, collaboratorId) => {
         const projectRef = doc(db, "projects", projectId);
         await updateDoc(projectRef, {
             collaborators: arrayUnion(collaboratorId), // Use Firestore's arrayUnion to add the collaborator without duplicating
+            collaboratorIds: arrayUnion(collaboratorId),//this is just a new field needed for the profile
         });
         console.log("Collaborator added successfully");
     } catch (error) {

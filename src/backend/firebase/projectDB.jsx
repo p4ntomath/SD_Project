@@ -89,17 +89,51 @@ export async function createProject(newProject) {
  * document ID in the database, along with other data retrieved from the document.
  */
 export const fetchProjects = async (uid) => {
-  try {
-    const projectsCollection = collection(db, "projects");
+  try {//updating this to account for fetching projects for collaborators as well,fetches for all researches
+
+    /*const projectsCollection = collection(db, "projects");
     const userProjectsQuery = query(projectsCollection, where("userId", "==", uid));
     const querySnapshot = await getDocs(userProjectsQuery);
 
     const projects = querySnapshot.docs.map((doc) => ({
       id: doc.id,
       ...doc.data(),
+    }));*/
+    const projectsCollection = collection(db, "projects");
+
+    // Query projects where user is the lead (owner)
+    const leadQuery = query(projectsCollection, where("userId", "==", uid));
+    const leadSnapshot = await getDocs(leadQuery);
+
+    // Query projects where user is a collaborator
+    const collaboratorQuery = query(
+      projectsCollection,
+      where("collaboratorIds", "array-contains", uid)
+    );
+    const collaboratorSnapshot = await getDocs(collaboratorQuery);
+
+    // Map both query results
+    const leadProjects = leadSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
     }));
 
-    return projects;
+    const collaboratorProjects = collaboratorSnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    // Combine and dedupe projects (in case user is both lead and collaborator)
+    const combinedProjectsMap = new Map();
+
+    leadProjects.forEach((project) => combinedProjectsMap.set(project.id, project));
+    collaboratorProjects.forEach((project) => combinedProjectsMap.set(project.id, project));
+
+    // Return combined projects as an array
+    return Array.from(combinedProjectsMap.values());
+
+
+    //return projects;
   } catch (error) {
     console.error("Error fetching projects:", error);
     throw new Error("Failed to fetch projects");
