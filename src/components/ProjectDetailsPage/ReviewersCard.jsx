@@ -200,6 +200,7 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
                     <p className="text-xs text-gray-500 break-words">{reviewer.fieldOfResearch || 'No field of research specified'}</p>
                   </div>
                 </div>
+                
                 <div className="flex items-center gap-2">
                   {getStatusBadge(reviewer.reviewStatus)}
                   {canManageReviewers && reviewer.reviewStatus === 'feedback_submitted' && (
