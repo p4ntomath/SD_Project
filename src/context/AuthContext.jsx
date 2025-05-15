@@ -1,71 +1,54 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
-import { auth, db } from '../backend/firebase/firebaseConfig'; // Adjust path as needed
+import React, { createContext, useState, useContext, useEffect } from 'react';
+import { auth, db } from '../backend/firebase/firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
 import { useLocation } from 'react-router-dom';
 import { doc, getDoc } from 'firebase/firestore';
-import { ClipLoader } from 'react-spinners'; // Importing the spinner
+import { ClipLoader } from 'react-spinners';
 
-// Create AuthContext
 const AuthContext = createContext();
 
-// AuthProvider component that wraps the app
 export const AuthProvider = ({ children }) => {
   const location = useLocation();
   const [user, setUser] = useState(null);
-  const [role, setRole] = useState(null); // Store the role selection
-  const [loading, setLoading] = useState(true); // To manage loading state
+  const [role, setRole] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      if (user) {
-        setUser(user);
-        // Fetch user role from Firestore
-        fetchRoleFromDatabase(user.uid);
-      } else {
-        setUser(null);
-        setRole(null);
-        setLoading(false);// Redirect to the welcome page if not authenticated
-      }
-    });
-
-    return () => unsubscribe();
-  }, []);
-
-  // In your AuthProvider component
   const fetchRoleFromDatabase = async (uid) => {
     try {
       if (!uid) {
-        console.error('No UID provided to fetch role');
         setRole(null);
-        setLoading(false);
         return;
       }
-  
+
       const docRef = doc(db, 'users', uid);
-      if (!docRef) {
-        console.error('Could not create document reference');
-        setRole(null);
-        setLoading(false);
-        return;
-      }
-  
       const docSnap = await getDoc(docRef);
-      if (docSnap?.exists()) {
+
+      if (docSnap.exists()) {
         const userData = docSnap.data();
         setRole(userData?.role || null);
       } else {
-        console.log('No user document found for UID:', uid);
         setRole(null);
       }
     } catch (error) {
       console.error('Error fetching role:', error);
       setRole(null);
-    } finally {
-      setLoading(false);
     }
   };
-  
 
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setUser(user);
+        await fetchRoleFromDatabase(user.uid);
+      } else {
+        setUser(null);
+        setRole(null);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
 
   if (loading && location.pathname !== '/login') {
     return (
@@ -87,9 +70,12 @@ export const AuthProvider = ({ children }) => {
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };
 
-// Custom hook to use the AuthContext
 export const useAuth = () => {
-  return useContext(AuthContext);
+  const context = useContext(AuthContext);
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
 };
 
 export default AuthContext;

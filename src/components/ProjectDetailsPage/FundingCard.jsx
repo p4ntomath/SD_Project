@@ -46,8 +46,11 @@ export default function FundingCard({
       if (isNaN(amount) || amount <= 0) {
         throw new Error('Please enter a valid amount');
       }
+      if (!fundingSource.trim()) {
+        throw new Error('Please enter a funding source');
+      }
 
-      await updateProjectFunds(projectId, amount);
+      await updateProjectFunds(projectId, amount, fundingSource);
       setProject({
         ...project,
         availableFunds: (project.availableFunds || 0) + amount
@@ -88,7 +91,7 @@ export default function FundingCard({
         throw new Error('Insufficient funds to cover the expense');
       }
 
-      await updateProjectExpense(projectId, amount);
+      await updateProjectExpense(projectId, amount, expenseDescription);
       setProject({
         ...project,
         usedFunds: (project.usedFunds || 0) + amount,
@@ -345,6 +348,8 @@ export default function FundingCard({
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Added By</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance After</th>
                       </tr>
@@ -357,6 +362,12 @@ export default function FundingCard({
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 break-all">
                             {entry.type === 'expense' ? 'Expense' : 'Funds Added'}
+                          </td>
+                          <td className="px-6 py-4 text-sm text-gray-500">
+                            {entry.type === 'expense' ? entry.description : entry.source}
+                          </td>
+                          <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            {entry.updatedByName}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
                             <span className={`break-words ${entry.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
