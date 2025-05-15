@@ -17,7 +17,6 @@ export default function MyProfilePage() {
 
   const [formData, setFormData] = useState({
     name: '',
-    email: '',
     role: '',
     bio: '',
     researchField: '',
@@ -76,7 +75,6 @@ export default function MyProfilePage() {
               : '';
             const updated = {
               name: userData.fullName || '',
-              email: userData.email || '',
               role: userData.role || 'Researcher',
               bio: userData.bio || '',
               researchField: userData.researchField || '',
@@ -164,13 +162,6 @@ export default function MyProfilePage() {
               {formData.role.charAt(0).toUpperCase() + formData.role.slice(1)}
             </p>
             <section className="text-center w-full text-sm text-gray-800 space-y-4">
-              <address className="not-italic">
-                <p className="flex items-center justify-center gap-2">
-                  <FaEnvelope className="text-blue-600" />
-                  {formData.email}
-                </p>
-
-              </address>
 
               <section aria-labelledby="joined-label">
                 <h2 id="joined-label" className="font-bold">Date joined</h2>
