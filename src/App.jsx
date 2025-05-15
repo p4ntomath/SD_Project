@@ -142,7 +142,7 @@ function App() {
               <ReviewerHomePage />
             </ProtectedRoute>
           } />
-          <Route path="/myprofile" element={<MyProfilePage />} />
+          <Route path="/account" element={<MyProfilePage />} />
         </Routes>
       </AuthProvider>
     </Router>
