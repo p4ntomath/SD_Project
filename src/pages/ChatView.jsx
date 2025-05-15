@@ -100,17 +100,17 @@ export default function ChatView() {
       {/* Chat Header */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center justify-between h-16">
-            <div className="flex items-center space-x-4">
+          <div className="flex items-center h-16">
+            <div className="flex-1 flex items-center min-w-0">
               <button 
                 onClick={() => navigate('/messages')}
-                className="md:hidden text-gray-600 hover:text-gray-800 font-medium flex items-center mr-4"
+                className="md:hidden text-gray-600 hover:text-gray-800 font-medium flex items-center mr-4 flex-shrink-0"
               >
                 <FiArrowLeft className="h-5 w-5 mr-1" />
                 Back
               </button>
-              <div className="flex items-center space-x-4">
-                <div className="relative">
+              <div className="flex items-center space-x-4 min-w-0">
+                <div className="relative flex-shrink-0">
                   {chat.type === 'group' ? (
                     <div className="w-10 h-10 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-medium text-lg">
                       {chat.avatar}
@@ -126,16 +126,16 @@ export default function ChatView() {
                     </>
                   )}
                 </div>
-                <div>
-                  <h2 className="font-semibold text-gray-900">{chat.name}</h2>
-                  <p className="text-sm text-gray-500">
+                <div className="min-w-0 flex-1">
+                  <h2 className="font-semibold text-gray-900 truncate">{chat.name}</h2>
+                  <p className="text-sm text-gray-500 truncate">
                     {chat.type === 'group' ? `${chat.members.length} members` : chat.status}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="flex items-center space-x-2">
+            <div className="flex items-center space-x-2 flex-shrink-0">
               <button className="p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
                 <FiPhone className="h-5 w-5" />
               </button>
@@ -147,7 +147,7 @@ export default function ChatView() {
                   <FiUserPlus className="h-5 w-5" />
                 </button>
               )}
-              <button className="p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
+              <button className="hidden md:block p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
                 <FiMoreVertical className="h-5 w-5" />
               </button>
             </div>
