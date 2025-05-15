@@ -1,6 +1,6 @@
 import { collection, query, where, getDocs, doc, getDoc, updateDoc,deleteObject } from "firebase/firestore";
 import { auth,db,storage } from "./firebaseConfig";
-import { fetchProject } from "./projectDB";
+import { fetchProjects } from "./projectDB";
 import {  ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export const project = async (uid) => {//fetch project names for researchers and collaborators
