@@ -24,6 +24,7 @@ import ReviewerProjects from './pages/reviewer/ReviewerProjects.jsx';
 import ReviewRequests from './pages/reviewer/ReviewRequests.jsx';
 import ReviewerHistory from './pages/ReviewerPages/ReviewerHistory.jsx';
 import ReviewProjectPage from './pages/ReviewerPages/ReviewProjectPage.jsx';
+import MessagesPage from './pages/Messages.jsx';
 
 function App() {
   return (
@@ -139,6 +140,16 @@ function App() {
           <Route path="/reviewer/settings" element={
             <ProtectedRoute allowedRoles={['reviewer']}>
               <ReviewerHomePage />
+            </ProtectedRoute>
+          } />
+          <Route path="/messages" element={
+            <ProtectedRoute allowedRoles={['researcher', 'reviewer']}>
+              <MessagesPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/messages/:folder" element={
+            <ProtectedRoute allowedRoles={['researcher', 'reviewer']}>
+              <MessagesPage />
             </ProtectedRoute>
           } />
         </Routes>
