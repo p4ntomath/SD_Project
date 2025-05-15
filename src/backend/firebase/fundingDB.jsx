@@ -38,8 +38,9 @@ export const fetchFunding = async () => {
  * Adds new funds to the existing project funds and logs the update in fundingHistory.
  * @param {string} projectId - ID of the project
  * @param {number} additionalFunds - The amount to add to current funds
+ * @param {string} source - The source of the funds
  */
-export const updateProjectFunds = async (projectId, additionalFunds) => {
+export const updateProjectFunds = async (projectId, additionalFunds, source) => {
     try {
       const user = auth.currentUser;
       if (!user) throw new Error("User not authenticated");
@@ -55,25 +56,38 @@ export const updateProjectFunds = async (projectId, additionalFunds) => {
   
       const projectData = projectSnap.data();
   
-      if (projectData.userId !== user.uid) {
+      // Check if user is owner or collaborator
+      const isOwner = projectData.userId === user.uid;
+      const isCollaborator = projectData.collaborators?.some(collab => 
+        collab.id === user.uid && collab.permissions?.canAddFunds
+      );
+
+      if (!isOwner && !isCollaborator) {
         throw new Error("Not authorized to update funding for this project");
       }
   
       const currentAvailableFunds = projectData.availableFunds || 0;
       const updatedAvailableFunds = currentAvailableFunds + additionalFunds;
   
+      // Get user's full name from users collection
+      const userRef = doc(db, "users", user.uid);
+      const userSnap = await getDoc(userRef);
+      const userFullName = userSnap.exists() ? userSnap.data().fullName : "Unknown User";
+      
       // Update the main document
       await updateDoc(projectRef, { 
         availableFunds: updatedAvailableFunds
       });
   
-      // Add funding history entry
+      // Add funding history entry with additional details
       const historyRef = collection(db, "projects", projectId, "fundingHistory");
       await addDoc(historyRef, {
         amount: additionalFunds,
         totalAfterUpdate: updatedAvailableFunds,
         updatedAt: Timestamp.now(),
         updatedBy: user.uid,
+        updatedByName: userFullName,
+        source: source,
         type: "funding"
       });
   
@@ -100,7 +114,14 @@ export const getFundingHistory = async (projectId) => {
     if (!projectSnap.exists()) throw new Error("Project not found");
 
     const projectData = projectSnap.data();
-    if (projectData.userId !== user.uid) {
+    
+    // Check if user is owner or collaborator
+    const isOwner = projectData.userId === user.uid;
+    const isCollaborator = projectData.collaborators?.some(collab => 
+      collab.id === user.uid && collab.permissions?.canAddFunds
+    );
+
+    if (!isOwner && !isCollaborator) {
       throw new Error("Not authorized to view this funding history");
     }
 
@@ -123,8 +144,9 @@ export const getFundingHistory = async (projectId) => {
  * Subtracts an amount from the existing project funds and logs the expense in fundingHistory.
  * @param {string} projectId - ID of the project
  * @param {number} expenseAmount - The amount to subtract from current funds
+ * @param {string} description - Description of the expense
  */
-export const updateProjectExpense = async (projectId, expenseAmount) => {
+export const updateProjectExpense = async (projectId, expenseAmount, description) => {
   try {
     const user = auth.currentUser;
     if (!user) throw new Error("User not authenticated");
@@ -140,7 +162,13 @@ export const updateProjectExpense = async (projectId, expenseAmount) => {
 
     const projectData = projectSnap.data();
 
-    if (projectData.userId !== user.uid) {
+    // Check if user is owner or collaborator
+    const isOwner = projectData.userId === user.uid;
+    const isCollaborator = projectData.collaborators?.some(collab => 
+      collab.id === user.uid && collab.permissions?.canAddFunds
+    );
+
+    if (!isOwner && !isCollaborator) {
       throw new Error("Not authorized to update expenses for this project");
     }
 
@@ -151,19 +179,26 @@ export const updateProjectExpense = async (projectId, expenseAmount) => {
       throw new Error("Insufficient funds to cover the expense");
     }
 
+    // Get user's full name from users collection
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+    const userFullName = userSnap.exists() ? userSnap.data().fullName : "Unknown User";
+
     // Update the main document with both available and used funds
     await updateDoc(projectRef, { 
       availableFunds: currentAvailableFunds - expenseAmount,
       usedFunds: currentUsedFunds + expenseAmount
     });
 
-    // Add expense history entry
+    // Add expense history entry with additional details
     const historyRef = collection(db, "projects", projectId, "fundingHistory");
     await addDoc(historyRef, {
       amount: -expenseAmount,
       totalAfterUpdate: currentAvailableFunds - expenseAmount,
       updatedAt: Timestamp.now(),
       updatedBy: user.uid,
+      updatedByName: userFullName,
+      description: description,
       type: "expense"
     });
 
@@ -195,7 +230,13 @@ export const getCurrentFunds = async (projectId) => {
 
     const projectData = projectSnap.data();
 
-    if (projectData.userId !== user.uid) {
+    // Check if user is owner or collaborator
+    const isOwner = projectData.userId === user.uid;
+    const isCollaborator = projectData.collaborators?.some(collab => 
+      collab.id === user.uid && collab.permissions?.canAddFunds
+    );
+
+    if (!isOwner && !isCollaborator) {
       throw new Error("Not authorized to view this project");
     }
 
@@ -223,7 +264,13 @@ export const getUsedFunds = async (projectId) => {
 
     const projectData = projectSnap.data();
 
-    if (projectData.userId !== user.uid) {
+    // Check if user is owner or collaborator
+    const isOwner = projectData.userId === user.uid;
+    const isCollaborator = projectData.collaborators?.some(collab => 
+      collab.id === user.uid && collab.permissions?.canAddFunds
+    );
+
+    if (!isOwner && !isCollaborator) {
       throw new Error("Not authorized to view this project");
     }
 

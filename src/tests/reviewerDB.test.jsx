@@ -300,7 +300,7 @@ describe('Reviewer Database Operations', () => {
             {
               id: 'reviewer1',
               name: 'John Doe Updated',
-              expertise: ['AI', 'ML']
+              fieldOfResearch: ['AI', 'ML']
             }
           ],
           updatedAt: expect.any(Date)

@@ -3,7 +3,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
 import ProjectReviews from '../components/ReviewerComponents/ProjectReviews';
-import { getProjectReviews } from '../backend/firebase/reviewdb';
+import { getProjectReviews } from '../backend/firebase/reviewerDB';
 
 // Mock the reviewdb functions
 vi.mock('../backend/firebase/reviewdb', () => ({

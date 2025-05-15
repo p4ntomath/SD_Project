@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { completeProfile } from '../backend/firebase/authFirebase';
 import RoleSelectionForm from '../components/RoleSelctionForm';
 import { ClipLoader } from 'react-spinners';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 
 const RoleSelectionPage = () => {
@@ -10,6 +10,7 @@ const RoleSelectionPage = () => {
   const [localLoading, setLocalLoading] = useState(false);
   const [profileCompleted, setProfileCompleted] = useState(false);
   const navigate = useNavigate();
+  const location = useLocation();
 
   const handleSubmit = async (formData) => {
     setLocalLoading(true);
@@ -18,12 +19,14 @@ const RoleSelectionPage = () => {
       const profileData = {
         fullName: formData.fullName,
         role: formData.role,
-        ...(formData.role === 'reviewer' && {
-          expertise: formData.expertise,
-          department: formData.department
-        })
+        institution: formData.institution,
+        department: formData.department,
+        fieldOfResearch: formData.fieldOfResearch,
+        researchTags: formData.tags,
+        bio: formData.bio || ''
       };
-      await completeProfile(formData.fullName, formData.role, profileData);
+
+      await completeProfile(profileData);
       setRole(formData.role);
       setProfileCompleted(true);
     } catch (error) {
@@ -38,7 +41,7 @@ const RoleSelectionPage = () => {
     if (profileCompleted) {
       navigate('/home');
     }
-    if(role){
+    if (role) {
       navigate('/home');
     }
   }, [profileCompleted, navigate, role]);

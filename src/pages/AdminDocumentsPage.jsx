@@ -6,12 +6,15 @@ import { fetchAllDocuments } from '../backend/firebase/documentsDB';
 import { getDoc, doc } from 'firebase/firestore';
 import { db } from '../backend/firebase/firebaseConfig';
 import { ClipLoader } from 'react-spinners';
+import MainNav from '../components/AdminComponents/Navigation/AdminMainNav';
+import MobileBottomNav from '../components/AdminComponents/Navigation/AdminMobileBottomNav';
 
 export default function AdminDocumentsPage() {
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [selectedCreator, setSelectedCreator] = useState('all');
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const navigate = useNavigate();
 
     // Get unique creators for filter dropdown
@@ -25,11 +28,10 @@ export default function AdminDocumentsPage() {
     useEffect(() => {
         const loadDocuments = async () => {
             try {
-                const allDocs = await fetchAllDocuments();
+                const docs = await fetchAllDocuments();
                 
-                // Fetch project details for each document
                 const docsWithDetails = await Promise.all(
-                    allDocs.map(async (document) => {
+                    docs.map(async (document) => {
                         if (document.projectId) {
                             const projectRef = doc(db, "projects", document.projectId);
                             const projectSnap = await getDoc(projectRef);
@@ -69,8 +71,11 @@ export default function AdminDocumentsPage() {
 
     if (loading) {
         return (
-            <div aria-label='loading' className="min-h-screen bg-gray-50 p-4">
-                <div  className="flex justify-center items-center h-64">
+            <div aria-label='loading' className="min-h-screen bg-gray-50">
+                <header>
+                    <MainNav setMobileMenuOpen={setMobileMenuOpen} mobileMenuOpen={mobileMenuOpen} />
+                </header>
+                <div className="flex justify-center items-center h-64">
                     <ClipLoader color="#3B82F6" />
                 </div>
             </div>
@@ -78,49 +83,51 @@ export default function AdminDocumentsPage() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 p-4 md:p-8">
-            <div className="max-w-7xl mx-auto">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-                    <div className="flex items-center">
-                        <button
-                            onClick={() => navigate('/admin')}
-                            className="mr-4 p-2 text-gray-600 hover:text-gray-800 transition-colors"
-                            aria-label="Back to dashboard"
-                        >
-                            <FaArrowLeft className="h-5 w-5" />
-                        </button>
-                        <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Documents Management</h1>
-                    </div>
-                    
-                    <div className="flex items-center">
-                        <label htmlFor="creator-filter" className="mr-2 text-sm text-gray-600 whitespace-nowrap">
-                            Filter by Creator:
-                        </label>
-                        <select
-                            id="creator-filter"
-                            value={selectedCreator}
-                            onChange={(e) => setSelectedCreator(e.target.value)}
-                            className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                            <option value="all">All Creators</option>
-                            {uniqueCreators.map(creator => (
-                                <option key={creator} value={creator}>
-                                    {creator}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
-                </div>
+        <div className="min-h-screen bg-gray-50">
+            <header>
+                <MainNav setMobileMenuOpen={setMobileMenuOpen} mobileMenuOpen={mobileMenuOpen} />
+            </header>
 
-                {error && (
-                    <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
-                        <p className="text-red-700">{error}</p>
+            <main className="p-4 md:p-8 pb-16 md:pb-8">
+                <div className="max-w-7xl mx-auto">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+                        <div className="flex items-center">
+                            <button
+                                onClick={() => navigate('/admin')}
+                                className="mr-4 p-2 text-gray-600 hover:text-gray-800 transition-colors"
+                                aria-label="Back to dashboard"
+                            >
+                                <FaArrowLeft className="h-5 w-5" />
+                            </button>
+                            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Documents Management</h1>
+                        </div>
+                        
+                        <div className="flex items-center">
+                            <label htmlFor="creator-filter" className="mr-2 text-sm text-gray-600 whitespace-nowrap">
+                                Filter by Creator:
+                            </label>
+                            <select
+                                id="creator-filter"
+                                value={selectedCreator}
+                                onChange={(e) => setSelectedCreator(e.target.value)}
+                                className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            >
+                                <option value="all">All Creators</option>
+                                {uniqueCreators.map(creator => (
+                                    <option key={creator} value={creator}>
+                                        {creator}
+                                    </option>
+                                ))}
+                            </select>
+                        </div>
                     </div>
-                )}
 
-                <div className="bg-white rounded-lg shadow">
-                    <div className="p-4 sm:p-6">
-                        <div className="flex flex-col">
+                    <div className="bg-white shadow rounded-lg overflow-hidden">
+                        {error ? (
+                            <div className="p-4 text-red-500">
+                                {error}
+                            </div>
+                        ) : (
                             <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
                                 <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
                                     <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
@@ -194,10 +201,14 @@ export default function AdminDocumentsPage() {
                                     </div>
                                 </div>
                             </div>
-                        </div>
+                        )}
                     </div>
                 </div>
-            </div>
+            </main>
+
+            <footer>
+                <MobileBottomNav />
+            </footer>
         </div>
     );
 }

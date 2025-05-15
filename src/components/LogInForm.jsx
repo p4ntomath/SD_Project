@@ -82,6 +82,7 @@ const LoginForm = () => {
       });
     } finally {
       setLoading(false);
+      setIsLoading(false);
     }
   };
 

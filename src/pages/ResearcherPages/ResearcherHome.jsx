@@ -5,6 +5,7 @@ import MainNav from '../../components/ResearcherComponents/Navigation/MainNav';
 import MobileBottomNav from '../../components/ResearcherComponents/Navigation/MobileBottomNav';
 import { FaChartLine, FaPiggyBank, FaFolder, FaClipboardCheck, FaUsers, FaClock } from 'react-icons/fa';
 import { useNavigate } from "react-router-dom";
+import CollaborationRequestsSection from '../../components/ResearcherComponents/CollaborationRequestsSection';
 
 export default function ResearcherHome() {
   const navigate = useNavigate();
@@ -212,6 +213,17 @@ export default function ResearcherHome() {
                 )}
               </article>
 
+              {/* Collaboration Requests Card */}
+              <article className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
+                <section className="flex items-center mb-4">
+                  <svg className="mr-2 text-purple-500 w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  <h2 className="text-xl font-bold text-gray-800">Collaboration Requests</h2>
+                </section>
+                <CollaborationRequestsSection />
+              </article>
+
               {/* Team Overview Card */}
               <article className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
                 <section className="flex items-center mb-4">
@@ -232,6 +244,55 @@ export default function ResearcherHome() {
                   <p className="text-gray-500 text-center py-4">No team members yet</p>
                 )}
               </article>
+
+              {/* Collaborations Section */}
+              <section className="bg-white rounded-lg shadow p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-semibold mb-4">My Collaborations</h2>
+                {projects.some(p => p.collaborators?.some(c => c.id === auth.currentUser?.uid)) ? (
+                  <div className="space-y-4">
+                    {projects.filter(p => p.collaborators?.some(c => c.id === auth.currentUser?.uid))
+                      .map(project => (
+                        <div key={project.id} className="p-4 bg-gray-50 rounded-lg">
+                          <div className="flex justify-between items-start mb-2">
+                            <h3 className="font-medium text-gray-900">{project.title}</h3>
+                            <span className={`px-2 py-1 text-xs rounded-full ${
+                              project.collaborators.find(c => c.id === auth.currentUser?.uid)?.accessLevel === 'Editor' 
+                                ? 'bg-blue-100 text-blue-800'
+                                : project.collaborators.find(c => c.id === auth.currentUser?.uid)?.accessLevel === 'Viewer'
+                                ? 'bg-gray-100 text-gray-800'
+                                : 'bg-green-100 text-green-800'
+                            }`}>
+                              {project.collaborators.find(c => c.id === auth.currentUser?.uid)?.accessLevel || 'Collaborator'}
+                            </span>
+                          </div>
+                          <p className="text-sm text-gray-600 mb-3">{project.description}</p>
+                          <div className="text-xs text-gray-500">
+                            <h4 className="font-medium mb-1">Your Permissions:</h4>
+                            <ul className="grid grid-cols-2 gap-1">
+                              {Object.entries(project.collaborators.find(c => c.id === auth.currentUser?.uid)?.permissions || {})
+                                .map(([key, value]) => (
+                                  <li key={key} className="flex items-center">
+                                    {value ? (
+                                      <svg className="h-3 w-3 text-green-500 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    ) : (
+                                      <svg className="h-3 w-3 text-red-500 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                      </svg>
+                                    )}
+                                    {key.replace(/([A-Z])/g, ' $1').toLowerCase()}
+                                  </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-gray-500 text-center py-4">You're not collaborating on any projects yet</p>
+                )}
+              </section>
             </section>
           )}
         </section>

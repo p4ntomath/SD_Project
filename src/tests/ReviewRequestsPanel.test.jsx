@@ -4,7 +4,7 @@ import { MemoryRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
 import ReviewRequestsPanel from '../components/ReviewerComponents/ReviewRequestsPanel';
 import { auth } from '../backend/firebase/firebaseConfig';
-import { getReviewerRequests, updateReviewRequestStatus } from '../backend/firebase/reviewdb';
+import { getReviewerRequests, updateReviewRequestStatus } from '../backend/firebase/reviewerDB';
 
 // Mock data
 const mockRequests = [

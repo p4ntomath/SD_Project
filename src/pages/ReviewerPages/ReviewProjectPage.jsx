@@ -33,7 +33,7 @@ export default function ReviewProjectPage() {
     };
 
     const handleFeedbackSubmitted = () => {
-        navigate('/reviewer/dashboard', {
+        navigate('/reviewer/history', {
             state: { message: 'Review submitted successfully' }
         });
     };
@@ -116,7 +116,7 @@ export default function ReviewProjectPage() {
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-medium text-gray-500">Created By</h3>
-                                    <p className="mt-1 text-gray-900">{project.createdBy?.name || 'Unknown'}</p>
+                                    <p className="mt-1 text-gray-900">{project.researcherName || 'Researcher'}</p>
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-medium text-gray-500">Last Updated</h3>

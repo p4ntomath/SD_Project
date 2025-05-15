@@ -91,14 +91,34 @@ export async function createProject(newProject) {
 export const fetchProjects = async (uid) => {
   try {
     const projectsCollection = collection(db, "projects");
-    const userProjectsQuery = query(projectsCollection, where("userId", "==", uid));
-    const querySnapshot = await getDocs(userProjectsQuery);
+    
+    // First get projects where user is owner
+    const ownedProjectsQuery = query(projectsCollection, where("userId", "==", uid));
+    const ownedProjectsSnapshot = await getDocs(ownedProjectsQuery);
+  
 
-    const projects = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    // Get all projects and filter for collaborations
+    const allProjectsSnapshot = await getDocs(projectsCollection);
+    const collabProjects = allProjectsSnapshot.docs.filter(doc => {
+      const data = doc.data();
+      return data.collaborators?.some(collab => collab.id === uid);
+    });
+    
 
+
+    // Combine both sets of projects
+    const projects = [...ownedProjectsSnapshot.docs, ...collabProjects]
+      .reduce((acc, doc) => {
+        if (!acc.some(p => p.id === doc.id)) {
+          acc.push({
+            id: doc.id,
+            ...doc.data()
+          });
+        }
+        return acc;
+      }, []);
+
+    
     return projects;
   } catch (error) {
     console.error("Error fetching projects:", error);
@@ -126,9 +146,10 @@ export const fetchProject = async (projectId) => {
 
     const projectData = projectSnap.data();
     
-    // Check if user has access (is owner or reviewer)
+    // Check if user has access (is owner, reviewer, or collaborator)
     const isOwner = projectData.userId === user.uid;
     const isInReviewersArray = projectData.reviewers?.some(rev => rev.id === user.uid);
+    const isCollaborator = projectData.collaborators?.some(collab => collab.id === user.uid);
 
     // Check reviewRequests collection for an accepted request
     const requestQuery = query(
@@ -140,7 +161,7 @@ export const fetchProject = async (projectId) => {
     const requestSnap = await getDocs(requestQuery);
     const isAcceptedReviewer = !requestSnap.empty;
 
-    if (!isOwner && !isInReviewersArray && !isAcceptedReviewer) {
+    if (!isOwner && !isInReviewersArray && !isAcceptedReviewer && !isCollaborator) {
       throw new Error('You do not have permission to access this project');
     }
 
@@ -423,40 +444,13 @@ export const getProjectDetails = async (projectId) => {
     }
 
     const projectData = projectSnap.data();
-    const currentUser = auth.currentUser;
 
-    if (!currentUser) {
-      throw new Error('User not authenticated');
-    }
-
-    // Check if user is owner
-    const isOwner = projectData.userId === currentUser.uid;
-
-    // First check if user is in the project's reviewers array
-    const isInReviewersArray = projectData.reviewers?.some(rev => rev.id === currentUser.uid);
-
-    // Then check reviewRequests collection for an accepted request
-    const requestQuery = query(
-      collection(db, "reviewRequests"),
-      where("projectId", "==", projectId),
-      where("reviewerId", "==", currentUser.uid),
-      where("status", "==", "accepted")
-    );
-    const requestSnap = await getDocs(requestQuery);
-    const isAcceptedReviewer = !requestSnap.empty;
-
-    if (!isOwner && !isInReviewersArray && !isAcceptedReviewer) {
-      throw new Error('You do not have permission to access this project');
-    }
-
-    // Add the review request to the project data if it exists
-    if (!isOwner && (isInReviewersArray || isAcceptedReviewer)) {
-      if (!requestSnap.empty) {
-        projectData.reviewRequest = {
-          id: requestSnap.docs[0].id,
-          ...requestSnap.docs[0].data()
-        };
-      }
+    // Get project owner's details
+    const ownerRef = doc(db, "users", projectData.userId);
+    const ownerSnap = await getDoc(ownerRef);
+    if (ownerSnap.exists()) {
+      const ownerData = ownerSnap.data();
+      projectData.researcherName = ownerData.fullName || 'Unknown';
     }
 
     return {
