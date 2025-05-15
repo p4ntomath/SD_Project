@@ -10,23 +10,24 @@ const RoleSelectionPage = () => {
   const [localLoading, setLocalLoading] = useState(false);
   const [profileCompleted, setProfileCompleted] = useState(false);
   const navigate = useNavigate();
-  const location = useLocation();
+  const { state } = useLocation();
 
   const handleSubmit = async (formData) => {
     setLocalLoading(true);
     setLoading(true);
     try {
+      // Ensure all required fields exist
       const profileData = {
-        fullName: formData.fullName,
+        fullName: formData.fullName || (state && state.name) || '',
         role: formData.role,
-        institution: formData.institution,
-        department: formData.department,
-        fieldOfResearch: formData.fieldOfResearch,
-        researchTags: formData.tags,
+        institution: formData.institution || '',
+        department: formData.department || '',
+        fieldOfResearch: formData.fieldOfResearch || '',
+        researchTags: formData.tags || [],
         bio: formData.bio || ''
       };
 
-      await completeProfile(profileData);
+      await completeProfile(profileData.fullName, profileData.role, profileData);
       setRole(formData.role);
       setProfileCompleted(true);
     } catch (error) {
