@@ -8,6 +8,7 @@ import MainNav from '../components/ResearcherComponents/Navigation/MainNav';
 import MobileBottomNav from '../components/ResearcherComponents/Navigation/MobileBottomNav';
 import { FiPlus } from 'react-icons/fi';
 import { useNavigate } from "react-router-dom";
+import { notify } from '../backend/firebase/notificationsUtil';
 
 export const formatDate = (dateString) => {
   if (!dateString) return 'Not specified';
@@ -87,6 +88,18 @@ export default function MyProjects() {
       setFilteredProjects(prevFiltered => [...prevFiltered, fullProject]);
       setModalOpen(true);
       setStatusMessage('Project was successfully created.');
+      notify({
+        type: "Project Creation",
+        projectId: createdProjectId,
+        projectTitle: cleanedProject.title,
+        goalText: goalInput,
+        description: cleanedProject.description,
+        folderName: cleanedProject.folderName,
+        amount: cleanedProject.amount,
+        researchField: cleanedProject.researchField,
+        userId: auth.currentUser.uid,
+        userName: auth.currentUser.displayName || 'Researcher',
+      });
       setShowForm(false);
       await new Promise(resolve => setTimeout(resolve, 500));
     } catch (err) {

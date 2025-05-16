@@ -1,4 +1,5 @@
 import React from 'react';
+import { notify } from '../../backend/firebase/notificationsUtil';
 
 export default function GoalsCard({ 
   project, 
@@ -14,6 +15,15 @@ export default function GoalsCard({
     try {
       const updatedGoals = project.goals.map((goal, index) => {
         if (index === goalIndex) {
+           // If marking as completed, notify
+          if (!goal.completed) {
+            notify({
+              type: "Goal Completion",
+              projectId,
+              projectTitle: project.title,
+              goalText: goal.text,
+            });
+          }
           return { ...goal, completed: !goal.completed };
         }
         return goal;
@@ -25,7 +35,7 @@ export default function GoalsCard({
       // Update both goals and status if all goals are completed
       await updateProject(projectId, { 
         goals: updatedGoals,
-        status: allGoalsCompleted ? 'Complete' : 'In Progress'
+        status: allGoalsCompleted ? 'Complete' : 'In Progress',
       });
       
       setProject({ 
@@ -36,7 +46,14 @@ export default function GoalsCard({
       
       if (allGoalsCompleted) {
         setModalOpen(true);
+        setError(false);
         setStatusMessage("All goals completed! Project status set to Complete.");
+        // Notify user about project completion
+        notify({
+          type: "Project Completion",
+          projectId,
+          projectTitle: project.title,
+        });
       }
     } catch (err) {
       setError(err.message);

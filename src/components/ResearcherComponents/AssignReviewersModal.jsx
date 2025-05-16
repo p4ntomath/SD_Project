@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ClipLoader } from 'react-spinners';
 import { getAvailableReviewers } from '../../backend/firebase/reviewerDB';
+import { notify } from '../../backend/firebase/notificationsUtil';
 
-export default function AssignReviewersModal({ isOpen, onClose, onAssign, projectId }) {
+export default function AssignReviewersModal({ isOpen, onClose, onAssign, projectId, projectTitle }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedReviewers, setSelectedReviewers] = useState([]);
   const [availableReviewers, setAvailableReviewers] = useState([]);
@@ -71,6 +72,12 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
     setLoading(true);
     try {
       await onAssign(selectedReviewers);
+      notify({
+        type: 'Reviewer Request Sent',
+        projectId,
+        projectTitle,
+        reviewerName: selectedReviewers.map(r => r.name).join(', '),
+      });
     } catch (error) {
       console.error('Error assigning reviewers:', error);
     }

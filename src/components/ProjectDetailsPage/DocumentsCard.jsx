@@ -3,7 +3,7 @@ import { ClipLoader } from 'react-spinners';
 import { AnimatePresence, motion } from 'framer-motion';
 import { createFolder, updateFolderName, deleteFolder } from '../../backend/firebase/folderDB';
 import { uploadDocument, deleteDocument } from '../../backend/firebase/documentsDB';
-
+import { notify } from '../../backend/firebase/notificationsUtil';
 export default function DocumentsCard({ 
   projectId, 
   folders, 
@@ -11,7 +11,9 @@ export default function DocumentsCard({
   foldersLoading, 
   setModalOpen, 
   setError, 
-  setStatusMessage 
+  setStatusMessage,
+  projectTitle
+
 }) {
   const [showFolderModal, setShowFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
@@ -42,11 +44,20 @@ export default function DocumentsCard({
       };
 
       setFolders([...folders, newFolder]);
+      
+      notify({
+        type: "Folder Created",
+        projectId,
+        projectTitle: projectTitle,
+        folderName: newFolderName
+      });
       setNewFolderName('');
       setShowFolderModal(false);
       setModalOpen(true);
       setError(false);
       setStatusMessage('Folder created successfully');
+      
+
     } catch (err) {
       console.error('Error creating folder:', err);
       setModalOpen(true);
@@ -69,6 +80,12 @@ export default function DocumentsCard({
       setModalOpen(true);
       setError(false);
       setStatusMessage('Folder renamed successfully');
+      notify({
+        type: "Folder Updated",     
+        projectId,
+        projectTitle: projectTitle,
+        folderName: newName
+      });
     } catch (err) {
       console.error('Error renaming folder:', err);
       setModalOpen(true);
@@ -93,6 +110,12 @@ export default function DocumentsCard({
       setModalOpen(true);
       setError(false);
       setStatusMessage('Folder deleted successfully');
+      notify({
+        type: "Folder Deleted", 
+        projectId,
+        projectTitle: projectTitle,
+        folderName: folderToDelete.name
+      });
     } catch (err) {
       console.error('Error deleting folder:', err);
       setModalOpen(true);
@@ -172,6 +195,13 @@ export default function DocumentsCard({
       setModalOpen(true);
       setError(false);
       setStatusMessage('File uploaded successfully');
+      notify({
+        type: "File Uploaded",
+        projectId,
+        projectTitle: projectTitle,
+        folderName: selectedFolder.name,
+        documentName: finalFileName
+      });
     } catch (err) {
       console.error('Error uploading file:', err);
       setModalOpen(true);
@@ -219,6 +249,13 @@ export default function DocumentsCard({
       setModalOpen(true);
       setError(false);
       setStatusMessage('File deleted successfully');
+      notify({
+        type: "File Deleted",
+        projectId,
+        projectTitle: projectTitle,
+        folderName: folder.name,
+        documentName: file.name
+      });
     } catch (err) {
       console.error('Error deleting file:', err);
       setError(true);
@@ -285,10 +322,14 @@ export default function DocumentsCard({
                           <svg className="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                           </svg>
+
+                          {/* File name with truncation */}
                           <div className="flex-1 min-w-0">
-                            <span className="truncate text-sm text-gray-700">{file.name}</span>
+                            <span className="block truncate text-sm text-gray-700">{file.name}</span>
                           </div>
-                          <div className="flex items-center gap-2">
+
+                          {/* Buttons do not shrink */}
+                          <div className="flex items-center gap-2 flex-shrink-0">
                             <button
                               onClick={() => handleDownloadFile(file)}
                               className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
@@ -318,6 +359,7 @@ export default function DocumentsCard({
                           </div>
                         </div>
                       </div>
+
                     ))
                   ) : (
                     <div className="flex flex-col items-center justify-center py-6 text-center bg-gray-50 rounded-lg border border-gray-200">
@@ -379,7 +421,7 @@ export default function DocumentsCard({
             ))}
 
             {folders.length === 0 && (
-              <div className="text-center py-12">
+              <div className="text-center py-12 ">
                 <div className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
                   <svg className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
@@ -387,15 +429,7 @@ export default function DocumentsCard({
                 </div>
                 <h3 className="text-lg font-medium text-gray-900 mb-1">No folders yet</h3>
                 <p className="text-sm text-gray-500 mb-4">Create a new folder to start organizing your project documents</p>
-                <button
-                  onClick={() => setShowFolderModal(true)}
-                  className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                  </svg>
-                  Create First Folder
-                </button>
+                
               </div>
             )}
           </div>

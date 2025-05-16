@@ -1,9 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
 import { useState, useEffect } from 'react';
-import { fetchProject, updateProject, deleteProject, getProjectDetails, 
-        notifyGoalCompletion, notifyProjectCompletion,
-       } from '../backend/firebase/projectDB';
+import { fetchProject, updateProject, deleteProject, getProjectDetails} from '../backend/firebase/projectDB';
 import { fetchDocumentsByFolder } from '../backend/firebase/documentsDB';
 import { ClipLoader } from 'react-spinners';
 import StatusModal from '../components/StatusModal';
@@ -17,6 +15,7 @@ import DocumentsCard from '../components/ProjectDetailsPage/DocumentsCard';
 import FundingCard from '../components/ProjectDetailsPage/FundingCard';
 import GoalsCard from '../components/ProjectDetailsPage/GoalsCard';
 import BasicInfoCard from '../components/ProjectDetailsPage/BasicInfoCard';
+import { notify } from '../backend/firebase/notificationsUtil';
 
 export default function ProjectDetailsPage() {
   const { projectId } = useParams();
@@ -206,6 +205,11 @@ export default function ProjectDetailsPage() {
       await deleteProject(projectId);
       setModalOpen(true);
       setStatusMessage("Project deleted successfully");
+      notify({
+        type: "Project Deleted",
+        projectId: projectId,   
+        projectTitle: project.title,
+        });
       setTimeout(() => {
         navigate("/home");
       }, 2000);
@@ -243,6 +247,12 @@ export default function ProjectDetailsPage() {
       setIsEditing(false);
       setModalOpen(true);
       setStatusMessage("Project updated successfully");
+      notify({
+        type: "Project Updated",
+        projectId,
+        projectTitle: updatedProject.title,
+        goalText: goalInput,
+      });
     } catch (err) {
       setError(err.message);
       setModalOpen(true);
@@ -388,6 +398,7 @@ export default function ProjectDetailsPage() {
               setModalOpen={setModalOpen}
               setError={setError}
               setStatusMessage={setStatusMessage}
+              projectTitle={project.title}
             />
 
             {/* Project Reviews Card */}

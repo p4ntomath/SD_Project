@@ -6,6 +6,7 @@ import { fetchProject } from '../../backend/firebase/projectDB';
 import { ClipLoader } from 'react-spinners';
 import ReviewerMainNav from '../../components/ReviewerComponents/Navigation/ReviewerMainNav';
 import ReviewerMobileBottomNav from '../../components/ReviewerComponents/Navigation/ReviewerMobileBottomNav';
+import { notify } from '../../backend/firebase/notificationsUtil';
 
 export default function ReviewRequests() {
   const [requests, setRequests] = useState([]);
@@ -91,18 +92,39 @@ export default function ReviewRequests() {
     }
   };
 
-  const handleAccept = async (projectId, requestId) => {
-    try {
-      setProcessingId(requestId);
-      await updateReviewRequestStatus(requestId, 'accepted');
-      setStatusMessage('Review request accepted successfully');
-      navigate(`/reviewer/review/${projectId}`);
-    } catch (err) {
-      setError('Failed to accept review request: ' + err.message);
-    } finally {
-      setProcessingId(null);
-    }
-  };
+ const handleAccept = async (projectId, requestId) => {
+  try {
+    setProcessingId(requestId);
+    await updateReviewRequestStatus(requestId, 'accepted');
+    setStatusMessage('Review request accepted successfully');
+
+    // Find the request object
+    const request = requests.find(r => r.id === requestId);
+
+    // 1. Notify the reviewer (yourself)
+    notify({
+      type: "Reviewer Accepted",
+      projectId,
+      projectTitle: request.project?.title || request.projectTitle,
+       researcherName: request.researcherName, 
+    });
+
+    // 2. Notify the researcher
+    notify({
+      userId: request.researcherId,
+      type: "Reviewer Request Accepted",
+      projectId,
+      projectTitle: request.project?.title || request.projectTitle,
+      reviewerName: auth.currentUser.displayName || "A reviewer",
+    });
+
+    navigate(`/reviewer/review/${projectId}`);
+  } catch (err) {
+    setError('Failed to accept review request: ' + err.message);
+  } finally {
+    setProcessingId(null);
+  }
+};
 
   const handleReject = async (requestId) => {
     try {

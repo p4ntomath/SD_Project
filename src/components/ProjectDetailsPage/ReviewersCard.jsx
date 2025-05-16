@@ -112,6 +112,7 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
         onClose={() => setShowAssignReviewersModal(false)}
         onAssign={handleAssignReviewers}
         projectId={projectId}
+        projectTitle={project.title}
       />
 
       {activeReviewers.length > 0 && (
