@@ -1,12 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import {
-  getFirestore,
-  initializeFirestore,
-  CACHE_SIZE_UNLIMITED
-} from "firebase/firestore";
+import { getFirestore } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
-
 // Firebase configuration using environment variables
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -21,15 +16,6 @@ const firebaseConfig = {
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-
-// Initialize Firestore with new `cache` config
-const db = initializeFirestore(app, {
-  cacheSizeBytes: CACHE_SIZE_UNLIMITED,
-  cache: {
-    type: "indexedDb"  // This replaces enableIndexedDbPersistence
-  }
-});
-
+const db = getFirestore(app);
 const storage = getStorage(app);
-
 export { app, auth, db, storage };
