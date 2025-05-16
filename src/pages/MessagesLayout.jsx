@@ -54,7 +54,7 @@ export default function MessagesLayout() {
 
   return (
     <div className="h-screen bg-gray-50">
-      <div className="h-full md:grid md:grid-cols-[320px_1fr]">
+      <div className="h-full md:grid md:grid-cols-[380px_1fr]">
         {/* Messages list - always visible on desktop */}
         <div className={`${location.pathname === '/messages' ? 'block' : 'hidden md:block'} h-full bg-white border-r border-gray-200 overflow-hidden`}>
           <div className="h-full flex flex-col">
