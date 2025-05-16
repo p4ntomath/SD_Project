@@ -488,17 +488,28 @@ const ChatRealTimeService = {
     const userChatsRef = doc(db, 'userChats', userId);
     const unsubscribe = onSnapshot(userChatsRef, async (docSnapshot) => {
       if (docSnapshot.exists()) {
-        const chatIds = docSnapshot.data().chatIds || [];
+        const userData = docSnapshot.data();
+        const chatIds = userData.chatIds || [];
+        const unreadCounts = userData.unreadCount || {};
         
         // Fetch all chats in parallel
-        const chatPromises = chatIds.map(chatId => 
-          getDoc(doc(db, 'chats', chatId)).then(chatDoc => 
-            chatDoc.exists() ? { id: chatDoc.id, ...chatDoc.data() } : null
-          )
-        );
+        const chatPromises = chatIds.map(async chatId => {
+          const chatDoc = await getDoc(doc(db, 'chats', chatId));
+          if (chatDoc.exists()) {
+            return {
+              id: chatDoc.id,
+              ...chatDoc.data(),
+              unreadCount: unreadCounts[chatId] || 0
+            };
+          }
+          return null;
+        });
         
-        const chats = (await Promise.all(chatPromises)).filter(chat => chat !== null);
-        callback(chats.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0)));
+        const chats = (await Promise.all(chatPromises))
+          .filter(chat => chat !== null)
+          .sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
+          
+        callback(chats);
       } else {
         callback([]);
       }

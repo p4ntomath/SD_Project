@@ -297,7 +297,7 @@ export default function ChatView() {
                     }`}
                   >
                     <p>{message.text}</p>
-                    <div className="flex items-center justify-end gap-1">
+                    <div className="flex items-center justify-end gap-1 mt-1">
                       <span 
                         className={`text-[10px] ${
                           isCurrentUser ? 'text-purple-200' : 'text-gray-500'
@@ -306,8 +306,8 @@ export default function ChatView() {
                         {formatMessageTime(message.timestamp)}
                       </span>
                       {isCurrentUser && (
-                        <span className={`text-xs ${isMessageReadByOthers(message) ? 'text-purple-200' : 'text-purple-300'}`}>
-                          {isMessageReadByOthers(message) ? '✓✓' : (isMessageDelivered(message) ? '✓' : '')}
+                        <span className={`text-[10px] ${isMessageReadByOthers(message) ? 'text-purple-200' : 'text-purple-300'}`}>
+                          {isMessageReadByOthers(message) ? '✓✓' : '✓'}
                         </span>
                       )}
                     </div>

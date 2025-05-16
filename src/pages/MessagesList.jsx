@@ -269,7 +269,7 @@ export default function MessagesList() {
                 <button 
                   key={chat.id}
                   onClick={() => navigate(`/messages/${chat.id}`)}
-                  className="w-full text-left hover:bg-gray-50 p-4 transition-colors"
+                  className={`w-full text-left p-4 transition-colors hover:bg-gray-50`}
                 >
                   <div className="flex items-center">
                     <div className="flex items-center flex-1 min-w-0">
@@ -285,20 +285,33 @@ export default function MessagesList() {
                         )}
                       </div>
                       <div className="ml-4 flex-1 min-w-0">
-                        <p className="font-medium text-gray-900 truncate">
+                        <p className={`${
+                          chat.unreadCount > 0 ? 'text-gray-900 font-bold' : 'text-gray-700 font-medium'
+                        } truncate`}>
                           {getChatDisplayName(chat)}
                         </p>
-                        <p className="text-sm text-gray-500 truncate">
+                        <p className={`text-sm truncate ${
+                          chat.unreadCount > 0 ? 'text-gray-800 font-medium' : 'text-gray-500'
+                        }`}>
                           {chat.lastMessage?.text || 'No messages yet'}
                         </p>
                       </div>
                     </div>
                     <div className="ml-4 flex flex-col items-end justify-between flex-shrink-0">
-                      <span className="text-xs text-gray-400 mb-2">
-                        {chat.lastMessage ? formatRelativeTime(chat.lastMessage.timestamp) : ''}
-                      </span>
+                      <div className="flex items-center gap-1">
+                        <span className={`text-xs ${
+                          chat.unreadCount > 0 ? 'text-gray-900 font-medium' : 'text-gray-400'
+                        }`}>
+                          {chat.lastMessage ? formatRelativeTime(chat.lastMessage.timestamp) : ''}
+                        </span>
+                        {chat.lastMessage?.senderId === auth.currentUser.uid && (
+                          <span className="text-xs text-gray-400">
+                            {chat.lastMessage.readBy?.length > 1 ? '✓✓' : '✓'}
+                          </span>
+                        )}
+                      </div>
                       {chat.unreadCount > 0 && (
-                        <div className="bg-purple-600 text-white text-xs font-medium rounded-full h-5 min-w-[20px] px-1.5 flex items-center justify-center">
+                        <div className="mt-1 bg-purple-600 text-white text-xs font-medium rounded-full h-5 min-w-[20px] px-1.5 flex items-center justify-center">
                           {chat.unreadCount}
                         </div>
                       )}
