@@ -101,14 +101,19 @@ export default function MessagesList() {
     return filtered;
   };
 
+  // Get chat name for display
+  const getChatDisplayName = (chat) => {
+    if (chat.type === 'group') return chat.groupName;
+    const otherUserId = chat.participants.find(id => id !== auth.currentUser.uid);
+    return chat.participantNames?.[otherUserId] || 'Unknown User';
+  };
+
   // Get avatar initials for a name
   const getAvatarInitials = (name) => {
-    if (!name) return '??';
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase();
+    if (!name || typeof name !== 'string') return 'U';
+    const parts = name.trim().split(' ');
+    if (parts.length === 0) return 'U';
+    return parts.map(part => part[0]).join('').toUpperCase();
   };
 
   // Format timestamp to relative time
@@ -275,13 +280,13 @@ export default function MessagesList() {
                           </div>
                         ) : (
                           <div className="w-12 h-12 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
-                            {getAvatarInitials(chat.name)}
+                            {getAvatarInitials(getChatDisplayName(chat))}
                           </div>
                         )}
                       </div>
                       <div className="ml-4 flex-1 min-w-0">
                         <p className="font-medium text-gray-900 truncate">
-                          {chat.type === 'group' ? chat.groupName : chat.name}
+                          {getChatDisplayName(chat)}
                         </p>
                         <p className="text-sm text-gray-500 truncate">
                           {chat.lastMessage?.text || 'No messages yet'}

@@ -454,7 +454,7 @@ const ChatRealTimeService = {
       const q = query(
         messagesRef,
         where('chatId', '==', chatId),
-        orderBy('timestamp', 'desc'),
+        orderBy('timestamp', 'asc'),  // Changed to ascending order
         limit(50)
       );
       
@@ -464,15 +464,13 @@ const ChatRealTimeService = {
             id: doc.id,
             ...doc.data()
           }));
-          callback(messages);
+          callback(messages);  // No need to sort here since query is already in ascending order
         },
         (error) => {
-          // Handle index requirement error specifically
           if (error.code === 'failed-precondition') {
             const indexUrl = error.message.match(/https:\/\/console\.firebase\.google\.com[^\s]*/);
             console.error('This query requires an index. Please create it at:', indexUrl?.[0]);
-            // You can create the index by visiting the URL in the error message
-            callback([]);  // Return empty array while index is being created
+            callback([]);
           } else {
             console.error('Error in messages subscription:', error);
             callback([]);
@@ -481,7 +479,7 @@ const ChatRealTimeService = {
       );
     } catch (error) {
       console.error('Error setting up messages subscription:', error);
-      return () => {}; // Return no-op cleanup function
+      return () => {};
     }
   },
 

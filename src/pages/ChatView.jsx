@@ -57,7 +57,7 @@ export default function ChatView() {
             ...msg,
             senderName: chat?.participantNames?.[msg.senderId] || 'Unknown User'
           }));
-          setMessages(messagesWithNames.sort((a, b) => a.timestamp?.seconds - b.timestamp?.seconds));
+          setMessages(messagesWithNames); // Remove the sort since messages are already in correct order
         });
 
         await MessageService.markMessagesAsRead(chatId, auth.currentUser.uid);
@@ -120,11 +120,10 @@ export default function ChatView() {
 
   // Get sender's avatar initials
   const getAvatarInitials = (name) => {
-    return name
-      .split(' ')
-      .map(part => part[0])
-      .join('')
-      .toUpperCase();
+    if (!name || typeof name !== 'string') return 'U';
+    const parts = name.trim().split(' ');
+    if (parts.length === 0) return 'U';
+    return parts.map(part => part[0]).join('').toUpperCase();
   };
 
   return (
