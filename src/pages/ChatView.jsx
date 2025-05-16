@@ -40,15 +40,26 @@ export default function ChatView() {
             navigate('/messages');
             return;
           }
+
+          // For direct chats, set the other participant's name as chat name
+          if (chatData.type === 'direct') {
+            const otherUserId = chatData.participants.find(id => id !== auth.currentUser.uid);
+            chatData.name = chatData.participantNames?.[otherUserId] || 'Unknown User';
+          }
+          
           setChat(chatData);
         });
 
-        // Subscribe to messages
+        // Subscribe to messages and mark as read
         unsubscribeMessages = ChatRealTimeService.subscribeToMessages(chatId, (messagesData) => {
-          setMessages(messagesData.sort((a, b) => a.timestamp?.seconds - b.timestamp?.seconds));
+          // Add sender names to messages
+          const messagesWithNames = messagesData.map(msg => ({
+            ...msg,
+            senderName: chat?.participantNames?.[msg.senderId] || 'Unknown User'
+          }));
+          setMessages(messagesWithNames.sort((a, b) => a.timestamp?.seconds - b.timestamp?.seconds));
         });
 
-        // Mark messages as read
         await MessageService.markMessagesAsRead(chatId, auth.currentUser.uid);
         setLoading(false);
       } catch (error) {

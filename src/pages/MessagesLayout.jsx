@@ -13,8 +13,8 @@ export default function MessagesLayout() {
   useEffect(() => {
     const loadInitialChat = async () => {
       try {
-        // Only attempt to load chats and navigate if we're at /messages
-        if (location.pathname === '/messages') {
+        // Only attempt to load chats and navigate if we're at /messages and on desktop
+        if (location.pathname === '/messages' && window.innerWidth >= 768) {
           const userChats = await ChatService.getUserChats(auth.currentUser.uid);
           if (userChats.length > 0) {
             // Navigate to the most recently updated chat
@@ -29,6 +29,7 @@ export default function MessagesLayout() {
     };
 
     const handleResize = () => {
+      // Only try to load initial chat when screen becomes desktop size
       if (window.innerWidth >= 768 && location.pathname === '/messages' && initialLoadComplete) {
         loadInitialChat();
       }

@@ -1,4 +1,3 @@
-import { initializeApp } from 'firebase/app';
 import { 
   getFirestore, 
   collection, 
@@ -9,8 +8,7 @@ import {
   updateDoc, 
   deleteDoc,
   arrayUnion, 
-  arrayRemove, 
-  enableIndexedDbPersistence,
+  arrayRemove,
   query, 
   where, 
   orderBy, 
@@ -19,21 +17,12 @@ import {
   onSnapshot, 
   serverTimestamp,
   increment,
-  writeBatch
+  writeBatch,
+  CACHE_SIZE_UNLIMITED,
+  deleteField
 } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from './firebaseConfig';
-
-
-
-// Enable offline persistence
-enableIndexedDbPersistence(db).catch((err) => {
-  if (err.code == 'failed-precondition') {
-    console.log("Multiple tabs open, persistence can only be enabled in one tab at a time");
-  } else if (err.code == 'unimplemented') {
-    console.log("The current browser doesn't support persistence");
-  }
-});
 
 // Helper function to ensure userChats document exists
 const ensureUserChatsExists = async (userId) => {
@@ -65,48 +54,72 @@ const handleFirebaseError = (error) => {
 // Enhanced ChatService with explicit group chat management
 const ChatService = {
   createDirectChat: async (userId1, userId2) => {
-    const participants = [userId1, userId2].sort();
-    const chatId = participants.join('_');
-    
-    const chatRef = doc(db, 'chats', chatId);
-    const chatSnap = await getDoc(chatRef);
-    
-    if (chatSnap.exists()) {
+    try {
+      // Check if users exist first
+      const [user1Doc, user2Doc] = await Promise.all([
+        getDoc(doc(db, 'users', userId1)),
+        getDoc(doc(db, 'users', userId2))
+      ]);
+
+      if (!user1Doc.exists() || !user2Doc.exists()) {
+        throw new Error('One or more users not found');
+      }
+
+      const participants = [userId1, userId2].sort();
+      const chatId = participants.join('_');
+      
+      const chatRef = doc(db, 'chats', chatId);
+      const chatSnap = await getDoc(chatRef);
+      
+      if (chatSnap.exists()) {
+        return chatId;
+      }
+
+      const user1Data = user1Doc.data();
+      const user2Data = user2Doc.data();
+      
+      const newChat = {
+        chatId,
+        type: 'direct',
+        createdAt: serverTimestamp(),
+        updatedAt: serverTimestamp(),
+        participants,
+        participantNames: {
+          [userId1]: user1Data.fullName,
+          [userId2]: user2Data.fullName
+        },
+        lastMessage: null
+      };
+      
+      await setDoc(chatRef, newChat);
+      
+      // Ensure userChats documents exist
+      await Promise.all([
+        ensureUserChatsExists(userId1),
+        ensureUserChatsExists(userId2)
+      ]);
+      
+      // Update userChats for both users
+      const batch = writeBatch(db);
+      batch.update(doc(db, 'userChats', userId1), {
+        chatIds: arrayUnion(chatId),
+        [`unreadCount.${chatId}`]: 0
+      });
+      
+      batch.update(doc(db, 'userChats', userId2), {
+        chatIds: arrayUnion(chatId),
+        [`unreadCount.${chatId}`]: 0
+      });
+      
+      await batch.commit();
+      
       return chatId;
+    } catch (error) {
+      if (error.code === 'permission-denied') {
+        throw new Error('You do not have permission to start this chat');
+      }
+      throw error;
     }
-    
-    const newChat = {
-      chatId,
-      type: 'direct',
-      createdAt: serverTimestamp(),
-      updatedAt: serverTimestamp(),
-      participants,
-      lastMessage: null
-    };
-    
-    await setDoc(chatRef, newChat);
-    
-    // Ensure userChats documents exist
-    await Promise.all([
-      ensureUserChatsExists(userId1),
-      ensureUserChatsExists(userId2)
-    ]);
-    
-    // Update userChats for both users
-    const batch = writeBatch(db);
-    batch.update(doc(db, 'userChats', userId1), {
-      chatIds: arrayUnion(chatId),
-      [`unreadCount.${chatId}`]: 0
-    });
-    
-    batch.update(doc(db, 'userChats', userId2), {
-      chatIds: arrayUnion(chatId),
-      [`unreadCount.${chatId}`]: 0
-    });
-    
-    await batch.commit();
-    
-    return chatId;
   },
 
   createGroupChat: async (creatorId, participantIds, groupName) => {

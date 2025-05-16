@@ -12,6 +12,7 @@ export default function MessagesList() {
   const [showNewChatModal, setShowNewChatModal] = useState(false);
   const [userSearchResults, setUserSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [error, setError] = useState(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -55,12 +56,18 @@ export default function MessagesList() {
   // Function to start a chat with a user
   const startChat = async (userId) => {
     try {
+      setError(null);
+      setLoading(true);
       const chatId = await ChatService.createDirectChat(auth.currentUser.uid, userId);
       setShowNewChatModal(false);
+      setSearchQuery('');
       setUserSearchResults([]);
       navigate(`/messages/${chatId}`);
     } catch (error) {
       console.error('Error creating chat:', error);
+      setError(error.message || 'Failed to create chat. Please try again.');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -218,6 +225,10 @@ export default function MessagesList() {
               searching ? (
                 <div className="flex items-center justify-center py-12">
                   <div className="text-gray-500">Searching users...</div>
+                </div>
+              ) : error ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <p className="text-sm text-red-500">{error}</p>
                 </div>
               ) : userSearchResults.length > 0 ? (
                 userSearchResults.map(user => (

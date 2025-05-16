@@ -1,6 +1,10 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
-import { getFirestore } from "firebase/firestore";
+import {
+  getFirestore,
+  initializeFirestore,
+  CACHE_SIZE_UNLIMITED
+} from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
 // Firebase configuration using environment variables
@@ -14,10 +18,18 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-// Initialize Firebase app
+// Initialize Firebase
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
-const db = getFirestore(app);
+
+// Initialize Firestore with new `cache` config
+const db = initializeFirestore(app, {
+  cacheSizeBytes: CACHE_SIZE_UNLIMITED,
+  cache: {
+    type: "indexedDb"  // This replaces enableIndexedDbPersistence
+  }
+});
+
 const storage = getStorage(app);
 
-export { app, auth, db ,storage};
+export { app, auth, db, storage };
