@@ -62,15 +62,16 @@ export default function ChatView() {
 
         // Subscribe to messages and mark as read
         unsubscribeMessages = ChatRealTimeService.subscribeToMessages(chatId, (messagesData) => {
-          // Add sender names to messages
           const messagesWithNames = messagesData.map(msg => ({
             ...msg,
             senderName: chat?.participantNames?.[msg.senderId] || 'Unknown User'
           }));
-          setMessages(messagesWithNames); // Remove the sort since messages are already in correct order
+          setMessages(messagesWithNames);
+          
+          // Mark messages as read when received
+          MessageService.markMessagesAsRead(chatId, auth.currentUser.uid);
         });
 
-        await MessageService.markMessagesAsRead(chatId, auth.currentUser.uid);
         setLoading(false);
       } catch (error) {
         console.error('Error initializing chat:', error);
@@ -121,10 +122,21 @@ export default function ChatView() {
     );
   }
 
+  // Add check for chat existence
+  if (!chat) {
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <div className="text-gray-500">Chat not found</div>
+      </div>
+    );
+  }
+
   // Format timestamp to readable time
   const formatMessageTime = (timestamp) => {
     if (!timestamp) return '';
-    const date = timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp);
+    // Handle both Firestore Timestamp and regular Date objects
+    const date = timestamp instanceof Date ? timestamp : timestamp.toDate?.();
+    if (!date) return '';
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
@@ -134,6 +146,13 @@ export default function ChatView() {
     const parts = name.trim().split(' ');
     if (parts.length === 0) return 'U';
     return parts.map(part => part[0]).join('').toUpperCase();
+  };
+
+  // Helper function to check if message is read by all participants
+  const isMessageReadByAll = (message) => {
+    if (!message.readBy || !chat?.participants) return false;
+    const otherParticipants = chat.participants.filter(id => id !== auth.currentUser.uid);
+    return otherParticipants.every(id => message.readBy.includes(id));
   };
 
   return (
@@ -152,7 +171,7 @@ export default function ChatView() {
               </button>
               <div className="flex items-center space-x-4 min-w-0">
                 <div className="relative flex-shrink-0">
-                  {chat.type === 'group' ? (
+                  {chat?.type === 'group' ? (
                     <div className="w-10 h-10 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-medium text-lg">
                       {chat.groupAvatar || '👥'}
                     </div>
@@ -219,13 +238,20 @@ export default function ChatView() {
                     }`}
                   >
                     <p>{message.text}</p>
-                    <span 
-                      className={`text-xs mt-1 ${
-                        isCurrentUser ? 'text-purple-200' : 'text-gray-500'
-                      }`}
-                    >
-                      {formatMessageTime(message.timestamp)}
-                    </span>
+                    <div className="flex items-center justify-end gap-1">
+                      <span 
+                        className={`text-xs ${
+                          isCurrentUser ? 'text-purple-200' : 'text-gray-500'
+                        }`}
+                      >
+                        {formatMessageTime(message.timestamp)}
+                      </span>
+                      {isCurrentUser && (
+                        <span className={`text-xs ${isMessageReadByAll(message) ? 'text-purple-200' : 'text-purple-300'}`}>
+                          {isMessageReadByAll(message) ? '✓✓' : '✓'}
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>

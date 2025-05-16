@@ -451,30 +451,35 @@ const ChatRealTimeService = {
     const messagesRef = collection(db, 'messages');
     
     try {
+      // Create a query for the most recent messages
       const q = query(
         messagesRef,
         where('chatId', '==', chatId),
-        orderBy('timestamp', 'asc'),  // Changed to ascending order
-        limit(50)
+        orderBy('timestamp', 'desc'),
+        limit(100)
       );
       
+      // Set up real-time listener
       return onSnapshot(q, 
         (snapshot) => {
-          const messages = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }));
-          callback(messages);  // No need to sort here since query is already in ascending order
+          const messages = snapshot.docs
+            .map(doc => ({
+              id: doc.id,
+              ...doc.data(),
+              // Ensure timestamp is properly handled for new messages
+              timestamp: doc.data().timestamp?.toDate?.() || new Date()
+            }))
+            .sort((a, b) => (a.timestamp - b.timestamp)); // Sort in ascending order for display
+          
+          callback(messages);
         },
         (error) => {
+          console.error('Error in messages subscription:', error);
           if (error.code === 'failed-precondition') {
             const indexUrl = error.message.match(/https:\/\/console\.firebase\.google\.com[^\s]*/);
             console.error('This query requires an index. Please create it at:', indexUrl?.[0]);
-            callback([]);
-          } else {
-            console.error('Error in messages subscription:', error);
-            callback([]);
           }
+          callback([]);
         }
       );
     } catch (error) {
