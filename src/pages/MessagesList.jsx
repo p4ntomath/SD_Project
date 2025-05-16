@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiSearch, FiMessageSquare, FiArrowLeft, FiUserPlus } from 'react-icons/fi';
+import { FiSearch, FiMessageSquare, FiArrowLeft, FiUserPlus, FiUsers, FiX } from 'react-icons/fi';
 import { ChatService, ChatRealTimeService } from '../backend/firebase/chatDB';
 import { auth } from '../backend/firebase/firebaseConfig';
 
@@ -10,6 +10,9 @@ export default function MessagesList() {
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [showGroupChatModal, setShowGroupChatModal] = useState(false);
+  const [groupName, setGroupName] = useState('');
+  const [selectedUsers, setSelectedUsers] = useState([]);
   const [userSearchResults, setUserSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState(null);
@@ -66,6 +69,28 @@ export default function MessagesList() {
     } catch (error) {
       console.error('Error creating chat:', error);
       setError(error.message || 'Failed to create chat. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Function to create a group chat
+  const createGroupChat = async () => {
+    if (selectedUsers.length < 2 || !groupName) return;
+    try {
+      setError(null);
+      setLoading(true);
+      const participantIds = selectedUsers.map(user => user.id);
+      const chatId = await ChatService.createGroupChat(auth.currentUser.uid, participantIds, groupName);
+      setShowNewChatModal(false);
+      setShowGroupChatModal(false);
+      setSearchQuery('');
+      setSelectedUsers([]);
+      setGroupName('');
+      navigate(`/messages/${chatId}`);
+    } catch (error) {
+      console.error('Error creating group chat:', error);
+      setError(error.message || 'Failed to create group chat. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -154,80 +179,155 @@ export default function MessagesList() {
               <FiArrowLeft className="h-5 w-5 mr-1" />
               Back to Dashboard
             </button>
-            <button
-              onClick={() => setShowNewChatModal(true)}
-              className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
-            >
-              <FiUserPlus className="h-4 w-4 mr-1.5" />
-              New Chat
-            </button>
+            <div className="flex space-x-2">
+              <button
+                onClick={() => {
+                  setShowNewChatModal(true);
+                  setShowGroupChatModal(false);
+                  setSearchQuery('');
+                  setSelectedUsers([]);
+                  setGroupName('');
+                }}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              >
+                <FiUserPlus className="h-4 w-4 mr-1.5" />
+                New Chat
+              </button>
+              <button
+                onClick={() => {
+                  setShowGroupChatModal(true);
+                  setShowNewChatModal(true);
+                  setSearchQuery('');
+                  setSelectedUsers([]);
+                  setGroupName('');
+                }}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+              >
+                <FiUsers className="h-4 w-4 mr-1.5" />
+                New Group
+              </button>
+            </div>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div className="bg-white shadow sm:rounded-lg mt-4 overflow-hidden"> {/* Added overflow-hidden */}
+        <div className="bg-white shadow sm:rounded-lg mt-4 overflow-hidden">
           {/* Search and Filters */}
           <div className="p-4 border-b border-gray-200">
-            <div className="relative">
-              <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
-              <input
-                type="text"
-                placeholder={showNewChatModal ? "Search users..." : "Search messages..."}
-                className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-100 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all"
-                value={searchQuery}
-                onChange={(e) => {
-                  setSearchQuery(e.target.value);
-                  if (showNewChatModal) {
-                    searchUsers(e.target.value);
-                  }
-                }}
-              />
-            </div>
-
-            {!showNewChatModal && (
-              <div className="flex space-x-2 mt-4">
-                <button
-                  onClick={() => setActiveFilter('all')}
-                  className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    activeFilter === 'all'
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  All
-                </button>
-                <button
-                  onClick={() => setActiveFilter('groups')}
-                  className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    activeFilter === 'groups'
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  Groups
-                </button>
-                <button
-                  onClick={() => setActiveFilter('direct')}
-                  className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    activeFilter === 'direct'
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  Direct
-                </button>
-                <button
-                  onClick={() => setActiveFilter('unread')}
-                  className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
-                    activeFilter === 'unread'
-                      ? 'bg-purple-600 text-white'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                  }`}
-                >
-                  Unread
-                </button>
+            {showNewChatModal && showGroupChatModal ? (
+              <div className="space-y-4">
+                <input
+                  type="text"
+                  placeholder="Group name..."
+                  className="w-full px-4 py-2 rounded-lg bg-gray-100 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all"
+                  value={groupName}
+                  onChange={(e) => setGroupName(e.target.value)}
+                />
+                <div className="relative">
+                  <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search users to add..."
+                    className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-100 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      searchUsers(e.target.value);
+                    }}
+                  />
+                </div>
+                {selectedUsers.length > 0 && (
+                  <div className="flex flex-wrap gap-2">
+                    {selectedUsers.map(user => (
+                      <span
+                        key={user.id}
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800"
+                      >
+                        {user.fullName}
+                        <button
+                          type="button"
+                          onClick={() => setSelectedUsers(users => users.filter(u => u.id !== user.id))}
+                          className="ml-1 inline-flex items-center p-0.5 rounded-full text-purple-400 hover:bg-purple-200 hover:text-purple-500 focus:outline-none"
+                        >
+                          <FiX className="h-3 w-3" />
+                        </button>
+                      </span>
+                    ))}
+                  </div>
+                )}
+                {selectedUsers.length >= 2 && groupName && (
+                  <button
+                    onClick={createGroupChat}
+                    className="w-full py-2 text-sm font-medium rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors"
+                  >
+                    Create Group Chat
+                  </button>
+                )}
               </div>
+            ) : (
+              <>
+                <div className="relative">
+                  <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder={showNewChatModal ? "Search users..." : "Search messages..."}
+                    className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-100 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      if (showNewChatModal) {
+                        searchUsers(e.target.value);
+                      }
+                    }}
+                  />
+                </div>
+
+                {!showNewChatModal && (
+                  <div className="flex space-x-2 mt-4">
+                    <button
+                      onClick={() => setActiveFilter('all')}
+                      className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        activeFilter === 'all'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      All
+                    </button>
+                    <button
+                      onClick={() => setActiveFilter('groups')}
+                      className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        activeFilter === 'groups'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      Groups
+                    </button>
+                    <button
+                      onClick={() => setActiveFilter('direct')}
+                      className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        activeFilter === 'direct'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      Direct
+                    </button>
+                    <button
+                      onClick={() => setActiveFilter('unread')}
+                      className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
+                        activeFilter === 'unread'
+                          ? 'bg-purple-600 text-white'
+                          : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                      }`}
+                    >
+                      Unread
+                    </button>
+                  </div>
+                )}
+              </>
             )}
           </div>
 
@@ -250,19 +350,47 @@ export default function MessagesList() {
                 userSearchResults.map(user => (
                   <button 
                     key={user.id}
-                    onClick={() => startChat(user.id)}
+                    onClick={() => {
+                      if (showGroupChatModal) {
+                        // Add/remove user from selected users
+                        if (selectedUsers.some(u => u.id === user.id)) {
+                          setSelectedUsers(users => users.filter(u => u.id !== user.id));
+                        } else {
+                          setSelectedUsers(users => [...users, user]);
+                        }
+                      } else {
+                        startChat(user.id);
+                      }
+                    }}
                     className="w-full text-left hover:bg-gray-50 p-4 transition-colors"
                   >
-                    <div className="flex items-center">
-                      <div className="flex-shrink-0">
-                        <div className="w-12 h-12 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
-                          {getAvatarInitials(user.fullName)}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <div className="w-12 h-12 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
+                            {getAvatarInitials(user.fullName)}
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <p className="font-medium text-gray-900">{user.fullName}</p>
+                          <p className="text-sm text-gray-500">{user.email}</p>
                         </div>
                       </div>
-                      <div className="ml-4">
-                        <p className="font-medium text-gray-900">{user.fullName}</p>
-                        <p className="text-sm text-gray-500">{user.email}</p>
-                      </div>
+                      {showGroupChatModal && (
+                        <div className="flex-shrink-0">
+                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                            selectedUsers.some(u => u.id === user.id)
+                              ? 'bg-purple-600 border-purple-600 text-white'
+                              : 'border-gray-300'
+                          }`}>
+                            {selectedUsers.some(u => u.id === user.id) && (
+                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </button>
                 ))

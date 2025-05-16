@@ -126,12 +126,27 @@ const ChatService = {
     const chatId = doc(collection(db, 'chats')).id;
     const participants = [...new Set([creatorId, ...participantIds])];
     
+    // Get all participant names
+    const participantNames = {};
+    await Promise.all(
+      participants.map(async (userId) => {
+        const userRef = doc(db, 'users', userId);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          participantNames[userId] = userSnap.data().fullName || 'Unknown User';
+        } else {
+          participantNames[userId] = 'Unknown User';
+        }
+      })
+    );
+    
     const newChat = {
       chatId,
       type: 'group',
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       participants,
+      participantNames,
       groupName,
       lastMessage: null
     };
@@ -189,12 +204,18 @@ const ChatService = {
       if (chatSnap.data().type !== 'group') {
         throw new Error('This is not a group chat');
       }
+
+      // Get new user's name
+      const userRef = doc(db, 'users', userId);
+      const userSnap = await getDoc(userRef);
+      const userName = userSnap.exists() ? userSnap.data().fullName || 'Unknown User' : 'Unknown User';
       
       const batch = writeBatch(db);
       
-      // Add user to chat participants
+      // Add user to chat participants and update participantNames
       batch.update(chatRef, {
-        participants: arrayUnion(userId)
+        participants: arrayUnion(userId),
+        [`participantNames.${userId}`]: userName
       });
       
       // Add chat to user's chats
@@ -481,9 +502,37 @@ const ChatRealTimeService = {
 
   subscribeToChat: (chatId, callback) => {
     const chatRef = doc(db, 'chats', chatId);
-    const unsubscribe = onSnapshot(chatRef, (doc) => {
-      if (doc.exists()) {
-        callback({ id: doc.id, ...doc.data() });
+    
+    const unsubscribe = onSnapshot(chatRef, async (snapshot) => {
+      if (snapshot.exists()) {
+        const chatData = snapshot.data();
+        
+        // If participant names are missing, fetch them
+        if (!chatData.participantNames || Object.keys(chatData.participantNames).length === 0) {
+          const participantNames = {};
+          
+          // Get all user docs in parallel with proper doc reference creation
+          for (const userId of chatData.participants) {
+            try {
+              const userRef = doc(db, 'users', userId);
+              const userSnap = await getDoc(userRef);
+              participantNames[userId] = userSnap.exists() ? 
+                userSnap.data().fullName || 'Unknown User' : 
+                'Unknown User';
+            } catch (error) {
+              console.error(`Error fetching user ${userId}:`, error);
+              participantNames[userId] = 'Unknown User';
+            }
+          }
+          
+          // Update chat with participant names
+          await updateDoc(chatRef, { participantNames });
+          chatData.participantNames = participantNames;
+        }
+        
+        callback({ id: snapshot.id, ...chatData });
+      } else {
+        callback(null);
       }
     });
     

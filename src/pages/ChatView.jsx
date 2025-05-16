@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiVideo, FiPhone, FiSettings, FiUserPlus, FiMoreVertical, FiPaperclip, FiSmile, FiSend, FiArrowLeft } from 'react-icons/fi';
+import { FiVideo, FiPhone, FiSettings, FiUserPlus, FiMoreVertical, FiPaperclip, FiSmile, FiSend, FiArrowLeft, FiSearch, FiX } from 'react-icons/fi';
 import { ChatService, MessageService, ChatRealTimeService } from '../backend/firebase/chatDB';
 import { auth } from '../backend/firebase/firebaseConfig';
 
@@ -13,6 +13,10 @@ export default function ChatView() {
   const [sendingMessage, setSendingMessage] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [showAddMemberModal, setShowAddMemberModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [userSearchResults, setUserSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
   const messagesEndRef = useRef(null);
   const chatViewRef = useRef(null);
 
@@ -145,6 +149,37 @@ export default function ChatView() {
       console.error('Error sending message:', error);
     } finally {
       setSendingMessage(false);
+    }
+  };
+
+  // Function to search for users
+  const searchUsers = async (query) => {
+    if (!query.trim()) {
+      setUserSearchResults([]);
+      return;
+    }
+    setSearching(true);
+    try {
+      const results = await ChatService.searchUsers(query, auth.currentUser.uid);
+      // Filter out users that are already in the chat
+      const filteredResults = results.filter(user => !chat.participants.includes(user.id));
+      setUserSearchResults(filteredResults);
+    } catch (error) {
+      console.error('Error searching users:', error);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  // Function to add a user to the group
+  const addUserToGroup = async (userId) => {
+    try {
+      await ChatService.addUserToGroupChat(chatId, userId);
+      setSearchQuery('');
+      setUserSearchResults([]);
+      setShowAddMemberModal(false);
+    } catch (error) {
+      console.error('Error adding user to group:', error);
     }
   };
 
@@ -308,22 +343,27 @@ export default function ChatView() {
                     </div>
                   ) : (
                     <div className="w-10 h-10 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
-                      {getAvatarInitials(chat.name)}
+                      {getAvatarInitials(chat?.name)}
                     </div>
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <h2 className="font-semibold text-gray-900 truncate">{chat.groupName || chat.name}</h2>
-                  <p className="text-sm text-gray-500 truncate">
-                    {chat.type === 'group' ? `${chat.participants?.length || 0} members` : 'Direct Message'}
-                  </p>
+                  <h2 className="font-semibold text-gray-900 truncate">{chat?.groupName || chat?.name}</h2>
+                  {chat?.type === 'group' && (
+                    <p className="text-sm text-gray-500 truncate">
+                      {`${chat.participants?.length || 0} members`}
+                    </p>
+                  )}
                 </div>
               </div>
             </div>
 
             <div className="flex items-center space-x-2 flex-shrink-0">
-              {chat.type === 'group' && (
-                <button className="p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
+              {chat?.type === 'group' && (
+                <button 
+                  onClick={() => setShowAddMemberModal(true)}
+                  className="p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+                >
                   <FiUserPlus className="h-5 w-5" />
                 </button>
               )}
@@ -334,6 +374,81 @@ export default function ChatView() {
           </div>
         </div>
       </header>
+
+      {/* Add Member Modal */}
+      {showAddMemberModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
+          <div className="bg-white w-full max-w-md mx-4 rounded-lg shadow-xl">
+            <div className="p-4 border-b border-gray-200">
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-medium">Add Members</h3>
+                <button 
+                  onClick={() => {
+                    setShowAddMemberModal(false);
+                    setSearchQuery('');
+                    setUserSearchResults([]);
+                  }}
+                  className="text-gray-400 hover:text-gray-500"
+                >
+                  <FiX className="h-5 w-5" />
+                </button>
+              </div>
+              <div className="mt-4">
+                <div className="relative">
+                  <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                  <input
+                    type="text"
+                    placeholder="Search users..."
+                    className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-100 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all"
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      searchUsers(e.target.value);
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="max-h-96 overflow-y-auto">
+              {searching ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-gray-500">Searching users...</div>
+                </div>
+              ) : userSearchResults.length > 0 ? (
+                <div className="divide-y divide-gray-200">
+                  {userSearchResults.map(user => (
+                    <button
+                      key={user.id}
+                      onClick={() => addUserToGroup(user.id)}
+                      className="w-full text-left hover:bg-gray-50 p-4 transition-colors"
+                    >
+                      <div className="flex items-center">
+                        <div className="flex-shrink-0">
+                          <div className="w-10 h-10 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
+                            {getAvatarInitials(user.fullName)}
+                          </div>
+                        </div>
+                        <div className="ml-4">
+                          <p className="font-medium text-gray-900">{user.fullName}</p>
+                          <p className="text-sm text-gray-500">{user.email}</p>
+                        </div>
+                      </div>
+                    </button>
+                  ))}
+                </div>
+              ) : searchQuery ? (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-gray-500">No users found</div>
+                </div>
+              ) : (
+                <div className="flex items-center justify-center py-8">
+                  <div className="text-gray-500">Type to search for users</div>
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Messages Area */}
       <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={chatViewRef}>
