@@ -326,15 +326,20 @@ const MessageService = {
         }));
       }
       
+      // Create message object without attachments first
       const newMessage = {
         messageId,
         chatId,
         senderId,
         text: message.text,
         timestamp: serverTimestamp(),
-        readBy: [senderId],
-        attachments: attachments.length > 0 ? attachments : undefined
+        readBy: [senderId]
       };
+
+      // Only add attachments field if there are attachments
+      if (attachments.length > 0) {
+        newMessage.attachments = attachments;
+      }
       
       const batch = writeBatch(db);
       batch.set(messageRef, newMessage);
@@ -444,22 +449,40 @@ const MessageService = {
 const ChatRealTimeService = {
   subscribeToMessages: (chatId, callback) => {
     const messagesRef = collection(db, 'messages');
-    const q = query(
-      messagesRef,
-      where('chatId', '==', chatId),
-      orderBy('timestamp', 'desc'),
-      limit(50)
-    );
     
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const messages = snapshot.docs.map(doc => ({
-        id: doc.id,
-        ...doc.data()
-      }));
-      callback(messages);
-    });
-    
-    return unsubscribe;
+    try {
+      const q = query(
+        messagesRef,
+        where('chatId', '==', chatId),
+        orderBy('timestamp', 'desc'),
+        limit(50)
+      );
+      
+      return onSnapshot(q, 
+        (snapshot) => {
+          const messages = snapshot.docs.map(doc => ({
+            id: doc.id,
+            ...doc.data()
+          }));
+          callback(messages);
+        },
+        (error) => {
+          // Handle index requirement error specifically
+          if (error.code === 'failed-precondition') {
+            const indexUrl = error.message.match(/https:\/\/console\.firebase\.google\.com[^\s]*/);
+            console.error('This query requires an index. Please create it at:', indexUrl?.[0]);
+            // You can create the index by visiting the URL in the error message
+            callback([]);  // Return empty array while index is being created
+          } else {
+            console.error('Error in messages subscription:', error);
+            callback([]);
+          }
+        }
+      );
+    } catch (error) {
+      console.error('Error setting up messages subscription:', error);
+      return () => {}; // Return no-op cleanup function
+    }
   },
 
   subscribeToChat: (chatId, callback) => {
@@ -475,14 +498,14 @@ const ChatRealTimeService = {
 
   subscribeToUserChats: (userId, callback) => {
     const userChatsRef = doc(db, 'userChats', userId);
-    const unsubscribe = onSnapshot(userChatsRef, async (doc) => {
-      if (doc.exists()) {
-        const chatIds = doc.data().chatIds || [];
+    const unsubscribe = onSnapshot(userChatsRef, async (docSnapshot) => {
+      if (docSnapshot.exists()) {
+        const chatIds = docSnapshot.data().chatIds || [];
         
         // Fetch all chats in parallel
         const chatPromises = chatIds.map(chatId => 
-          getDoc(doc(db, 'chats', chatId)).then(snap => 
-            snap.exists() ? { id: snap.id, ...snap.data() } : null
+          getDoc(doc(db, 'chats', chatId)).then(chatDoc => 
+            chatDoc.exists() ? { id: chatDoc.id, ...chatDoc.data() } : null
           )
         );
         
