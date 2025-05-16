@@ -314,11 +314,14 @@ const MessageService = {
       const batch = writeBatch(db);
       
       const timestamp = serverTimestamp();
+      const clientTimestamp = new Date(); // Add client-side timestamp
+      
       const newMessage = {
         chatId,
         senderId,
         text: message.text,
         timestamp,
+        clientTimestamp, // Add client timestamp for immediate sorting
         readBy: [senderId],
         readTimestamps: {
           [senderId]: timestamp
@@ -333,13 +336,16 @@ const MessageService = {
         throw new Error('Chat does not exist');
       }
       
+      // Update chat with both server and client timestamps
       batch.update(chatRef, {
         lastMessage: {
           text: message.text,
           timestamp,
+          clientTimestamp,
           senderId
         },
-        updatedAt: timestamp
+        updatedAt: timestamp,
+        clientUpdatedAt: clientTimestamp // Add client timestamp for immediate sorting
       });
       
       const participants = chatSnap.data().participants || [];
@@ -454,7 +460,7 @@ const ChatRealTimeService = {
               readTimestamps: doc.data().readTimestamps || {},
               readBy: doc.data().readBy || []
             }))
-            .sort((a, b) => (a.timestamp - b.timestamp)); // Sort in ascending order for display
+            .sort((a, b) => b.timestamp - a.timestamp); // Sort in descending order (newest first)
           
           callback(messages);
         },
@@ -486,35 +492,59 @@ const ChatRealTimeService = {
 
   subscribeToUserChats: (userId, callback) => {
     const userChatsRef = doc(db, 'userChats', userId);
-    const unsubscribe = onSnapshot(userChatsRef, async (docSnapshot) => {
-      if (docSnapshot.exists()) {
-        const userData = docSnapshot.data();
-        const chatIds = userData.chatIds || [];
-        const unreadCounts = userData.unreadCount || {};
-        
-        // Fetch all chats in parallel
-        const chatPromises = chatIds.map(async chatId => {
-          const chatDoc = await getDoc(doc(db, 'chats', chatId));
-          if (chatDoc.exists()) {
-            return {
-              id: chatDoc.id,
-              ...chatDoc.data(),
-              unreadCount: unreadCounts[chatId] || 0
-            };
+    
+    // Listen to changes in the user's chat list
+    const unsubscribe = onSnapshot(userChatsRef, (docSnapshot) => {
+      if (!docSnapshot.exists()) {
+        callback([]);
+        return;
+      }
+
+      const userData = docSnapshot.data();
+      const chatIds = userData.chatIds || [];
+      const unreadCounts = userData.unreadCount || {};
+      
+      if (chatIds.length === 0) {
+        callback([]);
+        return;
+      }
+
+      // Create a query to listen to all relevant chats
+      const chatsRef = collection(db, 'chats');
+      const q = query(chatsRef, where('chatId', 'in', chatIds));
+      
+      // Set up real-time listener for chats
+      const unsubscribeChats = onSnapshot(q, (querySnapshot) => {
+        const chats = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          unreadCount: unreadCounts[doc.id] || 0
+        }))
+        .sort((a, b) => {
+          // First try to sort by client timestamp
+          const aClientTime = a.lastMessage?.clientTimestamp?.toMillis?.() || 0;
+          const bClientTime = b.lastMessage?.clientTimestamp?.toMillis?.() || 0;
+          
+          if (aClientTime !== bClientTime) {
+            return bClientTime - aClientTime;
           }
-          return null;
+          
+          // Fall back to server timestamp if client timestamps are equal
+          const aTime = a.lastMessage?.timestamp?.seconds || a.updatedAt?.seconds || 0;
+          const bTime = b.lastMessage?.timestamp?.seconds || b.updatedAt?.seconds || 0;
+          return bTime - aTime;
         });
         
-        const chats = (await Promise.all(chatPromises))
-          .filter(chat => chat !== null)
-          .sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
-          
         callback(chats);
-      } else {
-        callback([]);
-      }
+      });
+
+      // Return cleanup function that unsubscribes from both listeners
+      return () => {
+        unsubscribe();
+        unsubscribeChats?.();
+      };
     });
-    
+
     return unsubscribe;
   }
 };

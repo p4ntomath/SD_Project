@@ -108,7 +108,9 @@ export default function ChatView() {
           const messagesWithNames = messagesData.map(msg => ({
             ...msg,
             senderName: chat?.participantNames?.[msg.senderId] || 'Unknown User'
-          }));
+          }))
+          // Messages are already sorted newest first from the subscription
+          .reverse(); // Reverse to display oldest first in the chat view
           setMessages(messagesWithNames);
         });
 
@@ -174,9 +176,19 @@ export default function ChatView() {
   // Format timestamp to readable time
   const formatMessageTime = (timestamp) => {
     if (!timestamp) return '';
-    // Handle both Firestore Timestamp and regular Date objects
-    const date = timestamp instanceof Date ? timestamp : timestamp.toDate?.();
-    if (!date) return '';
+    
+    // Handle both client timestamp and server timestamp
+    let date;
+    if (timestamp instanceof Date) {
+      date = timestamp;
+    } else if (timestamp.toDate) {
+      date = timestamp.toDate();
+    } else if (timestamp.seconds) {
+      date = new Date(timestamp.seconds * 1000);
+    } else {
+      date = new Date(timestamp);
+    }
+    
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
@@ -222,7 +234,12 @@ export default function ChatView() {
           <div className="flex items-center h-16">
             <div className="flex-1 flex items-center min-w-0">
               <button 
-                onClick={() => navigate('/messages')}
+                onClick={() => {
+                  // First mark all messages as read before navigating back
+                  MessageService.markMessagesAsRead(chatId, auth.currentUser.uid);
+                  // Navigate without replace to ensure MessagesList remounts
+                  navigate('/messages');
+                }}
                 className="md:hidden text-gray-600 hover:text-gray-800 font-medium flex items-center mr-4 flex-shrink-0"
               >
                 <FiArrowLeft className="h-5 w-5 mr-1" />

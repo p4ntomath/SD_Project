@@ -120,7 +120,18 @@ export default function MessagesList() {
   const formatRelativeTime = (timestamp) => {
     if (!timestamp) return '';
     
-    const date = timestamp.seconds ? new Date(timestamp.seconds * 1000) : new Date(timestamp);
+    // Handle both client timestamp and server timestamp
+    let date;
+    if (timestamp instanceof Date) {
+      date = timestamp;
+    } else if (timestamp.toDate) {
+      date = timestamp.toDate();
+    } else if (timestamp.seconds) {
+      date = new Date(timestamp.seconds * 1000);
+    } else {
+      date = new Date(timestamp);
+    }
+    
     const now = new Date();
     const diff = Math.floor((now - date) / 1000); // difference in seconds
 
@@ -302,7 +313,7 @@ export default function MessagesList() {
                         <span className={`text-xs ${
                           chat.unreadCount > 0 ? 'text-gray-900 font-medium' : 'text-gray-400'
                         }`}>
-                          {chat.lastMessage ? formatRelativeTime(chat.lastMessage.timestamp) : ''}
+                          {chat.lastMessage ? formatRelativeTime(chat.lastMessage.clientTimestamp || chat.lastMessage.timestamp) : ''}
                         </span>
                         {chat.lastMessage?.senderId === auth.currentUser.uid && (
                           <span className="text-xs text-gray-400">
