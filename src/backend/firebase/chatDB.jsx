@@ -507,27 +507,34 @@ const ChatRealTimeService = {
       if (snapshot.exists()) {
         const chatData = snapshot.data();
         
-        // If participant names are missing, fetch them
-        if (!chatData.participantNames || Object.keys(chatData.participantNames).length === 0) {
-          const participantNames = {};
+        // Initialize participantNames if missing
+        if (!chatData.participantNames) {
+          chatData.participantNames = {};
+        }
+        
+        // Check for any missing participant names
+        const missingParticipants = chatData.participants.filter(
+          userId => !chatData.participantNames[userId]
+        );
+        
+        if (missingParticipants.length > 0) {
+          const batch = writeBatch(db);
           
-          // Get all user docs in parallel with proper doc reference creation
-          for (const userId of chatData.participants) {
+          // Fetch missing user names
+          for (const userId of missingParticipants) {
             try {
               const userRef = doc(db, 'users', userId);
               const userSnap = await getDoc(userRef);
-              participantNames[userId] = userSnap.exists() ? 
-                userSnap.data().fullName || 'Unknown User' : 
-                'Unknown User';
+              const fullName = userSnap.exists() ? userSnap.data()?.fullName : null;
+              chatData.participantNames[userId] = fullName || 'Unknown User';
             } catch (error) {
               console.error(`Error fetching user ${userId}:`, error);
-              participantNames[userId] = 'Unknown User';
+              chatData.participantNames[userId] = 'Unknown User';
             }
           }
           
-          // Update chat with participant names
-          await updateDoc(chatRef, { participantNames });
-          chatData.participantNames = participantNames;
+          // Update chat with all participant names
+          await updateDoc(chatRef, { participantNames: chatData.participantNames });
         }
         
         callback({ id: snapshot.id, ...chatData });
