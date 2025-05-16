@@ -311,58 +311,37 @@ const MessageService = {
       const messageId = doc(collection(db, 'messages')).id;
       const messageRef = doc(db, 'messages', messageId);
       const chatRef = doc(db, 'chats', chatId);
+      const batch = writeBatch(db);
       
-      let attachments = [];
-      if (message.attachments && message.attachments.length > 0) {
-        attachments = await Promise.all(message.attachments.map(async (file) => {
-          const storageRef = ref(storage, `attachments/${chatId}/${file.name}_${Date.now()}`);
-          await uploadBytes(storageRef, file);
-          const url = await getDownloadURL(storageRef);
-          return {
-            type: file.type,
-            url,
-            name: file.name
-          };
-        }));
-      }
-      
-      // Create message object without attachments first
+      const timestamp = serverTimestamp();
       const newMessage = {
-        messageId,
         chatId,
         senderId,
         text: message.text,
-        timestamp: serverTimestamp(),
-        readBy: [senderId]
+        timestamp,
+        readBy: [senderId],
+        readTimestamps: {
+          [senderId]: timestamp
+        },
+        attachments: message.attachments || []
       };
 
-      // Only add attachments field if there are attachments
-      if (attachments.length > 0) {
-        newMessage.attachments = attachments;
-      }
-      
-      const batch = writeBatch(db);
       batch.set(messageRef, newMessage);
       
-      // Get chat data first to avoid multiple serverTimestamp() calls
       const chatSnap = await getDoc(chatRef);
       if (!chatSnap.exists()) {
         throw new Error('Chat does not exist');
       }
       
-      const timestamp = serverTimestamp();
-      
-      // Update chat's last message and timestamp
       batch.update(chatRef, {
         lastMessage: {
           text: message.text,
-          timestamp: timestamp,
+          timestamp,
           senderId
         },
         updatedAt: timestamp
       });
       
-      // Increment unread count for all participants except sender
       const participants = chatSnap.data().participants || [];
       participants.forEach((userId) => {
         if (userId !== senderId) {
@@ -408,24 +387,28 @@ const MessageService = {
   },
 
   markMessagesAsRead: async (chatId, userId) => {
-    // Alternative approach to avoid 'not-in' limitations
+    // Get messages that haven't been read by this user
     const messagesRef = collection(db, 'messages');
     const q = query(
       messagesRef,
       where('chatId', '==', chatId),
       orderBy('timestamp', 'desc'),
-      limit(100) // Adjust limit as needed
+      limit(100)
     );
     
     const snapshot = await getDocs(q);
     const batch = writeBatch(db);
     let count = 0;
     
+    const timestamp = serverTimestamp();
+    
     snapshot.forEach(doc => {
       const message = doc.data();
+      // Only mark as read if user hasn't read it yet
       if (!message.readBy || !message.readBy.includes(userId)) {
         batch.update(doc.ref, {
-          readBy: arrayUnion(userId)
+          readBy: arrayUnion(userId),
+          [`readTimestamps.${userId}`]: timestamp
         });
         count++;
       }
@@ -466,8 +449,10 @@ const ChatRealTimeService = {
             .map(doc => ({
               id: doc.id,
               ...doc.data(),
-              // Ensure timestamp is properly handled for new messages
-              timestamp: doc.data().timestamp?.toDate?.() || new Date()
+              // Ensure timestamp and readTimestamps are properly handled
+              timestamp: doc.data().timestamp?.toDate?.() || new Date(),
+              readTimestamps: doc.data().readTimestamps || {},
+              readBy: doc.data().readBy || []
             }))
             .sort((a, b) => (a.timestamp - b.timestamp)); // Sort in ascending order for display
           

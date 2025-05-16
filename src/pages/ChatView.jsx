@@ -14,6 +14,49 @@ export default function ChatView() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const messagesEndRef = useRef(null);
+  const chatViewRef = useRef(null);
+
+  // Track if chat is visible and focused
+  const [isVisible, setIsVisible] = useState(document.visibilityState === 'visible');
+  const [isFocused, setIsFocused] = useState(true);
+
+  // Handle tab visibility changes
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      setIsVisible(document.visibilityState === 'visible');
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  // Handle window focus changes
+  useEffect(() => {
+    const handleFocus = () => setIsFocused(true);
+    const handleBlur = () => setIsFocused(false);
+
+    window.addEventListener('focus', handleFocus);
+    window.addEventListener('blur', handleBlur);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      window.removeEventListener('blur', handleBlur);
+    };
+  }, []);
+
+  // Mark messages as read only when:
+  // 1. Chat exists (chatId is valid)
+  // 2. Browser tab is visible
+  // 3. Window is focused
+  // 4. Component is mounted
+  // 5. There are messages to read
+  useEffect(() => {
+    if (chatId && isVisible && isFocused && messages.length > 0) {
+      MessageService.markMessagesAsRead(chatId, auth.currentUser.uid);
+    }
+  }, [chatId, isVisible, isFocused, messages]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -67,9 +110,6 @@ export default function ChatView() {
             senderName: chat?.participantNames?.[msg.senderId] || 'Unknown User'
           }));
           setMessages(messagesWithNames);
-          
-          // Mark messages as read when received
-          MessageService.markMessagesAsRead(chatId, auth.currentUser.uid);
         });
 
         setLoading(false);
@@ -148,11 +188,30 @@ export default function ChatView() {
     return parts.map(part => part[0]).join('').toUpperCase();
   };
 
-  // Helper function to check if message is read by all participants
-  const isMessageReadByAll = (message) => {
-    if (!message.readBy || !chat?.participants) return false;
-    const otherParticipants = chat.participants.filter(id => id !== auth.currentUser.uid);
-    return otherParticipants.every(id => message.readBy.includes(id));
+  // Helper function to check if message is read by others (not the sender)
+  const isMessageReadByOthers = (message) => {
+    if (!message?.readBy || !chat?.participants) return false;
+    
+    // Get other participants (excluding sender)
+    const otherParticipants = chat.participants.filter(id => id !== message.senderId);
+    if (otherParticipants.length === 0) return false;
+
+    // Check if any other participant has read the message
+    return otherParticipants.some(participantId => {
+      return message.readBy.includes(participantId);
+    });
+  };
+
+  // Helper function to check if message is delivered
+  const isMessageDelivered = (message) => {
+    // Message is delivered if it has a timestamp and at least one recipient
+    if (!message?.timestamp || !chat?.participants) return false;
+    
+    const recipients = chat.participants.filter(id => id !== message.senderId);
+    if (recipients.length === 0) return false;
+
+    // Message is considered delivered if it has successfully been saved with a timestamp
+    return true;
   };
 
   return (
@@ -247,8 +306,8 @@ export default function ChatView() {
                         {formatMessageTime(message.timestamp)}
                       </span>
                       {isCurrentUser && (
-                        <span className={`text-[10px] ${isMessageReadByAll(message) ? 'text-purple-200' : 'text-purple-300'}`}>
-                          {isMessageReadByAll(message) ? '✓✓' : '✓'}
+                        <span className={`text-xs ${isMessageReadByOthers(message) ? 'text-purple-200' : 'text-purple-300'}`}>
+                          {isMessageReadByOthers(message) ? '✓✓' : (isMessageDelivered(message) ? '✓' : '')}
                         </span>
                       )}
                     </div>
