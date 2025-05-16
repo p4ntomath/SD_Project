@@ -48,7 +48,21 @@ const ensureUserChatsExists = async (userId) => {
   return userChatsRef;
 };
 
-// Chat Service Implementation
+// Error handling wrapper
+const handleFirebaseError = (error) => {
+  switch (error.code) {
+    case 'permission-denied':
+      throw new Error('You do not have permission to perform this action');
+    case 'not-found':
+      throw new Error('The requested resource was not found');
+    case 'failed-precondition':
+      throw new Error('Operation failed due to the current state of the system');
+    default:
+      throw new Error('An unexpected error occurred: ' + error.message);
+  }
+};
+
+// Enhanced ChatService with explicit group chat management
 const ChatService = {
   createDirectChat: async (userId1, userId2) => {
     const participants = [userId1, userId2].sort();
@@ -150,74 +164,183 @@ const ChatService = {
     return chats.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0));
   },
 
-  // ... (other ChatService methods remain the same)
+  addUserToGroupChat: async (chatId, userId) => {
+    try {
+      const chatRef = doc(db, 'chats', chatId);
+      const chatSnap = await getDoc(chatRef);
+      
+      if (!chatSnap.exists()) {
+        throw new Error('Chat does not exist');
+      }
+      
+      if (chatSnap.data().type !== 'group') {
+        throw new Error('This is not a group chat');
+      }
+      
+      const batch = writeBatch(db);
+      
+      // Add user to chat participants
+      batch.update(chatRef, {
+        participants: arrayUnion(userId)
+      });
+      
+      // Add chat to user's chats
+      const userChatsRef = doc(db, 'userChats', userId);
+      batch.update(userChatsRef, {
+        chatIds: arrayUnion(chatId),
+        [`unreadCount.${chatId}`]: 0
+      });
+      
+      await batch.commit();
+    } catch (error) {
+      handleFirebaseError(error);
+    }
+  },
+
+  removeUserFromGroupChat: async (chatId, userId) => {
+    try {
+      const chatRef = doc(db, 'chats', chatId);
+      const chatSnap = await getDoc(chatRef);
+      
+      if (!chatSnap.exists()) {
+        throw new Error('Chat does not exist');
+      }
+      
+      if (chatSnap.data().type !== 'group') {
+        throw new Error('This is not a group chat');
+      }
+      
+      const batch = writeBatch(db);
+      
+      // Remove user from chat participants
+      batch.update(chatRef, {
+        participants: arrayRemove(userId)
+      });
+      
+      // Remove chat from user's chats
+      const userChatsRef = doc(db, 'userChats', userId);
+      batch.update(userChatsRef, {
+        chatIds: arrayRemove(chatId),
+        [`unreadCount.${chatId}`]: deleteField()
+      });
+      
+      await batch.commit();
+    } catch (error) {
+      handleFirebaseError(error);
+    }
+  },
+
+  updateGroupChatDetails: async (chatId, details) => {
+    try {
+      const chatRef = doc(db, 'chats', chatId);
+      const chatSnap = await getDoc(chatRef);
+      
+      if (!chatSnap.exists()) {
+        throw new Error('Chat does not exist');
+      }
+      
+      if (chatSnap.data().type !== 'group') {
+        throw new Error('This is not a group chat');
+      }
+      
+      await updateDoc(chatRef, {
+        ...details,
+        updatedAt: serverTimestamp()
+      });
+    } catch (error) {
+      handleFirebaseError(error);
+    }
+  },
+
+  getGroupChatMembers: async (chatId) => {
+    try {
+      const chatRef = doc(db, 'chats', chatId);
+      const chatSnap = await getDoc(chatRef);
+      
+      if (!chatSnap.exists()) {
+        throw new Error('Chat does not exist');
+      }
+      
+      if (chatSnap.data().type !== 'group') {
+        throw new Error('This is not a group chat');
+      }
+      
+      return chatSnap.data().participants;
+    } catch (error) {
+      handleFirebaseError(error);
+    }
+  }
 };
 
-// Message Service Implementation
+// Enhanced MessageService with error handling
 const MessageService = {
   sendMessage: async (chatId, senderId, message) => {
-    const messageId = doc(collection(db, 'messages')).id;
-    const messageRef = doc(db, 'messages', messageId);
-    const chatRef = doc(db, 'chats', chatId);
-    
-    let attachments = [];
-    if (message.attachments && message.attachments.length > 0) {
-      attachments = await Promise.all(message.attachments.map(async (file) => {
-        const storageRef = ref(storage, `attachments/${chatId}/${file.name}_${Date.now()}`);
-        await uploadBytes(storageRef, file);
-        const url = await getDownloadURL(storageRef);
-        return {
-          type: file.type,
-          url,
-          name: file.name
-        };
-      }));
-    }
-    
-    const newMessage = {
-      messageId,
-      chatId,
-      senderId,
-      text: message.text,
-      timestamp: serverTimestamp(),
-      readBy: [senderId],
-      attachments: attachments.length > 0 ? attachments : undefined
-    };
-    
-    const batch = writeBatch(db);
-    batch.set(messageRef, newMessage);
-    
-    // Get chat data first to avoid multiple serverTimestamp() calls
-    const chatSnap = await getDoc(chatRef);
-    if (!chatSnap.exists()) {
-      throw new Error('Chat does not exist');
-    }
-    
-    const timestamp = serverTimestamp();
-    
-    // Update chat's last message and timestamp
-    batch.update(chatRef, {
-      lastMessage: {
-        text: message.text,
-        timestamp: timestamp,
-        senderId
-      },
-      updatedAt: timestamp
-    });
-    
-    // Increment unread count for all participants except sender
-    const participants = chatSnap.data().participants || [];
-    participants.forEach((userId) => {
-      if (userId !== senderId) {
-        const userChatsRef = doc(db, 'userChats', userId);
-        batch.update(userChatsRef, {
-          [`unreadCount.${chatId}`]: increment(1)
-        });
+    try {
+      const messageId = doc(collection(db, 'messages')).id;
+      const messageRef = doc(db, 'messages', messageId);
+      const chatRef = doc(db, 'chats', chatId);
+      
+      let attachments = [];
+      if (message.attachments && message.attachments.length > 0) {
+        attachments = await Promise.all(message.attachments.map(async (file) => {
+          const storageRef = ref(storage, `attachments/${chatId}/${file.name}_${Date.now()}`);
+          await uploadBytes(storageRef, file);
+          const url = await getDownloadURL(storageRef);
+          return {
+            type: file.type,
+            url,
+            name: file.name
+          };
+        }));
       }
-    });
-    
-    await batch.commit();
-    return messageId;
+      
+      const newMessage = {
+        messageId,
+        chatId,
+        senderId,
+        text: message.text,
+        timestamp: serverTimestamp(),
+        readBy: [senderId],
+        attachments: attachments.length > 0 ? attachments : undefined
+      };
+      
+      const batch = writeBatch(db);
+      batch.set(messageRef, newMessage);
+      
+      // Get chat data first to avoid multiple serverTimestamp() calls
+      const chatSnap = await getDoc(chatRef);
+      if (!chatSnap.exists()) {
+        throw new Error('Chat does not exist');
+      }
+      
+      const timestamp = serverTimestamp();
+      
+      // Update chat's last message and timestamp
+      batch.update(chatRef, {
+        lastMessage: {
+          text: message.text,
+          timestamp: timestamp,
+          senderId
+        },
+        updatedAt: timestamp
+      });
+      
+      // Increment unread count for all participants except sender
+      const participants = chatSnap.data().participants || [];
+      participants.forEach((userId) => {
+        if (userId !== senderId) {
+          const userChatsRef = doc(db, 'userChats', userId);
+          batch.update(userChatsRef, {
+            [`unreadCount.${chatId}`]: increment(1)
+          });
+        }
+      });
+      
+      await batch.commit();
+      return messageId;
+    } catch (error) {
+      handleFirebaseError(error);
+    }
   },
 
   getChatMessages: async (chatId, limitCount, startAfterId) => {
