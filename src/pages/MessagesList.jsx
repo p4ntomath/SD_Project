@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { FiSearch, FiMessageSquare, FiArrowLeft } from 'react-icons/fi';
+import { FiSearch, FiMessageSquare, FiArrowLeft, FiUserPlus } from 'react-icons/fi';
 import { ChatService, ChatRealTimeService } from '../backend/firebase/chatDB';
 import { auth } from '../backend/firebase/firebaseConfig';
 
@@ -9,6 +9,9 @@ export default function MessagesList() {
   const [activeFilter, setActiveFilter] = useState('all');
   const [chats, setChats] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [showNewChatModal, setShowNewChatModal] = useState(false);
+  const [userSearchResults, setUserSearchResults] = useState([]);
+  const [searching, setSearching] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -32,11 +35,40 @@ export default function MessagesList() {
     };
   }, []);
 
+  // Function to search for users
+  const searchUsers = async (query) => {
+    if (!query.trim()) {
+      setUserSearchResults([]);
+      return;
+    }
+    setSearching(true);
+    try {
+      const results = await ChatService.searchUsers(query, auth.currentUser.uid);
+      setUserSearchResults(results);
+    } catch (error) {
+      console.error('Error searching users:', error);
+    } finally {
+      setSearching(false);
+    }
+  };
+
+  // Function to start a chat with a user
+  const startChat = async (userId) => {
+    try {
+      const chatId = await ChatService.createDirectChat(auth.currentUser.uid, userId);
+      setShowNewChatModal(false);
+      setUserSearchResults([]);
+      navigate(`/messages/${chatId}`);
+    } catch (error) {
+      console.error('Error creating chat:', error);
+    }
+  };
+
   const filteredChats = () => {
     let filtered = [...chats];
 
-    // Apply search filter
-    if (searchQuery) {
+    // Apply search filter to existing chats
+    if (searchQuery && !showNewChatModal) {
       filtered = filtered.filter(chat => 
         chat.groupName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
         chat.name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -91,7 +123,7 @@ export default function MessagesList() {
       {/* Top Navigation */}
       <header className="bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center">
+          <div className="flex h-16 items-center justify-between">
             <button 
               onClick={() => navigate('/home')}
               className="text-gray-600 hover:text-gray-800 font-medium flex items-center"
@@ -99,75 +131,123 @@ export default function MessagesList() {
               <FiArrowLeft className="h-5 w-5 mr-1" />
               Back to Dashboard
             </button>
+            <button
+              onClick={() => setShowNewChatModal(true)}
+              className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+            >
+              <FiUserPlus className="h-4 w-4 mr-1.5" />
+              New Chat
+            </button>
           </div>
         </div>
       </header>
 
       <main className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div className="bg-white shadow sm:rounded-lg mt-4">
+        <div className="bg-white shadow sm:rounded-lg mt-4 overflow-hidden"> {/* Added overflow-hidden */}
           {/* Search and Filters */}
           <div className="p-4 border-b border-gray-200">
             <div className="relative">
               <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search messages..."
+                placeholder={showNewChatModal ? "Search users..." : "Search messages..."}
                 className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-100 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  if (showNewChatModal) {
+                    searchUsers(e.target.value);
+                  }
+                }}
               />
             </div>
 
-            <div className="flex space-x-2 mt-4">
-              <button
-                onClick={() => setActiveFilter('all')}
-                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeFilter === 'all'
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setActiveFilter('groups')}
-                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeFilter === 'groups'
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                Groups
-              </button>
-              <button
-                onClick={() => setActiveFilter('direct')}
-                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeFilter === 'direct'
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                Direct
-              </button>
-              <button
-                onClick={() => setActiveFilter('unread')}
-                className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
-                  activeFilter === 'unread'
-                    ? 'bg-purple-600 text-white'
-                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-                }`}
-              >
-                Unread
-              </button>
-            </div>
+            {!showNewChatModal && (
+              <div className="flex space-x-2 mt-4">
+                <button
+                  onClick={() => setActiveFilter('all')}
+                  className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    activeFilter === 'all'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  All
+                </button>
+                <button
+                  onClick={() => setActiveFilter('groups')}
+                  className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    activeFilter === 'groups'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Groups
+                </button>
+                <button
+                  onClick={() => setActiveFilter('direct')}
+                  className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    activeFilter === 'direct'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Direct
+                </button>
+                <button
+                  onClick={() => setActiveFilter('unread')}
+                  className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
+                    activeFilter === 'unread'
+                      ? 'bg-purple-600 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  Unread
+                </button>
+              </div>
+            )}
           </div>
 
-          {/* Chat Lists */}
-          <div className="divide-y divide-gray-200">
+          {/* Chat Lists or Search Results */}
+          <div className="divide-y divide-gray-200 max-h-[calc(100vh-12rem)] overflow-y-auto"> {/* Added max height and scroll */}
             {loading ? (
               <div className="flex items-center justify-center py-12">
-                <div className="text-gray-500">Loading chats...</div>
+                <div className="text-gray-500">Loading...</div>
               </div>
+            ) : showNewChatModal ? (
+              searching ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-gray-500">Searching users...</div>
+                </div>
+              ) : userSearchResults.length > 0 ? (
+                userSearchResults.map(user => (
+                  <button 
+                    key={user.id}
+                    onClick={() => startChat(user.id)}
+                    className="w-full text-left hover:bg-gray-50 p-4 transition-colors"
+                  >
+                    <div className="flex items-center">
+                      <div className="flex-shrink-0">
+                        <div className="w-12 h-12 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
+                          {getAvatarInitials(user.fullName)}
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <p className="font-medium text-gray-900">{user.fullName}</p>
+                        <p className="text-sm text-gray-500">{user.email}</p>
+                      </div>
+                    </div>
+                  </button>
+                ))
+              ) : searchQuery ? (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <p className="text-sm text-gray-500">No users found</p>
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-12">
+                  <p className="text-sm text-gray-500">Start typing to search for users</p>
+                </div>
+              )
             ) : filteredChats().length > 0 ? (
               filteredChats().map(chat => (
                 <button 

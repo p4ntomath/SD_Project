@@ -269,7 +269,26 @@ const ChatService = {
     } catch (error) {
       handleFirebaseError(error);
     }
-  }
+  },
+
+  searchUsers: async (searchTerm, currentUserId) => {
+    try {
+      const usersRef = collection(db, 'users');
+      const querySnapshot = await getDocs(usersRef);
+      
+      const searchResults = querySnapshot.docs
+        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .filter(user => 
+          user.id !== currentUserId && // Exclude current user
+          (user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           user.email?.toLowerCase().includes(searchTerm.toLowerCase()))
+        );
+
+      return searchResults;
+    } catch (error) {
+      handleFirebaseError(error);
+    }
+  },
 };
 
 // Enhanced MessageService with error handling
