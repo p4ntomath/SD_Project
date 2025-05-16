@@ -240,14 +240,14 @@ export default function ChatView() {
                     <p>{message.text}</p>
                     <div className="flex items-center justify-end gap-1">
                       <span 
-                        className={`text-xs ${
+                        className={`text-[10px] ${
                           isCurrentUser ? 'text-purple-200' : 'text-gray-500'
                         }`}
                       >
                         {formatMessageTime(message.timestamp)}
                       </span>
                       {isCurrentUser && (
-                        <span className={`text-xs ${isMessageReadByAll(message) ? 'text-purple-200' : 'text-purple-300'}`}>
+                        <span className={`text-[10px] ${isMessageReadByAll(message) ? 'text-purple-200' : 'text-purple-300'}`}>
                           {isMessageReadByAll(message) ? '✓✓' : '✓'}
                         </span>
                       )}
