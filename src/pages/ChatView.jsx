@@ -192,6 +192,61 @@ export default function ChatView() {
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
+  // Format date for message groups
+  const formatMessageDate = (timestamp) => {
+    if (!timestamp) return '';
+    
+    let date;
+    if (timestamp instanceof Date) {
+      date = timestamp;
+    } else if (timestamp.toDate) {
+      date = timestamp.toDate();
+    } else if (timestamp.seconds) {
+      date = new Date(timestamp.seconds * 1000);
+    } else {
+      date = new Date(timestamp);
+    }
+
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toDateString() === today.toDateString()) {
+      return 'Today';
+    } else if (date.toDateString() === yesterday.toDateString()) {
+      return 'Yesterday';
+    } else if (today.getTime() - date.getTime() < 7 * 24 * 60 * 60 * 1000) {
+      return date.toLocaleDateString('en-US', { weekday: 'long' });
+    }
+    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  };
+
+  // Group messages by date
+  const messagesByDate = messages.reduce((groups, message) => {
+    let date;
+    const timestamp = message.timestamp || message.clientTimestamp;
+    
+    if (!timestamp) {
+      date = new Date(); // fallback to current date if no timestamp
+    } else if (timestamp instanceof Date) {
+      date = timestamp;
+    } else if (typeof timestamp.toDate === 'function') {
+      date = timestamp.toDate(); // Firebase Timestamp
+    } else if (timestamp.seconds) {
+      date = new Date(timestamp.seconds * 1000); // Firebase Timestamp-like object
+    } else {
+      date = new Date(timestamp); // Try to parse as a date string/number
+    }
+    
+    const dateStr = formatMessageDate(date);
+    
+    if (!groups[dateStr]) {
+      groups[dateStr] = [];
+    }
+    groups[dateStr].push(message);
+    return groups;
+  }, {});
+
   // Get sender's avatar initials
   const getAvatarInitials = (name) => {
     if (!name || typeof name !== 'string') return 'U';
@@ -281,59 +336,70 @@ export default function ChatView() {
       </header>
 
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {messages.map((message, index) => {
-          const isCurrentUser = message.senderId === auth.currentUser.uid;
-          const showSender = chat.type === 'group' && (
-            index === 0 || 
-            messages[index - 1]?.senderId !== message.senderId
-          );
-
-          return (
-            <div
-              key={message.id}
-              className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
-            >
-              <div className="flex items-end space-x-2 max-w-[70%]">
-                {!isCurrentUser && showSender && (
-                  <div className="flex flex-col items-center space-y-1">
-                    <div className="w-8 h-8 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium text-sm">
-                      {getAvatarInitials(message.senderName || 'User')}
-                    </div>
-                  </div>
-                )}
-                <div className="flex flex-col">
-                  {showSender && !isCurrentUser && (
-                    <span className="text-sm text-gray-500 ml-1 mb-1">{message.senderName}</span>
-                  )}
-                  <div 
-                    className={`rounded-2xl px-4 py-2 shadow-sm ${
-                      isCurrentUser
-                        ? 'bg-purple-600 text-white rounded-br-none'
-                        : 'bg-white text-gray-900 rounded-bl-none'
-                    }`}
-                  >
-                    <p>{message.text}</p>
-                    <div className="flex items-center justify-end gap-1 mt-1">
-                      <span 
-                        className={`text-[10px] ${
-                          isCurrentUser ? 'text-purple-200' : 'text-gray-500'
-                        }`}
-                      >
-                        {formatMessageTime(message.timestamp)}
-                      </span>
-                      {isCurrentUser && (
-                        <span className={`text-[10px] ${isMessageReadByOthers(message) ? 'text-purple-200' : 'text-purple-300'}`}>
-                          {isMessageReadByOthers(message) ? '✓✓' : '✓'}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
+      <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={chatViewRef}>
+        {Object.entries(messagesByDate).map(([date, dateMessages]) => (
+          <div key={date}>
+            <div className="flex items-center justify-center mb-4">
+              <div className="bg-gray-200 rounded-full px-3 py-1">
+                <span className="text-xs font-medium text-gray-600">{date}</span>
               </div>
             </div>
-          );
-        })}
+            <div className="space-y-4">
+              {dateMessages.map((message, index) => {
+                const isCurrentUser = message.senderId === auth.currentUser.uid;
+                const showSender = chat.type === 'group' && (
+                  index === 0 || 
+                  dateMessages[index - 1]?.senderId !== message.senderId
+                );
+
+                return (
+                  <div
+                    key={message.id}
+                    className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
+                  >
+                    <div className="flex items-end space-x-2 max-w-[70%]">
+                      {!isCurrentUser && showSender && (
+                        <div className="flex flex-col items-center space-y-1">
+                          <div className="w-8 h-8 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium text-sm">
+                            {getAvatarInitials(message.senderName || 'User')}
+                          </div>
+                        </div>
+                      )}
+                      <div className="flex flex-col">
+                        {showSender && !isCurrentUser && (
+                          <span className="text-sm text-gray-500 ml-1 mb-1">{message.senderName}</span>
+                        )}
+                        <div 
+                          className={`rounded-2xl px-4 py-2 shadow-sm ${
+                            isCurrentUser
+                              ? 'bg-purple-600 text-white rounded-br-none'
+                              : 'bg-white text-gray-900 rounded-bl-none'
+                          }`}
+                        >
+                          <p>{message.text}</p>
+                          <div className="flex items-center justify-end gap-1 mt-1">
+                            <span 
+                              className={`text-[10px] ${
+                                isCurrentUser ? 'text-purple-200' : 'text-gray-500'
+                              }`}
+                            >
+                              {formatMessageTime(message.timestamp)}
+                            </span>
+                            {isCurrentUser && (
+                              <span className={`text-[10px] ${isMessageReadByOthers(message) ? 'text-purple-200' : 'text-purple-300'}`}>
+                                {isMessageReadByOthers(message) ? '✓✓' : '✓'}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        ))}
         <div ref={messagesEndRef} />
       </div>
 
