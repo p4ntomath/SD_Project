@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { FiVideo, FiPhone, FiSettings, FiUserPlus, FiMoreVertical, FiPaperclip, FiSmile, FiSend, FiArrowLeft, FiSearch, FiX } from 'react-icons/fi';
 import { ChatService, MessageService, ChatRealTimeService } from '../backend/firebase/chatDB';
 import { auth } from '../backend/firebase/firebaseConfig';
+import EmojiPicker from 'emoji-picker-react';
 
 export default function ChatView() {
   const { chatId } = useParams();
@@ -17,8 +18,11 @@ export default function ChatView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [userSearchResults, setUserSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
   const messagesEndRef = useRef(null);
   const chatViewRef = useRef(null);
+  const emojiButtonRef = useRef(null);
+  const emojiPickerRef = useRef(null);
 
   // Track if chat is visible and focused
   const [isVisible, setIsVisible] = useState(document.visibilityState === 'visible');
@@ -181,6 +185,29 @@ export default function ChatView() {
     } catch (error) {
       console.error('Error adding user to group:', error);
     }
+  };
+
+  // Click handler for emoji picker
+  const handleClickOutside = (event) => {
+    if (
+      emojiButtonRef.current?.contains(event.target) ||
+      emojiPickerRef.current?.contains(event.target)
+    ) {
+      return;
+    }
+    setShowEmojiPicker(false);
+  };
+
+  useEffect(() => {
+    if (showEmojiPicker) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => document.removeEventListener('mousedown', handleClickOutside);
+    }
+  }, [showEmojiPicker]);
+
+  const toggleEmojiPicker = (e) => {
+    e.stopPropagation();
+    setShowEmojiPicker(!showEmojiPicker);
   };
 
   if (loading) {
@@ -483,7 +510,7 @@ export default function ChatView() {
                       )}
                       <div className={`rounded-lg px-4 py-2 max-w-[70%] break-words ${
                         isCurrentUser 
-                          ? 'bg-purple-600 text-white' 
+                          ? 'bg-blue-600 text-white' 
                           : 'bg-gray-100 text-gray-900'
                       }`}>
                         {message.text}
@@ -499,7 +526,7 @@ export default function ChatView() {
       </div>
 
       {/* Message Input */}
-      <div className="p-4 bg-white border-t border-gray-200">
+      <div className="p-4 bg-white border-t border-gray-200 relative">
         <div className="flex items-end space-x-2 max-w-7xl mx-auto">
           <div className="flex-1 bg-gray-100 rounded-lg">
             <textarea
@@ -524,19 +551,47 @@ export default function ChatView() {
             <button className="p-3 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
               <FiPaperclip className="h-5 w-5" />
             </button>
-            <button className="p-3 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+            <button 
+              ref={emojiButtonRef}
+              onClick={toggleEmojiPicker}
+              className="p-3 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors relative"
+            >
               <FiSmile className="h-5 w-5" />
             </button>
             <button 
               onClick={handleSendMessage}
               disabled={!messageInput.trim() || sendingMessage}
-              className="p-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <FiSend className="h-5 w-5" />
             </button>
           </div>
         </div>
       </div>
+
+      {/* Emoji Picker */}
+      {showEmojiPicker && (
+        <div 
+          ref={emojiPickerRef}
+          className="absolute bottom-20 right-16 z-50"
+        >
+          <EmojiPicker
+            onEmojiClick={(emojiData) => {
+              const textarea = document.querySelector('textarea');
+              const cursorPosition = textarea.selectionStart;
+              setMessageInput(prev => prev.slice(0, cursorPosition) + emojiData.emoji + prev.slice(cursorPosition));
+              textarea.focus();
+            }}
+            height={400}
+            width={320}
+            theme="light"
+            emojiStyle="native"
+            searchPlaceHolder="Search emoji..."
+            previewConfig={{ showPreview: false }}
+            lazyLoadEmojis={true}
+          />
+        </div>
+      )}
     </div>
   );
 }

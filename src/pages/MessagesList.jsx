@@ -193,7 +193,7 @@ export default function MessagesList() {
                   setSelectedUsers([]);
                   setGroupName('');
                 }}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <FiUserPlus className="h-4 w-4 mr-1.5" />
                 
@@ -206,7 +206,7 @@ export default function MessagesList() {
                   setSelectedUsers([]);
                   setGroupName('');
                 }}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <FiUsers className="h-4 w-4 mr-1.5" />
                 
@@ -225,7 +225,7 @@ export default function MessagesList() {
                 <input
                   type="text"
                   placeholder="Group name..."
-                  className="w-full px-4 py-2 rounded-lg bg-gray-100 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all"
+                  className="w-full px-4 py-2 rounded-lg bg-gray-100 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
                 />
@@ -234,7 +234,7 @@ export default function MessagesList() {
                   <input
                     type="text"
                     placeholder="Search users to add..."
-                    className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-100 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all"
+                    className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-100 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -247,13 +247,13 @@ export default function MessagesList() {
                     {selectedUsers.map(user => (
                       <span
                         key={user.id}
-                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800"
+                        className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800"
                       >
                         {user.fullName}
                         <button
                           type="button"
                           onClick={() => setSelectedUsers(users => users.filter(u => u.id !== user.id))}
-                          className="ml-1 inline-flex items-center p-0.5 rounded-full text-purple-400 hover:bg-purple-200 hover:text-purple-500 focus:outline-none"
+                          className="ml-1 inline-flex items-center p-0.5 rounded-full text-blue-400 hover:bg-blue-200 hover:text-blue-500 focus:outline-none"
                         >
                           <FiX className="h-3 w-3" />
                         </button>
@@ -264,7 +264,7 @@ export default function MessagesList() {
                 {selectedUsers.length >= 2 && groupName && (
                   <button
                     onClick={createGroupChat}
-                    className="w-full py-2 text-sm font-medium rounded-lg bg-purple-600 text-white hover:bg-purple-700 transition-colors"
+                    className="w-full py-2 text-sm font-medium rounded-lg bg-blue-600 text-white hover:bg-blue-700 transition-colors"
                   >
                     Create Group Chat
                   </button>
@@ -277,7 +277,7 @@ export default function MessagesList() {
                   <input
                     type="text"
                     placeholder={showNewChatModal ? "Search users..." : "Search messages..."}
-                    className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-100 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all"
+                    className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-100 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -294,7 +294,7 @@ export default function MessagesList() {
                       onClick={() => setActiveFilter('all')}
                       className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
                         activeFilter === 'all'
-                          ? 'bg-purple-600 text-white'
+                          ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                       }`}
                     >
@@ -304,7 +304,7 @@ export default function MessagesList() {
                       onClick={() => setActiveFilter('groups')}
                       className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
                         activeFilter === 'groups'
-                          ? 'bg-purple-600 text-white'
+                          ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                       }`}
                     >
@@ -314,7 +314,7 @@ export default function MessagesList() {
                       onClick={() => setActiveFilter('direct')}
                       className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
                         activeFilter === 'direct'
-                          ? 'bg-purple-600 text-white'
+                          ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                       }`}
                     >
@@ -324,7 +324,7 @@ export default function MessagesList() {
                       onClick={() => setActiveFilter('unread')}
                       className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
                         activeFilter === 'unread'
-                          ? 'bg-purple-600 text-white'
+                          ? 'bg-blue-600 text-white'
                           : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
                       }`}
                     >
@@ -385,7 +385,7 @@ export default function MessagesList() {
                         <div className="flex-shrink-0">
                           <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                             selectedUsers.some(u => u.id === user.id)
-                              ? 'bg-purple-600 border-purple-600 text-white'
+                              ? 'bg-blue-600 border-blue-600 text-white'
                               : 'border-gray-300'
                           }`}>
                             {selectedUsers.some(u => u.id === user.id) && (
@@ -419,7 +419,7 @@ export default function MessagesList() {
                     <div className="flex items-center flex-1 min-w-0">
                       <div className="relative flex-shrink-0">
                         {chat.type === 'group' ? (
-                          <div className="w-12 h-12 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-medium text-lg">
+                          <div className="w-12 h-12 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-medium text-lg">
                             {chat.groupAvatar || '👥'}
                           </div>
                         ) : (
@@ -455,7 +455,7 @@ export default function MessagesList() {
                         )}
                       </div>
                       {chat.unreadCount > 0 && (
-                        <div className="mt-1 bg-purple-600 text-white text-xs font-medium rounded-full h-5 min-w-[20px] px-1.5 flex items-center justify-center">
+                        <div className="mt-1 bg-blue-600 text-white text-xs font-medium rounded-full h-5 min-w-[20px] px-1.5 flex items-center justify-center">
                           {chat.unreadCount}
                         </div>
                       )}
