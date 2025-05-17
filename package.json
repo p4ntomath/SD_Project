@@ -23,6 +23,7 @@
     "react-router-dom": "^7.4.1",
     "react-select": "^5.10.1",
     "react-spinners": "^0.15.0",
+    "select": "^1.1.2",
     "three": "^0.176.0",
     "vanta": "^0.5.24"
   },

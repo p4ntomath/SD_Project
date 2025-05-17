@@ -6,6 +6,7 @@ import { fetchProject } from '../../backend/firebase/projectDB';
 import { ClipLoader } from 'react-spinners';
 import ReviewerMainNav from '../../components/ReviewerComponents/Navigation/ReviewerMainNav';
 import ReviewerMobileBottomNav from '../../components/ReviewerComponents/Navigation/ReviewerMobileBottomNav';
+import { notify } from '../../backend/firebase/notificationsUtil';
 
 export default function ReviewRequests() {
   const [requests, setRequests] = useState([]);
@@ -96,6 +97,29 @@ export default function ReviewRequests() {
       setProcessingId(requestId);
       await updateReviewRequestStatus(requestId, 'accepted');
       setStatusMessage('Review request accepted successfully');
+
+      const request = requests.find(req => req.id === requestId);
+
+      // 1. Notify the reviewer (yourself)
+      notify({
+        type: 'Reviewer Accepted',
+        projectId,
+        projectTitle: request?.projectTitle,
+        reviewerName: auth.currentUser?.displayName || 'Reviewer',
+        researcherName: request?.researcherName,
+        // No userId here, goes to current user (reviewer)
+      });
+
+      // 2. Notify the researcher
+      notify({
+        type: 'Reviewer Request Accepted',
+        projectId,
+        projectTitle: request?.projectTitle,
+        reviewerName: auth.currentUser?.displayName || 'Reviewer',
+        researcherName: request?.researcherName,
+        userId: request?.researcherId, // Explicitly send to researcher
+      });
+
       navigate(`/reviewer/review/${projectId}`);
     } catch (err) {
       setError('Failed to accept review request: ' + err.message);

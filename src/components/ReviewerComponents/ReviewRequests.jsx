@@ -3,6 +3,10 @@ import { ClipLoader } from 'react-spinners';
 import { getReviewerRequests, updateReviewRequestStatus } from '../../backend/firebase/reviewerDB';
 import { auth } from '../../backend/firebase/firebaseConfig';
 import { useNavigate } from 'react-router-dom';
+import { notify } from '../../backend/firebase/notificationsUtil';
+import { getDoc, doc } from 'firebase/firestore';
+import { db } from '../../backend/firebase/firebaseConfig';
+
 
 export default function ReviewRequests() {
   const [requests, setRequests] = useState([]);
@@ -40,17 +44,55 @@ export default function ReviewRequests() {
   }, []);
 
   const handleAcceptRequest = async (requestId, projectId) => {
-    try {
-      await updateReviewRequestStatus(requestId, 'accepted');
-      // Update local state to reflect the change
-      setRequests(requests.filter(req => req.id !== requestId));
-      // Navigate to the project details page
-      navigate(`/reviewer/review/${projectId}`);
-    } catch (err) {
-      console.error('Error accepting request:', err);
-      setError(err.message);
+  try {
+    await updateReviewRequestStatus(requestId, 'accepted');
+
+    // Update local state to reflect the change
+    setRequests(requests.filter(req => req.id !== requestId));
+
+    // Get the current reviewer (the one who accepted the request)
+    const reviewer = auth.currentUser;
+    const reviewerDoc = await getDoc(doc(db, 'users', reviewer.uid));
+    const reviewerName = reviewerDoc.data()?.fullName 
+                       || reviewer.email?.split('@')[0] 
+                       || 'Reviewer';
+
+    // Fetch the project to get the researcher info
+    const projectDoc = await getDoc(doc(db, 'projects', projectId));
+    const projectData = projectDoc.data();
+
+    if (!projectData) {
+      throw new Error('Project not found');
     }
-  };
+
+    const { userId: researcherId, title: projectTitle } = projectData;
+
+    // Notify the reviewer (the one who accepted)
+    await notify({
+      type: 'Reviewer Accepted',
+      projectId,
+      projectTitle,
+      researcherName: projectData.userName || 'Researcher', // Optional: if project has researcher name
+      userId: reviewer.uid,
+    });
+
+    // Notify the researcher (who created the project)
+    await notify({
+      type: 'Reviewer Request Accepted',
+      projectId,
+      projectTitle,
+      reviewerName,
+      userId: researcherId,
+    });
+
+    // Navigate to the project review page
+    navigate(`/reviewer/review/${projectId}`);
+  } catch (err) {
+    console.error('Error accepting request:', err);
+    setError(err.message);
+  }
+};
+
 
   const handleRejectRequest = async (requestId) => {
     try {

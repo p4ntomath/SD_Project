@@ -2,34 +2,43 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaPlus } from 'react-icons/fa';
 import { checkPermission, isProjectOwner } from '../../utils/permissions';
+import { notify } from '../../backend/firebase/notificationsUtil';
 
-export default function GoalsCard({ 
-  project, 
+export default function GoalsCard({
+  project,
   calculateProgress,
   setProject,
   projectId,
   setModalOpen,
   setError,
   setStatusMessage,
-  updateProject 
+  updateProject
 }) {
-  const [showAddGoalModal, setShowAddGoalModal] = useState(false);
-  const [newGoal, setNewGoal] = useState("");
-  const [addingGoal, setAddingGoal] = useState(false);
-
-  const handleGoalStatusChange = async (index) => {
+  const toggleGoalStatus = async (goalIndex) => {
     try {
-      if (!checkPermission(project, 'canCompleteGoals')) {
-        throw new Error('You do not have permission to update goals');
-      }
+      const updatedGoals = project.goals.map((goal, index) => {
+        if (index === goalIndex) {
+          // If marking as completed, notify
+          if (!goal.completed) {
+            notify({
+              type: "Goal Completion",
+              projectId,
+              projectTitle: project.title,
+              goalText: goal.text,
+            });
+          }
+          return { ...goal, completed: !goal.completed };
+        }
+        return goal;
+      });
 
-      const updatedGoals = project.goals.map((goal, i) => 
-        i === index ? { ...goal, completed: !goal.completed } : goal
-      );
+      // Check if all goals are completed
+      const allGoalsCompleted = updatedGoals.every(goal => goal.completed);
 
+      // Update both goals and status if all goals are completed
       await updateProject(projectId, {
         goals: updatedGoals,
-        status: updatedGoals.every(goal => goal.completed) ? 'Complete' : 'In Progress'
+        status: allGoalsCompleted ? 'Complete' : 'In Progress',
       });
 
       setProject({
@@ -38,64 +47,17 @@ export default function GoalsCard({
         status: updatedGoals.every(goal => goal.completed) ? 'Complete' : 'In Progress'
       });
 
-      setModalOpen(true);
-      setError(false);
-      setStatusMessage('Goal status updated successfully');
-    } catch (err) {
-      setError(true);
-      setModalOpen(true);
-      setStatusMessage(err.message);
-    }
-  };
-
-  const handleAddGoal = async (e) => {
-    e.preventDefault();
-    try {
-      if (!checkPermission(project, 'canManageGoals')) {
-        throw new Error('You do not have permission to add goals');
+      if (allGoalsCompleted) {
+        setModalOpen(true);
+        setError(false);
+        setStatusMessage("All goals completed! Project status set to Complete.");
+        // Notify user about project completion
+        notify({
+          type: "Project Completion",
+          projectId,
+          projectTitle: project.title,
+        });
       }
-
-      setAddingGoal(true);
-      const newGoalObj = { text: newGoal.trim(), completed: false };
-      const updatedGoals = [...(project.goals || []), newGoalObj];
-
-      await updateProject(projectId, { goals: updatedGoals });
-      setProject({
-        ...project,
-        goals: updatedGoals
-      });
-
-      setShowAddGoalModal(false);
-      setNewGoal("");
-      setModalOpen(true);
-      setError(false);
-      setStatusMessage('Goal added successfully');
-    } catch (err) {
-      setError(true);
-      setModalOpen(true);
-      setStatusMessage(err.message);
-    } finally {
-      setAddingGoal(false);
-    }
-  };
-
-  const handleDeleteGoal = async (index) => {
-    try {
-      if (!checkPermission(project, 'canManageGoals')) {
-        throw new Error('You do not have permission to delete goals');
-      }
-
-      const updatedGoals = project.goals.filter((_, i) => i !== index);
-
-      await updateProject(projectId, { goals: updatedGoals });
-      setProject({
-        ...project,
-        goals: updatedGoals
-      });
-
-      setModalOpen(true);
-      setError(false);
-      setStatusMessage('Goal deleted successfully');
     } catch (err) {
       setError(true);
       setModalOpen(true);
@@ -116,7 +78,7 @@ export default function GoalsCard({
           </button>
         )}
       </div>
-      
+
       {(!project.goals || project.goals.length === 0) ? (
         <p className="text-gray-500 text-sm">No goals defined yet.</p>
       ) : (

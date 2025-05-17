@@ -18,26 +18,26 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
 
   // Helper function to check if a reviewer has pending requests
   const hasReviewerPendingRequest = (reviewerId) => {
-    return reviewRequests.some(request => 
-      request.reviewerId === reviewerId && 
+    return reviewRequests.some(request =>
+      request.reviewerId === reviewerId &&
       (request.status === 'pending' || request.status === 'accepted')
     );
   };
 
-    useEffect(() => {
-      if (!showAssignReviewersModal) {
-        // Reset sending state when modal is closed
-        setSendingReviewRequests(false);
-      }
-    }, [showAssignReviewersModal]);
+  useEffect(() => {
+    if (!showAssignReviewersModal) {
+      // Reset sending state when modal is closed
+      setSendingReviewRequests(false);
+    }
+  }, [showAssignReviewersModal]);
 
   const handleAssignReviewers = async (selectedReviewers) => {
     try {
       setSendingReviewRequests(true);
       // Create reviewer requests in the reviewRequests collection
-      const reviewerPromises = selectedReviewers.map(reviewer => 
+      const reviewerPromises = selectedReviewers.map(reviewer =>
         createReviewRequest(
-          projectId, 
+          projectId,
           reviewer.id,
           project.title,
           auth.currentUser.displayName || 'Researcher'
@@ -45,7 +45,7 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
       );
 
       await Promise.all(reviewerPromises);
-      
+
       // Reload review requests to update UI
       const updatedRequests = await getReviewerRequestsForProject(projectId);
       setReviewRequests(updatedRequests);
@@ -181,6 +181,7 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
         onAssign={handleAssignReviewers}
         projectId={projectId}
         reviewRequests={reviewRequests}
+        projectTitle={project.title}
       />
 
       {activeReviewers.length > 0 && (
@@ -200,7 +201,7 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
                     <p className="text-xs text-gray-500 break-words">{reviewer.fieldOfResearch || 'No field of research specified'}</p>
                   </div>
                 </div>
-                
+
                 <div className="flex items-center gap-2">
                   {getStatusBadge(reviewer.reviewStatus)}
                   {canManageReviewers && reviewer.reviewStatus === 'feedback_submitted' && (
@@ -243,14 +244,13 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
                     <p className="text-xs text-gray-500 break-words">Requested: {formatDate(request.requestedAt)}</p>
                   </div>
                 </div>
-                <span className={`px-2 py-1 text-xs rounded-full ${
-                  request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                  request.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
+                <span className={`px-2 py-1 text-xs rounded-full ${request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    request.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                      'bg-gray-100 text-gray-800'
+                  }`}>
                   {request.status === 'pending' ? 'Pending Response' :
-                   request.status === 'rejected' ? 'Request Declined' :
-                   'Unknown Status'}
+                    request.status === 'rejected' ? 'Request Declined' :
+                      'Unknown Status'}
                 </span>
               </li>
             ))}

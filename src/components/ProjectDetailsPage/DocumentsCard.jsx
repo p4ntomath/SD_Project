@@ -3,17 +3,19 @@ import { ClipLoader } from 'react-spinners';
 import { AnimatePresence, motion } from 'framer-motion';
 import { createFolder, updateFolderName, deleteFolder } from '../../backend/firebase/folderDB';
 import { uploadDocument, deleteDocument } from '../../backend/firebase/documentsDB';
-import { checkPermission, isProjectOwner } from '../../utils/permissions';
+import { notify } from '../../backend/firebase/notificationsUtil'; import { checkPermission, isProjectOwner } from '../../utils/permissions';
 
-export default function DocumentsCard({ 
-  projectId, 
+export default function DocumentsCard({
+  projectId,
   project, // Add project prop
-  folders, 
-  setFolders, 
-  foldersLoading, 
-  setModalOpen, 
-  setError, 
-  setStatusMessage 
+  folders,
+  setFolders,
+  foldersLoading,
+  setModalOpen,
+  setError,
+  setStatusMessage,
+  projectTitle
+
 }) {
   const [showFolderModal, setShowFolderModal] = useState(false);
   const [newFolderName, setNewFolderName] = useState('');
@@ -34,7 +36,7 @@ export default function DocumentsCard({
     try {
       setUploadLoading(true);
       const folderId = await createFolder(projectId, newFolderName);
-      
+
       const newFolder = {
         id: folderId,
         name: newFolderName,
@@ -44,11 +46,20 @@ export default function DocumentsCard({
       };
 
       setFolders([...folders, newFolder]);
+
+      notify({
+        type: "Folder Created",
+        projectId,
+        projectTitle: projectTitle,
+        folderName: newFolderName
+      });
       setNewFolderName('');
       setShowFolderModal(false);
       setModalOpen(true);
       setError(false);
       setStatusMessage('Folder created successfully');
+
+
     } catch (err) {
       console.error('Error creating folder:', err);
       setModalOpen(true);
@@ -62,15 +73,21 @@ export default function DocumentsCard({
   const handleRenameFolder = async (folderId, newName) => {
     try {
       await updateFolderName(projectId, folderId, newName);
-      
-      const updatedFolders = folders.map(folder => 
+
+      const updatedFolders = folders.map(folder =>
         folder.id === folderId ? { ...folder, name: newName } : folder
       );
       setFolders(updatedFolders);
-      
+
       setModalOpen(true);
       setError(false);
       setStatusMessage('Folder renamed successfully');
+      notify({
+        type: "Folder Updated",
+        projectId,
+        projectTitle: projectTitle,
+        folderName: newName
+      });
     } catch (err) {
       console.error('Error renaming folder:', err);
       setModalOpen(true);
@@ -88,13 +105,19 @@ export default function DocumentsCard({
     try {
       setUploadLoading(true);
       await deleteFolder(projectId, folderToDelete.id);
-      
+
       setFolders(folders.filter(folder => folder.id !== folderToDelete.id));
       setShowDeleteFolderConfirm(false);
       setFolderToDelete(null);
       setModalOpen(true);
       setError(false);
       setStatusMessage('Folder deleted successfully');
+      notify({
+        type: "Folder Deleted",
+        projectId,
+        projectTitle: projectTitle,
+        folderName: folderToDelete.name
+      });
     } catch (err) {
       console.error('Error deleting folder:', err);
       setModalOpen(true);
@@ -145,7 +168,7 @@ export default function DocumentsCard({
         displayName: finalFileName,
         description: customDescription || 'No description provided'
       });
-      
+
       const newFile = {
         id: documentId,
         documentId: documentId,
@@ -178,6 +201,13 @@ export default function DocumentsCard({
       setModalOpen(true);
       setError(false);
       setStatusMessage('File uploaded successfully');
+      notify({
+        type: "File Uploaded",
+        projectId,
+        projectTitle: projectTitle,
+        folderName: selectedFolder.name,
+        documentName: finalFileName
+      });
     } catch (err) {
       console.error('Error uploading file:', err);
       setModalOpen(true);
@@ -214,7 +244,7 @@ export default function DocumentsCard({
 
       setDeletingFile(file.id);
       await deleteDocument(file.documentId, projectId, folder.id);
-      
+
       const updatedFolders = folders.map(f => {
         if (f.id === folder.id) {
           return {
@@ -224,11 +254,18 @@ export default function DocumentsCard({
         }
         return f;
       });
-      
+
       setFolders(updatedFolders);
       setModalOpen(true);
       setError(false);
       setStatusMessage('File deleted successfully');
+      notify({
+        type: "File Deleted",
+        projectId,
+        projectTitle: projectTitle,
+        folderName: folder.name,
+        documentName: file.name
+      });
     } catch (err) {
       console.error('Error deleting file:', err);
       setError(true);
@@ -275,7 +312,7 @@ export default function DocumentsCard({
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             {folders.map((folder) => (
-              <div key={folder.id} 
+              <div key={folder.id}
                 className="group relative bg-white border border-gray-200 rounded-xl p-6 hover:border-blue-300 hover:shadow-lg transition-all duration-300">
                 <div className="flex items-center gap-4 mb-6">
                   <div className="p-4 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
@@ -297,10 +334,14 @@ export default function DocumentsCard({
                           <svg className="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                           </svg>
+
+                          {/* File name with truncation */}
                           <div className="flex-1 min-w-0">
-                            <span className="truncate text-sm text-gray-700 break-all">{file.name}</span>
+                            <span className="block truncate text-sm text-gray-700">{file.name}</span>
                           </div>
-                          <div className="flex items-center gap-2">
+
+                          {/* Buttons do not shrink */}
+                          <div className="flex items-center gap-2 flex-shrink-0">
                             <button
                               onClick={() => handleDownloadFile(file)}
                               className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
@@ -332,6 +373,7 @@ export default function DocumentsCard({
                           </div>
                         </div>
                       </div>
+
                     ))
                   ) : (
                     <div className="flex flex-col items-center justify-center py-6 text-center bg-gray-50 rounded-lg border border-gray-200">
@@ -397,7 +439,7 @@ export default function DocumentsCard({
             ))}
 
             {folders.length === 0 && (
-              <div className="text-center py-12">
+              <div className="text-center py-12 ">
                 <div className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
                   <svg className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
@@ -416,6 +458,7 @@ export default function DocumentsCard({
                     Create First Folder
                   </button>
                 )}
+
               </div>
             )}
           </div>

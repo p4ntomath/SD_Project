@@ -3,15 +3,16 @@ import { ClipLoader } from 'react-spinners';
 import { AnimatePresence } from 'framer-motion';
 import { updateProjectFunds, updateProjectExpense, getFundingHistory } from '../../backend/firebase/fundingDB';
 import { formatFirebaseDate } from '../../utils/dateUtils';
+import { notify } from '../../backend/firebase/notificationsUtil';
 import { checkPermission } from '../../utils/permissions';
 
-export default function FundingCard({ 
-  projectId, 
-  project, 
-  setProject, 
-  setModalOpen, 
-  setError, 
-  setStatusMessage 
+export default function FundingCard({
+  projectId,
+  project,
+  setProject,
+  setModalOpen,
+  setError,
+  setStatusMessage
 }) {
   const [showAddFundsModal, setShowAddFundsModal] = useState(false);
   const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
@@ -40,7 +41,7 @@ export default function FundingCard({
       if (!checkPermission(project, 'canAddFunds')) {
         throw new Error('You do not have permission to add funds');
       }
-      
+
       setAddFundsLoading(true);
       const amount = parseFloat(fundAmount);
       if (isNaN(amount) || amount <= 0) {
@@ -55,13 +56,21 @@ export default function FundingCard({
         ...project,
         availableFunds: (project.availableFunds || 0) + amount
       });
+
+
+
       setShowAddFundsModal(false);
       setFundAmount('');
       setFundingSource('');
       setModalOpen(true);
       setError(false);
       setStatusMessage('Funds added successfully');
+      setError(false);
       loadFundingHistory();
+
+      // Notify user about the added funds
+      notify({ type: 'Funds Added', projectId, projectTitle: project.title, amount });
+
     } catch (err) {
       setError(true);
       setModalOpen(true);
@@ -103,7 +112,12 @@ export default function FundingCard({
       setModalOpen(true);
       setError(false);
       setStatusMessage('Expense added successfully');
+
+      // Notify user about the added expense
+      notify({ type: 'Expense Added', projectId, projectTitle: project.title, amount, description: expenseDescription });
       loadFundingHistory();
+
+
     } catch (err) {
       setError(true);
       setModalOpen(true);
@@ -112,6 +126,7 @@ export default function FundingCard({
       setAddExpenseLoading(false);
     }
   };
+
 
   useEffect(() => {
     if (showFundingHistory) {
@@ -149,10 +164,10 @@ export default function FundingCard({
 
         <section className="mb-6">
           <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
+            <div
               className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-              style={{ 
-                width: `${(((project.usedFunds || 0) / ((project.availableFunds || 0) + (project.usedFunds || 0)) * 100) || 0)}%` 
+              style={{
+                width: `${(((project.usedFunds || 0) / ((project.availableFunds || 0) + (project.usedFunds || 0)) * 100) || 0)}%`
               }}
             />
           </div>

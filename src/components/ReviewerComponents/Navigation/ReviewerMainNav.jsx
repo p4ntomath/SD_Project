@@ -4,12 +4,15 @@ import { ClipboardDocumentCheckIcon } from "@heroicons/react/24/outline";
 import { logOut } from '../../../backend/firebase/authFirebase';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useUnreadNotificationsCount } from '../../../backend/firebase/notificationsUtil';
+
 
 export default function ReviewerMainNav({ setMobileMenuOpen, mobileMenuOpen, onSearch }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
+  const unreadCount = useUnreadNotificationsCount();
 
   const handleSearch = (e) => {
     e.preventDefault();
@@ -32,7 +35,7 @@ export default function ReviewerMainNav({ setMobileMenuOpen, mobileMenuOpen, onS
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <section className="flex justify-between h-16 items-center">
             <section className="hidden md:flex items-center space-x-2">
-              <button 
+              <button
                 onClick={() => navigate('/reviewer/dashboard')}
                 className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/dashboard' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                 aria-label="Home"
@@ -41,7 +44,7 @@ export default function ReviewerMainNav({ setMobileMenuOpen, mobileMenuOpen, onS
                 <p className="text-xs mt-1 group-hover:text-blue-600">Home</p>
               </button>
 
-              <button 
+              <button
                 onClick={() => navigate('/reviewer/requests')}
                 className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/requests' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                 aria-label="Pending Review Requests"
@@ -50,7 +53,7 @@ export default function ReviewerMainNav({ setMobileMenuOpen, mobileMenuOpen, onS
                 <p className="text-xs mt-1 group-hover:text-blue-600">Requests</p>
               </button>
 
-              <button 
+              <button
                 onClick={() => navigate('/reviewer/assigned')}
                 className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/assigned' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                 aria-label="Approved Projects"
@@ -59,7 +62,7 @@ export default function ReviewerMainNav({ setMobileMenuOpen, mobileMenuOpen, onS
                 <p className="text-xs mt-1 group-hover:text-blue-600">Approved</p>
               </button>
 
-              <button 
+              <button
                 onClick={() => navigate('/reviewer/history')}
                 className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/history' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                 aria-label="Review History"
@@ -68,7 +71,23 @@ export default function ReviewerMainNav({ setMobileMenuOpen, mobileMenuOpen, onS
                 <p className="text-xs mt-1 group-hover:text-blue-600">History</p>
               </button>
 
-              <button 
+              <button
+                onClick={() => navigate('/reviewernotifications')}
+                className={`group flex flex-col items-center justify-center p-3 relative ${location.pathname === '/notifications' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
+                aria-label="View alerts"
+              >
+                <span className="relative">
+                  <FiBell className="h-6 w-6 group-hover:text-blue-600" />
+                  {unreadCount > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 font-bold z-10">
+                      {unreadCount}
+                    </span>
+                  )}
+                </span>
+                <p className="text-xs mt-1 group-hover:text-blue-600">Notifications</p>
+              </button>
+
+              <button
                 onClick={() => navigate('/reviewer/messages')}
                 className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/messages' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                 aria-label="View messages"
@@ -77,7 +96,7 @@ export default function ReviewerMainNav({ setMobileMenuOpen, mobileMenuOpen, onS
                 <p className="text-xs mt-1 group-hover:text-blue-600">Messages</p>
               </button>
 
-              <button 
+              <button
                 onClick={() => navigate('/reviewer/account')}
                 className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/account' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                 aria-label="View profile"
@@ -86,7 +105,7 @@ export default function ReviewerMainNav({ setMobileMenuOpen, mobileMenuOpen, onS
                 <p className="text-xs mt-1 group-hover:text-blue-600">Account</p>
               </button>
             </section>
-            
+
             <section className="flex-1 max-w-md mx-4">
               <form onSubmit={handleSearch} className="relative">
                 <section className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -161,7 +180,7 @@ export default function ReviewerMainNav({ setMobileMenuOpen, mobileMenuOpen, onS
       <AnimatePresence>
         {showLogoutModal && (
           <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-            <motion.div 
+            <motion.div
               className="fixed inset-0 bg-black/30 backdrop-blur-sm"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -175,7 +194,7 @@ export default function ReviewerMainNav({ setMobileMenuOpen, mobileMenuOpen, onS
                 initial={{ scale: 0.95, opacity: 0, y: 10 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.95, opacity: 0, y: 10 }}
-                transition={{ 
+                transition={{
                   duration: 0.15,
                   ease: "easeOut"
                 }}

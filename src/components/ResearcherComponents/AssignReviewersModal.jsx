@@ -1,8 +1,15 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { getAvailableReviewers } from '../../backend/firebase/reviewerDB';
+import { notify } from '../../backend/firebase/notificationsUtil';
+import { auth } from '../../backend/firebase/firebaseConfig';
+import { getDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
+import { db } from '../../backend/firebase/firebaseConfig';
 
-export default function AssignReviewersModal({ isOpen, onClose, onAssign, projectId, reviewRequests }) {
+
+
+export default function AssignReviewersModal({ isOpen, onClose, onAssign, projectId, projectTitle }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedReviewers, setSelectedReviewers] = useState([]);
   const [availableReviewers, setAvailableReviewers] = useState([]);
@@ -14,13 +21,13 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
     const loadReviewers = async () => {
       try {
         const reviewers = await getAvailableReviewers();
-        
+
         // Filter out reviewers who have pending requests
         const pendingReviewerIds = reviewRequests
           .filter(req => req.status === 'pending' || req.status === 'accepted')
           .map(req => req.reviewerId);
 
-        const filteredReviewers = reviewers.filter(reviewer => 
+        const filteredReviewers = reviewers.filter(reviewer =>
           !pendingReviewerIds.includes(reviewer.id)
         );
 
@@ -30,7 +37,7 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
           fieldOfResearch: reviewer.fieldOfResearch || 'Not specified',
           department: reviewer.department || 'Not specified'
         }));
-        
+
         setAllReviewers(formattedReviewers);
         setAvailableReviewers(formattedReviewers);
       } catch (error) {
@@ -77,12 +84,42 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
   };
 
   const handleAssign = async () => {
-    if (selectedReviewers.length === 0) return;
+    if (!selectedReviewers.length) return;
     setLoading(true);
+
     try {
       await onAssign(selectedReviewers);
+      const researcher = auth.currentUser;
+
+      // Fetch fullName from Firestore
+      const researcherDoc = await getDoc(doc(db, 'users', researcher.uid));
+      const researcherName = researcherDoc.data()?.fullName
+        || researcher.email?.split('@')[0]
+        || 'Researcher';
+
+      // Notify researcher
+      await notify({
+        type: 'Reviewer Request Sent',
+        projectId,
+        projectTitle,
+        reviewerName: selectedReviewers.map(r => r.name).join(', '),
+        userId: researcher.uid,
+      });
+
+      // Notify reviewers
+      for (const reviewer of selectedReviewers) {
+        await notify({
+          type: 'Reviewer Request Received',
+          projectId,
+          projectTitle,
+          researcherName, // Now uses fullName correctly
+          userId: reviewer.id,
+        });
+      }
     } catch (error) {
       console.error('Error assigning reviewers:', error);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -112,8 +149,8 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
                 )}
               </h2>
             </div>
-            <button 
-              onClick={onClose} 
+            <button
+              onClick={onClose}
               className="text-gray-500 hover:text-gray-700"
               aria-label="Close modal"
               disabled={loading}
@@ -162,11 +199,10 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
                 <div
                   key={reviewer.id}
                   onClick={() => handleSelectReviewer(reviewer)}
-                  className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
-                    selectedReviewers.find(r => r.id === reviewer.id)
+                  className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${selectedReviewers.find(r => r.id === reviewer.id)
                       ? 'bg-blue-50 border-2 border-blue-500'
                       : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
-                  }`}
+                    }`}
                 >
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-100 rounded-full">
@@ -188,11 +224,10 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
                   </div>
                   <div className="flex items-center">
                     <div
-                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${
-                        selectedReviewers.find(r => r.id === reviewer.id)
+                      className={`w-6 h-6 rounded-full border-2 flex items-center justify-center transition-colors ${selectedReviewers.find(r => r.id === reviewer.id)
                           ? 'border-blue-500 bg-blue-500'
                           : 'border-gray-300'
-                      }`}
+                        }`}
                     >
                       {selectedReviewers.find(r => r.id === reviewer.id) && (
                         <svg className="w-4 h-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
