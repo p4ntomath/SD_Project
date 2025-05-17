@@ -4,6 +4,8 @@ import { getAuth } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
 import ReviewerMobileBottomNav from '../../components/ReviewerComponents/Navigation/ReviewerMobileBottomNav';
 import ReviewerMainNav from '../../components/ReviewerComponents/Navigation/ReviewerMainNav';
+import { notify } from '../../backend/firebase/notificationsUtil';
+import { FiBell } from 'react-icons/fi';
 
 const ReviewerNotificationsPage = () => {
   const [notifications, setNotifications] = useState([]);
@@ -59,9 +61,11 @@ const ReviewerNotificationsPage = () => {
         <section className="max-w-3xl mx-auto p-4 sm:p-8">
         <h2 className="text-3xl font-bold mb-6 text-gray-800 text-left">Your Notifications</h2>
         {notifications.length === 0 ? (
-        <section className="bg-white rounded-xl p-8 shadow border text-left">
-        <p className="text-gray-500">No notifications to display</p>
-        </section>
+        <section className="bg-white rounded-xl p-8 shadow  text-center flex flex-col items-center justify-center">
+                    <FiBell className="text-5xl text-blue-400 mb-4" />
+                    <p className="text-lg text-gray-700 font-semibold mb-2">No notifications yet</p>
+                    <p className="text-gray-500">You're all caught up! We'll let you know when something needs your attention.</p>
+                  </section>
     ) : (
         <ul className="space-y-4">
           {notifications.map(notification => (
