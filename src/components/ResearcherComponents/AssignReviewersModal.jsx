@@ -93,7 +93,8 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
       projectId,
       projectTitle,
       reviewerName: selectedReviewers.map(r => r.name).join(', '),
-      userId: researcher.uid,
+      targetUserId: researcher.uid, // <-- updated
+      senderUserId: researcher.uid, // optional, but explicit
     });
 
     // Notify reviewers
@@ -102,8 +103,9 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
         type: 'Reviewer Request Received',
         projectId,
         projectTitle,
-        researcherName, // Now uses fullName correctly
-        userId: reviewer.id,
+        researcherName,
+        targetUserId: reviewer.id, // <-- updated
+        senderUserId: researcher.uid, // optional, but explicit
       });
     }
   } catch (error) {

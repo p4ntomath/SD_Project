@@ -114,7 +114,7 @@ function App() {
             </ProtectedRoute>
           } />
 
-          <Route path="/reviewernotifications" element={
+          <Route path="/reviewer/notifications" element={
                       <ProtectedRoute allowedRoles={['reviewer']}>
                         <ReviewerNotificationsPage />
                       </ProtectedRoute>

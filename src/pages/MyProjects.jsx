@@ -89,7 +89,7 @@ export default function MyProjects() {
       setModalOpen(true);
       setStatusMessage('Project was successfully created.');
       
-      notify({
+     notify({
         type: "Project Created",
         projectId: createdProjectId,
         projectTitle: cleanedProject.title,
@@ -98,8 +98,8 @@ export default function MyProjects() {
         folderName: cleanedProject.folderName,
         amount: cleanedProject.amount,
         researchField: cleanedProject.researchField,
-        userId: auth.currentUser.uid,
-        userName: auth.currentUser.displayName || 'Researcher',
+        targetUserId: auth.currentUser.uid,   // <-- updated field
+        senderUserId: auth.currentUser.uid,   // <-- updated field (optional, but explicit)
       });
       setShowForm(false);
       await new Promise(resolve => setTimeout(resolve, 500));

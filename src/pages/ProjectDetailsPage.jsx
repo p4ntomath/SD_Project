@@ -205,11 +205,15 @@ export default function ProjectDetailsPage() {
       await deleteProject(projectId);
       setModalOpen(true);
       setStatusMessage("Project deleted successfully");
+
       notify({
         type: "Project Deleted",
-        projectId: projectId,   
+        projectId: projectId,
         projectTitle: project.title,
-        });
+        targetUserId: auth.currentUser?.uid,   // <-- add this
+        senderUserId: auth.currentUser?.uid,   // <-- add this (optional, but explicit)
+      });
+
       setTimeout(() => {
         navigate("/home");
       }, 2000);
@@ -247,12 +251,16 @@ export default function ProjectDetailsPage() {
       setIsEditing(false);
       setModalOpen(true);
       setStatusMessage("Project updated successfully");
+
       notify({
         type: "Project Updated",
         projectId,
         projectTitle: updatedProject.title,
         goalText: goalInput,
+        targetUserId: auth.currentUser?.uid,   // <-- add this
+        senderUserId: auth.currentUser?.uid,   // <-- add this (optional, but explicit)
       });
+
     } catch (err) {
       setError(err.message);
       setModalOpen(true);

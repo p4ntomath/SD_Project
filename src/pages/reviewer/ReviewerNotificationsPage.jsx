@@ -17,7 +17,7 @@ const ReviewerNotificationsPage = () => {
 
     const q = query(
       collection(db, 'notifications'),
-      where('userId', '==', auth.currentUser.uid),
+      where('targetUserId','==', auth.currentUser.uid),
       orderBy('timestamp', 'desc')
     );
 
@@ -64,33 +64,35 @@ const ReviewerNotificationsPage = () => {
         </section>
     ) : (
         <ul className="space-y-4">
-         {notifications.map(notification => (
-        <li key={notification.id}>
-          <section
-            className={`p-4 rounded-xl shadow border transition-colors cursor-pointer ${
-              !notification.readStatus
-                ? 'bg-blue-50 border-blue-400'
-                : 'bg-white border-gray-200'
-            }`}
-            onClick={() => markAsRead(notification.id)}
-          >
-            <section className="flex justify-between items-start mb-2">
-              <h3 className="font-semibold text-blue-600">{notification.type}</h3>
-              <time className="text-xs text-gray-500">
-                {notification.timestamp.toLocaleDateString()} at {notification.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-              </time>
-            </section>
-            <p className="text-gray-700 mb-2">{notification.message}</p>
-            {notification.projectId && (
-              <section className="mt-2">
-                <span className="text-xs font-mono text-gray-400">Project ID: {notification.projectId}</span>
+          {notifications.map(notification => (
+            <li key={notification.id}>
+              <section
+                className={`p-4 rounded-xl shadow border transition-colors ${
+                  !notification.readStatus
+                    ? 'bg-blue-50 border-blue-400'
+                    : 'bg-white border-gray-200'
+                }`}
+              >
+                <section className="flex justify-between items-start mb-2">
+                  <h3 className="font-semibold text-blue-600">{notification.type}</h3>
+                  <time className="text-xs text-gray-500">
+                    {notification.timestamp.toLocaleDateString()} at {notification.timestamp.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                  </time>
+                </section>
+                <p className="text-gray-700 mb-2">{notification.message}</p>
+                {!notification.readStatus && (
+                  <button
+                    className="mt-2 text-xs text-blue-600 underline hover:text-blue-800 cursor-pointer"
+                    onClick={() => markAsRead(notification.id)}
+                  >
+                    Mark as read
+                  </button>
+                )}
               </section>
-            )}
-          </section>
-        </li>
-      ))}
-    </ul>
-  )}
+            </li>
+          ))}
+        </ul>
+      )}
 </section>
       </main>
 <footer>

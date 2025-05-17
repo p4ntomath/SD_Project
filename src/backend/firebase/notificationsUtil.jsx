@@ -24,7 +24,7 @@ export function useUnreadNotificationsCount() {
     if (!auth.currentUser) return;
     const q = query(
       collection(db, 'notifications'),
-      where('userId', '==', auth.currentUser.uid),
+      where('targetUserId', '==', auth.currentUser.uid), // updated field
       where('readStatus', '==', false)
     );
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -37,16 +37,15 @@ export function useUnreadNotificationsCount() {
 }
 
 const notificationTemplates = {
-    
-    //Goals Card
+  // Goals Card
   "Goal Completion": ({ goalText, projectTitle }) =>
-    `You completed the goal: "${goalText}" on project: "${projectTitle}".`,
+    `You have successfully completed the goal "${goalText}" in the project "${projectTitle}".`,
 
   "Project Completion": ({ projectTitle }) =>
-    `Congratulations! Your project "${projectTitle}" is now complete.`,
+    `Congratulations! The project "${projectTitle}" has been marked as complete.`,
 
   "Project Created": ({ projectTitle }) =>
-    `Congratulations! Your project "${projectTitle}" has been created.`,
+    `Your project "${projectTitle}" was created successfully.`,
 
   "Project Deleted": ({ projectTitle }) =>
     `Your project "${projectTitle}" has been deleted.`,
@@ -54,48 +53,56 @@ const notificationTemplates = {
   "Project Updated": ({ projectTitle }) =>
     `Your project "${projectTitle}" has been updated.`,
 
-  //Funding Card
+  // Funding Card
   "Funds Added": ({ amount, projectTitle }) =>
-    `Funds of R${amount.toLocaleString()} have been added to your project "${projectTitle}".`,
+    `An amount of R${amount.toLocaleString()} has been added to your project "${projectTitle}".`,
 
   "Expense Added": ({ amount, description, projectTitle }) =>
-    `An expense of R${amount.toLocaleString()} (${description}) has been recorded for your project "${projectTitle}".`,
+    `A new expense of R${amount.toLocaleString()} (${description}) has been recorded for your project "${projectTitle}".`,
 
-  //Document Card
+  // Document Card
   "Folder Created": ({ folderName, projectTitle }) =>
-    `A new folder "${folderName}" has been created in your project "${projectTitle}".`,
+    `A new folder "${folderName}" was created in your project "${projectTitle}".`,
 
   "Folder Deleted": ({ folderName, projectTitle }) =>
-    `The folder "${folderName}" has been deleted from your project "${projectTitle}".`,
+    `The folder "${folderName}" was deleted from your project "${projectTitle}".`,
 
   "Folder Updated": ({ folderName, projectTitle }) =>
-    `The folder "${folderName}" has been updated in your project "${projectTitle}".`,
+    `The folder "${folderName}" was updated in your project "${projectTitle}".`,
 
   "File Uploaded": ({ documentName, folderName, projectTitle }) =>
-    `A new file "${documentName}" has been uploaded to the folder "${folderName}" in your project "${projectTitle}".`, 
+    `The file "${documentName}" was uploaded to the folder "${folderName}" in your project "${projectTitle}".`,
 
-  "File Deleted": ({ documentName, folderName, projectTitle }) =>     
-    `The file "${documentName}" has been deleted from the folder "${folderName}" in your project "${projectTitle}".`,
+  "File Deleted": ({ documentName, folderName, projectTitle }) =>
+    `The file "${documentName}" was deleted from the folder "${folderName}" in your project "${projectTitle}".`,
 
   "File Updated": ({ documentName, folderName, projectTitle }) =>
-    `The file "${documentName}" has been updated in the folder "${folderName}" in your project "${projectTitle}".`,
+    `The file "${documentName}" was updated in the folder "${folderName}" in your project "${projectTitle}".`,
 
-    //Reviewer Card
-  "Reviewer Request Sent": ({ reviewerName, projectTitle }) =>    
-    `You have send a review request to ${reviewerName} on your project, "${projectTitle}".`,
+  // Reviewer Card
+  "Reviewer Request Sent": ({ reviewerName, projectTitle }) =>
+    `A review request has been sent to ${reviewerName} for your project "${projectTitle}".`,
+
   "Reviewer Request Received": ({ researcherName, projectTitle }) =>
-    `You have received a review request from ${researcherName} on their project, "${projectTitle}".`,
+    `You have received a review request from ${researcherName} for the project "${projectTitle}".`,
 
   "Reviewer Accepted": ({ researcherName, projectTitle }) =>
-    `You have accepted to review the project, "${projectTitle}", by ${researcherName}.`,
-  "Reviewer Request Accepted": ({ reviewerName, projectTitle }) =>  
-    ` ${reviewerName} has accepted to review your project, "${projectTitle}".`,
+    `You have accepted the review request for the project "${projectTitle}" by ${researcherName}.`,
+
+  "Reviewer Request Accepted": ({ reviewerName, projectTitle }) =>
+    `${reviewerName} has accepted your review request for the project "${projectTitle}".`,
 
   "Reviewer Denied": ({ researcherName, projectTitle }) =>
-    `You have denied the review request for the project "${projectTitle}" by ${researcherName}.`,
-  "Reviewer Request Denied": ({ reviewerName, projectTitle }) =>
-    `Your request to review the project "${projectTitle}" has been denied by ${reviewerName}.`, 
+    `You have declined the review request for the project "${projectTitle}" by ${researcherName}.`,
 
+  "Reviewer Request Denied": ({ reviewerName, projectTitle }) =>
+    `${reviewerName} has declined your review request for the project "${projectTitle}".`,
+
+  "Review Submitted": ({ researcherName, projectTitle }) =>
+    `You have submitted your review for the project "${projectTitle}" by ${researcherName}.`,
+
+  "Review Received": ({ reviewerName, projectTitle }) =>
+    `You have received a review for your project "${projectTitle}" from ${reviewerName}.`,
 };
 
 export const notify = async ({
@@ -109,32 +116,32 @@ export const notify = async ({
   description,
   reviewerName,
   researcherName,
-  userId, 
+  targetUserId, // recipient
+  senderUserId, // actor
 }) => {
-  // Use the provided userId if available, otherwise fall back to current user
-  const targetUserId = userId || auth.currentUser?.uid;
-  
-  if (!targetUserId) {
-    console.error("User ID not provided and user not authenticated");
+  const target = targetUserId || auth.currentUser?.uid;
+  const sender = senderUserId || auth.currentUser?.uid;
+
+  if (!target) {
+    console.error("Target user ID not provided and user not authenticated");
     return;
   }
-  
   if (!projectId) {
     console.error("Project ID is undefined. Cannot send notification.");
     return;
   }
-  
   const template = notificationTemplates[type];
   if (!template) {
     console.error("Unknown notification type:", type);
     return;
   }
-  
+
   const message = template({ goalText, projectTitle, documentName, amount, description, folderName, reviewerName, researcherName });
-  
+
   const notificationsRef = collection(db, "notifications");
   await addDoc(notificationsRef, {
-    userId: targetUserId, // Use the target user ID here
+    targetUserId: target,
+    senderUserId: sender,
     projectId,
     message,
     type,
@@ -142,3 +149,4 @@ export const notify = async ({
     readStatus: false,
   });
 };
+

@@ -5,6 +5,9 @@ import { getProjectDetails } from '../../backend/firebase/projectDB';
 import { fetchDocumentsByFolder } from '../../backend/firebase/documentsDB';
 import ReviewFeedbackForm from '../../components/ReviewerComponents/ReviewFeedbackForm';
 import { ClipLoader } from 'react-spinners';
+import { notify } from '../../backend/firebase/notificationsUtil';
+import { getDoc, doc } from 'firebase/firestore';
+import { db } from '../../backend/firebase/firebaseConfig';
 
 export default function ReviewProjectPage() {
     const { projectId } = useParams();
@@ -32,7 +35,72 @@ export default function ReviewProjectPage() {
         }
     };
 
-    const handleFeedbackSubmitted = () => {
+    const handleFeedbackSubmitted = async () => {
+        // Fetch reviewer name from Firestore for accuracy
+        let reviewerName = auth.currentUser.displayName || 'Reviewer';
+        try {
+            const reviewerDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+            if (reviewerDoc.exists()) {
+                reviewerName = reviewerDoc.data().fullName || reviewerDoc.data().displayName || reviewerName;
+            }
+        } catch (err) {
+            console.error('Failed to fetch reviewer name:', err);
+        }
+
+        // Fetch researcher name from Firestore using project.userId
+        let researcherName = 'Researcher';
+        try {
+            if (project.userId) {
+                const researcherDoc = await getDoc(doc(db, 'users', project.userId));
+                if (researcherDoc.exists()) {
+                    researcherName = researcherDoc.data().fullName || researcherDoc.data().displayName || researcherName;
+                }
+            }
+        } catch (err) {
+            console.error('Failed to fetch researcher name:', err);
+        }
+
+        // Debugging: Log all relevant values
+        console.log('Submitting review notification...');
+        console.log('projectId:', projectId);
+        console.log('project:', project);
+        console.log('reviewerName:', reviewerName);
+        console.log('researcherName:', researcherName);
+        console.log('auth.currentUser.uid:', auth.currentUser.uid);
+        console.log('project.userId:', project.userId);
+
+        // Notify reviewer (yourself)
+        try {
+            await notify({
+                type: 'Review Submitted',
+                projectId,
+                projectTitle: project.title,
+                reviewerName,
+                researcherName,
+                targetUserId: auth.currentUser.uid,
+                senderUserId: auth.currentUser.uid
+            });
+            console.log('Review Submitted notification sent');
+        } catch (err) {
+            console.error('Failed to send Review Submitted notification:', err);
+        }
+
+        // Notify researcher (project owner)
+        try {
+            await notify({
+                type: 'Review Received',
+                projectId,
+                projectTitle: project.title,
+                researcherName,
+                reviewerName,
+                targetUserId: project.userId, // Use userId for researcher
+                senderUserId: auth.currentUser.uid
+            });
+            console.log('Review Received notification sent');
+        } catch (err) {
+            console.error('Failed to send Review Received notification:', err);
+        }
+
         navigate('/reviewer/history', {
             state: { message: 'Review submitted successfully' }
         });

@@ -30,7 +30,7 @@ export default function ReviewerMobileBottomNav() {
         </button>
 
   <button 
-                onClick={() => navigate('/notifications')}
+                onClick={() => navigate('/reviewer/notifications')}
                 className={`group flex flex-col items-center justify-center p-3 relative ${location.pathname === '/notifications' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                 aria-label="View alerts"
               >
