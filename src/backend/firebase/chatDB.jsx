@@ -194,28 +194,44 @@ const ChatService = {
 
   addUserToGroupChat: async (chatId, userId) => {
     try {
+      // First verify the chat exists and is a group chat
       const chatRef = doc(db, 'chats', chatId);
       const chatSnap = await getDoc(chatRef);
       
       if (!chatSnap.exists()) {
-        throw new Error('Chat does not exist');
+        throw new Error('Chat not found');
       }
       
-      if (chatSnap.data().type !== 'group') {
+      const chatData = chatSnap.data();
+      if (chatData.type !== 'group') {
         throw new Error('This is not a group chat');
       }
 
-      // Get new user's name
+      // Check if user is already in the chat
+      if (chatData.participants.includes(userId)) {
+        throw new Error('User is already a member of this chat');
+      }
+
+      // Verify the user exists
       const userRef = doc(db, 'users', userId);
       const userSnap = await getDoc(userRef);
-      const userName = userSnap.exists() ? userSnap.data().fullName || 'Unknown User' : 'Unknown User';
+      
+      if (!userSnap.exists()) {
+        throw new Error('User not found');
+      }
+
+      const userName = userSnap.data().fullName || 'Unknown User';
+      
+      // Create userChats document if it doesn't exist
+      await ensureUserChatsExists(userId);
       
       const batch = writeBatch(db);
       
       // Add user to chat participants and update participantNames
       batch.update(chatRef, {
         participants: arrayUnion(userId),
-        [`participantNames.${userId}`]: userName
+        [`participantNames.${userId}`]: userName,
+        updatedAt: serverTimestamp()
       });
       
       // Add chat to user's chats
@@ -227,6 +243,7 @@ const ChatService = {
       
       await batch.commit();
     } catch (error) {
+      console.error('Error in addUserToGroupChat:', error);
       handleFirebaseError(error);
     }
   },

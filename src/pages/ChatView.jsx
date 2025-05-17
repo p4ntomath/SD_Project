@@ -19,6 +19,9 @@ export default function ChatView() {
   const [userSearchResults, setUserSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [addingMember, setAddingMember] = useState(false);
+  const [selectedUsers, setSelectedUsers] = useState(new Set());
+  const [addingMembers, setAddingMembers] = useState(false);
   const messagesEndRef = useRef(null);
   const chatViewRef = useRef(null);
   const emojiButtonRef = useRef(null);
@@ -175,16 +178,37 @@ export default function ChatView() {
     }
   };
 
-  // Function to add a user to the group
-  const addUserToGroup = async (userId) => {
+  // Modify addUserToGroup to handle multiple users
+  const addUsersToGroup = async () => {
+    if (selectedUsers.size === 0) return;
+    
     try {
-      await ChatService.addUserToGroupChat(chatId, userId);
+      setAddingMembers(true);
+      await Promise.all(
+        Array.from(selectedUsers).map(userId =>
+          ChatService.addUserToGroupChat(chatId, userId)
+        )
+      );
       setSearchQuery('');
       setUserSearchResults([]);
+      setSelectedUsers(new Set());
       setShowAddMemberModal(false);
     } catch (error) {
-      console.error('Error adding user to group:', error);
+      console.error('Error adding users to group:', error);
+    } finally {
+      setAddingMembers(false);
     }
+  };
+
+  // Toggle user selection
+  const toggleUserSelection = (userId) => {
+    const newSelected = new Set(selectedUsers);
+    if (newSelected.has(userId)) {
+      newSelected.delete(userId);
+    } else {
+      newSelected.add(userId);
+    }
+    setSelectedUsers(newSelected);
   };
 
   // Click handler for emoji picker
@@ -378,7 +402,13 @@ export default function ChatView() {
                   <h2 className="font-semibold text-gray-900 truncate">{chat?.groupName || chat?.name}</h2>
                   {chat?.type === 'group' && (
                     <p className="text-sm text-gray-500 truncate">
-                      {`${chat.participants?.length || 0} members`}
+                      {chat.participantNames ?
+                        Object.values(chat.participantNames)
+                          .map(name => name.split(' ')[0]) // Get first names
+                          .slice(0, 3) // Take first 3 names
+                          .join(', ') + 
+                        (chat.participants.length > 3 ? ` and ${chat.participants.length - 3} others` : '')
+                        : `${chat.participants?.length || 0} members`}
                     </p>
                   )}
                 </div>
@@ -414,6 +444,7 @@ export default function ChatView() {
                     setShowAddMemberModal(false);
                     setSearchQuery('');
                     setUserSearchResults([]);
+                    setSelectedUsers(new Set());
                   }}
                   className="text-gray-400 hover:text-gray-500 p-1 rounded-full hover:bg-gray-100"
                 >
@@ -444,10 +475,10 @@ export default function ChatView() {
               ) : userSearchResults.length > 0 ? (
                 <div className="divide-y divide-gray-100">
                   {userSearchResults.map(user => (
-                    <button
+                    <div
                       key={user.id}
-                      onClick={() => addUserToGroup(user.id)}
-                      className="w-full text-left hover:bg-gray-50 p-4 transition-colors"
+                      onClick={() => toggleUserSelection(user.id)}
+                      className="w-full text-left hover:bg-gray-50 p-4 transition-colors cursor-pointer"
                     >
                       <div className="flex items-center">
                         <div className="flex-shrink-0">
@@ -455,12 +486,25 @@ export default function ChatView() {
                             {getAvatarInitials(user.fullName)}
                           </div>
                         </div>
-                        <div className="ml-4">
+                        <div className="ml-4 flex-1">
                           <p className="font-medium text-gray-900">{user.fullName}</p>
                           <p className="text-sm text-gray-500">{user.email}</p>
                         </div>
+                        <div className="flex-shrink-0">
+                          <div className={`w-5 h-5 border-2 rounded ${
+                            selectedUsers.has(user.id)
+                              ? 'bg-purple-600 border-purple-600'
+                              : 'border-gray-300'
+                          }`}>
+                            {selectedUsers.has(user.id) && (
+                              <svg className="w-full h-full text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                              </svg>
+                            )}
+                          </div>
+                        </div>
                       </div>
-                    </button>
+                    </div>
                   ))}
                 </div>
               ) : searchQuery ? (
@@ -473,6 +517,24 @@ export default function ChatView() {
                 </div>
               )}
             </div>
+            {selectedUsers.size > 0 && (
+              <div className="p-4 border-t border-gray-100">
+                <button
+                  onClick={addUsersToGroup}
+                  disabled={addingMembers}
+                  className="w-full py-2 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                >
+                  {addingMembers ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      Adding members...
+                    </>
+                  ) : (
+                    `Add ${selectedUsers.size} member${selectedUsers.size > 1 ? 's' : ''}`
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         </div>
       )}
