@@ -377,18 +377,18 @@ export default function ChatView() {
 
       {/* Add Member Modal */}
       {showAddMemberModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center">
-          <div className="bg-white w-full max-w-md mx-4 rounded-lg shadow-xl">
-            <div className="p-4 border-b border-gray-200">
+        <div className="fixed inset-0 bg-gray-500/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-xl shadow-2xl transform transition-all">
+            <div className="p-6 border-b border-gray-100">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-medium">Add Members</h3>
+                <h3 className="text-lg font-semibold text-gray-900">Add Members</h3>
                 <button 
                   onClick={() => {
                     setShowAddMemberModal(false);
                     setSearchQuery('');
                     setUserSearchResults([]);
                   }}
-                  className="text-gray-400 hover:text-gray-500"
+                  className="text-gray-400 hover:text-gray-500 p-1 rounded-full hover:bg-gray-100"
                 >
                   <FiX className="h-5 w-5" />
                 </button>
@@ -399,7 +399,7 @@ export default function ChatView() {
                   <input
                     type="text"
                     placeholder="Search users..."
-                    className="w-full pl-10 pr-4 py-2 rounded-lg bg-gray-100 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all"
+                    className="w-full pl-10 pr-4 py-2.5 rounded-lg bg-gray-50 border border-gray-200 text-gray-900 placeholder-gray-500 outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500 focus:bg-white transition-all"
                     value={searchQuery}
                     onChange={(e) => {
                       setSearchQuery(e.target.value);
@@ -415,7 +415,7 @@ export default function ChatView() {
                   <div className="text-gray-500">Searching users...</div>
                 </div>
               ) : userSearchResults.length > 0 ? (
-                <div className="divide-y divide-gray-200">
+                <div className="divide-y divide-gray-100">
                   {userSearchResults.map(user => (
                     <button
                       key={user.id}
@@ -424,7 +424,7 @@ export default function ChatView() {
                     >
                       <div className="flex items-center">
                         <div className="flex-shrink-0">
-                          <div className="w-10 h-10 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
+                          <div className="w-10 h-10 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-medium">
                             {getAvatarInitials(user.fullName)}
                           </div>
                         </div>
@@ -462,51 +462,31 @@ export default function ChatView() {
             <div className="space-y-4">
               {dateMessages.map((message, index) => {
                 const isCurrentUser = message.senderId === auth.currentUser.uid;
-                const showSender = chat.type === 'group' && (
+                const showSender = !isCurrentUser && chat.type === 'group' && (
                   index === 0 || 
                   dateMessages[index - 1]?.senderId !== message.senderId
                 );
+                const senderName = chat.participantNames?.[message.senderId] || 'Unknown User';
 
                 return (
-                  <div
-                    key={message.id}
-                    className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}
-                  >
-                    <div className="flex items-end space-x-2 max-w-[70%]">
-                      {!isCurrentUser && showSender && (
-                        <div className="flex flex-col items-center space-y-1">
-                          <div className="w-8 h-8 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium text-sm">
-                            {getAvatarInitials(message.senderName || 'User')}
-                          </div>
+                  <div key={message.id}>
+                    {showSender && (
+                      <p className="text-sm text-gray-500 mb-1">
+                        {senderName}
+                      </p>
+                    )}
+                    <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
+                      {showSender && (
+                        <div className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm font-medium mr-2">
+                          {getAvatarInitials(senderName)}
                         </div>
                       )}
-                      <div className="flex flex-col">
-                        {showSender && !isCurrentUser && (
-                          <span className="text-sm text-gray-500 ml-1 mb-1">{message.senderName}</span>
-                        )}
-                        <div 
-                          className={`rounded-2xl px-4 py-2 shadow-sm ${
-                            isCurrentUser
-                              ? 'bg-purple-600 text-white rounded-br-none'
-                              : 'bg-white text-gray-900 rounded-bl-none'
-                          }`}
-                        >
-                          <p>{message.text}</p>
-                          <div className="flex items-center justify-end gap-1 mt-1">
-                            <span 
-                              className={`text-[10px] ${
-                                isCurrentUser ? 'text-purple-200' : 'text-gray-500'
-                              }`}
-                            >
-                              {formatMessageTime(message.timestamp)}
-                            </span>
-                            {isCurrentUser && (
-                              <span className={`text-[10px] ${isMessageReadByOthers(message) ? 'text-purple-200' : 'text-purple-300'}`}>
-                                {isMessageReadByOthers(message) ? '✓✓' : '✓'}
-                              </span>
-                            )}
-                          </div>
-                        </div>
+                      <div className={`rounded-lg px-4 py-2 max-w-[70%] break-words ${
+                        isCurrentUser 
+                          ? 'bg-purple-600 text-white' 
+                          : 'bg-gray-100 text-gray-900'
+                      }`}>
+                        {message.text}
                       </div>
                     </div>
                   </div>

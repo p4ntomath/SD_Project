@@ -128,9 +128,14 @@ export default function MessagesList() {
 
   // Get chat name for display
   const getChatDisplayName = (chat) => {
-    if (chat.type === 'group') return chat.groupName;
+    if (chat.type === 'group') {
+      // For group chats, return the group name
+      return chat.groupName;
+    }
+    // For direct chats, get the other participant's name
     const otherUserId = chat.participants.find(id => id !== auth.currentUser.uid);
-    return chat.participantNames?.[otherUserId] || 'Unknown User';
+    const participantName = chat.participantNames?.[otherUserId];
+    return participantName || 'Unknown User';
   };
 
   // Get avatar initials for a name
@@ -177,7 +182,7 @@ export default function MessagesList() {
               className="text-gray-600 hover:text-gray-800 font-medium flex items-center"
             >
               <FiArrowLeft className="h-5 w-5 mr-1" />
-              Back to Dashboard
+              Dashboard
             </button>
             <div className="flex space-x-2">
               <button
@@ -191,7 +196,7 @@ export default function MessagesList() {
                 className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
               >
                 <FiUserPlus className="h-4 w-4 mr-1.5" />
-                New Chat
+                
               </button>
               <button
                 onClick={() => {
@@ -204,7 +209,7 @@ export default function MessagesList() {
                 className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-purple-600 hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500"
               >
                 <FiUsers className="h-4 w-4 mr-1.5" />
-                New Group
+                
               </button>
             </div>
           </div>
