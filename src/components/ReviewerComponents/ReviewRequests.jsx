@@ -3,6 +3,10 @@ import { ClipLoader } from 'react-spinners';
 import { getReviewerRequests, updateReviewRequestStatus } from '../../backend/firebase/reviewerDB';
 import { auth } from '../../backend/firebase/firebaseConfig';
 import { useNavigate } from 'react-router-dom';
+import { notify } from '../../backend/firebase/notificationsUtil';
+import { getDoc, doc } from 'firebase/firestore';
+import { db } from '../../backend/firebase/firebaseConfig';
+
 
 export default function ReviewRequests() {
   const [requests, setRequests] = useState([]);
