@@ -408,7 +408,7 @@ export const respondToResearcherInvitation = async (invitationId, accepted) => {
             
             if (!chatSnapshot.empty) {
                 const projectChat = chatSnapshot.docs[0];
-                const ChatService = (await import('./chatDB.js')).ChatService;
+                const ChatService = (await import("./chatDB.jsx")).ChatService;
                 await ChatService.addUserToGroupChat(projectChat.id, researcherId);
             }
         } else {
