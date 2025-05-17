@@ -237,7 +237,18 @@ export const getProjectReviews = async (projectId) => {
       // Get reviewer details
       const reviewerDoc = await getDoc(doc(db, "users", review.reviewerId));
       if (reviewerDoc.exists()) {
-        review.reviewer = { id: reviewerDoc.id, ...reviewerDoc.data() };
+        const reviewerData = reviewerDoc.data();
+        review.reviewer = { 
+          id: reviewerDoc.id, 
+          fullName: reviewerData.fullName,
+          fieldOfResearch: reviewerData.fieldOfResearch || 'Not specified'
+        };
+      } else {
+        review.reviewer = {
+          id: review.reviewerId,
+          fullName: 'Anonymous Reviewer',
+          fieldOfResearch: 'Not specified'
+        };
       }
       reviews.push(review);
     }
