@@ -315,7 +315,12 @@ export default function ProjectDetailsPage() {
         )
       );
 
+      // Wait for all invitations to be sent
       await Promise.all(invitationPromises);
+      
+      // Fetch the updated pending invitations to get complete researcher details
+      const updatedInvitations = await getPendingCollaboratorInvitations(projectId);
+      setPendingInvitations(updatedInvitations);
       
       setShowCollaboratorsModal(false);
       setModalOpen(true);
@@ -419,6 +424,7 @@ export default function ProjectDetailsPage() {
 
   return (
     <>
+
 
       <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">

@@ -15,13 +15,18 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
       try {
         const reviewers = await getAvailableReviewers();
         
-        // Filter out reviewers who have pending requests
-        const pendingReviewerIds = reviewRequests
-          .filter(req => req.status === 'pending' || req.status === 'accepted')
-          .map(req => req.reviewerId);
+        // Filter out both active reviewers and those with pending/accepted requests
+        const unavailableReviewerIds = [
+          ...reviewRequests
+            .filter(req => req.status === 'pending' || req.status === 'accepted')
+            .map(req => req.reviewerId),
+          ...reviewRequests
+            .filter(req => req.status === 'completed')
+            .map(req => req.reviewerId)
+        ];
 
         const filteredReviewers = reviewers.filter(reviewer => 
-          !pendingReviewerIds.includes(reviewer.id)
+          !unavailableReviewerIds.includes(reviewer.id)
         );
 
         const formattedReviewers = filteredReviewers.map(reviewer => ({
