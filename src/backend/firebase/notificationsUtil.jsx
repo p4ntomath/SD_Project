@@ -89,7 +89,7 @@ const notificationTemplates = {
   "Reviewer Accepted": ({ researcherName, projectTitle }) =>
     `You have accepted to review the project, "${projectTitle}", by ${researcherName}.`,
   "Reviewer Request Accepted": ({ reviewerName, projectTitle }) =>  
-    `Your request to review the project "${projectTitle}" has been accepted by ${reviewerName}.`,
+    ` ${reviewerName} has accepted to review your project, "${projectTitle}".`,
 
   "Reviewer Denied": ({ researcherName, projectTitle }) =>
     `You have denied the review request for the project "${projectTitle}" by ${researcherName}.`,

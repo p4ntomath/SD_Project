@@ -88,8 +88,9 @@ export default function MyProjects() {
       setFilteredProjects(prevFiltered => [...prevFiltered, fullProject]);
       setModalOpen(true);
       setStatusMessage('Project was successfully created.');
+      
       notify({
-        type: "Project Creation",
+        type: "Project Created",
         projectId: createdProjectId,
         projectTitle: cleanedProject.title,
         goalText: goalInput,
