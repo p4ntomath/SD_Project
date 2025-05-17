@@ -2,12 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { getFirestore, collection, query, onSnapshot, orderBy, where, doc, updateDoc } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { useNavigate } from 'react-router-dom';
-import MainNav from '../components/ResearcherComponents/Navigation/MainNav';
-import { notify } from '../backend/firebase/notificationsUtil';
-import MobileBottomNav from '../components/ResearcherComponents/Navigation/MobileBottomNav';
-import { FiBell } from 'react-icons/fi';
+import ReviewerMobileBottomNav from '../../components/ReviewerComponents/Navigation/ReviewerMobileBottomNav';
+import ReviewerMainNav from '../../components/ReviewerComponents/Navigation/ReviewerMainNav';
 
-const NotificationsPage = () => {
+const ReviewerNotificationsPage = () => {
   const [notifications, setNotifications] = useState([]);
   const [loading, setLoading] = useState(true);
   const auth = getAuth();
@@ -45,7 +43,7 @@ const NotificationsPage = () => {
   if (loading) {
     return (
       <section className="flex flex-col h-screen bg-gray-50">
-        <MainNav />
+        <ReviewerMainNav />
         <section className="flex justify-center items-center flex-1">
           <p className="text-gray-500">Loading notifications...</p>
         </section>
@@ -55,7 +53,7 @@ const NotificationsPage = () => {
 
   return (
     <section  className="min-h-screen bg-gray-50 flex flex-col">
-      <MainNav />
+      <ReviewerMainNav />
 
       <main className="flex-1 p-4 md:p-2 pb-16 md:pb-8">
         <section className="max-w-3xl mx-auto p-4 sm:p-8">
@@ -96,7 +94,7 @@ const NotificationsPage = () => {
 </section>
       </main>
 <footer>
-        <MobileBottomNav />
+        <ReviewerMobileBottomNav />
       </footer>
 
     </section>
@@ -104,4 +102,4 @@ const NotificationsPage = () => {
   );
 };
 
-export default NotificationsPage;
+export default ReviewerNotificationsPage;

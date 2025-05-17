@@ -1,9 +1,11 @@
 import { FiHome, FiFolder, FiBell, FiUser, FiFileText } from 'react-icons/fi';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useUnreadNotificationsCount } from '../../../backend/firebase/notificationsUtil';
 
 export default function MobileBottomNav ({ showForm, setShowForm }) {
   const location = useLocation();
   const navigate = useNavigate();
+  const unreadCount = useUnreadNotificationsCount();
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200" aria-label="Mobile navigation">
@@ -36,12 +38,19 @@ export default function MobileBottomNav ({ showForm, setShowForm }) {
         </button>
 
         <button 
-          onClick={() => navigate('/alerts')}
-          className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/alerts' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
+          onClick={() => navigate('/reviewernotifications')}
+          className={`group flex flex-col items-center justify-center p-3 relative ${location.pathname === '/reviewernotifications' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
           aria-label="View alerts"
         >
-          <FiBell className="h-6 w-6 group-hover:text-blue-600" />
-          <p className="text-xs mt-1 group-hover:text-blue-600">Alerts</p>
+          <span className="relative">
+            <FiBell className="h-6 w-6 group-hover:text-blue-600" />
+            {unreadCount > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 font-bold z-10">
+                {unreadCount}
+              </span>
+            )}
+          </span>
+          <p className="text-xs mt-1 group-hover:text-blue-600">Notifications</p>
         </button>
 
         <button 

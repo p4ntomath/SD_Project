@@ -92,39 +92,41 @@ export default function ReviewRequests() {
     }
   };
 
- const handleAccept = async (projectId, requestId) => {
-  try {
-    setProcessingId(requestId);
-    await updateReviewRequestStatus(requestId, 'accepted');
-    setStatusMessage('Review request accepted successfully');
+  const handleAccept = async (projectId, requestId) => {
+    try {
+      setProcessingId(requestId);
+      await updateReviewRequestStatus(requestId, 'accepted');
+      setStatusMessage('Review request accepted successfully');
 
-    // Find the request object
-    const request = requests.find(r => r.id === requestId);
+      const request = requests.find(req => req.id === requestId);
 
-    // 1. Notify the reviewer (yourself)
-    notify({
-      type: "Reviewer Accepted",
-      projectId,
-      projectTitle: request.project?.title || request.projectTitle,
-       researcherName: request.researcherName, 
-    });
+      // 1. Notify the reviewer (yourself)
+      notify({
+        type: 'Reviewer Accepted',
+        projectId,
+        projectTitle: request?.projectTitle,
+        reviewerName: auth.currentUser?.displayName || 'Reviewer',
+        researcherName: request?.researcherName,
+        // No userId here, goes to current user (reviewer)
+      });
 
-    // 2. Notify the researcher
-    notify({
-      userId: request.researcherId,
-      type: "Reviewer Request Accepted",
-      projectId,
-      projectTitle: request.project?.title || request.projectTitle,
-      reviewerName: auth.currentUser.displayName || "A reviewer",
-    });
+      // 2. Notify the researcher
+      notify({
+        type: 'Reviewer Request Accepted',
+        projectId,
+        projectTitle: request?.projectTitle,
+        reviewerName: auth.currentUser?.displayName || 'Reviewer',
+        researcherName: request?.researcherName,
+        userId: request?.researcherId, // Explicitly send to researcher
+      });
 
-    navigate(`/reviewer/review/${projectId}`);
-  } catch (err) {
-    setError('Failed to accept review request: ' + err.message);
-  } finally {
-    setProcessingId(null);
-  }
-};
+      navigate(`/reviewer/review/${projectId}`);
+    } catch (err) {
+      setError('Failed to accept review request: ' + err.message);
+    } finally {
+      setProcessingId(null);
+    }
+  };
 
   const handleReject = async (requestId) => {
     try {

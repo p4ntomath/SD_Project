@@ -109,26 +109,32 @@ export const notify = async ({
   description,
   reviewerName,
   researcherName,
+  userId, 
 }) => {
-  const userId = auth.currentUser?.uid;
-  if (!userId) {
-    console.error("User not authenticated");
+  // Use the provided userId if available, otherwise fall back to current user
+  const targetUserId = userId || auth.currentUser?.uid;
+  
+  if (!targetUserId) {
+    console.error("User ID not provided and user not authenticated");
     return;
   }
+  
   if (!projectId) {
     console.error("Project ID is undefined. Cannot send notification.");
     return;
   }
+  
   const template = notificationTemplates[type];
   if (!template) {
     console.error("Unknown notification type:", type);
     return;
   }
+  
   const message = template({ goalText, projectTitle, documentName, amount, description, folderName, reviewerName, researcherName });
-  console.log(message);
+  
   const notificationsRef = collection(db, "notifications");
   await addDoc(notificationsRef, {
-    userId,
+    userId: targetUserId, // Use the target user ID here
     projectId,
     message,
     type,

@@ -3,6 +3,12 @@ import { motion } from 'framer-motion';
 import { ClipLoader } from 'react-spinners';
 import { getAvailableReviewers } from '../../backend/firebase/reviewerDB';
 import { notify } from '../../backend/firebase/notificationsUtil';
+import { auth } from '../../backend/firebase/firebaseConfig';
+import { getDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
+import { db } from '../../backend/firebase/firebaseConfig';
+
+
 
 export default function AssignReviewersModal({ isOpen, onClose, onAssign, projectId, projectTitle }) {
   const [searchQuery, setSearchQuery] = useState('');
@@ -67,21 +73,45 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
     }
   };
 
-  const handleAssign = async () => {
-    if (selectedReviewers.length === 0) return;
-    setLoading(true);
-    try {
-      await onAssign(selectedReviewers);
-      notify({
-        type: 'Reviewer Request Sent',
+ const handleAssign = async () => {
+  if (!selectedReviewers.length) return;
+  setLoading(true);
+
+  try {
+    await onAssign(selectedReviewers);
+    const researcher = auth.currentUser;
+    
+    // Fetch fullName from Firestore
+    const researcherDoc = await getDoc(doc(db, 'users', researcher.uid));
+    const researcherName = researcherDoc.data()?.fullName 
+                        || researcher.email?.split('@')[0] 
+                        || 'Researcher';
+
+    // Notify researcher
+    await notify({
+      type: 'Reviewer Request Sent',
+      projectId,
+      projectTitle,
+      reviewerName: selectedReviewers.map(r => r.name).join(', '),
+      userId: researcher.uid,
+    });
+
+    // Notify reviewers
+    for (const reviewer of selectedReviewers) {
+      await notify({
+        type: 'Reviewer Request Received',
         projectId,
         projectTitle,
-        reviewerName: selectedReviewers.map(r => r.name).join(', '),
+        researcherName, // Now uses fullName correctly
+        userId: reviewer.id,
       });
-    } catch (error) {
-      console.error('Error assigning reviewers:', error);
     }
-  };
+  } catch (error) {
+    console.error('Error assigning reviewers:', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (!isOpen) return null;
 

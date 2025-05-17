@@ -25,6 +25,7 @@ import ReviewRequests from './pages/reviewer/ReviewRequests.jsx';
 import ReviewerHistory from './pages/ReviewerPages/ReviewerHistory.jsx';
 import ReviewProjectPage from './pages/ReviewerPages/ReviewProjectPage.jsx';
 import NotificationsPage from './pages/NotificationsPage.jsx';
+import ReviewerNotificationsPage from './pages/reviewer/ReviewerNotificationsPage.jsx';
 
 function App() {
   return (
@@ -108,11 +109,16 @@ function App() {
             </ProtectedRoute>
           } />
           <Route path="/notifications" element={
-            <ProtectedRoute allowedRoles={['researcher', 'reviewer', 'admin']}>
+            <ProtectedRoute allowedRoles={['researcher']}>
               <NotificationsPage />
             </ProtectedRoute>
           } />
 
+          <Route path="/reviewernotifications" element={
+                      <ProtectedRoute allowedRoles={['reviewer']}>
+                        <ReviewerNotificationsPage />
+                      </ProtectedRoute>
+                    } />
           <Route path="/reviewer/review/:projectId" element={
             <ProtectedRoute allowedRoles={['reviewer']}>
               <ReviewProjectPage />
