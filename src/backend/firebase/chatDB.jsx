@@ -122,7 +122,7 @@ const ChatService = {
     }
   },
 
-  createGroupChat: async (creatorId, participantIds, groupName) => {
+  createGroupChat: async (creatorId, participantIds, groupName, metadata = {}) => {
     const chatId = doc(collection(db, 'chats')).id;
     const participants = [...new Set([creatorId, ...participantIds])];
     
@@ -148,7 +148,8 @@ const ChatService = {
       participants,
       participantNames,
       groupName,
-      lastMessage: null
+      lastMessage: null,
+      ...metadata // Add any additional metadata like projectId
     };
     
     await setDoc(doc(db, 'chats', chatId), newChat);

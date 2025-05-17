@@ -397,6 +397,20 @@ export const respondToResearcherInvitation = async (invitationId, accepted) => {
                 status: "accepted",
                 updatedAt: serverTimestamp()
             });
+
+            // Find and add to project group chat if it exists
+            const chatsQuery = query(
+                collection(db, "chats"),
+                where("type", "==", "group"),
+                where("projectId", "==", projectId)
+            );
+            const chatSnapshot = await getDocs(chatsQuery);
+            
+            if (!chatSnapshot.empty) {
+                const projectChat = chatSnapshot.docs[0];
+                const ChatService = (await import('./chatDB.js')).ChatService;
+                await ChatService.addUserToGroupChat(projectChat.id, researcherId);
+            }
         } else {
             await updateDoc(invitationRef, {
                 status: "declined",
