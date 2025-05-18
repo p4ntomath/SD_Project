@@ -38,8 +38,6 @@ export default function MobileBottomNav ({ showForm, setShowForm }) {
         </button>
 
         <button 
-          onClick={() => navigate('/notifications')}
-          className={`group flex flex-col items-center justify-center p-3 relative ${location.pathname === '/reviewernotifications' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
           onClick={() => navigate('/messages')}
           className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/messages' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
           aria-label="View messages"
