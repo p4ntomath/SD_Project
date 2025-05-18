@@ -8,6 +8,7 @@ import { useNavigate } from "react-router-dom";
 import CollaborationRequestsSection from '../../components/ResearcherComponents/CollaborationRequestsSection';
 import ClipLoader from 'react-spinners/ClipLoader';
 import { useExport } from '../../hooks/useExport';
+import ExportDialog from '../../components/ExportDialog';
 
 export default function ResearcherHome() {
   const navigate = useNavigate();
@@ -15,6 +16,8 @@ export default function ResearcherHome() {
   const [loading, setLoading] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { exportLoading, showExportMenu, setShowExportMenu, handleExport } = useExport();
+  const [showExportDialog, setShowExportDialog] = useState(false);
+  const [selectedFormat, setSelectedFormat] = useState(null);
 
   const fetchAllProjects = async (user) => {
     try {
@@ -112,14 +115,22 @@ export default function ResearcherHome() {
                 <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
                   <div className="py-1" role="menu" aria-orientation="vertical">
                     <button
-                      onClick={() => handleExport('dashboard', 'csv')}
+                      onClick={() => {
+                        setSelectedFormat('csv');
+                        setShowExportDialog(true);
+                        setShowExportMenu(false);
+                      }}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                       role="menuitem"
                     >
                       Export as CSV
                     </button>
                     <button
-                      onClick={() => handleExport('dashboard', 'pdf')}
+                      onClick={() => {
+                        setSelectedFormat('pdf');
+                        setShowExportDialog(true);
+                        setShowExportMenu(false);
+                      }}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                       role="menuitem"
                     >
@@ -354,6 +365,15 @@ export default function ResearcherHome() {
       <footer>
         <MobileBottomNav />
       </footer>
+
+      <ExportDialog
+        isOpen={showExportDialog}
+        onClose={() => setShowExportDialog(false)}
+        onExport={(type, format, filters) => handleExport(type, format, filters, setShowExportDialog)}
+        type="dashboard"
+        format={selectedFormat}
+        loading={exportLoading}
+      />
     </section>
   );
 }

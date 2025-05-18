@@ -14,7 +14,7 @@ export const useExport = () => {
   const [exportLoading, setExportLoading] = useState(false);
   const [showExportMenu, setShowExportMenu] = useState(false);
 
-  const handleExport = async (type, format) => {
+  const handleExport = async (type, format, { startDate = null, endDate = null, projectIds = null } = {}, setShowExportDialog) => {
     try {
       const user = auth.currentUser;
       if (!user) {
@@ -27,10 +27,10 @@ export const useExport = () => {
       if (format === 'pdf') {
         switch (type) {
           case 'projects':
-            await generateProjectOverviewPdf(user.uid);
+            await generateProjectOverviewPdf(user.uid, { startDate, endDate, projectIds });
             break;
           case 'funding':
-            await generateFundingHistoryReportPdf(user.uid);
+            await generateFundingHistoryReportPdf(user.uid, { startDate, endDate, projectIds });
             break;
           case 'files':
             await generateFolderReportPdf(user.uid);
@@ -39,33 +39,33 @@ export const useExport = () => {
             await generateReviewedProjectsReportPdf(user.uid);
             break;
           case 'progress':
-            await generateProgressReportPdf(user.uid);
+            await generateProgressReportPdf(user.uid, { startDate, endDate, projectIds });
             break;
           case 'team':
-            await generateTeamReportPdf(user.uid);
+            await generateTeamReportPdf(user.uid, { startDate, endDate, projectIds });
             break;
           case 'dashboard':
             await Promise.all([
-              generateProjectOverviewPdf(user.uid),
-              generateFundingHistoryReportPdf(user.uid),
-              generateProgressReportPdf(user.uid),
-              generateTeamReportPdf(user.uid)
+              generateProjectOverviewPdf(user.uid, { startDate, endDate, projectIds }),
+              generateFundingHistoryReportPdf(user.uid, { startDate, endDate, projectIds }),
+              generateProgressReportPdf(user.uid, { startDate, endDate, projectIds }),
+              generateTeamReportPdf(user.uid, { startDate, endDate, projectIds })
             ]);
             break;
           default:
             throw new Error('Invalid export type');
         }
       } else {
-        // CSV format
+        // CSV format with filters
         if (type === 'dashboard') {
           await Promise.all([
-            handleDashboardExport(user.uid, 'projects'),
-            handleDashboardExport(user.uid, 'funding'),
-            handleDashboardExport(user.uid, 'progress'),
-            handleDashboardExport(user.uid, 'team')
+            handleDashboardExport(user.uid, 'projects', { startDate, endDate, projectIds }),
+            handleDashboardExport(user.uid, 'funding', { startDate, endDate, projectIds }),
+            handleDashboardExport(user.uid, 'progress', { startDate, endDate, projectIds }),
+            handleDashboardExport(user.uid, 'team', { startDate, endDate, projectIds })
           ]);
         } else {
-          await handleDashboardExport(user.uid, type);
+          await handleDashboardExport(user.uid, type, { startDate, endDate, projectIds });
         }
       }
     } catch (error) {
@@ -74,6 +74,7 @@ export const useExport = () => {
     } finally {
       setExportLoading(false);
       setShowExportMenu(false);
+      setShowExportDialog(true); // Notify that export is complete
     }
   };
 

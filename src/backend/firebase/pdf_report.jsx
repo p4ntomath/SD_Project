@@ -1,4 +1,3 @@
-// @ts-check
 import { jsPDF } from "jspdf";
 import autoTable from 'jspdf-autotable';
 import Papa from "papaparse";
@@ -76,9 +75,24 @@ const generateBasePdf = (csvData, title = "Report") => {
 /**
  * Generate a PDF report for project overview
  */
-export const generateProjectOverviewPdf = async (uid) => {
+export const generateProjectOverviewPdf = async (uid, { startDate = null, endDate = null, projectIds = null } = {}) => {
   try {
-    const projectsData = await fetchProjects(uid);
+    let projectsData = await fetchProjects(uid);
+    
+    // Apply filters
+    if (startDate || endDate) {
+      projectsData = projectsData.filter(project => {
+        const projectDate = project.createdAt?.toDate?.() || new Date(project.createdAt);
+        const isAfterStart = !startDate || projectDate >= new Date(startDate);
+        const isBeforeEnd = !endDate || projectDate <= new Date(endDate);
+        return isAfterStart && isBeforeEnd;
+      });
+    }
+    
+    if (projectIds?.length) {
+      projectsData = projectsData.filter(project => projectIds.includes(project.id));
+    }
+
     const csvData = generateProjectOverviewCSV(projectsData);
     const doc = generateBasePdf(csvData, "Projects Overview Report");
     doc.save("projects_overview_report.pdf");
@@ -91,10 +105,15 @@ export const generateProjectOverviewPdf = async (uid) => {
 /**
  * Generate a PDF report for funding history
  */
-export const generateFundingHistoryReportPdf = async (uid) => {
+export const generateFundingHistoryReportPdf = async (uid, { startDate = null, endDate = null, projectIds = null } = {}) => {
   try {
-    // Pass undefined instead of null for no date filter
-    const fundingData = await getProjectFunding(uid, undefined);
+    let fundingData = await getProjectFunding(uid, startDate ? new Date(startDate) : undefined);
+    
+    // Apply project filter if specified
+    if (projectIds?.length) {
+      fundingData = fundingData.filter(project => projectIds.includes(project.id));
+    }
+
     const csvData = generateFundingCSV(fundingData);
     const doc = generateBasePdf(csvData, "Funding History Report");
     doc.save("funding_history_report.pdf");
@@ -107,9 +126,24 @@ export const generateFundingHistoryReportPdf = async (uid) => {
 /**
  * Generate a PDF report for project progress
  */
-export const generateProgressReportPdf = async (uid) => {
+export const generateProgressReportPdf = async (uid, { startDate = null, endDate = null, projectIds = null } = {}) => {
   try {
-    const projectsData = await fetchProjects(uid);
+    let projectsData = await fetchProjects(uid);
+    
+    // Apply filters
+    if (startDate || endDate) {
+      projectsData = projectsData.filter(project => {
+        const projectDate = project.updatedAt?.toDate?.() || new Date(project.updatedAt);
+        const isAfterStart = !startDate || projectDate >= new Date(startDate);
+        const isBeforeEnd = !endDate || projectDate <= new Date(endDate);
+        return isAfterStart && isBeforeEnd;
+      });
+    }
+    
+    if (projectIds?.length) {
+      projectsData = projectsData.filter(project => projectIds.includes(project.id));
+    }
+
     const csvData = generateProgressCSV(projectsData);
     const doc = generateBasePdf(csvData, "Progress Report");
     doc.save("progress_report.pdf");
@@ -122,9 +156,24 @@ export const generateProgressReportPdf = async (uid) => {
 /**
  * Generate a PDF report for team overview
  */
-export const generateTeamReportPdf = async (uid) => {
+export const generateTeamReportPdf = async (uid, { startDate = null, endDate = null, projectIds = null } = {}) => {
   try {
-    const projectsData = await fetchProjects(uid);
+    let projectsData = await fetchProjects(uid);
+    
+    // Apply filters
+    if (startDate || endDate) {
+      projectsData = projectsData.filter(project => {
+        const projectDate = project.createdAt?.toDate?.() || new Date(project.createdAt);
+        const isAfterStart = !startDate || projectDate >= new Date(startDate);
+        const isBeforeEnd = !endDate || projectDate <= new Date(endDate);
+        return isAfterStart && isBeforeEnd;
+      });
+    }
+    
+    if (projectIds?.length) {
+      projectsData = projectsData.filter(project => projectIds.includes(project.id));
+    }
+
     const csvData = generateTeamCSV(projectsData);
     const doc = generateBasePdf(csvData, "Team Overview Report");
     doc.save("team_overview_report.pdf");

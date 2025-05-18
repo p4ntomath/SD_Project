@@ -174,7 +174,7 @@ export const generateProjectsCSV = (projects) => {
 };
 
 // Combined controller for dashboard exports
-export const handleDashboardExport = async (uid, type) => {
+export const handleDashboardExport = async (uid, type, { startDate = null, endDate = null, projectIds = null } = {}) => {
   try {
     const userSnap = await getDoc(doc(db, "users", uid));
     if (!userSnap.exists()) throw new Error("User not found");
@@ -182,39 +182,73 @@ export const handleDashboardExport = async (uid, type) => {
     let data;
     let filename;
 
+    // Helper function to filter by date range
+    const filterByDateRange = (items, dateField = 'createdAt') => {
+      if (!startDate && !endDate) return items;
+      return items.filter(item => {
+        const itemDate = item[dateField]?.toDate?.() || new Date(item[dateField]);
+        const isAfterStart = !startDate || itemDate >= new Date(startDate);
+        const isBeforeEnd = !endDate || itemDate <= new Date(endDate);
+        return isAfterStart && isBeforeEnd;
+      });
+    };
+
+    // Helper function to filter by project IDs
+    const filterByProjects = (items) => {
+      if (!projectIds?.length) return items;
+      return items.filter(item => projectIds.includes(item.id));
+    };
+
     switch (type) {
       case 'projects':
-        const projectsData = await fetchProjects(uid);
+        let projectsData = await fetchProjects(uid);
+        projectsData = filterByDateRange(projectsData);
+        projectsData = filterByProjects(projectsData);
         data = generateProjectsCSV(projectsData);
         filename = 'projects_report';
         break;
       case 'funding':
-        const fundingData = await getProjectFunding(uid);
-        data = generateFundingCSV(fundingData);
+        const fundingData = await getProjectFunding(uid, startDate);
+        data = generateFundingCSV(filterByProjects(fundingData));
         filename = 'funding_report';
         break;
       case 'files':
-        const folderData = await getAllProjectFoldersWithFiles(uid);
+        let folderData = await getAllProjectFoldersWithFiles(uid);
+        folderData = filterByProjects(folderData);
         data = generateFolderCSV(folderData);
         filename = 'files_report';
         break;
       case 'reviews':
-        const reviewedData = await getReviewedProjects(uid);
+        let reviewedData = await getReviewedProjects(uid);
+        reviewedData = filterByDateRange(reviewedData, 'reviewDate');
+        reviewedData = filterByProjects(reviewedData);
         data = generateReviewedProjectsCSV(reviewedData);
         filename = 'reviews_report';
         break;
       case 'progress':
-        const progressData = await fetchProjects(uid);
+        let progressData = await fetchProjects(uid);
+        progressData = filterByDateRange(progressData);
+        progressData = filterByProjects(progressData);
         data = generateProgressCSV(progressData);
         filename = 'progress_report';
         break;
       case 'team':
-        const teamData = await fetchProjects(uid);
+        let teamData = await fetchProjects(uid);
+        teamData = filterByDateRange(teamData);
+        teamData = filterByProjects(teamData);
         data = generateTeamCSV(teamData);
         filename = 'team_report';
         break;
       default:
         throw new Error('Invalid report type');
+    }
+
+    // Add date range to filename if specified
+    if (startDate || endDate) {
+      const dateStr = startDate && endDate ? `_${startDate.split('T')[0]}_to_${endDate.split('T')[0]}` : 
+                     startDate ? `_from_${startDate.split('T')[0]}` :
+                     `_until_${endDate.split('T')[0]}`;
+      filename += dateStr;
     }
 
     downloadCSVFile(data, `${filename}.csv`);
