@@ -1,57 +1,58 @@
 import React from 'react';
 import { formatFirebaseDate } from '../../utils/dateUtils';
+import { isProjectOwner } from '../../utils/permissions';
 
 export default function BasicInfoCard({ project, calculateProgress }) {
+  const progressPercentage = calculateProgress();
+  
   return (
     <article className="bg-white rounded-lg shadow p-4 sm:p-6">
-      <h2 className="text-lg sm:text-xl font-semibold mb-4">Project Overview</h2>
-      <section className="space-y-4">
+      <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:items-center sm:justify-between mb-4">
+        <h2 className="text-lg sm:text-xl font-semibold">Project Details</h2>
+        <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs sm:text-sm max-w-fit ${
+          project.status === 'Complete' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
+        }`}>
+          {project.status}
+        </span>
+      </div>
+
+      <div className="space-y-4">
         {/* Progress Bar */}
-        <section className="mb-4 sm:mb-6">
-          <header className="flex justify-between items-center mb-2">
-            <p className="text-sm text-gray-500">Overall Progress</p>
-            <p className="text-sm text-gray-600">{calculateProgress()}%</p>
-          </header>
-          <section className="w-full bg-gray-200 rounded-full h-2">
-            <section 
-              className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
-              style={{ width: `${calculateProgress()}%` }}
+        <div>
+          <div className="flex justify-between items-center mb-2">
+            <span className="text-sm font-medium text-gray-700">Project Progress</span>
+            <span className="text-sm font-medium text-gray-700">{progressPercentage}%</span>
+          </div>
+          <div className="w-full bg-gray-200 rounded-full h-2.5">
+            <div 
+              className="bg-blue-600 h-2.5 rounded-full transition-all duration-500" 
+              style={{ width: `${progressPercentage}%` }}
             />
-          </section>
-        </section>
+          </div>
+        </div>
 
-        <dl className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-          <div>
-            <dt className="text-sm text-gray-500">Research Field</dt>
-            <dd className="font-medium">{project.researchField}</dd>
-          </div>
-          <div>
-            <dt className="text-sm text-gray-500">Duration</dt>
-            <dd className="font-medium">{project.duration}</dd>
-          </div>
-          <div>
-            <dt className="text-sm text-gray-500">Created</dt>
-            <dd className="font-medium">{formatFirebaseDate(project.createdAt)}</dd>
-          </div>
-          <div>
-            <dt className="text-sm text-gray-500">Deadline</dt>
-            <dd className="font-medium">{formatFirebaseDate(project.deadline)}</dd>
-          </div>
-          <div>
-            <dt className="text-sm text-gray-500">Status</dt>
-            <dd>
-              <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                {project.status || 'In Progress'}
-              </span>
-            </dd>
-          </div>
-        </dl>
+        {/* Project Description */}
+        <div>
+          <h3 className="text-sm font-medium text-gray-700 mb-2">Description</h3>
+          <p className="text-gray-600 text-sm">{project.description || 'No description provided.'}</p>
+        </div>
 
-        <section>
-          <h3 className="text-sm text-gray-500 mb-1">Description</h3>
-          <p className="text-gray-700">{project.description}</p>
-        </section>
-      </section>
+        {/* Project Duration */}
+        {project.duration && (
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Duration</h3>
+            <p className="text-gray-600 text-sm">{project.duration}</p>
+          </div>
+        )}
+
+        {/* Project Owner */}
+        {project.researcherName && (
+          <div>
+            <h3 className="text-sm font-medium text-gray-700 mb-2">Project Owner</h3>
+            <p className="text-gray-600 text-sm">{project.researcherName}</p>
+          </div>
+        )}
+      </div>
     </article>
   );
 }

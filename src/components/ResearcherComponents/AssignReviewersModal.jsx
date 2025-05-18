@@ -1,16 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ClipLoader } from 'react-spinners';
 import { getAvailableReviewers } from '../../backend/firebase/reviewerDB';
 import { notify } from '../../backend/firebase/notificationsUtil';
 import { auth } from '../../backend/firebase/firebaseConfig';
 import { getDoc } from 'firebase/firestore';
 import { doc } from 'firebase/firestore';
 import { db } from '../../backend/firebase/firebaseConfig';
+export default function AssignReviewersModal({ isOpen, onClose, onAssign, projectId, reviewRequests }) {
 
-
-
-export default function AssignReviewersModal({ isOpen, onClose, onAssign, projectId, projectTitle }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedReviewers, setSelectedReviewers] = useState([]);
   const [availableReviewers, setAvailableReviewers] = useState([]);
@@ -22,12 +19,28 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
     const loadReviewers = async () => {
       try {
         const reviewers = await getAvailableReviewers();
-        const formattedReviewers = reviewers.map(reviewer => ({
+        
+        // Filter out both active reviewers and those with pending/accepted requests
+        const unavailableReviewerIds = [
+          ...reviewRequests
+            .filter(req => req.status === 'pending' || req.status === 'accepted')
+            .map(req => req.reviewerId),
+          ...reviewRequests
+            .filter(req => req.status === 'completed')
+            .map(req => req.reviewerId)
+        ];
+
+        const filteredReviewers = reviewers.filter(reviewer => 
+          !unavailableReviewerIds.includes(reviewer.id)
+        );
+
+        const formattedReviewers = filteredReviewers.map(reviewer => ({
           id: reviewer.id,
           name: reviewer.fullName,
-          expertise: reviewer.expertise || 'Not specified',
+          fieldOfResearch: reviewer.fieldOfResearch || 'Not specified',
           department: reviewer.department || 'Not specified'
         }));
+        
         setAllReviewers(formattedReviewers);
         setAvailableReviewers(formattedReviewers);
       } catch (error) {
@@ -40,7 +53,7 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
     if (isOpen) {
       loadReviewers();
     }
-  }, [isOpen]);
+  }, [isOpen, reviewRequests]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -58,7 +71,7 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
     } else {
       const filtered = allReviewers.filter(reviewer =>
         reviewer.name.toLowerCase().includes(query.toLowerCase()) ||
-        reviewer.expertise.toLowerCase().includes(query.toLowerCase()) ||
+        reviewer.fieldOfResearch.toLowerCase().includes(query.toLowerCase()) ||
         reviewer.department.toLowerCase().includes(query.toLowerCase())
       );
       setAvailableReviewers(filtered);
@@ -159,7 +172,7 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
                 type="text"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
-                placeholder="Search reviewers by name, expertise, or department..."
+                placeholder="Search reviewers by name, field Of Research, or department..."
                 className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
               <svg
@@ -211,7 +224,7 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
                     <div>
                       <h3 className="font-medium text-gray-900">{reviewer.name}</h3>
                       <p className="text-sm text-gray-500">
-                        {reviewer.expertise} • {reviewer.department}
+                        {reviewer.fieldOfResearch} • {reviewer.department}
                       </p>
                     </div>
                   </div>

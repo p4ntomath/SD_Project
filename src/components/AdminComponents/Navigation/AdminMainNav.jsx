@@ -1,24 +1,13 @@
-
-import { FiHome, FiList, FiUser, FiMenu, FiX, FiSearch, FiClock, FiInbox, FiMessageSquare } from 'react-icons/fi';
+import { FiHome, FiUsers, FiFolder, FiDollarSign, FiMenu, FiX, FiSearch } from 'react-icons/fi';
 import { useState } from 'react';
-import { ClipboardDocumentCheckIcon } from "@heroicons/react/24/outline";
 import { logOut } from '../../../backend/firebase/authFirebase';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useUnreadNotificationsCount } from '../../../backend/firebase/notificationsUtil';
 
-
-export default function ReviewerMainNav({ setMobileMenuOpen, mobileMenuOpen, onSearch }) {
-  const [searchQuery, setSearchQuery] = useState('');
+export default function AdminMainNav({ setMobileMenuOpen, mobileMenuOpen }) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-   const unreadCount = useUnreadNotificationsCount();
-   
-  const handleSearch = (e) => {
-    e.preventDefault();
-    onSearch(searchQuery);
-  };
 
   const handleLogout = async () => {
     try {
@@ -37,94 +26,45 @@ export default function ReviewerMainNav({ setMobileMenuOpen, mobileMenuOpen, onS
           <section className="flex justify-between h-16 items-center">
             <section className="hidden md:flex items-center space-x-2">
               <button 
-                onClick={() => navigate('/reviewer/dashboard')}
-                className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/dashboard' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
-                aria-label="Home"
+                onClick={() => navigate('/admin')}
+                className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/admin' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
+                aria-label="Dashboard"
               >
                 <FiHome className="h-6 w-6 group-hover:text-blue-600" />
-                <p className="text-xs mt-1 group-hover:text-blue-600">Home</p>
+                <p className="text-xs mt-1 group-hover:text-blue-600">Dashboard</p>
               </button>
 
               <button 
-                onClick={() => navigate('/reviewer/requests')}
-                className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/requests' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
-                aria-label="Pending Review Requests"
+                onClick={() => navigate('/admin/users')}
+                className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/admin/users' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
+                aria-label="Users"
               >
-                <FiInbox className="h-6 w-6 group-hover:text-blue-600" />
-                <p className="text-xs mt-1 group-hover:text-blue-600">Requests</p>
+                <FiUsers className="h-6 w-6 group-hover:text-blue-600" />
+                <p className="text-xs mt-1 group-hover:text-blue-600">Users</p>
               </button>
 
               <button 
-                onClick={() => navigate('/reviewer/assigned')}
-                className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/assigned' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
-                aria-label="Approved Projects"
+                onClick={() => navigate('/admin/projects')}
+                className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/admin/projects' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
+                aria-label="Projects"
               >
-                <ClipboardDocumentCheckIcon className="h-6 w-6 group-hover:text-blue-600" />
-                <p className="text-xs mt-1 group-hover:text-blue-600">Approved</p>
+                <FiFolder className="h-6 w-6 group-hover:text-blue-600" />
+                <p className="text-xs mt-1 group-hover:text-blue-600">Projects</p>
               </button>
 
               <button 
-                onClick={() => navigate('/reviewer/history')}
-                className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/history' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
-                aria-label="Review History"
+                onClick={() => navigate('/admin/funding')}
+                className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/admin/funding' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
+                aria-label="Funding"
               >
-                <FiClock className="h-6 w-6 group-hover:text-blue-600" />
-                <p className="text-xs mt-1 group-hover:text-blue-600">History</p>
+                <FiDollarSign className="h-6 w-6 group-hover:text-blue-600" />
+                <p className="text-xs mt-1 group-hover:text-blue-600">Funding</p>
               </button>
-
-               <button 
-                              onClick={() => navigate('/reviewer/notifications')}
-                              className={`group flex flex-col items-center justify-center p-3 relative ${location.pathname === '/notifications' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
-                              aria-label="View alerts"
-                            >
-                              <span className="relative">
-                                <FiBell className="h-6 w-6 group-hover:text-blue-600" />
-                                {unreadCount > 0 && (
-                                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 font-bold z-10">
-                                    {unreadCount}
-                                  </span>
-                                )}
-                              </span>
-                              <p className="text-xs mt-1 group-hover:text-blue-600">Notifications</p>
-                            </button>  
-
-              <button 
-                onClick={() => navigate('/reviewer/messages')}
-                className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/messages' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
-                aria-label="View messages"
-              >
-                <FiMessageSquare className="h-6 w-6 group-hover:text-blue-600" />
-                <p className="text-xs mt-1 group-hover:text-blue-600">Messages</p>
-              </button>
-
-              <button 
-                onClick={() => navigate('/reviewer/account')}
-                className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/account' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
-                aria-label="View profile"
-              >
-                <FiUser className="h-6 w-6 group-hover:text-blue-600" />
-                <p className="text-xs mt-1 group-hover:text-blue-600">Account</p>
-              </button>
-            </section>
-            
-            <section className="flex-1 max-w-md mx-4">
-              <form onSubmit={handleSearch} className="relative">
-                <section className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiSearch className="h-5 w-5 text-gray-400" />
-                </section>
-                <input
-                  type="text"
-                  placeholder="Search reviews..."
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </form>
             </section>
 
             <section className='hidden md:flex items-center space-x-6'>
               <section className="hidden md:flex items-center">
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent">Review Portal</h1>
+                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent">Admin Portal</h1>
               </section>
 
               <section className="hidden md:flex items-center">
@@ -160,13 +100,6 @@ export default function ReviewerMainNav({ setMobileMenuOpen, mobileMenuOpen, onS
           <section className="md:hidden bg-white shadow-md">
             <section className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
               <button
-                onClick={() => navigate('/reviewer/account')}
-                className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                aria-label="View profile"
-              >
-                My Profile
-              </button>
-              <button
                 onClick={() => setShowLogoutModal(true)}
                 className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
               >
@@ -176,6 +109,7 @@ export default function ReviewerMainNav({ setMobileMenuOpen, mobileMenuOpen, onS
           </section>
         )}
       </nav>
+      
 
       {/* Logout Confirmation Modal */}
       <AnimatePresence>

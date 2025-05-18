@@ -1,16 +1,28 @@
-import React, { useState,useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import AssignReviewersModal from '../ResearcherComponents/AssignReviewersModal';
 import { auth } from '../../backend/firebase/firebaseConfig';
 import { createReviewRequest, getReviewerRequestsForProject } from '../../backend/firebase/reviewerDB';
+import { isProjectOwner, checkPermission } from '../../utils/permissions';
 
-export default function ReviewersCard({ project, reviewRequests, formatDate, setReviewRequests, projectId , setModalOpen, setStatusMessage, setError }) {
+export default function ReviewersCard({ project, reviewRequests, formatDate, setReviewRequests, projectId, setModalOpen, setStatusMessage, setError }) {
   const [showAssignReviewersModal, setShowAssignReviewersModal] = useState(false);
   const [sendingReviewRequests, setSendingReviewRequests] = useState(false);
+  const [processingReRequest, setProcessingReRequest] = useState(null);
   const activeReviewers = project.reviewers || [];
   const pendingRequests = reviewRequests.filter(
     request => request.status !== 'accepted' && request.status !== 'completed'
   );
 
+  // Check if current user can manage reviewers
+  const canManageReviewers = isProjectOwner(project) || checkPermission(project, 'canManageReviewers');
+
+  // Helper function to check if a reviewer has pending requests
+  const hasReviewerPendingRequest = (reviewerId) => {
+    return reviewRequests.some(request => 
+      request.reviewerId === reviewerId && 
+      (request.status === 'pending' || request.status === 'accepted')
+    );
+  };
 
     useEffect(() => {
       if (!showAssignReviewersModal) {
@@ -65,7 +77,61 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
     }
   };
 
+  const handleReRequest = async (reviewer) => {
+    try {
+      // Check if reviewer already has a pending request
+      if (hasReviewerPendingRequest(reviewer.id)) {
+        setError(true);
+        setModalOpen(true);
+        setStatusMessage(
+          <div className="flex items-center gap-2 text-yellow-600">
+            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+            <span>Cannot send new request: {reviewer.name} already has a pending review request</span>
+          </div>
+        );
+        return;
+      }
 
+      setProcessingReRequest(reviewer.id);
+      // Create new review request for the reviewer
+      await createReviewRequest(
+        projectId,
+        reviewer.id,
+        project.title,
+        auth.currentUser.displayName || 'Researcher'
+      );
+
+      // Reload review requests to update UI
+      const updatedRequests = await getReviewerRequestsForProject(projectId);
+      setReviewRequests(updatedRequests);
+
+      setModalOpen(true);
+      setStatusMessage(
+        <div className="flex items-center gap-2 text-green-600">
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+          </svg>
+          <span>Successfully sent new review request to {reviewer.name}</span>
+        </div>
+      );
+      setError(false);
+    } catch (err) {
+      console.error("Error re-requesting review:", err);
+      setError(true);
+      setStatusMessage(
+        <div className="flex items-center gap-2 text-red-600">
+          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+          <span>Failed to send review request: {err.message}</span>
+        </div>
+      );
+    } finally {
+      setProcessingReRequest(null);
+    }
+  };
 
 
   const getStatusBadge = (status) => {
@@ -79,7 +145,7 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
       case 'feedback_submitted':
         return (
           <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-            Feedback Submitted
+            Feedback Received
           </span>
         );
       default:
@@ -95,16 +161,18 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
     <section className="bg-white rounded-lg shadow p-4 sm:p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg sm:text-xl font-semibold">Project Reviewers</h2>
-        <button
-          onClick={() => setShowAssignReviewersModal(true)}
-          disabled={sendingReviewRequests}
-          className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
-          </svg>
-          Assign Reviewers
-        </button>
+        {canManageReviewers && (
+          <button
+            onClick={() => setShowAssignReviewersModal(true)}
+            disabled={sendingReviewRequests}
+            className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z" />
+            </svg>
+            Assign Reviewers
+          </button>
+        )}
       </div>
 
       <AssignReviewersModal
@@ -112,7 +180,7 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
         onClose={() => setShowAssignReviewersModal(false)}
         onAssign={handleAssignReviewers}
         projectId={projectId}
-        projectTitle={project.title}
+        reviewRequests={reviewRequests}
       />
 
       {activeReviewers.length > 0 && (
@@ -128,11 +196,30 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
                     </svg>
                   </div>
                   <div>
-                    <p className="font-medium text-sm">{reviewer.name}</p>
-                    <p className="text-xs text-gray-500">{reviewer.expertise || 'Reviewer'}</p>
+                    <p className="font-medium text-sm break-words">{reviewer.name}</p>
+                    <p className="text-xs text-gray-500 break-words">{reviewer.fieldOfResearch || 'No field of research specified'}</p>
                   </div>
                 </div>
-                {getStatusBadge(reviewer.reviewStatus)}
+                
+                <div className="flex items-center gap-2">
+                  {getStatusBadge(reviewer.reviewStatus)}
+                  {canManageReviewers && reviewer.reviewStatus === 'feedback_submitted' && (
+                    <button
+                      onClick={() => handleReRequest(reviewer)}
+                      disabled={processingReRequest === reviewer.id || sendingReviewRequests}
+                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      title="Request another review"
+                    >
+                      {processingReRequest === reviewer.id ? (
+                        <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full" />
+                      ) : (
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                      )}
+                    </button>
+                  )}
+                </div>
               </li>
             ))}
           </ul>
@@ -152,8 +239,8 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
                     </svg>
                   </div>
                   <div>
-                    <p className="font-medium text-sm">{request.reviewerName}</p>
-                    <p className="text-xs text-gray-500">Requested: {formatDate(request.requestedAt)}</p>
+                    <p className="font-medium text-sm break-words">{request.reviewerName}</p>
+                    <p className="text-xs text-gray-500 break-words">Requested: {formatDate(request.requestedAt)}</p>
                   </div>
                 </div>
                 <span className={`px-2 py-1 text-xs rounded-full ${

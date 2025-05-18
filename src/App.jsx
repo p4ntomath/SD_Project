@@ -26,6 +26,10 @@ import ReviewerHistory from './pages/ReviewerPages/ReviewerHistory.jsx';
 import ReviewProjectPage from './pages/ReviewerPages/ReviewProjectPage.jsx';
 import NotificationsPage from './pages/NotificationsPage.jsx';
 import ReviewerNotificationsPage from './pages/reviewer/ReviewerNotificationsPage.jsx';
+import MessagesPage from './pages/Messages.jsx';
+import MessagesList from './pages/MessagesList.jsx';
+import ChatView from './pages/ChatView.jsx';
+import MessagesLayout from './pages/MessagesLayout.jsx';
 
 function App() {
   return (
@@ -154,6 +158,14 @@ function App() {
               <ReviewerHomePage />
             </ProtectedRoute>
           } />
+          <Route path="/messages" element={
+            <ProtectedRoute allowedRoles={['researcher', 'reviewer', 'admin']}>
+              <MessagesLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<MessagesList />} />
+            <Route path=":chatId" element={<ChatView />} />
+          </Route>
         </Routes>
       </AuthProvider>
     </Router>

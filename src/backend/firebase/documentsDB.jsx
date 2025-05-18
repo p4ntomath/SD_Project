@@ -45,9 +45,9 @@ export const uploadDocument = async (file, projectId, folderId, metadata = {}) =
     // Store comprehensive file metadata in Firestore
     const fileMetadata = {
       documentId: docRef.id,
-      fileName: file.name,         // Original file name
-      displayName: metadata.displayName || file.name, // Custom name if provided
-      storageFileName: safeFileName, // Name in storage
+      fileName: file.name,
+      displayName: metadata.displayName || file.name,
+      storageFileName: safeFileName,
       downloadURL,
       uploadedAt: serverTimestamp(),
       lastModified: serverTimestamp(),
@@ -60,6 +60,17 @@ export const uploadDocument = async (file, projectId, folderId, metadata = {}) =
     };
 
     await setDoc(docRef, fileMetadata);
+
+    // Update folder's total size
+    const folderSnap = await getDoc(folderRef);
+    if (folderSnap.exists()) {
+      const folderData = folderSnap.data();
+      const currentSize = folderData.size || 0;
+      await updateDoc(folderRef, {
+        size: currentSize + file.size,
+        updatedAt: serverTimestamp()
+      });
+    }
 
     return docRef.id;
   } catch (error) {
@@ -85,22 +96,12 @@ export const fetchDocumentsByFolder = async (projectId) => {
 
     const projectData = projectSnap.data();
     
-    // Check if user is owner or reviewer
+    // Check if user is owner, reviewer, or collaborator
     const isOwner = projectData.userId === user.uid;
     const isInReviewersArray = projectData.reviewers?.some(rev => rev.id === user.uid);
+    const isCollaborator = projectData.collaborators?.some(collab => collab.id === user.uid);
 
-    // Check reviewRequests collection for an accepted request
-    const requestQuery = query(
-      collection(db, "reviewRequests"),
-      where("projectId", "==", projectId),
-      where("reviewerId", "==", user.uid),
-      where("status", "==", "accepted")
-    );
-    const requestSnap = await getDocs(requestQuery);
-    const isAcceptedReviewer = !requestSnap.empty;
-
-    // Allow access if user is owner, in reviewers array, or has an accepted review request
-    if (!isOwner && !isInReviewersArray && !isAcceptedReviewer) {
+    if (!isOwner && !isInReviewersArray && !isCollaborator) {
       throw new Error("You don't have permission to access this project's documents");
     }
 
@@ -127,7 +128,7 @@ export const fetchDocumentsByFolder = async (projectId) => {
             fileName: fileData.fileName,
             description: fileData.description || '',
             downloadURL: fileData.downloadURL,
-            size: fileData.size ? `${(fileData.size / 1024).toFixed(1)} KB` : 'Unknown size',
+            size: fileData.size || 0, // Keep raw byte size
             type: fileData.type || 'Unknown type',
             uploadDate: fileData.uploadedAt,
             lastModified: fileData.lastModified
@@ -138,12 +139,13 @@ export const fetchDocumentsByFolder = async (projectId) => {
           id: folderDoc.id,
           name: folderData.name,
           createdAt: folderData.createdAt,
+          size: folderData.size || 0, // Keep raw byte size
           files: files || [] // Ensure files is always an array
         };
       })
     );
 
-    return folders; // Return all folders, including empty ones
+    return folders;
   } catch (error) {
     console.error("Error fetching documents:", error);
     throw error;
@@ -212,6 +214,18 @@ export const deleteDocument = async (documentId, projectId, folderId) => {
       // Storage file might already be deleted or not exist, continue with document deletion
     }
     
+    // Update folder's total size before deleting the document
+    const folderSnap = await getDoc(folderRef);
+    if (folderSnap.exists()) {
+      const folderData = folderSnap.data();
+      const currentSize = folderData.size || 0;
+      const newSize = Math.max(0, currentSize - (data.size || 0)); // Ensure size doesn't go negative
+      await updateDoc(folderRef, {
+        size: newSize,
+        updatedAt: serverTimestamp()
+      });
+    }
+
     await deleteDoc(docRef);  // Delete the document from Firestore
     return true;
   } catch (error) {

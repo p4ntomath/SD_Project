@@ -59,7 +59,7 @@ export default function ProjectReviews({ projectId, formatDate }) {
                                 {review.reviewer?.fullName || 'Anonymous Reviewer'}
                             </h3>
                             <p className="text-sm text-gray-500">
-                                {review.reviewer?.expertise || 'Expertise not specified'}
+                                {review.reviewer?.fieldOfResearch || 'Expertise not specified'}
                             </p>
                         </div>
                         <div className="flex items-center">
@@ -99,7 +99,7 @@ export default function ProjectReviews({ projectId, formatDate }) {
                         </div>
                     </div>
 
-                    <p className="text-gray-700 whitespace-pre-wrap">{review.feedback}</p>
+                    <p className="text-gray-700 whitespace-pre-wrap break-words">{review.feedback}</p>
                 </div>
             ))}
         </div>

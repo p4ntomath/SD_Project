@@ -126,7 +126,7 @@ export const updateReviewRequestStatus = async (requestId, status) => {
       const reviewer = {
         id: requestData.reviewerId,
         name: reviewerData.fullName,
-        expertise: reviewerData.expertise || "",
+        fieldOfResearch: reviewerData.fieldOfResearch || "",
         reviewStatus: 'pending_feedback'  // Make sure this is always included
       };
 
@@ -237,7 +237,18 @@ export const getProjectReviews = async (projectId) => {
       // Get reviewer details
       const reviewerDoc = await getDoc(doc(db, "users", review.reviewerId));
       if (reviewerDoc.exists()) {
-        review.reviewer = { id: reviewerDoc.id, ...reviewerDoc.data() };
+        const reviewerData = reviewerDoc.data();
+        review.reviewer = { 
+          id: reviewerDoc.id, 
+          fullName: reviewerData.fullName,
+          fieldOfResearch: reviewerData.fieldOfResearch || 'Not specified'
+        };
+      } else {
+        review.reviewer = {
+          id: review.reviewerId,
+          fullName: 'Anonymous Reviewer',
+          fieldOfResearch: 'Not specified'
+        };
       }
       reviews.push(review);
     }
@@ -359,7 +370,7 @@ export const addReviewerToProject = async (projectId, reviewerId) => {
     const reviewer = {
       id: reviewerId,
       name: reviewerData.fullName,
-      expertise: reviewerData.expertise || "",
+      fieldOfResearch: reviewerData.fieldOfResearch || "",
       reviewStatus: 'pending_feedback'
     };
 
@@ -417,7 +428,7 @@ export const updateExistingReviewerInfo = async (projectId) => {
       return {
         id: reviewer.id,
         name: reviewerData.fullName,
-        expertise: reviewerData.expertise || null,
+        fieldOfResearch: reviewerData.fieldOfResearch || null,
         reviewStatus: reviewer.reviewStatus || 'pending_feedback' // Maintain existing status or set default
       };
     });

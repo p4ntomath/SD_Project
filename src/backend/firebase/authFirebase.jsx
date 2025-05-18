@@ -62,23 +62,15 @@ const completeProfile = async (fullName, role, profileData) => {
       throw new Error('User not authenticated');
     }
 
-    // Validate required fields
-    const requiredFields = ['institution', 'department', 'fieldOfResearch'];
-    const missingFields = requiredFields.filter(field => !profileData[field]);
-    
-    if (missingFields.length > 0) {
-      throw new Error(`Missing required fields: ${missingFields.join(', ')}`);
-    }
-
     // Clean and validate the data before saving
     const userData = {
       fullName: fullName || '',
       role: role || '',
-      institution: profileData.institution || '',
-      department: profileData.department || '',
-      fieldOfResearch: profileData.fieldOfResearch || '',
-      researchTags: Array.isArray(profileData.researchTags) ? profileData.researchTags : [],
-      bio: profileData.bio || '',
+      institution: profileData?.institution || '',
+      department: profileData?.department || '',
+      fieldOfResearch: profileData?.fieldOfResearch || '',
+      researchTags: Array.isArray(profileData?.researchTags) ? profileData.researchTags : [],
+      bio: profileData?.bio || '',
       updatedAt: new Date()
     };
 

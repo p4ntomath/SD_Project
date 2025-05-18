@@ -66,13 +66,11 @@ const RoleSelectionForm = ({ onSubmit }) => {
   };
 
   const handleInstitutionChange = (selectedOption) => {
-    setFormData(prev => ({ 
-      ...prev, 
-      institution: selectedOption?.value || '' 
+    setErrors(prev => ({ ...prev, institution: '' }));
+    setFormData(prev => ({
+      ...prev,
+      institution: selectedOption ? selectedOption.value : ''
     }));
-    if (errors.institution) {
-      setErrors(prev => ({ ...prev, institution: '' }));
-    }
   };
 
   // Get all available options by combining filtered tags and selected tags
