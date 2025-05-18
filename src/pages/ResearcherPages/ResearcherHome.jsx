@@ -6,17 +6,15 @@ import MobileBottomNav from '../../components/ResearcherComponents/Navigation/Mo
 import { FaChartLine, FaPiggyBank, FaFolder, FaClipboardCheck, FaUsers, FaClock, FaDownload } from 'react-icons/fa';
 import { useNavigate } from "react-router-dom";
 import CollaborationRequestsSection from '../../components/ResearcherComponents/CollaborationRequestsSection';
-import { handleDashboardExport } from '../../backend/firebase/csv_report';
 import ClipLoader from 'react-spinners/ClipLoader';
+import { useExport } from '../../hooks/useExport';
 
 export default function ResearcherHome() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [exportLoading, setExportLoading] = useState(false);
-  const [exportFormat, setExportFormat] = useState('csv');
-  const [showExportMenu, setShowExportMenu] = useState(false);
+  const { exportLoading, showExportMenu, setShowExportMenu, handleExport } = useExport();
 
   const fetchAllProjects = async (user) => {
     try {
@@ -78,31 +76,6 @@ export default function ResearcherHome() {
     </div>
   );
 
-  const handleExportDashboard = async () => {
-    try {
-      const user = auth.currentUser;
-      if (!user) {
-        console.error("No user logged in");
-        return;
-      }
-      
-      setExportLoading(true);
-      // Export all reports in parallel with the selected format
-      await Promise.all([
-        handleDashboardExport(user.uid, 'projects', exportFormat),
-        handleDashboardExport(user.uid, 'funding', exportFormat),
-        handleDashboardExport(user.uid, 'progress', exportFormat),
-        handleDashboardExport(user.uid, 'team', exportFormat)
-      ]);
-      setExportFormat('csv'); // Reset format after export
-    } catch (error) {
-      console.error("Error exporting dashboard:", error);
-    } finally {
-      setExportLoading(false);
-      setShowExportMenu(false);
-    }
-  };
-
   return (
     <section data-testid="researcher-home" className="min-h-screen bg-gray-50 flex flex-col">
       <header>
@@ -139,20 +112,14 @@ export default function ResearcherHome() {
                 <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
                   <div className="py-1" role="menu" aria-orientation="vertical">
                     <button
-                      onClick={() => {
-                        setExportFormat('csv');
-                        handleExportDashboard();
-                      }}
+                      onClick={() => handleExport('dashboard', 'csv')}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                       role="menuitem"
                     >
                       Export as CSV
                     </button>
                     <button
-                      onClick={() => {
-                        setExportFormat('pdf');
-                        handleExportDashboard();
-                      }}
+                      onClick={() => handleExport('dashboard', 'pdf')}
                       className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
                       role="menuitem"
                     >

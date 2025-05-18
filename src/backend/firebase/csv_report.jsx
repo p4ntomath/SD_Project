@@ -174,39 +174,11 @@ export const generateProjectsCSV = (projects) => {
 };
 
 // Combined controller for dashboard exports
-export const handleDashboardExport = async (uid, type, format = 'pdf') => {
+export const handleDashboardExport = async (uid, type) => {
   try {
     const userSnap = await getDoc(doc(db, "users", uid));
     if (!userSnap.exists()) throw new Error("User not found");
 
-    // Handle PDF format first since it's the default
-    if (format === 'pdf') {
-      switch (type) {
-        case 'projects':
-          await generateProjectOverviewPdf(uid);
-          break;
-        case 'funding':
-          await generateFundingHistoryReportPdf(uid);
-          break;
-        case 'files':
-          await generateFolderReportPdf(uid);
-          break;
-        case 'reviews':
-          await generateReviewedProjectsReportPdf(uid);
-          break;
-        case 'progress':
-          await generateProgressReportPdf(uid);
-          break;
-        case 'team':
-          await generateTeamReportPdf(uid);
-          break;
-        default:
-          throw new Error('PDF generation not supported for this report type');
-      }
-      return;
-    }
-
-    // If not PDF, handle CSV format
     let data;
     let filename;
 
@@ -245,13 +217,12 @@ export const handleDashboardExport = async (uid, type, format = 'pdf') => {
         throw new Error('Invalid report type');
     }
 
-    // Download as CSV
     downloadCSVFile(data, `${filename}.csv`);
   } catch (error) {
-    console.error("Error exporting data:", error.message);
+    console.error("Error exporting data:", error);
     throw new Error("Export failed");
   }
-};
+}
 
 export const generateProgressCSV = (projects) => {
   let csv = "Project Name,Overall Progress,Total Goals,Completed Goals,Status,Last Updated\n";

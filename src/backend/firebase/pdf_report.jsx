@@ -21,47 +21,56 @@ import { fetchProjects } from "./projectDB";
  * Base PDF generator that converts CSV data into a styled PDF table
  */
 const generateBasePdf = (csvData, title = "Report") => {
-  // Parse CSV string into rows
-  const { data } = Papa.parse(csvData.trim(), {
-    header: false,
-    skipEmptyLines: true,
-  });
+  try {
+    // Parse CSV string into rows
+    const { data } = Papa.parse(csvData.trim(), {
+      header: false,
+      skipEmptyLines: true,
+    });
 
-  const headers = data[0];
-  const rows = data.slice(1);
+    if (!data || data.length < 1) {
+      throw new Error("No data available for PDF generation");
+    }
 
-  // Create new document in portrait mode, using points as units
-  const doc = new jsPDF({
-    orientation: 'portrait',
-    unit: 'pt',
-    format: 'a4'
-  });
+    const headers = data[0];
+    const rows = data.slice(1);
 
-  // Add title
-  doc.setFontSize(16);
-  doc.text(title, 40, 40);
+    // Create new document in portrait mode, using points as units
+    const doc = new jsPDF({
+      orientation: 'portrait',
+      unit: 'pt',
+      format: 'a4'
+    });
 
-  // Add table using the plugin
-  autoTable(doc, {
-    head: [headers],
-    body: rows,
-    startY: 60,
-    theme: 'striped',
-    margin: { left: 40, right: 40 },
-    didDrawPage: (data) => {
-      // Footer
-      const pageHeight = doc.internal.pageSize.height;
-      doc.setFontSize(8);
-      doc.setTextColor(150);
-      doc.text(
-        `Generated on: ${new Date().toLocaleDateString()} | Page ${doc.internal.pages.length}`,
-        40,
-        pageHeight - 20
-      );
-    },
-  });
+    // Add title
+    doc.setFontSize(16);
+    doc.text(title, 40, 40);
 
-  return doc;
+    // Add table using the plugin
+    autoTable(doc, {
+      head: [headers],
+      body: rows,
+      startY: 60,
+      theme: 'striped',
+      margin: { left: 40, right: 40 },
+      didDrawPage: (data) => {
+        // Footer
+        const pageHeight = doc.internal.pageSize.height;
+        doc.setFontSize(8);
+        doc.setTextColor(150);
+        doc.text(
+          `Generated on: ${new Date().toLocaleDateString()} | Page ${doc.getNumberOfPages()}`,
+          40,
+          pageHeight - 20
+        );
+      },
+    });
+
+    return doc;
+  } catch (error) {
+    console.error("Error in PDF generation:", error);
+    throw error;
+  }
 };
 
 /**
