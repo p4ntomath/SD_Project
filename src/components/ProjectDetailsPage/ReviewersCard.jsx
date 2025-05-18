@@ -145,7 +145,7 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
       case 'feedback_submitted':
         return (
           <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-            Feedback Submitted
+            Feedback Received
           </span>
         );
       default:
