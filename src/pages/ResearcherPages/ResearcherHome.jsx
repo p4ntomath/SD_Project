@@ -3,15 +3,20 @@ import { fetchProjects } from '../../backend/firebase/projectDB';
 import { auth } from '../../backend/firebase/firebaseConfig';
 import MainNav from '../../components/ResearcherComponents/Navigation/MainNav';
 import MobileBottomNav from '../../components/ResearcherComponents/Navigation/MobileBottomNav';
-import { FaChartLine, FaPiggyBank, FaFolder, FaClipboardCheck, FaUsers, FaClock } from 'react-icons/fa';
+import { FaChartLine, FaPiggyBank, FaFolder, FaClipboardCheck, FaUsers, FaClock, FaDownload } from 'react-icons/fa';
 import { useNavigate } from "react-router-dom";
 import CollaborationRequestsSection from '../../components/ResearcherComponents/CollaborationRequestsSection';
+import { handleDashboardExport } from '../../backend/firebase/csv_report';
+import ClipLoader from 'react-spinners/ClipLoader';
 
 export default function ResearcherHome() {
   const navigate = useNavigate();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [exportLoading, setExportLoading] = useState(false);
+  const [exportFormat, setExportFormat] = useState('csv');
+  const [showExportMenu, setShowExportMenu] = useState(false);
 
   const fetchAllProjects = async (user) => {
     try {
@@ -73,6 +78,31 @@ export default function ResearcherHome() {
     </div>
   );
 
+  const handleExportDashboard = async () => {
+    try {
+      const user = auth.currentUser;
+      if (!user) {
+        console.error("No user logged in");
+        return;
+      }
+      
+      setExportLoading(true);
+      // Export all reports in parallel with the selected format
+      await Promise.all([
+        handleDashboardExport(user.uid, 'projects', exportFormat),
+        handleDashboardExport(user.uid, 'funding', exportFormat),
+        handleDashboardExport(user.uid, 'progress', exportFormat),
+        handleDashboardExport(user.uid, 'team', exportFormat)
+      ]);
+      setExportFormat('csv'); // Reset format after export
+    } catch (error) {
+      console.error("Error exporting dashboard:", error);
+    } finally {
+      setExportLoading(false);
+      setShowExportMenu(false);
+    }
+  };
+
   return (
     <section data-testid="researcher-home" className="min-h-screen bg-gray-50 flex flex-col">
       <header>
@@ -84,7 +114,55 @@ export default function ResearcherHome() {
 
       <main className="flex-1 p-4 md:p-8 pb-16 md:pb-8">
         <section className="max-w-6xl mx-auto">
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-800 mb-8">Dashboard</h1>
+          <div className="flex items-center justify-between mb-8">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Dashboard</h1>
+            <div className="relative">
+              <button
+                onClick={() => setShowExportMenu(!showExportMenu)}
+                disabled={exportLoading}
+                className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {exportLoading ? (
+                  <>
+                    <ClipLoader size={16} color="#FFFFFF" className="mr-2" />
+                    Exporting...
+                  </>
+                ) : (
+                  <>
+                    <FaDownload className="mr-2" />
+                    Export Dashboard
+                  </>
+                )}
+              </button>
+              
+              {showExportMenu && !exportLoading && (
+                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                  <div className="py-1" role="menu" aria-orientation="vertical">
+                    <button
+                      onClick={() => {
+                        setExportFormat('csv');
+                        handleExportDashboard();
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                      role="menuitem"
+                    >
+                      Export as CSV
+                    </button>
+                    <button
+                      onClick={() => {
+                        setExportFormat('pdf');
+                        handleExportDashboard();
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 hover:text-gray-900"
+                      role="menuitem"
+                    >
+                      Export as PDF
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
           
           {loading ? (
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -97,8 +175,10 @@ export default function ResearcherHome() {
               {/* Projects Overview Card */}
               <article className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
                 <section className="flex items-center mb-4">
-                  <FaFolder className="mr-2 text-blue-500 text-2xl" />
-                  <h2 className="text-xl font-bold text-gray-800">Projects Overview</h2>
+                  <div className="flex items-center">
+                    <FaFolder className="mr-2 text-blue-500 text-2xl" />
+                    <h2 className="text-xl font-bold text-gray-800">Projects Overview</h2>
+                  </div>
                 </section>
                 <section className="space-y-4">
                   <section className="grid grid-cols-2 gap-4">
@@ -126,8 +206,10 @@ export default function ResearcherHome() {
               {/* Funding Summary Card */}
               <article className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
                 <section className="flex items-center mb-4">
-                  <FaPiggyBank className="mr-2 text-pink-500 text-2xl" />
-                  <h2 className="text-xl font-bold text-gray-800">Funding Summary</h2>
+                  <div className="flex items-center">
+                    <FaPiggyBank className="mr-2 text-pink-500 text-2xl" />
+                    <h2 className="text-xl font-bold text-gray-800">Funding Summary</h2>
+                  </div>
                 </section>
                 
                 {projects.length > 0 ? (
@@ -161,8 +243,10 @@ export default function ResearcherHome() {
               {/* Progress Summary Card */}
               <article className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
                 <section className="flex items-center mb-4">
-                  <FaClipboardCheck className="mr-2 text-green-500 text-2xl" />
-                  <h2 className="text-xl font-bold text-gray-800">Progress Overview</h2>
+                  <div className="flex items-center">
+                    <FaClipboardCheck className="mr-2 text-green-500 text-2xl" />
+                    <h2 className="text-xl font-bold text-gray-800">Progress Overview</h2>
+                  </div>
                 </section>
                 
                 {projects.length > 0 ? (
@@ -226,9 +310,11 @@ export default function ResearcherHome() {
 
               {/* Team Overview Card */}
               <article className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
-                <section className="flex items-center mb-4">
-                  <FaUsers className="mr-2 text-indigo-500 text-2xl" />
-                  <h2 className="text-xl font-bold text-gray-800">Team Overview</h2>
+                <section className="flex items-center justify-between mb-4">
+                  <div className="flex items-center">
+                    <FaUsers className="mr-2 text-indigo-500 text-2xl" />
+                    <h2 className="text-xl font-bold text-gray-800">Team Overview</h2>
+                  </div>
                 </section>
                 {projects.length > 0 ? (
                   <section className="space-y-4">

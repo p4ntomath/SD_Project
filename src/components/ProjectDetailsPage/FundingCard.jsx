@@ -348,7 +348,7 @@ export default function FundingCard({
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description/Source</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Added By</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance After</th>
@@ -361,7 +361,7 @@ export default function FundingCard({
                             {formatFirebaseDate(entry.updatedAt)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 break-all">
-                            {entry.type === 'expense' ? 'Expense' : 'Funds Added'}
+                            {entry.type === 'expense' ? 'Expense' : 'Income'}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-500">
                             {entry.type === 'expense' ? entry.description : entry.source}

@@ -6,14 +6,11 @@ import {
   getDocs,
   getDoc,
   doc,
-  updateDoc,
-  deleteDoc,
-  arrayUnion,
-  onSnapshot,
+
 } from "firebase/firestore";
 import { fetchProjects } from "./projectDB";
 import { getFundingHistory } from "./fundingDB";
-import { getFolders } from "./folderDB";
+
 
 
 /*
@@ -24,31 +21,48 @@ import { getFolders } from "./folderDB";
 
 */
 
-// Returns Project Name and Funding History, startDate is not a necesity to passed into the function
+/**
+ * Retrieves funding history for all projects belonging to a user
+ * @param {string} uid - The user ID
+ * @param {Date} [startDate] - Optional start date to filter funding history
+ * @returns {Promise<Array>} Array of projects with their funding histories
+ * @throws {Error} If user is not found or data retrieval fails
+ */
 export const getProjectFunding = async (uid, startDate) => {
   try {
+    if (!uid) throw new Error("User ID is required");
 
     const userProjects = await fetchProjects(uid);
+    if (!userProjects?.length) return [];
+
     const projectsWithFunding = await Promise.all(
       userProjects.map(async (project) => {
-        const fundingHistory = await getFundingHistory(project.id);
+        try {
+          const fundingHistory = await getFundingHistory(project.id);
+          const filteredHistory = startDate
+            ? fundingHistory.filter(entry => {
+              const entryDate = entry.updatedAt?.toDate?.() ?? new Date(entry.date);
+              return entryDate >= startDate;
+            })
+            : fundingHistory;
 
-
-        const filteredHistory = startDate
-          ? fundingHistory.filter(entry => {
-            const entryDate = entry.updatedAt?.toDate?.() ?? new Date(entry.date);
-            return entryDate >= startDate;
-          })
-          : fundingHistory;
-
-        return {
-          name: project.title,
-          fundingHistory: filteredHistory
-        };
+          return {
+            name: project.title || "Unnamed Project",
+            id: project.id,
+            fundingHistory: filteredHistory
+          };
+        } catch (error) {
+          console.error(`Error fetching funding for project ${project.id}:`, error);
+          return {
+            name: project.title || "Unnamed Project",
+            id: project.id,
+            fundingHistory: []
+          };
+        }
       })
     );
 
-    return projectsWithFunding;
+    return projectsWithFunding.filter(p => p.fundingHistory.length > 0);
   } catch (error) {
     console.error("Error loading projects and funding history:", error);
     throw new Error("Failed to get project funding data");
@@ -57,76 +71,112 @@ export const getProjectFunding = async (uid, startDate) => {
 
 
 
+/**
+ * Retrieves all folders and their files for all projects belonging to a user
+ * @param {string} uid - The user ID
+ * @returns {Promise<Array>} Array of projects with their folders and files
+ * @throws {Error} If user is not found or data retrieval fails
+ */
 export const getAllProjectFoldersWithFiles = async (uid) => {
   try {
+    if (!uid) throw new Error("User ID is required");
+
     const projects = await fetchProjects(uid);
-    const userCache = new Map(); // Cache user lookups
+    if (!projects?.length) return [];
+
+    const userCache = new Map(); // Cache user lookups to reduce database reads
 
     const projectFolders = await Promise.all(
       projects.map(async (project) => {
-        const folderSnapshot = await getDocs(
-          collection(db, "projects", project.id, "folders")
-        );
+        try {
+          const folderSnapshot = await getDocs(
+            collection(db, "projects", project.id, "folders")
+          );
 
-        const folders = await Promise.all(
-          folderSnapshot.docs.map(async (folderDoc) => {
-            const folderData = folderDoc.data();
-            const folderId = folderDoc.id;
+          if (folderSnapshot.empty) {
+            return {
+              projectName: project.title || "Unnamed Project",
+              projectId: project.id,
+              folders: []
+            };
+          }
 
-            // Fetch files in folder
-            const filesSnapshot = await getDocs(
-              collection(db, "projects", project.id, "folders", folderId, "files")
-            );
+          const folders = await Promise.all(
+            folderSnapshot.docs.map(async (folderDoc) => {
+              try {
+                const folderData = folderDoc.data();
+                const folderId = folderDoc.id;
 
-            const files = await Promise.all(
-              filesSnapshot.docs.map(async (fileDoc) => {
-                const data = fileDoc.data();
-                const uploadedById = data.uploadedBy;
+                // Fetch files in folder
+                const filesSnapshot = await getDocs(
+                  collection(db, "projects", project.id, "folders", folderId, "files")
+                );
 
-                let uploadedByName = "Unknown";
+                const files = await Promise.all(
+                  filesSnapshot.docs.map(async (fileDoc) => {
+                    try {
+                      const data = fileDoc.data();
+                      const uploadedById = data.uploadedBy;
+                      let uploadedByName = "Unknown";
 
-                if (uploadedById) {
-                  if (userCache.has(uploadedById)) {
-                    uploadedByName = userCache.get(uploadedById);
-                  } else {
-                    const userSnap = await getDoc(doc(db, "users", uploadedById));
-                    if (userSnap.exists()) {
-                      const userData = userSnap.data();
-                      uploadedByName = userData.fullName || "Unnamed User";
-                      userCache.set(uploadedById, uploadedByName);
+                      if (uploadedById) {
+                        if (userCache.has(uploadedById)) {
+                          uploadedByName = userCache.get(uploadedById);
+                        } else {
+                          const userSnap = await getDoc(doc(db, "users", uploadedById));
+                          if (userSnap.exists()) {
+                            const userData = userSnap.data();
+                            uploadedByName = userData.fullName || "Unnamed User";
+                            userCache.set(uploadedById, uploadedByName);
+                          }
+                        }
+                      }
+
+                      return {
+                        fileId: fileDoc.id,
+                        fileName: data.fileName || "Unnamed File",
+                        uploadedBy: uploadedByName,
+                        uploadedAt: data.uploadedAt?.toDate?.() ?? null,
+                        size: data.size || 0,
+                        type: data.type || "unknown"
+                      };
+                    } catch (error) {
+                      console.error(`Error processing file ${fileDoc.id}:`, error);
+                      return null;
                     }
-                  }
-                }
+                  })
+                );
 
                 return {
-                  fileId: fileDoc.id,
-                  fileName: data.fileName,
-                  uploadedBy: uploadedByName,
-                  uploadedAt: data.uploadedAt?.toDate?.() ?? null,
+                  id: folderId,
+                  name: folderData.name || "Unnamed Folder",
+                  type: folderData.type || "general",
+                  createdAt: folderData.createdAt?.toDate?.() ?? null,
+                  files: files.filter(Boolean) // Remove any null entries from errors
                 };
-              })
-            );
+              } catch (error) {
+                console.error(`Error processing folder ${folderDoc.id}:`, error);
+                return null;
+              }
+            })
+          );
 
-            return {
-              id: folderId,
-              name: folderData.name ?? "",
-              type: folderData.type ?? "",
-              files,
-            };
-          })
-        );
-
-
-        return {
-          projectName: project.title,
-          projectId: project.id,
-
-          folders,
-        };
+          return {
+            projectName: project.title || "Unnamed Project",
+            projectId: project.id,
+            folders: folders.filter(Boolean) // Remove any null entries from errors
+          };
+        } catch (error) {
+          console.error(`Error processing project ${project.id}:`, error);
+          return null;
+        }
       })
     );
 
-    return projectFolders;
+    // Filter out any failed projects and those with no folders
+    return projectFolders
+      .filter(Boolean)
+      .filter(project => project.folders.length > 0);
   } catch (error) {
     console.error("Error fetching folders and files:", error.message);
     throw new Error("Failed to fetch folders and files for all projects");
@@ -135,64 +185,90 @@ export const getAllProjectFoldersWithFiles = async (uid) => {
 
 
 
-
-// Returns the date, project Description, feedback, reseacherName and Title of project
+/**
+ * Retrieves all projects reviewed by a specific user with project and researcher details
+ * @param {string} uid - The reviewer's user ID
+ * @returns {Promise<Array>} Array of reviewed projects with detailed information
+ * @throws {Error} If reviewer is not found or data retrieval fails
+ */
 export const getReviewedProjects = async (uid) => {
   try {
+    if (!uid) throw new Error("Reviewer ID is required");
+
     const reviewsRef = collection(db, "reviews");
     const q = query(reviewsRef, where("reviewerId", "==", uid));
     const reviewsSnapshot = await getDocs(q);
 
+    if (reviewsSnapshot.empty) return [];
+
     const reviewedProjects = [];
-
-
-    // Cache to avoid duplicate reads
     const projectCache = new Map();
     const userCache = new Map();
 
     for (const reviewDoc of reviewsSnapshot.docs) {
-      const reviewData = reviewDoc.data();
-      const projectId = reviewData.projectId;
+      try {
+        const reviewData = reviewDoc.data();
+        const projectId = reviewData.projectId;
 
-      if (!projectId) continue;
+        if (!projectId) {
+          console.warn(`Review ${reviewDoc.id} has no project ID`);
+          continue;
+        }
 
-      // Use cache to avoid redundant reads
-      let projectData = projectCache.get(projectId);
-      if (!projectData) {
-        const projectSnap = await getDoc(doc(db, "projects", projectId));
-        if (!projectSnap.exists()) continue;
-        projectData = projectSnap.data();
-        projectCache.set(projectId, projectData);
-      }
+        // Get project data using cache
+        let projectData;
+        if (projectCache.has(projectId)) {
+          projectData = projectCache.get(projectId);
+        } else {
+          const projectSnap = await getDoc(doc(db, "projects", projectId));
+          if (!projectSnap.exists()) {
+            console.warn(`Project ${projectId} from review ${reviewDoc.id} not found`);
+            continue;
+          }
+          projectData = projectSnap.data();
+          projectCache.set(projectId, projectData);
+        }
 
-      const { title, description, userId } = projectData;
+        const { title, description, userId } = projectData;
 
-      // Fetch researcher info (cached)
-      let researcherName = "Unknown";
-      if (userId) {
-        let userData = userCache.get(userId);
-        if (!userData) {
-          const userSnap = await getDoc(doc(db, "users", userId));
-          if (userSnap.exists()) {
-            userData = userSnap.data();
-            userCache.set(userId, userData);
+        // Get researcher data using cache
+        let researcherName = "Unknown";
+        if (userId) {
+          if (userCache.has(userId)) {
+            researcherName = userCache.get(userId);
+          } else {
+            const userSnap = await getDoc(doc(db, "users", userId));
+            if (userSnap.exists()) {
+              const userData = userSnap.data();
+              researcherName = userData.fullName || "Unnamed User";
+              userCache.set(userId, researcherName);
+            }
           }
         }
-        researcherName = userData?.fullName || "Unnamed User";
 
+        reviewedProjects.push({
+          id: reviewDoc.id,
+          projectId,
+          title: title || "Untitled Project",
+          description: description || "No description provided",
+          researcherName,
+          researcherId: userId,
+          feedback: reviewData.feedback || "",
+          rating: reviewData.rating,
+          status: reviewData.status || "reviewed",
+          reviewDate: reviewData.updatedAt?.toDate?.() ?? 
+                     reviewData.createdAt?.toDate?.() ?? 
+                     new Date(),
+          date: reviewData.updatedAt?.toDate?.().toLocaleDateString() ?? "N/A"
+        });
+      } catch (error) {
+        console.error(`Error processing review ${reviewDoc.id}:`, error);
+        continue;
       }
-
-      reviewedProjects.push({
-        title,
-        description,
-        researcherName,
-        feedback: reviewData.feedback || "",
-        date: reviewData.updatedAt?.toDate?.().toLocaleDateString() ?? "N/A"
-
-      });
     }
 
-    return reviewedProjects;
+    // Sort by review date, most recent first
+    return reviewedProjects.sort((a, b) => b.reviewDate - a.reviewDate);
   } catch (error) {
     console.error("Error fetching reviewed projects:", error.message);
     throw new Error("Failed to fetch reviewed projects");

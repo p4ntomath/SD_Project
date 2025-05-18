@@ -1,15 +1,26 @@
-import jsPDF from "jspdf";
-import autoTable from "jspdf-autotable";
+// @ts-check
+import { jsPDF } from "jspdf";
+import autoTable from 'jspdf-autotable';
 import Papa from "papaparse";
-import { generateFolderCSV, generateFundingCSV, generateReviewedProjectsCSV } from "./csv_report";
-import { getProjectFunding, getAllProjectFoldersWithFiles,getReviewedProjects } from "./reports";
+import { 
+  generateFolderCSV, 
+  generateFundingCSV, 
+  generateReviewedProjectsCSV,
+  generateProjectOverviewCSV,
+  generateProgressCSV,
+  generateTeamCSV 
+} from "./csv_report";
+import { 
+  getProjectFunding, 
+  getAllProjectFoldersWithFiles,
+  getReviewedProjects
+} from "./reports";
+import { fetchProjects } from "./projectDB";
 
 /**
- * Converts a CSV string into a structured, styled table inside a PDF.
- * @param {string} csvData - The CSV string.
- * @param {string} title - The title of the PDF report.
+ * Base PDF generator that converts CSV data into a styled PDF table
  */
-const generatePdfFromCSV = (csvData, title = "CSV Report") => {
+const generateBasePdf = (csvData, title = "Report") => {
   // Parse CSV string into rows
   const { data } = Papa.parse(csvData.trim(), {
     header: false,
@@ -19,86 +30,127 @@ const generatePdfFromCSV = (csvData, title = "CSV Report") => {
   const headers = data[0];
   const rows = data.slice(1);
 
-  const doc = new jsPDF();
+  // Create new document in portrait mode, using points as units
+  const doc = new jsPDF({
+    orientation: 'portrait',
+    unit: 'pt',
+    format: 'a4'
+  });
 
-  // Title styling
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  doc.setTextColor(44, 62, 80); // dark gray
-  doc.text(title, doc.internal.pageSize.getWidth() / 2, 20, { align: "center" });
+  // Add title
+  doc.setFontSize(16);
+  doc.text(title, 40, 40);
 
-  // Draw header line
-  doc.setDrawColor(180);
-  doc.line(14, 24, doc.internal.pageSize.getWidth() - 14, 24);
-
-  // Create styled table
+  // Add table using the plugin
   autoTable(doc, {
     head: [headers],
     body: rows,
-    startY: 30,
-    styles: {
-      font: "helvetica",
-      fontSize: 9,
-      cellPadding: 3,
-      textColor: 50,
-    },
-    headStyles: {
-      fillColor: [26, 188, 156], // teal
-      textColor: 255,
-      fontSize: 10,
-      fontStyle: "bold",
-    },
-    alternateRowStyles: {
-      fillColor: [245, 245, 245], // light gray
-    },
-    theme: "striped",
-    margin: { left: 14, right: 14 },
+    startY: 60,
+    theme: 'striped',
+    margin: { left: 40, right: 40 },
     didDrawPage: (data) => {
       // Footer
-      const pageHeight = doc.internal.pageSize.getHeight();
+      const pageHeight = doc.internal.pageSize.height;
       doc.setFontSize(8);
       doc.setTextColor(150);
       doc.text(
-        `Generated on: ${new Date().toLocaleDateString()} | Page ${doc.internal.getNumberOfPages()}`,
-        14,
-        pageHeight - 10
+        `Generated on: ${new Date().toLocaleDateString()} | Page ${doc.internal.pages.length}`,
+        40,
+        pageHeight - 20
       );
     },
   });
 
-  doc.save(`${title.replace(/\s+/g, "_")}.pdf`);
+  return doc;
 };
 
 /**
- * Generates a PDF report for a user's folder and file structure.
- * @param {string} uid - The user ID.
+ * Generate a PDF report for project overview
  */
-export const generateFundingHistoryReportPdf = async (uid) => {
+export const generateProjectOverviewPdf = async (uid) => {
   try {
-    const fundingData = await getProjectFunding(uid, "");
-    const csvData = generateFundingCSV(fundingData);
-    generatePdfFromCSV(csvData, "Fund History Report");
+    const projectsData = await fetchProjects(uid);
+    const csvData = generateProjectOverviewCSV(projectsData);
+    const doc = generateBasePdf(csvData, "Projects Overview Report");
+    doc.save("projects_overview_report.pdf");
   } catch (error) {
-    console.error("Error generating funding report PDF:", error);
+    console.error("Error generating projects overview PDF:", error);
+    throw error;
   }
 };
 
+/**
+ * Generate a PDF report for funding history
+ */
+export const generateFundingHistoryReportPdf = async (uid) => {
+  try {
+    // Pass undefined instead of null for no date filter
+    const fundingData = await getProjectFunding(uid, undefined);
+    const csvData = generateFundingCSV(fundingData);
+    const doc = generateBasePdf(csvData, "Funding History Report");
+    doc.save("funding_history_report.pdf");
+  } catch (error) {
+    console.error("Error generating funding report PDF:", error);
+    throw error;
+  }
+};
+
+/**
+ * Generate a PDF report for project progress
+ */
+export const generateProgressReportPdf = async (uid) => {
+  try {
+    const projectsData = await fetchProjects(uid);
+    const csvData = generateProgressCSV(projectsData);
+    const doc = generateBasePdf(csvData, "Progress Report");
+    doc.save("progress_report.pdf");
+  } catch (error) {
+    console.error("Error generating progress report PDF:", error);
+    throw error;
+  }
+};
+
+/**
+ * Generate a PDF report for team overview
+ */
+export const generateTeamReportPdf = async (uid) => {
+  try {
+    const projectsData = await fetchProjects(uid);
+    const csvData = generateTeamCSV(projectsData);
+    const doc = generateBasePdf(csvData, "Team Overview Report");
+    doc.save("team_overview_report.pdf");
+  } catch (error) {
+    console.error("Error generating team report PDF:", error);
+    throw error;
+  }
+};
+
+/**
+ * Generate a PDF report for folders and files
+ */
 export const generateFolderReportPdf = async (uid) => {
   try {
     const folderData = await getAllProjectFoldersWithFiles(uid);
     const csvData = generateFolderCSV(folderData);
-    generatePdfFromCSV(csvData, "Folder and File Report");
+    const doc = generateBasePdf(csvData, "Folders and Files Report");
+    doc.save("folders_files_report.pdf");
   } catch (error) {
     console.error("Error generating folder report PDF:", error);
+    throw error;
   }
-}
+};
 
+/**
+ * Generate a PDF report for reviewed projects
+ */
 export const generateReviewedProjectsReportPdf = async (uid) => {
   try {
     const reviewedData = await getReviewedProjects(uid);
     const csvData = generateReviewedProjectsCSV(reviewedData);
-    generatePdfFromCSV(csvData, "Reviewed Projects Report");
+    const doc = generateBasePdf(csvData, "Reviewed Projects Report");
+    doc.save("reviewed_projects_report.pdf");
   } catch (error) {
     console.error("Error generating reviewed projects report PDF:", error);
+    throw error;
   }
 };

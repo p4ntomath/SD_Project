@@ -61,7 +61,7 @@ export const updateProjectFunds = async (projectId, additionalFunds, source) => 
       const isCollaborator = projectData.collaborators?.some(collab => 
         collab.id === user.uid && collab.permissions?.canAddFunds
       );
-
+  
       if (!isOwner && !isCollaborator) {
         throw new Error("Not authorized to update funding for this project");
       }
@@ -88,7 +88,7 @@ export const updateProjectFunds = async (projectId, additionalFunds, source) => 
         updatedBy: user.uid,
         updatedByName: userFullName,
         source: source,
-        type: "funding"
+        type: "income"  // Changed from 'funding' to 'income'
       });
   
       return { success: true, message: "Funds updated and history logged", updatedFunds: updatedAvailableFunds };
