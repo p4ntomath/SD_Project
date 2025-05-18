@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { getAvailableReviewers } from '../../backend/firebase/reviewerDB';
-
+import { notify } from '../../backend/firebase/notificationsUtil';
+import { auth } from '../../backend/firebase/firebaseConfig';
+import { getDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
+import { db } from '../../backend/firebase/firebaseConfig';
 export default function AssignReviewersModal({ isOpen, onClose, onAssign, projectId, reviewRequests }) {
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedReviewers, setSelectedReviewers] = useState([]);
   const [availableReviewers, setAvailableReviewers] = useState([]);
@@ -81,15 +86,47 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
     }
   };
 
-  const handleAssign = async () => {
-    if (selectedReviewers.length === 0) return;
-    setLoading(true);
-    try {
-      await onAssign(selectedReviewers);
-    } catch (error) {
-      console.error('Error assigning reviewers:', error);
+ const handleAssign = async () => {
+  if (!selectedReviewers.length) return;
+  setLoading(true);
+
+  try {
+    await onAssign(selectedReviewers);
+    const researcher = auth.currentUser;
+    
+    // Fetch fullName from Firestore
+    const researcherDoc = await getDoc(doc(db, 'users', researcher.uid));
+    const researcherName = researcherDoc.data()?.fullName 
+                        || researcher.email?.split('@')[0] 
+                        || 'Researcher';
+
+    // Notify researcher
+    await notify({
+      type: 'Reviewer Request Sent',
+      projectId,
+      projectTitle,
+      reviewerName: selectedReviewers.map(r => r.name).join(', '),
+      targetUserId: researcher.uid, // <-- updated
+      senderUserId: researcher.uid, // optional, but explicit
+    });
+
+    // Notify reviewers
+    for (const reviewer of selectedReviewers) {
+      await notify({
+        type: 'Reviewer Request Received',
+        projectId,
+        projectTitle,
+        researcherName,
+        targetUserId: reviewer.id, // <-- updated
+        senderUserId: researcher.uid, // optional, but explicit
+      });
     }
-  };
+  } catch (error) {
+    console.error('Error assigning reviewers:', error);
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (!isOpen) return null;
 

@@ -9,6 +9,7 @@ import {
   setDoc,
   getDocs,
   getDoc,
+  addDoc,
   doc,
   updateDoc,
   deleteDoc
@@ -454,3 +455,4 @@ export const getProjectDetails = async (projectId) => {
     throw error;
   }
 };
+

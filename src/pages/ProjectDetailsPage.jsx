@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
 import { useState, useEffect } from 'react';
-import { fetchProject, updateProject, deleteProject, getProjectDetails } from '../backend/firebase/projectDB';
+import { fetchProject, updateProject, deleteProject, getProjectDetails} from '../backend/firebase/projectDB';
 import { fetchDocumentsByFolder } from '../backend/firebase/documentsDB';
 import { ClipLoader } from 'react-spinners';
 import StatusModal from '../components/StatusModal';
@@ -15,6 +15,7 @@ import DocumentsCard from '../components/ProjectDetailsPage/DocumentsCard';
 import FundingCard from '../components/ProjectDetailsPage/FundingCard';
 import GoalsCard from '../components/ProjectDetailsPage/GoalsCard';
 import BasicInfoCard from '../components/ProjectDetailsPage/BasicInfoCard';
+import { notify } from '../backend/firebase/notificationsUtil';
 import AssignCollaboratorsModal from '../components/ResearcherComponents/AssignCollaboratorsModal';
 import { sendResearcherInvitation, getPendingCollaboratorInvitations } from '../backend/firebase/collaborationDB';
 import { auth } from '../backend/firebase/firebaseConfig';
@@ -60,7 +61,9 @@ export default function ProjectDetailsPage() {
         
         if (projectData.goals) {
           projectData.goals = projectData.goals.map(goal =>
-            typeof goal === 'string' ? { text: goal, completed: false } : goal
+            typeof goal === 'string'
+              ? { text: goal, completed: false, notified: false }
+              : { ...goal, notified: goal.notified || false }
           );
         }
         
@@ -250,6 +253,15 @@ export default function ProjectDetailsPage() {
       await deleteProject(projectId);
       setModalOpen(true);
       setStatusMessage("Project deleted successfully");
+
+      notify({
+        type: "Project Deleted",
+        projectId: projectId,
+        projectTitle: project.title,
+        targetUserId: auth.currentUser?.uid,   // <-- add this
+        senderUserId: auth.currentUser?.uid,   // <-- add this (optional, but explicit)
+      });
+
       setTimeout(() => {
         navigate("/home");
       }, 2000);
@@ -287,6 +299,16 @@ export default function ProjectDetailsPage() {
       setIsEditing(false);
       setModalOpen(true);
       setStatusMessage("Project updated successfully");
+
+      notify({
+        type: "Project Updated",
+        projectId,
+        projectTitle: updatedProject.title,
+        goalText: goalInput,
+        targetUserId: auth.currentUser?.uid,   // <-- add this
+        senderUserId: auth.currentUser?.uid,   // <-- add this (optional, but explicit)
+      });
+
     } catch (err) {
       setError(err.message);
       setModalOpen(true);
@@ -322,10 +344,13 @@ export default function ProjectDetailsPage() {
     const completed = project.goals.filter(goal => goal.completed).length;
     if(Math.round((completed / project.goals.length) * 100) === 100){
       project.status = 'Complete';
+       
     }
     else{
       project.status = 'In Progress';
     }
+
+ 
     return Math.round((completed / project.goals.length) * 100);
   };
 
@@ -640,6 +665,7 @@ const getDefaultGroupName = (projectTitle) => {
               setModalOpen={setModalOpen}
               setError={setError}
               setStatusMessage={setStatusMessage}
+              projectTitle={project.title}
             />
 
             {/* Project Reviews Card */}
@@ -651,6 +677,7 @@ const getDefaultGroupName = (projectTitle) => {
 
           {/* Right Column - Additional Info */}
           <section className="space-y-4 sm:space-y-6">
+
             <FundingCard
               projectId={projectId}
               project={project}

@@ -3,6 +3,7 @@ import { ClipLoader } from 'react-spinners';
 import { AnimatePresence } from 'framer-motion';
 import { updateProjectFunds, updateProjectExpense, getFundingHistory } from '../../backend/firebase/fundingDB';
 import { formatFirebaseDate } from '../../utils/dateUtils';
+import { notify } from '../../backend/firebase/notificationsUtil';
 import { checkPermission } from '../../utils/permissions';
 
 export default function FundingCard({ 
@@ -55,13 +56,21 @@ export default function FundingCard({
         ...project,
         availableFunds: (project.availableFunds || 0) + amount
       });
+
+      
+
       setShowAddFundsModal(false);
       setFundAmount('');
       setFundingSource('');
       setModalOpen(true);
       setError(false);
       setStatusMessage('Funds added successfully');
+      setError(false);
       loadFundingHistory();
+
+      // Notify user about the added funds
+      notify({type: 'Funds Added', projectId, projectTitle: project.title, amount});
+
     } catch (err) {
       setError(true);
       setModalOpen(true);
@@ -103,7 +112,12 @@ export default function FundingCard({
       setModalOpen(true);
       setError(false);
       setStatusMessage('Expense added successfully');
+
+      // Notify user about the added expense
+        notify({type: 'Expense Added', projectId, projectTitle: project.title, amount, description: expenseDescription});
       loadFundingHistory();
+
+      
     } catch (err) {
       setError(true);
       setModalOpen(true);
@@ -112,6 +126,7 @@ export default function FundingCard({
       setAddExpenseLoading(false);
     }
   };
+  
 
   useEffect(() => {
     if (showFundingHistory) {

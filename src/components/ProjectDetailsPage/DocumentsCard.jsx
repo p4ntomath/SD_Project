@@ -45,7 +45,7 @@ export default function DocumentsCard({
     const [isRenamingFolder, setIsRenamingFolder] = useState(null);
     const [showDeleteFileConfirm, setShowDeleteFileConfirm] = useState(false);
     const [fileToDelete, setFileToDelete] = useState(null);
-
+  
     const handleCreateFolderWrapper = () => {
         handleCreateFolder({
             newFolderName,
@@ -94,6 +94,7 @@ export default function DocumentsCard({
                 setModalOpen,
                 setStatusMessage
             });
+          
         } catch (err) {
             setError(true);
             setModalOpen(true);
@@ -124,6 +125,7 @@ export default function DocumentsCard({
             setFolderToDelete,
             setShowDeleteFolderModal: setShowDeleteFolderConfirm
         });
+      
     };
 
     const confirmDeleteFolderWrapper = () => {
@@ -155,9 +157,11 @@ export default function DocumentsCard({
             return;
         }
 
+
         setFileToDelete({ file, folder });
         setShowDeleteFileConfirm(true);
     };
+
 
     const confirmDeleteFileWrapper = () => {
         if (!fileToDelete) return;
@@ -179,7 +183,6 @@ export default function DocumentsCard({
             }
         });
     };
-
     const handleDownloadFileWrapper = (file) => {
         handleDownload({
             downloadURL: file.downloadURL,
@@ -338,6 +341,8 @@ export default function DocumentsCard({
                           <svg className="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                           </svg>
+
+                          {/* File name with truncation */}
                           <div className="flex-1 min-w-0">
                             <span className="text-sm text-gray-700 truncate block">{file.name}</span>
                             <span className="text-xs text-gray-500">{file.size}</span>
@@ -374,6 +379,7 @@ export default function DocumentsCard({
                           )}
                         </div>
                       </div>
+
                     ))
                   ) : (
                     <div className="flex flex-col items-center justify-center py-6 text-center">
@@ -417,7 +423,6 @@ export default function DocumentsCard({
               )}
             </div>
           ))}
-
           {folders.length === 0 && (
             <div className="text-center py-12">
               <div className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">

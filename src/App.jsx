@@ -24,6 +24,8 @@ import ReviewerProjects from './pages/reviewer/ReviewerProjects.jsx';
 import ReviewRequests from './pages/reviewer/ReviewRequests.jsx';
 import ReviewerHistory from './pages/ReviewerPages/ReviewerHistory.jsx';
 import ReviewProjectPage from './pages/ReviewerPages/ReviewProjectPage.jsx';
+import NotificationsPage from './pages/NotificationsPage.jsx';
+import ReviewerNotificationsPage from './pages/reviewer/ReviewerNotificationsPage.jsx';
 import MessagesPage from './pages/Messages.jsx';
 import MessagesList from './pages/MessagesList.jsx';
 import ChatView from './pages/ChatView.jsx';
@@ -110,6 +112,17 @@ function App() {
               <DocumentsPage />
             </ProtectedRoute>
           } />
+          <Route path="/notifications" element={
+            <ProtectedRoute allowedRoles={['researcher']}>
+              <NotificationsPage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/reviewer/notifications" element={
+                      <ProtectedRoute allowedRoles={['reviewer']}>
+                        <ReviewerNotificationsPage />
+                      </ProtectedRoute>
+                    } />
           <Route path="/reviewer/review/:projectId" element={
             <ProtectedRoute allowedRoles={['reviewer']}>
               <ReviewProjectPage />

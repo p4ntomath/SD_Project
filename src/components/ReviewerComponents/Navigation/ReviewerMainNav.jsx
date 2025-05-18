@@ -1,16 +1,20 @@
+
 import { FiHome, FiList, FiUser, FiMenu, FiX, FiSearch, FiClock, FiInbox, FiMessageSquare } from 'react-icons/fi';
 import { useState } from 'react';
 import { ClipboardDocumentCheckIcon } from "@heroicons/react/24/outline";
 import { logOut } from '../../../backend/firebase/authFirebase';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useUnreadNotificationsCount } from '../../../backend/firebase/notificationsUtil';
+
 
 export default function ReviewerMainNav({ setMobileMenuOpen, mobileMenuOpen, onSearch }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-
+   const unreadCount = useUnreadNotificationsCount();
+   
   const handleSearch = (e) => {
     e.preventDefault();
     onSearch(searchQuery);
@@ -67,6 +71,22 @@ export default function ReviewerMainNav({ setMobileMenuOpen, mobileMenuOpen, onS
                 <FiClock className="h-6 w-6 group-hover:text-blue-600" />
                 <p className="text-xs mt-1 group-hover:text-blue-600">History</p>
               </button>
+
+               <button 
+                              onClick={() => navigate('/reviewer/notifications')}
+                              className={`group flex flex-col items-center justify-center p-3 relative ${location.pathname === '/notifications' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
+                              aria-label="View alerts"
+                            >
+                              <span className="relative">
+                                <FiBell className="h-6 w-6 group-hover:text-blue-600" />
+                                {unreadCount > 0 && (
+                                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 font-bold z-10">
+                                    {unreadCount}
+                                  </span>
+                                )}
+                              </span>
+                              <p className="text-xs mt-1 group-hover:text-blue-600">Notifications</p>
+                            </button>  
 
               <button 
                 onClick={() => navigate('/reviewer/messages')}

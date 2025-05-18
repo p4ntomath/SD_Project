@@ -1,7 +1,9 @@
+import { notify } from '../../backend/firebase/notificationsUtil';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaPlus } from 'react-icons/fa';
 import { checkPermission, isProjectOwner } from '../../utils/permissions';
+
 
 export default function GoalsCard({ 
   project, 
@@ -19,6 +21,7 @@ export default function GoalsCard({
 
   const handleGoalStatusChange = async (index) => {
     try {
+
       if (!checkPermission(project, 'canCompleteGoals')) {
         throw new Error('You do not have permission to update goals');
       }

@@ -1,0 +1,152 @@
+import { db, auth } from "./firebaseConfig";
+import { query, where, arrayUnion, serverTimestamp } from "firebase/firestore";
+import { useState, useEffect } from 'react';
+import { getAuth } from 'firebase/auth';
+import { getFirestore } from 'firebase/firestore';
+import { onSnapshot } from 'firebase/firestore';
+import {
+  collection,
+  setDoc,
+  getDocs,
+  getDoc,
+  addDoc,
+  doc,
+  updateDoc,
+  deleteDoc
+} from 'firebase/firestore';
+
+export function useUnreadNotificationsCount() {
+  const [count, setCount] = useState(0);
+  const auth = getAuth();
+  const db = getFirestore();
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    const q = query(
+      collection(db, 'notifications'),
+      where('targetUserId', '==', auth.currentUser.uid), // updated field
+      where('readStatus', '==', false)
+    );
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      setCount(snapshot.size);
+    });
+    return () => unsubscribe();
+  }, [auth.currentUser, db]);
+
+  return count;
+}
+
+const notificationTemplates = {
+  // Goals Card
+  "Goal Completion": ({ goalText, projectTitle }) =>
+    `You have successfully completed the goal "${goalText}" in the project "${projectTitle}".`,
+
+  "Project Completion": ({ projectTitle }) =>
+    `Congratulations! The project "${projectTitle}" has been marked as complete.`,
+
+  "Project Created": ({ projectTitle }) =>
+    `Your project "${projectTitle}" was created successfully.`,
+
+  "Project Deleted": ({ projectTitle }) =>
+    `Your project "${projectTitle}" has been deleted.`,
+
+  "Project Updated": ({ projectTitle }) =>
+    `Your project "${projectTitle}" has been updated.`,
+
+  // Funding Card
+  "Funds Added": ({ amount, projectTitle }) =>
+    `An amount of R${amount.toLocaleString()} has been added to your project "${projectTitle}".`,
+
+  "Expense Added": ({ amount, description, projectTitle }) =>
+    `A new expense of R${amount.toLocaleString()} (${description}) has been recorded for your project "${projectTitle}".`,
+
+  // Document Card
+  "Folder Created": ({ folderName, projectTitle }) =>
+    `A new folder "${folderName}" was created in your project "${projectTitle}".`,
+
+  "Folder Deleted": ({ folderName, projectTitle }) =>
+    `The folder "${folderName}" was deleted from your project "${projectTitle}".`,
+
+  "Folder Updated": ({ folderName, projectTitle }) =>
+    `The folder "${folderName}" was updated in your project "${projectTitle}".`,
+
+  "File Uploaded": ({ documentName, folderName, projectTitle }) =>
+    `The file "${documentName}" was uploaded to the folder "${folderName}" in your project "${projectTitle}".`,
+
+  "File Deleted": ({ documentName, folderName, projectTitle }) =>
+    `The file "${documentName}" was deleted from the folder "${folderName}" in your project "${projectTitle}".`,
+
+  "File Updated": ({ documentName, folderName, projectTitle }) =>
+    `The file "${documentName}" was updated in the folder "${folderName}" in your project "${projectTitle}".`,
+
+  // Reviewer Card
+  "Reviewer Request Sent": ({ reviewerName, projectTitle }) =>
+    `A review request has been sent to ${reviewerName} for your project "${projectTitle}".`,
+
+  "Reviewer Request Received": ({ researcherName, projectTitle }) =>
+    `You have received a review request from ${researcherName} for the project "${projectTitle}".`,
+
+  "Reviewer Accepted": ({ researcherName, projectTitle }) =>
+    `You have accepted the review request for the project "${projectTitle}" by ${researcherName}.`,
+
+  "Reviewer Request Accepted": ({ reviewerName, projectTitle }) =>
+    `${reviewerName} has accepted your review request for the project "${projectTitle}".`,
+
+  "Reviewer Denied": ({ researcherName, projectTitle }) =>
+    `You have declined the review request for the project "${projectTitle}" by ${researcherName}.`,
+
+  "Reviewer Request Denied": ({ reviewerName, projectTitle }) =>
+    `${reviewerName} has declined your review request for the project "${projectTitle}".`,
+
+  "Review Submitted": ({ researcherName, projectTitle }) =>
+    `You have submitted your review for the project "${projectTitle}" by ${researcherName}.`,
+
+  "Review Received": ({ reviewerName, projectTitle }) =>
+    `You have received a review for your project "${projectTitle}" from ${reviewerName}.`,
+};
+
+export const notify = async ({
+  type,
+  projectId,
+  projectTitle,
+  goalText,
+  folderName,
+  documentName,
+  amount,
+  description,
+  reviewerName,
+  researcherName,
+  targetUserId, // recipient
+  senderUserId, // actor
+}) => {
+  const target = targetUserId || auth.currentUser?.uid;
+  const sender = senderUserId || auth.currentUser?.uid;
+
+  if (!target) {
+    console.error("Target user ID not provided and user not authenticated");
+    return;
+  }
+  if (!projectId) {
+    console.error("Project ID is undefined. Cannot send notification.");
+    return;
+  }
+  const template = notificationTemplates[type];
+  if (!template) {
+    console.error("Unknown notification type:", type);
+    return;
+  }
+
+  const message = template({ goalText, projectTitle, documentName, amount, description, folderName, reviewerName, researcherName });
+
+  const notificationsRef = collection(db, "notifications");
+  await addDoc(notificationsRef, {
+    targetUserId: target,
+    senderUserId: sender,
+    projectId,
+    message,
+    type,
+    timestamp: new Date().toISOString(),
+    readStatus: false,
+  });
+};
+
