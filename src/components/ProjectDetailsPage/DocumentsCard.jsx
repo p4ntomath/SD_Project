@@ -1,214 +1,257 @@
 import React, { useState } from 'react';
 import { ClipLoader } from 'react-spinners';
 import { AnimatePresence, motion } from 'framer-motion';
-import { checkPermission, isProjectOwner } from '../../utils/permissions';
+import { checkPermission } from '../../utils/permissions';
+import { notify } from '../../backend/firebase/notificationsUtil';
 import {
-    handleCreateFolder,
-    handleFileUpload,
-    handleDeleteFolder,
-    confirmDeleteFolder,
-    handleDeleteFile,
-    handleDownload,
-    handleRenameFolder
+  handleCreateFolder,
+  handleFileUpload,
+  handleDeleteFolder,
+  confirmDeleteFolder,
+  handleDeleteFile,
+  handleDownload,
+  handleRenameFolder
 } from '../../utils/documentUtils';
 
 function formatFileSize(bytes) {
-    if (bytes === 0) return '0 B';
-    const k = 1024;
-    const sizes = ['B', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
+  if (bytes === 0) return '0 B';
+  const k = 1024;
+  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const i = Math.floor(Math.log(bytes) / Math.log(k));
+  return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
 }
 
 export default function DocumentsCard({ 
-    projectId, 
-    project,
-    folders, 
-    setFolders, 
-    foldersLoading, 
-    setModalOpen, 
-    setError, 
-    setStatusMessage 
+  projectId, 
+  project,
+  folders, 
+  setFolders, 
+  foldersLoading, 
+  setModalOpen, 
+  setError, 
+  setStatusMessage 
 }) {
-    const [showFolderModal, setShowFolderModal] = useState(false);
-    const [newFolderName, setNewFolderName] = useState('');
-    const [selectedFolder, setSelectedFolder] = useState(null);
-    const [showUploadModal, setShowUploadModal] = useState(false);
-    const [selectedFile, setSelectedFile] = useState(null);
-    const [uploadLoading, setUploadLoading] = useState(false);
-    const [customName, setCustomName] = useState('');
-    const [customDescription, setCustomDescription] = useState('');
-    const [downloadingFile, setDownloadingFile] = useState(null);
-    const [deletingFile, setDeletingFile] = useState(null);
-    const [showDeleteFolderConfirm, setShowDeleteFolderConfirm] = useState(false);
-    const [folderToDelete, setFolderToDelete] = useState(null);
-    const [isRenamingFolder, setIsRenamingFolder] = useState(null);
-    const [showDeleteFileConfirm, setShowDeleteFileConfirm] = useState(false);
-    const [fileToDelete, setFileToDelete] = useState(null);
+  const [showFolderModal, setShowFolderModal] = useState(false);
+  const [newFolderName, setNewFolderName] = useState('');
+  const [selectedFolder, setSelectedFolder] = useState(null);
+  const [showUploadModal, setShowUploadModal] = useState(false);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [uploadLoading, setUploadLoading] = useState(false);
+  const [customName, setCustomName] = useState('');
+  const [customDescription, setCustomDescription] = useState('');
+  const [downloadingFile, setDownloadingFile] = useState(null);
+  const [deletingFile, setDeletingFile] = useState(null);
+  const [showDeleteFolderConfirm, setShowDeleteFolderConfirm] = useState(false);
+  const [folderToDelete, setFolderToDelete] = useState(null);
+  const [showDeleteFileConfirm, setShowDeleteFileConfirm] = useState(false);
+  const [fileToDelete, setFileToDelete] = useState(null);
+  const [isRenamingFolder, setIsRenamingFolder] = useState(null);
 
-    const handleCreateFolderWrapper = () => {
-        handleCreateFolder({
-            newFolderName,
-            projectId,
-            setUploadLoading,
-            setFolders,
-            folders,
-            setModalOpen,
-            setError,
-            setStatusMessage,
-            setNewFolderName,
-            setShowFolderModal
-        });
-    };
+  const handleCreateFolderWrapper = async () => {
+    try {
+      if (!newFolderName.trim()) return;
+      
+      setUploadLoading(true);
+      const folderId = await handleCreateFolder(projectId, newFolderName);
+      
+      const newFolder = {
+        id: folderId,
+        name: newFolderName,
+        files: [],
+        createdAt: new Date(),
+        projectId: projectId
+      };
+      
+      setFolders([...folders, newFolder]);
+      
+      // Notify about folder creation
+      notify({
+        type: "Folder Created",
+        projectId,
+        projectTitle: project.title,
+        folderName: newFolderName
+      });
+      
+      setNewFolderName('');
+      setShowFolderModal(false);
+      setModalOpen(true);
+      setError(false);
+      setStatusMessage('Folder created successfully');
+    } catch (err) {
+      setError(true);
+      setModalOpen(true);
+      setStatusMessage('Failed to create folder: ' + err.message);
+    } finally {
+      setUploadLoading(false);
+    }
+  };
 
-    const handleFileUploadWrapper = (event) => {
-        const file = event.target.files[0];
-        if (file) {
-            const fileNameWithoutExtension = file.name.replace(/\.[^/.]+$/, "");
-            setSelectedFile(file);
-            setCustomName(fileNameWithoutExtension);
-            setCustomDescription('');
-            setShowUploadModal(true);
-        }
-    };
+  const handleFileUploadWrapper = async () => {
+    try {
+      if (!customName.trim()) {
+        setError(true);
+        setModalOpen(true);
+        setStatusMessage('Please enter a file name');
+        return;
+      }
 
-    const handleConfirmUploadWrapper = async () => {
-        try {
-            const fileExtension = selectedFile.name.split('.').pop();
-            const finalFileName = customName.endsWith(`.${fileExtension}`) ? customName : `${customName}.${fileExtension}`;
+      const fileExtension = selectedFile.name.split('.').pop();
+      const finalFileName = customName.endsWith(`.${fileExtension}`) ? customName : `${customName}.${fileExtension}`;
 
-            handleFileUpload({
-                selectedFile,
-                selectedFolder,
-                projectId,
-                customName: finalFileName,
-                customDescription,
-                setError,
-                setShowUploadModal,
-                setUploadLoading,
-                setFolders,
-                folders,
-                setSelectedFile,
-                setCustomName,
-                setCustomDescription,
-                setModalOpen,
-                setStatusMessage
-            });
-        } catch (err) {
-            setError(true);
-            setModalOpen(true);
-            setStatusMessage('Failed to upload file: ' + err.message);
-        }
-    };
+      setUploadLoading(true);
+      const documentId = await handleFileUpload(selectedFile, projectId, selectedFolder.id, {
+        displayName: finalFileName,
+        description: customDescription || 'No description provided'
+      });
 
-    const handleDeleteFolderWrapper = (folderId) => {
-        const folder = folders.find(f => f.id === folderId);
-        if (!folder) {
-            setError(true);
-            setModalOpen(true);
-            setStatusMessage('Folder not found');
-            return;
-        }
+      const newFile = {
+        id: documentId,
+        documentId: documentId,
+        name: finalFileName,
+        displayName: finalFileName,
+        description: customDescription || 'No description provided',
+        originalName: selectedFile.name,
+        size: formatFileSize(selectedFile.size),
+        type: selectedFile.type,
+        uploadDate: new Date(),
+        folderId: selectedFolder.id,
+        projectId: projectId
+      };
 
-        // Ensure the folder object has the projectId
-        const folderWithProject = {
+      const updatedFolders = folders.map(folder => {
+        if (folder.id === selectedFolder.id) {
+          return {
             ...folder,
-            projectId: projectId // Add projectId from props
-        };
-
-        handleDeleteFolder({
-            folder: folderWithProject,
-            setError,
-            setModalOpen,
-            setStatusMessage,
-            setFolderToDelete,
-            setShowDeleteFolderModal: setShowDeleteFolderConfirm
-        });
-    };
-
-    const confirmDeleteFolderWrapper = () => {
-        // Ensure the folderToDelete has projectId
-        const folderWithProject = folderToDelete ? {
-            ...folderToDelete,
-            projectId: projectId
-        } : null;
-
-        confirmDeleteFolder({
-            folderToDelete: folderWithProject,
-            setUploadLoading,
-            setFolders,
-            folders,
-            setShowDeleteFolderModal: setShowDeleteFolderConfirm,
-            setFolderToDelete,
-            setModalOpen,
-            setError,
-            setStatusMessage,
-            setShowDeleteFolderConfirm
-        });
-    };
-
-    const handleDeleteFileWrapper = (file, folder) => {
-        if (!checkPermission(project, 'canUploadFiles')) {
-            setError(true);
-            setModalOpen(true);
-            setStatusMessage('You need permission to manage files in this project');
-            return;
+            files: [...folder.files, newFile]
+          };
         }
+        return folder;
+      });
 
-        setFileToDelete({ file, folder });
-        setShowDeleteFileConfirm(true);
-    };
+      setFolders(updatedFolders);
+      setShowUploadModal(false);
+      setSelectedFile(null);
+      setCustomName('');
+      setCustomDescription('');
+      setModalOpen(true);
+      setError(false);
+      setStatusMessage('File uploaded successfully');
 
-    const confirmDeleteFileWrapper = () => {
-        if (!fileToDelete) return;
-        
-        handleDeleteFile({
-            folderId: fileToDelete.folder.id,
-            fileId: fileToDelete.file.id,
-            projectId: projectId, // Add the projectId from props
-            folders,
-            setUploadLoading,
-            setFolders,
-            setModalOpen,
-            setError,
-            setStatusMessage,
-            setDeletingFile,
-            onSuccess: () => {
-                setShowDeleteFileConfirm(false);
-                setFileToDelete(null);
-            }
-        });
-    };
+      // Notify about file upload
+      notify({
+        type: "File Uploaded",
+        projectId,
+        projectTitle: project.title,
+        folderName: selectedFolder.name,
+        documentName: finalFileName
+      });
+    } catch (err) {
+      setError(true);
+      setModalOpen(true);
+      setStatusMessage('Failed to upload file: ' + err.message);
+    } finally {
+      setUploadLoading(false);
+    }
+  };
 
-    const handleDownloadFileWrapper = (file) => {
-        handleDownload({
-            downloadURL: file.downloadURL,
-            setError,
-            setModalOpen,
-            setStatusMessage,
-            setDownloadingFile,
-            fileId: file.id
-        });
-    };
+  const handleDeleteFileWrapper = async (file, folder) => {
+    try {
+      setDeletingFile(file.id);
+      await handleDeleteFile(file.documentId, projectId, folder.id);
+      
+      const updatedFolders = folders.map(f => {
+        if (f.id === folder.id) {
+          return {
+            ...f,
+            files: f.files.filter(f => f.id !== file.id)
+          };
+        }
+        return f;
+      });
+      
+      setFolders(updatedFolders);
+      setModalOpen(true);
+      setError(false);
+      setStatusMessage('File deleted successfully');
 
-    const handleRenameFolderWrapper = (folder) => {
-        if (!newFolderName.trim()) return;
-        
-        handleRenameFolder({
-            folder,
-            newName: newFolderName,
-            setFolders,
-            folders,
-            setModalOpen,
-            setError,
-            setStatusMessage
-        });
-        setIsRenamingFolder(null);
-        setNewFolderName('');
-    };
+      // Notify about file deletion
+      notify({
+        type: "File Deleted",
+        projectId,
+        projectTitle: project.title,
+        folderName: folder.name,
+        documentName: file.name
+      });
+    } catch (err) {
+      setError(true);
+      setModalOpen(true);
+      setStatusMessage('Failed to delete file: ' + err.message);
+    } finally {
+      setDeletingFile(null);
+    }
+  };
+
+  const handleDeleteFolderWrapper = async (folderId) => {
+    const folder = folders.find(f => f.id === folderId);
+    if (!folder) return;
+
+    try {
+      setUploadLoading(true);
+      await handleDeleteFolder(projectId, folderId);
+      
+      setFolders(folders.filter(f => f.id !== folderId));
+      setShowDeleteFolderConfirm(false);
+      setFolderToDelete(null);
+      setModalOpen(true);
+      setError(false);
+      setStatusMessage('Folder deleted successfully');
+
+      // Notify about folder deletion
+      notify({
+        type: "Folder Deleted",
+        projectId,
+        projectTitle: project.title,
+        folderName: folder.name
+      });
+    } catch (err) {
+      setError(true);
+      setModalOpen(true);
+      setStatusMessage('Failed to delete folder: ' + err.message);
+    } finally {
+      setUploadLoading(false);
+    }
+  };
+
+  const handleRenameFolderWrapper = async (folder, newName) => {
+    try {
+      await handleRenameFolder(projectId, folder.id, newName);
+      
+      const updatedFolders = folders.map(f => 
+        f.id === folder.id ? { ...f, name: newName } : f
+      );
+      setFolders(updatedFolders);
+      
+      setModalOpen(true);
+      setError(false);
+      setStatusMessage('Folder renamed successfully');
+
+      // Notify about folder rename
+      notify({
+        type: "Folder Updated",
+        projectId,
+        projectTitle: project.title,
+        folderName: newName
+      });
+    } catch (err) {
+      setError(true);
+      setModalOpen(true);
+      setStatusMessage('Failed to rename folder: ' + err.message);
+    }
+  };
 
   return (
-    <section className="bg-white rounded-xl shadow-lg p-6">
+    <div className="bg-white rounded-xl shadow-lg p-6">
+      {/* Header section */}
       <header className="flex justify-between items-center mb-6">
         <div className="flex items-center gap-4">
           <div className="p-3 bg-blue-50 rounded-lg">
@@ -234,6 +277,7 @@ export default function DocumentsCard({
         )}
       </header>
 
+      {/* Main content */}
       {foldersLoading ? (
         <div className="flex flex-col items-center justify-center py-12 bg-gray-50/50 rounded-lg">
           <ClipLoader color="#3B82F6" />
@@ -245,13 +289,17 @@ export default function DocumentsCard({
             <div key={folder.id} 
               className="group relative bg-white border border-gray-200 rounded-xl p-6 hover:border-blue-300 hover:shadow-lg transition-all duration-300"
             >
+              {/* Folder header */}
               <div className="flex items-center gap-4 mb-4">
-                <div className="p-3 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
+                {/* Folder icon */}
+                <div className="p-3 bg-blue-50 rounded-lg">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                   </svg>
                 </div>
-                <div>
+
+                {/* Folder name section */}
+                <div className="flex-1 min-w-0">
                   {isRenamingFolder === folder.id ? (
                     <div className="flex items-center gap-2">
                       <input
@@ -315,6 +363,7 @@ export default function DocumentsCard({
                 </div>
               </div>
 
+              {/* Files section */}
               <div className="space-y-2">
                 <div className="text-xs text-gray-500">
                   <p>Size: {formatFileSize(folder.size || 0)}</p>
@@ -330,48 +379,56 @@ export default function DocumentsCard({
                   </div>
                 </div>
 
-                <div className="space-y-2 max-h-64 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-gray-100">
+                <div className="space-y-2 max-h-64 overflow-y-auto">
                   {folder.files && folder.files.length > 0 ? (
                     folder.files.map((file) => (
-                      <div key={file.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                      <div key={file.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100">
+                        {/* File info */}
                         <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {/* File icon */}
                           <svg className="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                           </svg>
+
+                          {/* File name */}
                           <div className="flex-1 min-w-0">
-                            <span className="text-sm text-gray-700 truncate block">{file.name}</span>
-                            <span className="text-xs text-gray-500">{file.size}</span>
+                            <span className="block truncate text-sm text-gray-700">{file.name}</span>
                           </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <button
-                            onClick={() => handleDownloadFileWrapper(file)}
-                            className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
-                            disabled={downloadingFile === file.id}
-                          >
-                            {downloadingFile === file.id ? (
-                              <ClipLoader size={16} color="currentColor" />
-                            ) : (
-                              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4V4" />
-                              </svg>
-                            )}
-                          </button>
-                          {checkPermission(project, 'canUploadFiles') && (
+
+                          {/* File actions */}
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {/* Download button */}
                             <button
-                              onClick={() => handleDeleteFileWrapper(file, folder)}
-                              className="p-1 text-red-600 hover:text-red-800 transition-colors"
-                              disabled={deletingFile === file.id}
+                              onClick={() => handleDownloadFile(file)}
+                              className="p-1 text-blue-600 hover:text-blue-800"
+                              disabled={downloadingFile === file.id}
                             >
-                              {deletingFile === file.id ? (
+                              {downloadingFile === file.id ? (
                                 <ClipLoader size={16} color="currentColor" />
                               ) : (
                                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4 4m0 0l-4-4m4 4V4" />
                                 </svg>
                               )}
                             </button>
-                          )}
+
+                            {/* Delete button */}
+                            {checkPermission(project, 'canUploadFiles') && (
+                              <button
+                                onClick={() => handleDeleteFile(file, folder)}
+                                className="p-1 text-red-600 hover:text-red-800"
+                                disabled={deletingFile === file.id}
+                              >
+                                {deletingFile === file.id ? (
+                                  <ClipLoader size={16} color="currentColor" />
+                                ) : (
+                                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                )}
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))
@@ -386,38 +443,42 @@ export default function DocumentsCard({
                 </div>
               </div>
 
+              {/* Folder actions */}
               {checkPermission(project, 'canUploadFiles') && (
                 <div className="mt-4 flex items-center justify-between pt-4 border-t border-gray-100">
+                  {/* Upload button */}
                   <button
                     onClick={() => {
                       setSelectedFolder(folder);
                       document.getElementById('file-upload').click();
                     }}
-                    className="text-sm text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1"
+                    className="text-sm text-blue-600 hover:text-blue-800 flex items-center gap-1"
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                     </svg>
                     Upload a file
                   </button>
-                  {checkPermission(project, 'canUploadFiles') && (
-                    <div className="flex items-center gap-3">
-                      <button
-                        onClick={() => handleDeleteFolderWrapper(folder.id)}
-                        className="text-sm text-gray-600 hover:text-red-600 transition-colors flex items-center gap-1"
-                      >
-                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
-                        Delete
-                      </button>
-                    </div>
-                  )}
+
+                  {/* Delete folder button */}
+                  <button
+                    onClick={() => {
+                      setFolderToDelete(folder);
+                      setShowDeleteFolderConfirm(true);
+                    }}
+                    className="text-sm text-gray-600 hover:text-red-600 flex items-center gap-1"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Delete
+                  </button>
                 </div>
               )}
             </div>
           ))}
 
+          {/* Empty state */}
           {folders.length === 0 && (
             <div className="text-center py-12">
               <div className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
@@ -432,14 +493,21 @@ export default function DocumentsCard({
         </div>
       )}
 
+      {/* Hidden file input */}
       <input
         id="file-upload"
         type="file"
         className="hidden"
-        onChange={handleFileUploadWrapper}
+        onChange={(e) => {
+          if (e.target.files?.[0]) {
+            setSelectedFile(e.target.files[0]);
+            setCustomName(e.target.files[0].name.split('.')[0]);
+            setShowUploadModal(true);
+          }
+        }}
       />
 
-      {/* Create Folder Modal */}
+      {/* Modals */}
       <AnimatePresence>
         {showFolderModal && (
           <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -489,7 +557,6 @@ export default function DocumentsCard({
         )}
       </AnimatePresence>
 
-      {/* Upload File Modal */}
       <AnimatePresence>
         {showUploadModal && (
           <div className="fixed inset-0 z-50 overflow-y-auto">
@@ -533,7 +600,7 @@ export default function DocumentsCard({
                       Cancel
                     </button>
                     <button
-                      onClick={handleConfirmUploadWrapper}
+                      onClick={handleFileUploadWrapper}
                       disabled={!customName.trim() || uploadLoading}
                       className="bg-blue-600 text-white px-4 py-2 rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center"
                     >
@@ -554,49 +621,49 @@ export default function DocumentsCard({
         )}
       </AnimatePresence>
 
-      {/* Delete Folder Confirmation Modal */}
       <AnimatePresence>
         {showDeleteFolderConfirm && (
-          <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
-            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteFolderConfirm(false)} />
-            <motion.article
-              className="relative bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200"
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.8, opacity: 0 }}
-              transition={{ type: 'spring', stiffness: 300, damping: 20 }}
-            >
-              <h2 className="text-xl font-semibold mb-4 text-gray-900">Delete Folder?</h2>
-              <p className="text-gray-700 mb-6">Are you sure you want to delete this folder and all its contents? This action cannot be undone.</p>
-              <footer className="flex justify-end gap-3">
-                <button
-                  onClick={() => setShowDeleteFolderConfirm(false)}
-                  className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50/80 transition-colors"
-                  disabled={uploadLoading}
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => confirmDeleteFolderWrapper()}
-                  disabled={uploadLoading}
-                  className="bg-red-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-xl hover:bg-red-700/90 transition-colors flex items-center gap-2"
-                >
-                  {uploadLoading ? (
-                    <>
-                      <ClipLoader size={16} color="#FFFFFF" />
-                      Deleting...
-                    </>
-                  ) : (
-                    'Delete'
-                  )}
-                </button>
-              </footer>
-            </motion.article>
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex min-h-screen items-center justify-center p-4">
+              <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteFolderConfirm(false)} />
+              <motion.article
+                className="relative bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200"
+                initial={{ scale: 0.8, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0.8, opacity: 0 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+              >
+                <h2 className="text-xl font-semibold mb-4 text-gray-900">Delete Folder?</h2>
+                <p className="text-gray-700 mb-6">Are you sure you want to delete this folder and all its contents? This action cannot be undone.</p>
+                <footer className="flex justify-end gap-3">
+                  <button
+                    onClick={() => setShowDeleteFolderConfirm(false)}
+                    className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50/80 transition-colors"
+                    disabled={uploadLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => handleDeleteFolderWrapper(folderToDelete.id)}
+                    disabled={uploadLoading}
+                    className="bg-red-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-xl hover:bg-red-700/90 transition-colors flex items-center gap-2"
+                  >
+                    {uploadLoading ? (
+                      <>
+                        <ClipLoader size={16} color="#FFFFFF" />
+                        Deleting...
+                      </>
+                    ) : (
+                      'Delete'
+                    )}
+                  </button>
+                </footer>
+              </motion.article>
+            </div>
           </div>
         )}
       </AnimatePresence>
 
-      {/* Delete File Confirmation Modal */}
       <AnimatePresence>
         {showDeleteFileConfirm && fileToDelete && (
             <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
@@ -624,7 +691,7 @@ export default function DocumentsCard({
                             Cancel
                         </button>
                         <button
-                            onClick={confirmDeleteFileWrapper}
+                            onClick={() => handleDeleteFileWrapper(fileToDelete.file, fileToDelete.folder)}
                             disabled={uploadLoading}
                             className="bg-red-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-xl hover:bg-red-700/90 transition-colors flex items-center gap-2"
                         >
@@ -642,6 +709,6 @@ export default function DocumentsCard({
             </div>
         )}
       </AnimatePresence>
-    </section>
-  );
+    </div>
+    );
 }

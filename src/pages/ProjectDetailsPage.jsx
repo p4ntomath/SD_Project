@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
 import { useState, useEffect } from 'react';
-import { fetchProject, updateProject, deleteProject, getProjectDetails } from '../backend/firebase/projectDB';
+import { fetchProject, updateProject, deleteProject, getProjectDetails} from '../backend/firebase/projectDB';
 import { fetchDocumentsByFolder } from '../backend/firebase/documentsDB';
 import { ClipLoader } from 'react-spinners';
 import StatusModal from '../components/StatusModal';
@@ -21,6 +21,7 @@ import { auth } from '../backend/firebase/firebaseConfig';
 import { checkPermission, isProjectOwner } from '../utils/permissions';
 import { updateCollaboratorAccessLevel, removeCollaboratorFromProject } from "../backend/firebase/collaborationDB";
 import { ChatService } from '../backend/firebase/chatDB';
+import { notify } from '../backend/firebase/notificationsUtil';
 
 export default function ProjectDetailsPage() {
   const { projectId } = useParams();
@@ -60,7 +61,9 @@ export default function ProjectDetailsPage() {
         
         if (projectData.goals) {
           projectData.goals = projectData.goals.map(goal =>
-            typeof goal === 'string' ? { text: goal, completed: false } : goal
+            typeof goal === 'string'
+              ? { text: goal, completed: false, notified: false }
+              : { ...goal, notified: goal.notified || false }
           );
         }
         
@@ -247,50 +250,48 @@ export default function ProjectDetailsPage() {
 
   const handleDelete = async () => {
     try {
+      setIsSubmitting(true);
       await deleteProject(projectId);
+      
+      notify({
+        type: 'Project Deleted',
+        projectId,
+        projectTitle: project.title
+      });
+
+      navigate('/projects');
       setModalOpen(true);
-      setStatusMessage("Project deleted successfully");
-      setTimeout(() => {
-        navigate("/home");
-      }, 2000);
+      setError(false);
+      setStatusMessage('Project deleted successfully');
     } catch (err) {
-      setError(err.message);
+      setError(true);
       setModalOpen(true);
-      setStatusMessage("Failed to delete project: " + err.message);
+      setStatusMessage('Failed to delete project: ' + err.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleUpdate = async (updatedProject) => {
     try {
       setUpdateLoading(true);
-      const { id, userId, createdAt, goalInput, ...updateData } = updatedProject;
-      
-      // Preserve existing funding and status values if not changed
-      updateData.availableFunds = updatedProject.availableFunds ?? project.availableFunds;
-      updateData.usedFunds = updatedProject.usedFunds ?? project.usedFunds;
-      updateData.status = updatedProject.status ?? project.status;
-      
-      // Recalculate duration if deadline has changed
-      if (updateData.deadline) {
-        const today = new Date();
-        const deadlineDate = new Date(updateData.deadline);
-        const durationDays = Math.ceil((deadlineDate - today) / (1000 * 60 * 60 * 24));
-        const months = Math.floor(durationDays / 30);
-        
-        updateData.duration = months > 0 
-          ? `${months} month${months > 1 ? 's' : ''}`
-          : `${durationDays} day${durationDays > 1 ? 's' : ''}`;
-      }
-      
-      await updateProject(projectId, updateData);
-      setProject({ ...project, ...updateData });
+      await updateProject(projectId, updatedProject);
+      setProject({ ...project, ...updatedProject });
       setIsEditing(false);
       setModalOpen(true);
-      setStatusMessage("Project updated successfully");
+      setError(false);
+      setStatusMessage('Project updated successfully');
+
+      // Notify about project update
+      notify({
+        type: 'Project Updated',
+        projectId,
+        projectTitle: updatedProject.title || project.title
+      });
     } catch (err) {
-      setError(err.message);
+      setError(true);
       setModalOpen(true);
-      setStatusMessage("Failed to update project: " + err.message);
+      setStatusMessage('Failed to update project: ' + err.message);
     } finally {
       setUpdateLoading(false);
     }
@@ -322,94 +323,101 @@ export default function ProjectDetailsPage() {
     const completed = project.goals.filter(goal => goal.completed).length;
     if(Math.round((completed / project.goals.length) * 100) === 100){
       project.status = 'Complete';
+       
     }
     else{
       project.status = 'In Progress';
     }
+
+ 
     return Math.round((completed / project.goals.length) * 100);
   };
 
 
   const handleAssignCollaborators = async (selectedResearchers) => {
     try {
-      // Send invitations to all selected researchers with their assigned roles
-      const invitationPromises = selectedResearchers.map(researcher => 
-        sendResearcherInvitation(
-          projectId, 
-          researcher.id,
-          auth.currentUser.uid,
-          researcher.role // Pass the assigned role
-        )
-      );
-
-      // Wait for all invitations to be sent
-      await Promise.all(invitationPromises);
+      setIsSubmitting(true);
+      for (const researcher of selectedResearchers) {
+        await sendResearcherInvitation(projectId, researcher.id);
+        
+        notify({
+          type: 'Collaboration Invitation',
+          projectId,
+          projectTitle: project.title,
+          researcherId: researcher.id,
+          researcherName: researcher.name
+        });
+      }
       
-      // Fetch the updated pending invitations to get complete researcher details
       const updatedInvitations = await getPendingCollaboratorInvitations(projectId);
       setPendingInvitations(updatedInvitations);
       
-      setShowCollaboratorsModal(false);
       setModalOpen(true);
       setError(false);
-      setStatusMessage(
-        <div className="flex items-center gap-2 text-green-600">
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-          </svg>
-          <span>Successfully sent {selectedResearchers.length} collaboration invitation{selectedResearchers.length !== 1 ? 's' : ''}</span>
-        </div>
-      );
+      setStatusMessage('Invitations sent successfully');
     } catch (err) {
-      console.error("Error inviting collaborators:", err);
-      setModalOpen(true);
       setError(true);
-      setStatusMessage(
-        <div className="flex items-center gap-2 text-red-600">
-          <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-          <span>{err.message || "Failed to send collaborator invitations"}</span>
-        </div>
-      );
+      setModalOpen(true);
+      setStatusMessage('Failed to send invitations: ' + err.message);
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   const handleAccessLevelChange = async (collaboratorId, newAccessLevel) => {
     try {
       await updateCollaboratorAccessLevel(projectId, collaboratorId, newAccessLevel);
-      setProject(prevProject => ({
-        ...prevProject,
-        collaborators: prevProject.collaborators.map(collaborator =>
-          collaborator.id === collaboratorId ? { ...collaborator, accessLevel: newAccessLevel } : collaborator
+      
+      const updatedProject = {
+        ...project,
+        collaborators: project.collaborators.map(c => 
+          c.id === collaboratorId ? { ...c, accessLevel: newAccessLevel } : c
         )
-      }));
+      };
+      setProject(updatedProject);
+      
+      notify({
+        type: 'Access Level Changed',
+        projectId,
+        projectTitle: project.title,
+        collaboratorId,
+        newAccessLevel
+      });
+
       setModalOpen(true);
       setError(false);
-      setStatusMessage("Collaborator access level updated successfully");
+      setStatusMessage('Access level updated successfully');
     } catch (err) {
-      console.error("Error updating collaborator access:", err);
-      setModalOpen(true); 
       setError(true);
-      setStatusMessage("Failed to update collaborator access level");
+      setModalOpen(true);
+      setStatusMessage('Failed to update access level: ' + err.message);
     }
   };
 
   const handleRemoveCollaborator = async (collaboratorId) => {
     try {
       await removeCollaboratorFromProject(projectId, collaboratorId);
-      setProject(prevProject => ({
-        ...prevProject,
-        collaborators: prevProject.collaborators.filter(collaborator => collaborator.id !== collaboratorId)
-      }));
+      
+      const updatedProject = {
+        ...project,
+        collaborators: project.collaborators.filter(c => c.id !== collaboratorId)
+      };
+      setProject(updatedProject);
+      
+      notify({
+        type: 'Collaborator Removed',
+        projectId,
+        projectTitle: project.title,
+        collaboratorId
+      });
+
       setModalOpen(true);
       setError(false);
-      setStatusMessage("Collaborator removed successfully");
+      setStatusMessage('Collaborator removed successfully');
     } catch (err) {
-      console.error("Error removing collaborator:", err);
-      setModalOpen(true);
       setError(true);
-      setStatusMessage("Failed to remove collaborator");
+      setModalOpen(true);
+      setStatusMessage('Failed to remove collaborator: ' + err.message);
     }
   };
 
@@ -424,41 +432,33 @@ const getDefaultGroupName = (projectTitle) => {
 
   // Replace the createProjectGroupChat function
   const createProjectGroupChat = async (customName) => {
-    if (!project?.collaborators?.length || isCreatingChat || !isProjectOwner(project)) return;
-    
     try {
       setIsCreatingChat(true);
-      setIsSubmitting(true);
-      
-      // Validate and trim chat name
-      const chatName = (customName || getDefaultGroupName(project.title))
-        .trim()
-        .substring(0, 30);
-
-      // Get collaborator IDs
-      const collaboratorIds = project.collaborators.map(c => c.id);
-
-      // Create the group chat with project metadata
-      const chatId = await ChatService.createGroupChat(
-        auth.currentUser.uid,
-        collaboratorIds,
-        chatName,
-        { projectId }  // Add projectId as metadata
+      const chatService = new ChatService();
+      const chatId = await chatService.createGroupChat(
+        customName || getDefaultGroupName(project.title),
+        [auth.currentUser.uid, ...project.collaborators.map(c => c.id)],
+        projectId
       );
-
       setGroupChatId(chatId);
+      
+      notify({
+        type: 'Group Chat Created',
+        projectId,
+        projectTitle: project.title,
+        chatId
+      });
+
       setModalOpen(true);
       setError(false);
-      setStatusMessage('Team chat created successfully!');
-      setShowGroupNameModal(false);
-    } catch (error) {
-      console.error('Error creating project chat:', error);
-      setModalOpen(true);
+      setStatusMessage('Group chat created successfully');
+    } catch (err) {
       setError(true);
-      setStatusMessage('Failed to create team chat');
+      setModalOpen(true);
+      setStatusMessage('Failed to create group chat: ' + err.message);
     } finally {
       setIsCreatingChat(false);
-      setIsSubmitting(false);
+      setShowGroupNameModal(false);
     }
   };
 
@@ -640,6 +640,7 @@ const getDefaultGroupName = (projectTitle) => {
               setModalOpen={setModalOpen}
               setError={setError}
               setStatusMessage={setStatusMessage}
+              projectTitle={project.title}
             />
 
             {/* Project Reviews Card */}
@@ -651,6 +652,7 @@ const getDefaultGroupName = (projectTitle) => {
 
           {/* Right Column - Additional Info */}
           <section className="space-y-4 sm:space-y-6">
+
             <FundingCard
               projectId={projectId}
               project={project}

@@ -180,6 +180,7 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
         onClose={() => setShowAssignReviewersModal(false)}
         onAssign={handleAssignReviewers}
         projectId={projectId}
+        projectTitle={project.title}
         reviewRequests={reviewRequests}
       />
 
@@ -262,5 +263,23 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
         <p className="text-sm text-gray-500 text-center py-4">No reviewers assigned yet</p>
       )}
     </section>
+  );
+}
+
+function getStatusBadge(status) {
+  const badges = {
+    'pending': { bg: 'bg-yellow-100', text: 'text-yellow-800', label: 'Pending' },
+    'in_progress': { bg: 'bg-blue-100', text: 'text-blue-800', label: 'In Progress' },
+    'feedback_submitted': { bg: 'bg-green-100', text: 'text-green-800', label: 'Feedback Submitted' },
+    'declined': { bg: 'bg-red-100', text: 'text-red-800', label: 'Declined' },
+    'completed': { bg: 'bg-purple-100', text: 'text-purple-800', label: 'Completed' }
+  };
+
+  const badge = badges[status] || badges.pending;
+
+  return (
+    <span className={`px-2 py-1 text-xs rounded-full ${badge.bg} ${badge.text}`}>
+      {badge.label}
+    </span>
   );
 }

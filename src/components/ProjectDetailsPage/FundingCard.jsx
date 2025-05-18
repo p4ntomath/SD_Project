@@ -4,6 +4,7 @@ import { AnimatePresence } from 'framer-motion';
 import { updateProjectFunds, updateProjectExpense, getFundingHistory } from '../../backend/firebase/fundingDB';
 import { formatFirebaseDate } from '../../utils/dateUtils';
 import { checkPermission } from '../../utils/permissions';
+import { notify } from '../../backend/firebase/notificationsUtil';
 
 export default function FundingCard({ 
   projectId, 
@@ -25,36 +26,43 @@ export default function FundingCard({
   const [addExpenseLoading, setAddExpenseLoading] = useState(false);
 
   const loadFundingHistory = async () => {
-    try {
-      const history = await getFundingHistory(projectId);
-      setFundingHistory(history.sort((a, b) => b.updatedAt.seconds - a.updatedAt.seconds));
-    } catch (err) {
-      console.error('Error loading funding history:', err);
-      setError(err.message);
+    if (showFundingHistory) {
+      try {
+        const history = await getFundingHistory(projectId);
+        setFundingHistory(history.sort((a, b) => b.updatedAt.seconds - a.updatedAt.seconds));
+      } catch (err) {
+        console.error('Error loading funding history:', err);
+      }
     }
   };
 
   const handleAddFunds = async (e) => {
     e.preventDefault();
-    try {
-      if (!checkPermission(project, 'canAddFunds')) {
-        throw new Error('You do not have permission to add funds');
-      }
-      
-      setAddFundsLoading(true);
-      const amount = parseFloat(fundAmount);
-      if (isNaN(amount) || amount <= 0) {
-        throw new Error('Please enter a valid amount');
-      }
-      if (!fundingSource.trim()) {
-        throw new Error('Please enter a funding source');
-      }
+    
+    if (!fundAmount || !fundingSource) {
+      setError(true);
+      setModalOpen(true);
+      setStatusMessage('Please fill in all required fields');
+      return;
+    }
 
+    const amount = parseFloat(fundAmount);
+    if (isNaN(amount) || amount <= 0) {
+      setError(true);
+      setModalOpen(true);
+      setStatusMessage('Please enter a valid amount');
+      return;
+    }
+
+    try {
+      setAddFundsLoading(true);
       await updateProjectFunds(projectId, amount, fundingSource);
+      
       setProject({
         ...project,
-        availableFunds: (project.availableFunds || 0) + amount
+        totalFunding: (project.totalFunding || 0) + amount
       });
+      
       setShowAddFundsModal(false);
       setFundAmount('');
       setFundingSource('');
@@ -62,6 +70,16 @@ export default function FundingCard({
       setError(false);
       setStatusMessage('Funds added successfully');
       loadFundingHistory();
+
+      // Notify about the added funds
+      notify({
+        type: 'Funds Added', 
+        projectId, 
+        projectTitle: project.title, 
+        amount,
+        source: fundingSource
+      });
+
     } catch (err) {
       setError(true);
       setModalOpen(true);
@@ -73,37 +91,56 @@ export default function FundingCard({
 
   const handleAddExpense = async (e) => {
     e.preventDefault();
+    
+    if (!expenseAmount || !expenseDescription) {
+      setError(true);
+      setModalOpen(true);
+      setStatusMessage('Please fill in all required fields');
+      return;
+    }
+
+    const amount = parseFloat(expenseAmount);
+    if (isNaN(amount) || amount <= 0) {
+      setError(true);
+      setModalOpen(true);
+      setStatusMessage('Please enter a valid amount');
+      return;
+    }
+
+    if (amount > (project.totalFunding || 0) - (project.totalExpenses || 0)) {
+      setError(true);
+      setModalOpen(true);
+      setStatusMessage('Expense amount exceeds available funds');
+      return;
+    }
+
     try {
-      if (!checkPermission(project, 'canAddFunds')) {
-        throw new Error('You do not have permission to add expenses');
-      }
-
       setAddExpenseLoading(true);
-      const amount = parseFloat(expenseAmount);
-      if (isNaN(amount) || amount <= 0) {
-        throw new Error('Please enter a valid amount');
-      }
-      if (!expenseDescription.trim()) {
-        throw new Error('Please enter an expense description');
-      }
-
-      if (amount > (project.availableFunds || 0)) {
-        throw new Error('Insufficient funds to cover the expense');
-      }
-
       await updateProjectExpense(projectId, amount, expenseDescription);
+      
       setProject({
         ...project,
-        usedFunds: (project.usedFunds || 0) + amount,
-        availableFunds: (project.availableFunds || 0) - amount
+        totalExpenses: (project.totalExpenses || 0) + amount
       });
+      
       setShowAddExpenseModal(false);
       setExpenseAmount('');
       setExpenseDescription('');
       setModalOpen(true);
       setError(false);
       setStatusMessage('Expense added successfully');
+
+      // Notify about the added expense
+      notify({
+        type: 'Expense Added', 
+        projectId, 
+        projectTitle: project.title, 
+        amount, 
+        description: expenseDescription
+      });
+      
       loadFundingHistory();
+
     } catch (err) {
       setError(true);
       setModalOpen(true);
@@ -114,9 +151,7 @@ export default function FundingCard({
   };
 
   useEffect(() => {
-    if (showFundingHistory) {
-      loadFundingHistory();
-    }
+    loadFundingHistory();
   }, [showFundingHistory]);
 
   return (

@@ -28,6 +28,8 @@ import MessagesPage from './pages/Messages.jsx';
 import MessagesList from './pages/MessagesList.jsx';
 import ChatView from './pages/ChatView.jsx';
 import MessagesLayout from './pages/MessagesLayout.jsx';
+import NotificationsPage from './pages/NotificationsPage.jsx';
+import ReviewerNotificationsPage from './pages/reviewer/ReviewerNotificationsPage.jsx';
 
 function App() {
   return (
@@ -110,6 +112,16 @@ function App() {
               <DocumentsPage />
             </ProtectedRoute>
           } />
+          <Route path="/notifications" element={
+            <ProtectedRoute allowedRoles={['researcher']}>
+              <NotificationsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/reviewer/notifications" element={
+                      <ProtectedRoute allowedRoles={['reviewer']}>
+                        <ReviewerNotificationsPage />
+                      </ProtectedRoute>
+                    } />
           <Route path="/reviewer/review/:projectId" element={
             <ProtectedRoute allowedRoles={['reviewer']}>
               <ReviewProjectPage />

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaPlus } from 'react-icons/fa';
 import { checkPermission, isProjectOwner } from '../../utils/permissions';
+import { notify } from '../../backend/firebase/notificationsUtil';
 
 export default function GoalsCard({ 
   project, 
@@ -23,24 +24,47 @@ export default function GoalsCard({
         throw new Error('You do not have permission to update goals');
       }
 
-      const updatedGoals = project.goals.map((goal, i) => 
-        i === index ? { ...goal, completed: !goal.completed } : goal
-      );
+      const updatedGoals = project.goals.map((goal, i) => {
+        if (i === index) {
+          const newStatus = !goal.completed;
+          // Notify if marking as completed
+          if (newStatus) {
+            notify({
+              type: "Goal Completion",
+              projectId,
+              projectTitle: project.title,
+              goalText: goal.text,
+            });
+          }
+          return { ...goal, completed: newStatus };
+        }
+        return goal;
+      });
+
+      const allGoalsCompleted = updatedGoals.every(goal => goal.completed);
 
       await updateProject(projectId, {
         goals: updatedGoals,
-        status: updatedGoals.every(goal => goal.completed) ? 'Complete' : 'In Progress'
+        status: allGoalsCompleted ? 'Complete' : 'In Progress'
       });
 
       setProject({
         ...project,
         goals: updatedGoals,
-        status: updatedGoals.every(goal => goal.completed) ? 'Complete' : 'In Progress'
+        status: allGoalsCompleted ? 'Complete' : 'In Progress'
       });
 
       setModalOpen(true);
       setError(false);
       setStatusMessage('Goal status updated successfully');
+
+      if (allGoalsCompleted) {
+        notify({
+          type: "Project Completion",
+          projectId,
+          projectTitle: project.title
+        });
+      }
     } catch (err) {
       setError(true);
       setModalOpen(true);
@@ -60,9 +84,17 @@ export default function GoalsCard({
       const updatedGoals = [...(project.goals || []), newGoalObj];
 
       await updateProject(projectId, { goals: updatedGoals });
+      
       setProject({
         ...project,
         goals: updatedGoals
+      });
+
+      notify({
+        type: "Goal Added",
+        projectId,
+        projectTitle: project.title,
+        goalText: newGoal.trim()
       });
 
       setShowAddGoalModal(false);
@@ -85,12 +117,21 @@ export default function GoalsCard({
         throw new Error('You do not have permission to delete goals');
       }
 
+      const goalToDelete = project.goals[index];
       const updatedGoals = project.goals.filter((_, i) => i !== index);
 
       await updateProject(projectId, { goals: updatedGoals });
+      
       setProject({
         ...project,
         goals: updatedGoals
+      });
+
+      notify({
+        type: "Goal Deleted",
+        projectId,
+        projectTitle: project.title,
+        goalText: goalToDelete.text
       });
 
       setModalOpen(true);
@@ -107,7 +148,7 @@ export default function GoalsCard({
     <section className="bg-white rounded-lg shadow p-4 sm:p-6">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-lg sm:text-xl font-semibold">Project Goals</h2>
-        {isProjectOwner(project) && (
+        {checkPermission(project, 'canManageGoals') && (
           <button
             onClick={() => setShowAddGoalModal(true)}
             className="text-blue-600 hover:text-blue-700"
@@ -131,7 +172,7 @@ export default function GoalsCard({
                 className="mt-1"
               />
               <span className={goal.completed ? 'line-through text-gray-500 flex-1' : 'flex-1'}>{goal.text}</span>
-              {isProjectOwner(project) && (
+              {checkPermission(project, 'canManageGoals') && (
                 <button
                   onClick={() => handleDeleteGoal(index)}
                   className="text-red-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"

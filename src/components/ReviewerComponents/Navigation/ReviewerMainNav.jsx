@@ -1,220 +1,186 @@
-import { FiHome, FiList, FiUser, FiMenu, FiX, FiSearch, FiClock, FiInbox, FiMessageSquare } from 'react-icons/fi';
+import { FiHome, FiBell, FiUser, FiMenu, FiX, FiSearch, FiClock, FiInbox, FiMessageSquare } from 'react-icons/fi';
 import { useState } from 'react';
 import { ClipboardDocumentCheckIcon } from "@heroicons/react/24/outline";
 import { logOut } from '../../../backend/firebase/authFirebase';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { AnimatePresence, motion } from 'framer-motion';
+import LogoutConfirmModal from '../../LogoutConfirmModal';
+import { useUnreadNotificationsCount } from '../../../backend/firebase/notificationsUtil';
+
 
 export default function ReviewerMainNav({ setMobileMenuOpen, mobileMenuOpen, onSearch }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-
+  const unreadCount = useUnreadNotificationsCount();
+  
   const handleSearch = (e) => {
     e.preventDefault();
-    onSearch(searchQuery);
+    if (onSearch && searchQuery.trim()) {
+      onSearch(searchQuery);
+    }
   };
 
   const handleLogout = async () => {
     try {
       await logOut();
-      window.location.href = "/login";
+      navigate('/login');
     } catch (error) {
-      console.error("Logout failed:", error);
+      console.error('Error logging out:', error);
     }
-    setShowLogoutModal(false);
   };
 
   return (
     <>
-      <nav className="bg-white shadow-sm">
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <section className="flex justify-between h-16 items-center">
-            <section className="hidden md:flex items-center space-x-2">
-              <button 
-                onClick={() => navigate('/reviewer/dashboard')}
-                className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/dashboard' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
-                aria-label="Home"
-              >
-                <FiHome className="h-6 w-6 group-hover:text-blue-600" />
-                <p className="text-xs mt-1 group-hover:text-blue-600">Home</p>
-              </button>
-
-              <button 
-                onClick={() => navigate('/reviewer/requests')}
-                className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/requests' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
-                aria-label="Pending Review Requests"
-              >
-                <FiInbox className="h-6 w-6 group-hover:text-blue-600" />
-                <p className="text-xs mt-1 group-hover:text-blue-600">Requests</p>
-              </button>
-
-              <button 
-                onClick={() => navigate('/reviewer/assigned')}
-                className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/assigned' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
-                aria-label="Approved Projects"
-              >
-                <ClipboardDocumentCheckIcon className="h-6 w-6 group-hover:text-blue-600" />
-                <p className="text-xs mt-1 group-hover:text-blue-600">Approved</p>
-              </button>
-
-              <button 
-                onClick={() => navigate('/reviewer/history')}
-                className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/history' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
-                aria-label="Review History"
-              >
-                <FiClock className="h-6 w-6 group-hover:text-blue-600" />
-                <p className="text-xs mt-1 group-hover:text-blue-600">History</p>
-              </button>
-
-              <button 
-                onClick={() => navigate('/reviewer/messages')}
-                className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/messages' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
-                aria-label="View messages"
-              >
-                <FiMessageSquare className="h-6 w-6 group-hover:text-blue-600" />
-                <p className="text-xs mt-1 group-hover:text-blue-600">Messages</p>
-              </button>
-
-              <button 
-                onClick={() => navigate('/reviewer/account')}
-                className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/account' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
-                aria-label="View profile"
-              >
-                <FiUser className="h-6 w-6 group-hover:text-blue-600" />
-                <p className="text-xs mt-1 group-hover:text-blue-600">Account</p>
-              </button>
-            </section>
-            
-            <section className="flex-1 max-w-md mx-4">
-              <form onSubmit={handleSearch} className="relative">
-                <section className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiSearch className="h-5 w-5 text-gray-400" />
-                </section>
-                <input
-                  type="text"
-                  placeholder="Search reviews..."
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </form>
-            </section>
-
-            <section className='hidden md:flex items-center space-x-6'>
-              <section className="hidden md:flex items-center">
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent">Review Portal</h1>
-              </section>
-
-              <section className="hidden md:flex items-center">
+      <nav className="bg-white shadow-sm border-b border-gray-200 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex">
+              <div className="md:hidden flex items-center">
                 <button
-                  className="bg-gray-500 hover:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors flex items-center"
-                  aria-label="Logout"
-                  onClick={() => setShowLogoutModal(true)}
+                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                  className="text-gray-500 hover:text-gray-600 focus:outline-none focus:text-gray-600"
                 >
-                  Logout
+                  {mobileMenuOpen ? (
+                    <FiX className="h-6 w-6" />
+                  ) : (
+                    <FiMenu className="h-6 w-6" />
+                  )}
                 </button>
-              </section>
-            </section>
+              </div>
+              <div className="ml-2 md:ml-0 flex space-x-8">
+                <button
+                  onClick={() => navigate('/reviewer/dashboard')}
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                    location.pathname === '/reviewer/dashboard'
+                      ? 'border-blue-500 text-gray-900'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <FiHome className="h-5 w-5 mr-1" />
+                  <span className="hidden md:inline">Dashboard</span>
+                </button>
 
-            {/*Mobile*/}
-            <section className="md:hidden flex items-center">
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none"
-                aria-label="Toggle menu"
-                aria-expanded={mobileMenuOpen}
-              >
-                {mobileMenuOpen ? (
-                  <FiX className="h-6 w-6" />
-                ) : (
-                  <FiMenu className="h-6 w-6" />
-                )}
-              </button>
-            </section>
-          </section>
-        </section>
+                <button
+                  onClick={() => navigate('/reviewer/requests')}
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                    location.pathname === '/reviewer/requests'
+                      ? 'border-blue-500 text-gray-900'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <FiInbox className="h-5 w-5 mr-1" />
+                  <span className="hidden md:inline">Review Requests</span>
+                </button>
 
-        {mobileMenuOpen && (
-          <section className="md:hidden bg-white shadow-md">
-            <section className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-              <button
-                onClick={() => navigate('/reviewer/account')}
-                className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                aria-label="View profile"
-              >
-                My Profile
-              </button>
-              <button
-                onClick={() => setShowLogoutModal(true)}
-                className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-              >
-                Logout
-              </button>
-            </section>
-          </section>
-        )}
-      </nav>
+                <button
+                  onClick={() => navigate('/reviewer/assigned')}
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                    location.pathname === '/reviewer/assigned'
+                      ? 'border-blue-500 text-gray-900'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <ClipboardDocumentCheckIcon className="h-5 w-5 mr-1" />
+                  <span className="hidden md:inline">Assigned Projects</span>
+                </button>
 
-      {/* Logout Confirmation Modal */}
-      <AnimatePresence>
-        {showLogoutModal && (
-          <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-            <motion.div 
-              className="fixed inset-0 bg-black/30 backdrop-blur-sm"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.15 }}
-            />
-            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-              <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-              <motion.article
-                className="relative inline-block align-bottom bg-white/90 backdrop-blur-md rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-200"
-                initial={{ scale: 0.95, opacity: 0, y: 10 }}
-                animate={{ scale: 1, opacity: 1, y: 0 }}
-                exit={{ scale: 0.95, opacity: 0, y: 10 }}
-                transition={{ 
-                  duration: 0.15,
-                  ease: "easeOut"
-                }}
-              >
-                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                  <div className="sm:flex sm:items-start">
-                    <div className="mt-3 text-center sm:mt-0 sm:text-left">
-                      <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                        Confirm Logout
-                      </h3>
-                      <div className="mt-2">
-                        <p className="text-sm text-gray-500">
-                          Are you sure you want to log out? You'll need to sign in again to access your account.
-                        </p>
-                      </div>
+                <button
+                  onClick={() => navigate('/reviewer/history')}
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                    location.pathname === '/reviewer/history'
+                      ? 'border-blue-500 text-gray-900'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <FiClock className="h-5 w-5 mr-1" />
+                  <span className="hidden md:inline">Review History</span>
+                </button>
+
+                <button
+                  onClick={() => navigate('/reviewer/notifications')}
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium relative ${
+                    location.pathname === '/reviewer/notifications'
+                      ? 'border-blue-500 text-gray-900'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <span className="relative">
+                    <FiBell className="h-5 w-5 mr-1" />
+                    {unreadCount > 0 && (
+                      <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 min-w-[1.2rem] text-center">
+                        {unreadCount}
+                      </span>
+                    )}
+                  </span>
+                  <span className="hidden md:inline">Notifications</span>
+                </button>
+
+                <button
+                  onClick={() => navigate('/reviewer/messages')}
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                    location.pathname === '/reviewer/messages'
+                      ? 'border-blue-500 text-gray-900'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <FiMessageSquare className="h-5 w-5 mr-1" />
+                  <span className="hidden md:inline">Messages</span>
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center">
+              {onSearch && (
+                <form onSubmit={handleSearch} className="hidden md:block mx-4">
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <FiSearch className="h-5 w-5 text-gray-400" />
                     </div>
+                    <input
+                      type="text"
+                      placeholder="Search..."
+                      value={searchQuery}
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:placeholder-gray-400 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
                   </div>
-                </div>
-                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
-                  <button
-                    type="button"
-                    className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
-                    onClick={handleLogout}
-                  >
-                    Logout
-                  </button>
-                  <button
-                    type="button"
-                    className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
-                    onClick={() => setShowLogoutModal(false)}
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </motion.article>
+                </form>
+              )}
+
+              <div className="flex items-center space-x-4">
+                <button
+                  onClick={() => navigate('/reviewer/account')}
+                  className={`inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium ${
+                    location.pathname === '/reviewer/account'
+                      ? 'border-blue-500 text-gray-900'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                  }`}
+                >
+                  <FiUser className="h-5 w-5" />
+                  <span className="hidden md:ml-2 md:inline">Account</span>
+                </button>
+
+                <button
+                  onClick={() => setShowLogoutModal(true)}
+                  className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <span className="hidden md:inline">Logout</span>
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 md:ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      </nav>
+
+      <LogoutConfirmModal
+        isOpen={showLogoutModal}
+        onClose={() => setShowLogoutModal(false)}
+        onConfirm={handleLogout}
+      />
     </>
   );
 }
