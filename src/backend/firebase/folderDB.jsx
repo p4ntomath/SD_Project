@@ -22,14 +22,15 @@ export const createFolder = async (projectId, folderName) => {
         const foldersCollectionRef = collection(projectRef, "folders");
         const folderRef = doc(foldersCollectionRef);
 
-        // Create folder document
+        // Create folder document with initialized size
         await setDoc(folderRef, {
             name: folderName.trim(),
             createdAt: serverTimestamp(),
             updatedAt: serverTimestamp(),
             createdBy: user.uid,
             projectId: projectId,
-            folderId: folderRef.id
+            folderId: folderRef.id,
+            size: 0 // Initialize size to 0
         });
 
         return folderRef.id;

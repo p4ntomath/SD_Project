@@ -5,7 +5,7 @@ import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vites
 import '@testing-library/jest-dom';
 import ReviewerHomePage from '../pages/ReviewerHomePage';
 import { auth } from '../backend/firebase/firebaseConfig';
-import { getReviewerRequests, updateReviewRequestStatus } from '../backend/firebase/reviewdb';
+import { getReviewerRequests, updateReviewRequestStatus } from '../backend/firebase/reviewerDB';
 
 // Suppress act() warnings for this test file
 const originalError = console.error;

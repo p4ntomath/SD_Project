@@ -27,11 +27,12 @@ import { getFolders } from "./folderDB";
 // Returns Project Name and Funding History, startDate is not a necesity to passed into the function
 export const getProjectFunding = async (uid, startDate) => {
   try {
-    const userProjects = await fetchProjects(uid);
 
+    const userProjects = await fetchProjects(uid);
     const projectsWithFunding = await Promise.all(
       userProjects.map(async (project) => {
         const fundingHistory = await getFundingHistory(project.id);
+
 
         const filteredHistory = startDate
           ? fundingHistory.filter(entry => {
@@ -53,6 +54,7 @@ export const getProjectFunding = async (uid, startDate) => {
     throw new Error("Failed to get project funding data");
   }
 };
+
 
 
 export const getAllProjectFoldersWithFiles = async (uid) => {
@@ -114,9 +116,11 @@ export const getAllProjectFoldersWithFiles = async (uid) => {
           })
         );
 
+
         return {
           projectName: project.title,
           projectId: project.id,
+
           folders,
         };
       })
@@ -131,6 +135,7 @@ export const getAllProjectFoldersWithFiles = async (uid) => {
 
 
 
+
 // Returns the date, project Description, feedback, reseacherName and Title of project
 export const getReviewedProjects = async (uid) => {
   try {
@@ -139,6 +144,7 @@ export const getReviewedProjects = async (uid) => {
     const reviewsSnapshot = await getDocs(q);
 
     const reviewedProjects = [];
+
 
     // Cache to avoid duplicate reads
     const projectCache = new Map();
@@ -173,6 +179,7 @@ export const getReviewedProjects = async (uid) => {
           }
         }
         researcherName = userData?.fullName || "Unnamed User";
+
       }
 
       reviewedProjects.push({
@@ -181,6 +188,7 @@ export const getReviewedProjects = async (uid) => {
         researcherName,
         feedback: reviewData.feedback || "",
         date: reviewData.updatedAt?.toDate?.().toLocaleDateString() ?? "N/A"
+
       });
     }
 

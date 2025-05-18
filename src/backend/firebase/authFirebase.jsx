@@ -11,7 +11,7 @@ import {
 import {collection, query, where, getDocs } from "firebase/firestore";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 
-const signUp = async (fullName, email, password, role, additionalData = {}) => {
+const signUp = async (fullName, email, password, additionalData = {}) => {
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
@@ -20,79 +20,77 @@ const signUp = async (fullName, email, password, role, additionalData = {}) => {
       userId: user.uid,
       fullName,
       email,
-      role,
-      ...additionalData,
       createdAt: new Date(),
+      ...additionalData
     });
 
     return user;
   } catch (error) {
-    throw error; // Throw the original error to preserve the error code
+    throw error;
   }
 };
 
-
-// 🔹 Google Sign-In
 const googleSignIn = async () => {
   try {
     const provider = new GoogleAuthProvider();
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
 
-    // Check if user exists in Firestore
     const userDoc = await getDoc(doc(db, "users", user.uid));
 
     if (!userDoc.exists()) {
       // New user → Store minimal data including userId
       await setDoc(doc(db, "users", user.uid), {
-        userId: user.uid, // Storing the userId
+        userId: user.uid,
         email: user.email,
+        fullName: user.displayName,
         createdAt: new Date(),
       });
-      // Return new user info
       return { isNewUser: true, user };
-    } else {
-      // Existing user → Proceed normally
-      return { isNewUser: false, user };
     }
+    
+    return { isNewUser: false, user };
   } catch (error) {
-    throw error; // Re-throw to handle in the component
+    throw error;
   }
 };
 
 const completeProfile = async (fullName, role, profileData) => {
   try {
     const user = auth.currentUser;
-    
-    // Use profileData if provided, otherwise fallback to basic data
-    const userData = profileData || {
-      fullName,
-      role
+    if (!user) {
+      throw new Error('User not authenticated');
+    }
+
+    // Clean and validate the data before saving
+    const userData = {
+      fullName: fullName || '',
+      role: role || '',
+      institution: profileData?.institution || '',
+      department: profileData?.department || '',
+      fieldOfResearch: profileData?.fieldOfResearch || '',
+      researchTags: Array.isArray(profileData?.researchTags) ? profileData.researchTags : [],
+      bio: profileData?.bio || '',
+      updatedAt: new Date()
     };
 
-    await setDoc(doc(db, "users", user.uid), {
-      ...userData,
-      updatedAt: new Date()
-    }, { merge: true });
+    await setDoc(doc(db, "users", user.uid), userData, { merge: true });
   } catch (error) {
     console.error("Error completing profile:", error.message);
-    throw error; // Re-throw to handle in the component
+    throw error;
   }
-}
+};
 
-// 🔹 Email/Password Sign-In
 const signIn = async (email, password) => {
   try {
     const userCredential = await signInWithEmailAndPassword(auth, email, password);
     return userCredential.user;
   } catch (error) {
     console.error("Error signing in:", error.message);
-    throw error; // Re-throw the error for handling in the calling function
+    throw error;
   }
 };
 
-
-// 🔹 Password Reset
 const resetPassword = async (email) => {
   try {
     // Check if email exists in Firestore "users" collection
@@ -104,24 +102,19 @@ const resetPassword = async (email) => {
       throw new Error("No account found with this email.");
     }
 
-    // If email exists, send password reset email
     await sendPasswordResetEmail(auth, email);
   } catch (error) {
     throw error;
   }
 };
 
-// 🔹 Logout
 const logOut = async () => {
   try {
     await signOut(auth);
   } catch (error) {
     return Promise.reject(error);
-    
   }
 };
-
-
 
 const getUserRole = async (uid) => {
   try {
@@ -140,9 +133,8 @@ const getUserRole = async (uid) => {
   }
 };
 
-// 🔹 Auth State Listener
 const authStateListener = (callback) => {
   return onAuthStateChanged(auth, callback);
 };
 
-export { signUp, signIn, googleSignIn, resetPassword, logOut, authStateListener, completeProfile , getUserRole };
+export { signUp, signIn, googleSignIn, resetPassword, logOut, authStateListener, completeProfile, getUserRole };

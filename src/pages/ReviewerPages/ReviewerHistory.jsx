@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { auth } from '../../backend/firebase/firebaseConfig';
-import { getReviewerRequests } from '../../backend/firebase/reviewdb';
+import { getReviewerHistory } from '../../backend/firebase/reviewerDB';
 import { ClipLoader } from 'react-spinners';
 import ReviewerMainNav from '../../components/ReviewerComponents/Navigation/ReviewerMainNav';
 import ReviewerMobileBottomNav from '../../components/ReviewerComponents/Navigation/ReviewerMobileBottomNav';
@@ -23,11 +23,8 @@ export default function ReviewerHistory() {
           return;
         }
 
-        const reviewRequests = await getReviewerRequests(userId);
-        const completedReviews = reviewRequests.filter(req => 
-          req.status === 'completed'
-        );
-        setReviews(completedReviews);
+        const reviewerHistory = await getReviewerHistory(userId);
+        setReviews(reviewerHistory);
       } catch (err) {
         console.error('Error loading completed reviews:', err);
         setError(err.message);
@@ -62,7 +59,7 @@ export default function ReviewerHistory() {
   };
 
   const getStatusColor = (status) => {
-    switch (status.toLowerCase()) {
+    switch (status?.toLowerCase()) {
       case 'approved':
         return 'bg-green-100 text-green-800';
       case 'rejected':
@@ -128,25 +125,25 @@ export default function ReviewerHistory() {
                     <div className="flex justify-between items-start">
                       <div>
                         <h2 className="text-lg font-semibold text-gray-900 mb-2">
-                          {review.projectTitle}
+                          {review.projectTitle || 'Untitled Project'}
                         </h2>
                         <div className="grid grid-cols-2 gap-4 text-sm">
                           <div>
                             <h3 className="font-medium text-gray-500">Researcher</h3>
-                            <p className="text-gray-900">{review.researcherName}</p>
+                            <p className="text-gray-900">{review.researcherName || 'Unknown Researcher'}</p>
                           </div>
                           <div>
                             <h3 className="font-medium text-gray-500">Review Date</h3>
-                            <p className="text-gray-900">{formatDate(review.updatedAt)}</p>
+                            <p className="text-gray-900">{formatDate(review.updatedAt || review.createdAt)}</p>
                           </div>
                         </div>
                       </div>
-                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(review.reviewStatus || 'pending')}`}>
-                        {(review.reviewStatus || 'Pending').charAt(0).toUpperCase() + (review.reviewStatus || 'pending').slice(1)}
+                      <span className={`inline-flex items-center px-3 py-1 rounded-full text-sm font-medium ${getStatusColor(review.status)}`}>
+                        {(review.status || 'Pending').charAt(0).toUpperCase() + (review.status || 'pending').slice(1)}
                       </span>
                     </div>
                     
-                    {review.reviewComment && (
+                    {review.feedback && (
                       <div className="mt-4 border-t border-gray-200 pt-4">
                         <div className="flex items-center mb-2">
                           <h3 className="font-medium text-gray-500">Rating:</h3>
@@ -154,9 +151,7 @@ export default function ReviewerHistory() {
                             {[1, 2, 3, 4, 5].map((star) => (
                               <svg
                                 key={star}
-                                className={`h-5 w-5 ${
-                                  star <= review.reviewRating ? 'text-yellow-400' : 'text-gray-300'
-                                }`}
+                                className={`h-5 w-5 ${star <= review.rating ? 'text-yellow-400' : 'text-gray-300'}`}
                                 fill="currentColor"
                                 viewBox="0 0 20 20"
                               >
@@ -166,7 +161,7 @@ export default function ReviewerHistory() {
                           </div>
                         </div>
                         <h3 className="font-medium text-gray-500 mb-2">Your Feedback</h3>
-                        <p className="text-gray-700 text-sm whitespace-pre-wrap">{review.reviewComment}</p>
+                        <p className="text-gray-700 text-sm whitespace-pre-wrap">{review.feedback}</p>
                       </div>
                     )}
                   </div>

@@ -33,7 +33,7 @@ export default function ReviewProjectPage() {
     };
 
     const handleFeedbackSubmitted = () => {
-        navigate('/reviewer/dashboard', {
+        navigate('/reviewer/history', {
             state: { message: 'Review submitted successfully' }
         });
     };
@@ -116,7 +116,7 @@ export default function ReviewProjectPage() {
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-medium text-gray-500">Created By</h3>
-                                    <p className="mt-1 text-gray-900">{project.createdBy?.name || 'Unknown'}</p>
+                                    <p className="mt-1 text-gray-900">{project.researcherName || 'Researcher'}</p>
                                 </div>
                                 <div>
                                     <h3 className="text-sm font-medium text-gray-500">Last Updated</h3>
@@ -140,7 +140,7 @@ export default function ReviewProjectPage() {
                                 Project Documents
                             </h3>
                             {folders && folders.length > 0 ? (
-                                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-1 gap-6">
                                     {folders.map((folder) => (
                                         <div key={folder.id} className="bg-gray-50 rounded-lg p-4 flex flex-col h-full">
                                             <h4 className="text-md font-medium text-gray-900 mb-4 flex items-center">
@@ -186,14 +186,8 @@ export default function ReviewProjectPage() {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center py-12">
-                                    <div className="mx-auto w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
-                                        </svg>
-                                    </div>
-                                    <h3 className="text-lg font-medium text-gray-900 mb-1">No documents available</h3>
-                                    <p className="text-sm text-gray-500">This project doesn't have any documents yet.</p>
+                                <div className="text-center py-12 px-4 rounded-lg bg-gray-50">
+                                    <p className="text-gray-500">No documents available</p>
                                 </div>
                             )}
                         </div>

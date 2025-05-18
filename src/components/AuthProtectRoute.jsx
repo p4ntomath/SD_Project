@@ -9,12 +9,15 @@ const AuthProtectRoute = ({ children }) => {
 
     useEffect(() => {
         if (!loading) {
-            if (user && role === null) {
-                navigate("/complete-profile", { replace: true });
-            } else if (user) {
-                // Redirect to appropriate dashboard based on role
-                const path = role === 'admin' ? '/admin' : '/home';
-                navigate(path, { replace: true });
+            if (user) {
+                // If user exists but no role, they need to complete their profile
+                if (!role) {
+                    navigate("/complete-profile", { replace: true });
+                } else {
+                    // User exists and has role, redirect to their appropriate dashboard
+                    const path = role === 'admin' ? '/admin' : '/home';
+                    navigate(path, { replace: true });
+                }
             }
         }
     }, [user, role, loading, navigate]);

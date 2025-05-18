@@ -70,7 +70,7 @@ export default function ProjectFeedback({ projectId }) {
                 {review.reviewer?.name || 'Anonymous Reviewer'}
               </h3>
               <p className="text-sm text-gray-500">
-                {review.reviewer?.expertise || 'Expertise not specified'}
+                {review.reviewer?.fieldOfResearch || 'Field of Research not specified'}
               </p>
             </div>
             <div className="flex items-center">

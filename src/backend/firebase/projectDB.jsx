@@ -91,14 +91,34 @@ export async function createProject(newProject) {
 export const fetchProjects = async (uid) => {
   try {
     const projectsCollection = collection(db, "projects");
-    const userProjectsQuery = query(projectsCollection, where("userId", "==", uid));
-    const querySnapshot = await getDocs(userProjectsQuery);
+    
+    // First get projects where user is owner
+    const ownedProjectsQuery = query(projectsCollection, where("userId", "==", uid));
+    const ownedProjectsSnapshot = await getDocs(ownedProjectsQuery);
+  
 
-    const projects = querySnapshot.docs.map((doc) => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
+    // Get all projects and filter for collaborations
+    const allProjectsSnapshot = await getDocs(projectsCollection);
+    const collabProjects = allProjectsSnapshot.docs.filter(doc => {
+      const data = doc.data();
+      return data.collaborators?.some(collab => collab.id === uid);
+    });
+    
 
+
+    // Combine both sets of projects
+    const projects = [...ownedProjectsSnapshot.docs, ...collabProjects]
+      .reduce((acc, doc) => {
+        if (!acc.some(p => p.id === doc.id)) {
+          acc.push({
+            id: doc.id,
+            ...doc.data()
+          });
+        }
+        return acc;
+      }, []);
+
+    
     return projects;
   } catch (error) {
     console.error("Error fetching projects:", error);
@@ -126,9 +146,10 @@ export const fetchProject = async (projectId) => {
 
     const projectData = projectSnap.data();
     
-    // Check if user has access (is owner or reviewer)
+    // Check if user has access (is owner, reviewer, or collaborator)
     const isOwner = projectData.userId === user.uid;
     const isInReviewersArray = projectData.reviewers?.some(rev => rev.id === user.uid);
+    const isCollaborator = projectData.collaborators?.some(collab => collab.id === user.uid);
 
     // Check reviewRequests collection for an accepted request
     const requestQuery = query(
@@ -140,7 +161,7 @@ export const fetchProject = async (projectId) => {
     const requestSnap = await getDocs(requestQuery);
     const isAcceptedReviewer = !requestSnap.empty;
 
-    if (!isOwner && !isInReviewersArray && !isAcceptedReviewer) {
+    if (!isOwner && !isInReviewersArray && !isAcceptedReviewer && !isCollaborator) {
       throw new Error('You do not have permission to access this project');
     }
 
@@ -208,58 +229,50 @@ export const updateProject = async (id, updatedData) => {
 
     const projectData = projectSnapshot.data();
     const projectUserId = projectData.userId;
-
-    if (user.uid !== projectUserId) {
+    const isOwner = user.uid === projectUserId;
+    
+    // Check if user is a collaborator
+    const collaborator = projectData.collaborators?.find(c => c.id === user.uid);
+    
+    // If not owner and not collaborator, reject update
+    if (!isOwner && !collaborator) {
       throw new Error('You are not authorized to update this project');
     }
 
-    const restrictedFields = ['id', 'userId', 'createdAt', 'projectId'];
-    const filteredData = Object.keys(updatedData).reduce((acc, key) => {
-      if (!restrictedFields.includes(key)) {
-        acc[key] = updatedData[key];
-      }
-      return acc;
-    }, {});
-
-    // Handle deadline conversion, validation and duration calculation
-    if (filteredData.deadline) {
-      let deadlineDate;
-      try {
-        deadlineDate = new Date(filteredData.deadline);
-        if (isNaN(deadlineDate.getTime())) {
-          throw new Error("Invalid deadline date");
-        }
-        
-        // Recalculate duration based on creation date and new deadline
-        const creationDate = projectData.createdAt.toDate ? projectData.createdAt.toDate() : new Date(projectData.createdAt);
-        const durationMs = deadlineDate.getTime() - creationDate.getTime();
-        const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
-        
-        if (durationDays >= 365) {
-          const years = Math.floor(durationDays / 365);
-          filteredData.duration = `${years} year${years > 1 ? 's' : ''}`;
-        } else if (durationDays >= 30) {
-          const months = Math.floor(durationDays / 30);
-          filteredData.duration = `${months} month${months > 1 ? 's' : ''}`;
+    // If collaborator, verify they have permission for the updates they're trying to make
+    if (!isOwner && collaborator) {
+      const { permissions } = collaborator;
+      
+      // Check permissions based on what's being updated
+      if (updatedData.goals) {
+        // Allow goal completion updates if they have canCompleteGoals permission
+        if (permissions.canCompleteGoals) {
+          // Only allow updating goal completion status
+          const existingGoals = projectData.goals || [];
+          const updatedGoals = updatedData.goals.map((newGoal, index) => ({
+            ...existingGoals[index],
+            completed: newGoal.completed
+          }));
+          updatedData.goals = updatedGoals;
         } else {
-          filteredData.duration = `${durationDays} day${durationDays > 1 ? 's' : ''}`;
+          throw new Error('You do not have permission to update goals');
         }
-        
-        // Update the deadline
-        filteredData.deadline = deadlineDate;
-      } catch (error) {
-        throw new Error(`Invalid deadline format: ${error.message}`);
       }
-    }
-
-    if (Object.keys(filteredData).length === 0) {
-      return;
+      
+      // Remove any other fields that collaborators shouldn't be able to update
+      const restrictedFields = ['id', 'userId', 'createdAt', 'projectId'];
+      Object.keys(updatedData).forEach(key => {
+        if (restrictedFields.includes(key) || 
+            (key !== 'goals' && key !== 'status')) {
+          delete updatedData[key];
+        }
+      });
     }
 
     // Add update timestamp
-    filteredData.updatedAt = new Date();
+    updatedData.updatedAt = new Date();
 
-    await updateDoc(projectRef, filteredData);
+    await updateDoc(projectRef, updatedData);
     return { success: true, message: 'Project updated successfully' };
   } catch (error) {
     console.error("Error updating project:", error);
@@ -423,40 +436,13 @@ export const getProjectDetails = async (projectId) => {
     }
 
     const projectData = projectSnap.data();
-    const currentUser = auth.currentUser;
 
-    if (!currentUser) {
-      throw new Error('User not authenticated');
-    }
-
-    // Check if user is owner
-    const isOwner = projectData.userId === currentUser.uid;
-
-    // First check if user is in the project's reviewers array
-    const isInReviewersArray = projectData.reviewers?.some(rev => rev.id === currentUser.uid);
-
-    // Then check reviewRequests collection for an accepted request
-    const requestQuery = query(
-      collection(db, "reviewRequests"),
-      where("projectId", "==", projectId),
-      where("reviewerId", "==", currentUser.uid),
-      where("status", "==", "accepted")
-    );
-    const requestSnap = await getDocs(requestQuery);
-    const isAcceptedReviewer = !requestSnap.empty;
-
-    if (!isOwner && !isInReviewersArray && !isAcceptedReviewer) {
-      throw new Error('You do not have permission to access this project');
-    }
-
-    // Add the review request to the project data if it exists
-    if (!isOwner && (isInReviewersArray || isAcceptedReviewer)) {
-      if (!requestSnap.empty) {
-        projectData.reviewRequest = {
-          id: requestSnap.docs[0].id,
-          ...requestSnap.docs[0].data()
-        };
-      }
+    // Get project owner's details
+    const ownerRef = doc(db, "users", projectData.userId);
+    const ownerSnap = await getDoc(ownerRef);
+    if (ownerSnap.exists()) {
+      const ownerData = ownerSnap.data();
+      projectData.researcherName = ownerData.fullName || 'Unknown';
     }
 
     return {
