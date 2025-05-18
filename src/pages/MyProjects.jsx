@@ -200,7 +200,7 @@ export default function MyProjects() {
                         <section className="flex justify-between items-start">
                           <section>
                             <h2 className="text-xl font-semibold text-gray-800">{project.title}</h2>
-                            <p className="mt-2 text-gray-600 break-all">{project.description}</p>
+                            <p className="mt-2 text-gray-600 break">{project.description}</p>
                             <div className="flex items-center gap-2 mt-2">
                               {project.collaborators?.length > 0 && (
                                 <span className="text-sm text-gray-500 flex items-center gap-1">
