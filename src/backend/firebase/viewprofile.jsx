@@ -1,6 +1,6 @@
 
 import { auth,db,storage } from "./firebaseConfig";
-import { collection, query, where, getDocs, doc, getDoc, updateDoc, deleteObject, deleteField } from "firebase/firestore";
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, /*deleteObject, deleteField*/ } from "firebase/firestore";
 
 import {  ref, uploadBytes, getDownloadURL } from "firebase/storage";
 

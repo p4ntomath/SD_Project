@@ -1,20 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import accountIcon from '../assets/accountIcon.png';
+import { auth, db } from '../backend/firebase/firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { auth, db } from '../backend/firebase/firebaseConfig';
-import handleImageUpload from '../components/HandleImageUpload';
-import { getStorage } from "firebase/storage";
+import { uploadUserProfilePicture, updateUserProfile } from '../backend/firebase/viewprofile';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '../components/CropImage';
+import accountIcon from '../assets/accountIcon.png';
+import { FaChevronDown, FaEllipsisV } from 'react-icons/fa';
 import MainNav from '../components/ResearcherComponents/Navigation/MainNav';
 import MobileBottomNav from '../components/ResearcherComponents/Navigation/MobileBottomNav';
-import { FaChevronDown, FaEllipsisV, FaEnvelope } from 'react-icons/fa';
-
+import { getStorage } from 'firebase/storage';
 
 export default function MyProfilePage() {
   const storage = getStorage();
-
   const [formData, setFormData] = useState({
     name: '',
     role: '',
@@ -24,7 +22,6 @@ export default function MyProfilePage() {
     joined: '',
     institution: ''
   });
-
   const [draftData, setDraftData] = useState({ ...formData });
   const [previewURL, setPreviewURL] = useState('');
   const [selectedFile, setSelectedFile] = useState(null);
@@ -33,6 +30,48 @@ export default function MyProfilePage() {
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [openCropModal, setOpenCropModal] = useState(false);
   const [open, setOpen] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Load initial profile data
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        try {
+          const docRef = doc(db, "users", user.uid);
+          const docSnap = await getDoc(docRef);
+          
+          if (docSnap.exists()) {
+            const userData = docSnap.data();
+            const joinDate = user.metadata?.creationTime
+              ? new Date(user.metadata.creationTime).toLocaleDateString('en-GB', { 
+                  day: '2-digit', 
+                  month: 'short', 
+                  year: 'numeric' 
+                })
+              : '';
+            
+            const profileData = {
+              name: userData.fullName || '',
+              role: userData.role || 'Researcher',
+              bio: userData.bio || '',
+              researchField: userData.researchField || '',
+              photoURL: userData.profilePicture || '',
+              joined: joinDate,
+              institution: userData.institution || ''
+            };
+            
+            setFormData(profileData);
+            setDraftData(profileData);
+          }
+        } catch (error) {
+          console.error("Error loading profile:", error);
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    });
+    return () => unsubscribe();
+  }, []);
 
   const handleImageChange = (e) => {
     const file = e.target.files[0];
@@ -54,57 +93,52 @@ export default function MyProfilePage() {
     if (!croppedAreaPixels || !selectedFile) return;
     try {
       const croppedImg = await getCroppedImg(selectedFile, croppedAreaPixels);
-      setPreviewURL(croppedImg);
-      setDraftData(prev => ({ ...prev, photoURL: croppedImg }));
+      const blob = await fetch(croppedImg).then(r => r.blob());
+      const file = new File([blob], `profile.jpg`, { type: 'image/jpeg' });
+      
+      const downloadURL = await uploadUserProfilePicture(file);
+      
+      setPreviewURL(downloadURL);
+      setDraftData(prev => ({ ...prev, photoURL: downloadURL }));
       setOpenCropModal(false);
-    } catch (err) {
-      console.error('Crop failed:', err);
+    } catch (error) {
+      console.error('Image upload failed:', error);
+      alert('Failed to upload profile picture');
     }
   };
 
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (user) {
-        try {
-          const docRef = doc(db, "users", user.uid);
-          const docSnap = await getDoc(docRef);
-          if (docSnap.exists()) {
-            const userData = docSnap.data();
-            const joinDate = user.metadata?.creationTime
-              ? new Date(user.metadata.creationTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-              : '';
-            const updated = {
-              name: userData.fullName || '',
-              role: userData.role || 'Researcher',
-              bio: userData.bio || '',
-              researchField: userData.researchField || '',
-              photoURL: userData.photoURL || '',
-              joined: joinDate,
-              institution: userData.institution || ''
-            };
-            setFormData(updated);
-            setDraftData(updated);
-          }
-        } catch (error) {
-          console.error("Error fetching user profile:", error);
-        }
-      }
-    });
-    return () => unsubscribe();
-  }, []);
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setFormData(draftData);
-    alert('Profile updated!');
+    try {
+      await updateUserProfile({
+        fullName: draftData.name,
+        bio: draftData.bio,
+        researchField: draftData.researchField,
+        institution: draftData.institution,
+        profilePicture: draftData.photoURL || null
+      });
+      
+      // Update both formData and draftData to ensure UI consistency
+      setFormData(draftData);
+      alert('Profile updated successfully!');
+    } catch (error) {
+      console.error("Error updating profile:", error);
+      alert('Failed to update profile: ' + error.message);
+    }
   };
 
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-xl">Loading profile...</div>
+      </div>
+    );
+  }
 
   return (
     <>
       <MainNav />
       <main className="min-h-screen bg-gray-100 p-8">
-
         <header className="relative flex items-center gap-5 mb-7 ml-17">
           <nav className="relative" aria-label="User navigation">
             <button
@@ -114,18 +148,14 @@ export default function MyProfilePage() {
               aria-haspopup="true"
               aria-label="Open user menu"
             >
-              {/* Arrow for md and up */}
               <FaChevronDown
                 className={`transition-transform duration-300 ${open ? 'rotate-180' : ''} hidden md:inline`}
               />
-
               <FaEllipsisV
                 onClick={() => setOpen(!open)}
                 className="md:hidden text-black text-xl cursor-pointer"
                 aria-label="Open user menu"
               />
-
-
             </button>
 
             {open && (
@@ -143,6 +173,7 @@ export default function MyProfilePage() {
         </header>
 
         <section className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-7xl mx-auto min-h-[600px]">
+          {/* Left Profile Card - Now uses draftData for immediate updates */}
           <aside className="bg-white p-6 rounded-2xl shadow flex flex-col items-center">
             <input id="profile-image-input" type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
             <button
@@ -157,35 +188,31 @@ export default function MyProfilePage() {
                 className="w-40 h-40 rounded-full object-cover border-4 border-gray-300 hover:opacity-90"
               />
             </button>
-            <h1 className="text-xl font-bold mt-2 mb-2">{formData.name}</h1>
+            <h1 className="text-xl font-bold mt-2 mb-2">{draftData.name}</h1>
             <p className="text-gray-600 mb-4">
-              {formData.role.charAt(0).toUpperCase() + formData.role.slice(1)}
+              {draftData.role.charAt(0).toUpperCase() + draftData.role.slice(1)}
             </p>
             <section className="text-center w-full text-sm text-gray-800 space-y-4">
-
               <section aria-labelledby="joined-label">
                 <h2 id="joined-label" className="font-bold">Date joined</h2>
                 <p>{formData.joined}</p>
               </section>
-
               <section aria-labelledby="institution-label">
                 <h2 id="institution-label" className="font-bold">Institution/Department</h2>
-                <p>{formData.institution}</p>
+                <p>{draftData.institution}</p>
               </section>
-
               <section aria-labelledby="research-field-label">
                 <h2 id="research-field-label" className="font-bold">Research Field</h2>
-                <p>{formData.researchField}</p>
+                <p>{draftData.researchField}</p>
               </section>
-
               <section aria-labelledby="bio-label">
                 <h2 id="bio-label" className="font-bold">Biography</h2>
-                <p>{formData.bio}</p>
+                <p>{draftData.bio}</p>
               </section>
             </section>
-
           </aside>
 
+          {/* Right Edit Form */}
           <section className="bg-white p-6 rounded-2xl shadow">
             <h2 className="text-xl font-bold mb-6">Edit Your Information</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
@@ -200,6 +227,7 @@ export default function MyProfilePage() {
                   value={draftData.name}
                   onChange={(e) => setDraftData({ ...draftData, name: e.target.value })}
                   className="w-full p-2 border border-gray-300 rounded"
+                  required
                 />
 
                 <label htmlFor="institution" className="block text-sm font-semibold mb-1 mt-4">Institution/Department</label>
@@ -239,10 +267,10 @@ export default function MyProfilePage() {
                 Save Changes
               </button>
             </form>
-
           </section>
         </section>
 
+        {/* Image Cropping Modal */}
         {openCropModal && selectedFile && (
           <dialog open className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
             <section className="bg-white rounded-xl p-6 w-[90vw] max-w-[500px] shadow-lg max-h-[90vh] overflow-y-auto">
@@ -263,4 +291,4 @@ export default function MyProfilePage() {
       </footer>
     </>
   );
-} 
+}
