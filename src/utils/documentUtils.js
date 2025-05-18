@@ -1,6 +1,8 @@
 import { createFolder, updateFolderName, deleteFolder } from '../backend/firebase/folderDB';
 import { uploadDocument, deleteDocument } from '../backend/firebase/documentsDB';
-import { auth } from '../backend/firebase/firebaseConfig';
+import { getDownloadURL, ref } from 'firebase/storage';
+import { storage, db } from '../backend/firebase/firebaseConfig';
+import { doc, collection, getDoc } from 'firebase/firestore';
 
 const MAX_FOLDER_SIZE = 100 * 1024 * 1024; // 100MB in bytes
 
@@ -90,7 +92,7 @@ export const handleCreateFolder = async ({
 export const handleFileUpload = async ({
     selectedFile,
     selectedFolder,
-    projectId,
+    projectId, // Optional - will be taken from selectedFolder if not provided
     customName,
     customDescription,
     setError,
@@ -106,6 +108,14 @@ export const handleFileUpload = async ({
 }) => {
     if (!selectedFile || !selectedFolder || !customName.trim()) {
         setError("Please select a file, folder and provide a name");
+        setShowUploadModal(false);
+        return;
+    }
+
+    // Use projectId from params or from folder
+    const effectiveProjectId = projectId || selectedFolder.projectId;
+    if (!effectiveProjectId) {
+        setError("Project ID is required");
         setShowUploadModal(false);
         return;
     }
@@ -136,23 +146,39 @@ export const handleFileUpload = async ({
         const fileExtension = selectedFile.name.split('.').pop();
         const finalFileName = customName.endsWith(`.${fileExtension}`) ? customName : `${customName}.${fileExtension}`;
 
-        const documentId = await uploadDocument(selectedFile, projectId, selectedFolder.id, {
+        // Upload file and get document ID with metadata
+        const response = await uploadDocument(selectedFile, effectiveProjectId, selectedFolder.id, {
             displayName: finalFileName,
             description: customDescription || 'No description provided'
         });
 
+        // Fetch the document data to get the storageFileName
+        const folderRef = doc(db, "projects", effectiveProjectId, "folders", selectedFolder.id);
+        const filesCollectionRef = collection(folderRef, "files");
+        const docRef = doc(filesCollectionRef, response);
+        const docSnap = await getDoc(docRef);
+        
+        if (!docSnap.exists()) {
+            throw new Error('Failed to get uploaded file data');
+        }
+
+        const fileData = docSnap.data();
+        const downloadURL = await getDownloadURL(ref(storage, `projects/${effectiveProjectId}/folders/${selectedFolder.id}/${fileData.storageFileName}`));
+
         const newFile = {
-            id: documentId,
-            documentId: documentId,
+            id: response,
+            documentId: response,
             name: finalFileName,
             displayName: finalFileName,
             description: customDescription || 'No description provided',
             originalName: selectedFile.name,
-            size: (selectedFile.size / 1024).toFixed(1) + ' KB',
+            size: formatSize(selectedFile.size),
             type: selectedFile.type,
             uploadDate: new Date(),
             folderId: selectedFolder.id,
-            projectId
+            projectId: effectiveProjectId,
+            downloadURL,
+            storageFileName: fileData.storageFileName // Store the storageFileName for future use
         };
 
         const updatedFolders = folders.map(folder => {
@@ -244,7 +270,7 @@ export const confirmDeleteFolder = async ({
 export const handleDeleteFile = async ({
     folderId,
     fileId,
-    projectId,
+    projectId, // Optional - can be derived from folder
     folders,
     setUploadLoading,
     setFolders,
@@ -252,20 +278,37 @@ export const handleDeleteFile = async ({
     setError,
     setStatusMessage,
     setDeletingFile = null,
-    onSuccess = null
+    onSuccess = null,
+    folder = null, // Optional - can be found using folderId
+    file = null // Optional - can be found using fileId
 }) => {
     try {
         if (setDeletingFile) setDeletingFile(fileId);
         setUploadLoading(true);
-        
-        await deleteDocument(fileId, projectId, folderId);
+
+        // Find folder and file if not provided
+        const targetFolder = folder || folders.find(f => f.id === folderId);
+        if (!targetFolder) {
+            throw new Error('Folder not found');
+        }
+
+        const effectiveProjectId = projectId || targetFolder.projectId;
+        if (!effectiveProjectId) {
+            throw new Error('Project ID is required');
+        }
+
+        await deleteDocument(fileId, effectiveProjectId, folderId);
         
         // Update folders state after deletion
         const updatedFolders = folders.map(f => {
             if (f.id === folderId) {
+                const remainingFiles = f.files.filter(file => file.id !== fileId);
+                const newSize = calculateFolderSize(remainingFiles);
                 return {
                     ...f,
-                    files: f.files.filter(file => file.id !== fileId)
+                    files: remainingFiles,
+                    size: newSize,
+                    remainingSpace: MAX_FOLDER_SIZE - newSize
                 };
             }
             return f;
@@ -279,6 +322,7 @@ export const handleDeleteFile = async ({
         // Call onSuccess callback if provided
         if (onSuccess) onSuccess();
     } catch (err) {
+        console.error('Error deleting file:', err);
         setError(true);
         setModalOpen(true);
         setStatusMessage('Failed to delete file: ' + err.message);
@@ -288,19 +332,25 @@ export const handleDeleteFile = async ({
     }
 };
 
-export const handleDownload = ({
+export const handleDownload = async ({
     downloadURL,
     setError,
     setModalOpen,
     setStatusMessage,
-    setDownloadingFile = null, // Optional parameter for DocumentsCard
-    fileId = null // Optional parameter for DocumentsCard
+    setDownloadingFile = null,
+    fileId = null,
+    file = null 
 }) => {
     try {
         if (setDownloadingFile) setDownloadingFile(fileId);
         
-        if (downloadURL) {
-            window.open(downloadURL, '_blank');
+        let effectiveDownloadURL = downloadURL;
+        if (!effectiveDownloadURL && file?.projectId && file?.folderId && file?.storageFileName) {
+            effectiveDownloadURL = await getDownloadURL(ref(storage, `projects/${file.projectId}/folders/${file.folderId}/${file.storageFileName}`));
+        }
+        
+        if (effectiveDownloadURL) {
+            window.open(effectiveDownloadURL, '_blank');
         } else {
             throw new Error('Download URL not found');
         }
