@@ -96,42 +96,6 @@ export const updateProjectFunds = async (projectId, additionalFunds, source) => 
       console.error("Error updating funds:", error);
       throw new Error(error.message);
     }
-
-    const projectRef = doc(db, "projects", projectId);
-    const projectSnap = await getDoc(projectRef);
-
-    if (!projectSnap.exists()) throw new Error("Project not found");
-
-    const projectData = projectSnap.data();
-
-    if (projectData.userId !== user.uid) {
-      throw new Error("Not authorized to update funding for this project");
-    }
-
-    const currentAvailableFunds = projectData.availableFunds || 0;
-    const updatedAvailableFunds = currentAvailableFunds + additionalFunds;
-
-    // Update the main document
-    await updateDoc(projectRef, {
-      availableFunds: updatedAvailableFunds
-    });
-
-    // Add funding history entry
-    const historyRef = collection(db, "projects", projectId, "fundingHistory");
-    await addDoc(historyRef, {
-      amount: additionalFunds,
-      totalAfterUpdate: updatedAvailableFunds,
-      updatedAt: Timestamp.now(),
-      updatedBy: user.uid,
-      type: "funding",
-      description: description.trim()
-    });
-
-    return { success: true, message: "Funds updated and history logged", updatedFunds: updatedAvailableFunds };
-  } catch (error) {
-    console.error("Error updating funds:", error);
-    throw new Error(error.message);
-  }
 };
 
 
@@ -158,7 +122,7 @@ export const getFundingHistory = async (projectId) => {
     );
 
     if (!isOwner && !isCollaborator) {
-      throw new Error("Not authorihttps://github.com/p4ntomath/SD_Project/pull/90/conflict?name=src%252Fbackend%252Ffirebase%252FfundingDB.jsx&ancestor_oid=cda4e28fba97d5b3c2796a99dab8b95e9b92f603&base_oid=8814f8eaed9637851115b3906e7030b9f6133bdd&head_oid=82b8a1aaa509be9413c00f9b4c2a3ef868cf7809zed to view this funding history");
+      throw new Error("Not authorized to view this funding history");
     }
 
     const historyRef = collection(db, "projects", projectId, "fundingHistory");

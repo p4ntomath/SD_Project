@@ -204,15 +204,16 @@ const suggestResearchers = (currentUser, allResearchers) => {
  */
 export const searchResearchers = async (searchTerm, currentUserId, project) => {
     try {
-        const projectRef = doc(db, "projects", projectId);
-        const projectSnap = await getDoc(projectRef);
+        const usersCollection = collection(db, "users");
 
-
+        // First, get all researchers
         const researcherQuery = query(
             usersCollection,
             where("role", "==", "researcher")
+        );
+        const querySnapshot = await getDocs(researcherQuery);
 
-
+        // Check pending invitations
         const invitationsQuery = query(
             collection(db, "invitations"),
             where("projectId", "==", project.projectId),
@@ -245,8 +246,8 @@ export const searchResearchers = async (searchTerm, currentUserId, project) => {
             return nameMatches || institutionMatches;
         });
     } catch (error) {
-        console.error("Error updating collaborator access level:", error.message, error.stack);
-        throw new Error("Failed to update collaborator access level");
+        console.error("Error searching for researchers:", error.message, error.stack);
+        throw new Error("Failed to search for researchers");
     }
 };
 
@@ -483,15 +484,15 @@ export const getSentInvitations = async (senderId) => {
         
         const invitationsSnapshot = await getDocs(invitationsQuery);
         const pendingInvitations = await Promise.all(
-            invitationsSnapshot.docs.map(async (doc) => {
-                const invitationData = doc.data();
+            invitationsSnapshot.docs.map(async (docSnapshot) => {
+                const invitationData = docSnapshot.data();
                 const researcherDoc = await getDoc(doc(db, "users", invitationData.researcherId));
                 const researcherData = researcherDoc.data();
                 const projectDoc = await getDoc(doc(db, "projects", invitationData.projectId));
                 const projectData = projectDoc.data();
                 
                 return {
-                    invitationId: doc.id,
+                    invitationId: docSnapshot.id,
                     researcherId: invitationData.researcherId,
                     researcherName: researcherData?.fullName || "Unknown Researcher",
                     researcherInstitution: researcherData?.institution || "Unknown Institution",
