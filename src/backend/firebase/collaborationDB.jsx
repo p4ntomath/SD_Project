@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 
 /**
+
  * Adds a collaborator to a project with default "Collaborator" access and specific permissions.
  * @param {string} projectId - The ID of the project.
  * @param {string} collaboratorId - The ID of the collaborator to add.
@@ -44,6 +45,7 @@ export const addCollaboratorToProject = async (projectId, collaboratorId) => {
 
         await updateDoc(projectRef, {
             collaborators: arrayUnion(collaboratorData),
+
             updatedAt: serverTimestamp()
         });
 
@@ -202,13 +204,14 @@ const suggestResearchers = (currentUser, allResearchers) => {
  */
 export const searchResearchers = async (searchTerm, currentUserId, project) => {
     try {
-        const usersCollection = collection(db, "users");
+        const projectRef = doc(db, "projects", projectId);
+        const projectSnap = await getDoc(projectRef);
+
 
         const researcherQuery = query(
             usersCollection,
             where("role", "==", "researcher")
-        );
-        const querySnapshot = await getDocs(researcherQuery);
+
 
         const invitationsQuery = query(
             collection(db, "invitations"),
@@ -242,12 +245,13 @@ export const searchResearchers = async (searchTerm, currentUserId, project) => {
             return nameMatches || institutionMatches;
         });
     } catch (error) {
-        console.error("Error searching for researchers:", error);
-        throw new Error("Failed to search for researchers");
+        console.error("Error updating collaborator access level:", error.message, error.stack);
+        throw new Error("Failed to update collaborator access level");
     }
 };
 
 /**
+
  * Adds a researcher as a collaborator to a project
  * @param {string} projectId - The ID of the project
  * @param {string} researcherId - The ID of the researcher to add
@@ -261,7 +265,6 @@ const addResearcherToProject = async (projectId, researcherId, role = 'Collabora
         if (!researcherDoc.exists()) {
             throw new Error("Researcher not found");
         }
-
         const researcherData = researcherDoc.data();
         const permissions = {
             Viewer: {

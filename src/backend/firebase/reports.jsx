@@ -27,19 +27,16 @@ import { getFolders } from "./folderDB";
 // Returns Project Name and Funding History, startDate is not a necesity to passed into the function
 export const getProjectFunding = async (uid, startDate) => {
   try {
-    // Step 1: Fetch user projects
-    const userProjects = await fetchProjects(uid);
-    //console.log("Stored Projects:", userProjects);
 
-    // Step 2: Fetch funding history for each project
+    const userProjects = await fetchProjects(uid);
     const projectsWithFunding = await Promise.all(
       userProjects.map(async (project) => {
         const fundingHistory = await getFundingHistory(project.id);
 
-        // Step 3: Filter history if startDate is provided
+
         const filteredHistory = startDate
           ? fundingHistory.filter(entry => {
-            const entryDate = entry.updatedAt?.toDate?.() || new Date(entry.date);
+            const entryDate = entry.updatedAt?.toDate?.() ?? new Date(entry.date);
             return entryDate >= startDate;
           })
           : fundingHistory;
@@ -58,36 +55,86 @@ export const getProjectFunding = async (uid, startDate) => {
   }
 };
 
-export const getAllProjectFolders = async (uid) => {
+
+
+export const getAllProjectFoldersWithFiles = async (uid) => {
   try {
     const projects = await fetchProjects(uid);
+    const userCache = new Map(); // Cache user lookups
 
     const projectFolders = await Promise.all(
       projects.map(async (project) => {
-        const foldersRef = collection(db, "projects", project.id, "folders");
-        const folderSnapshot = await getDocs(foldersRef);
+        const folderSnapshot = await getDocs(
+          collection(db, "projects", project.id, "folders")
+        );
 
-        const folders = folderSnapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
+        const folders = await Promise.all(
+          folderSnapshot.docs.map(async (folderDoc) => {
+            const folderData = folderDoc.data();
+            const folderId = folderDoc.id;
+
+            // Fetch files in folder
+            const filesSnapshot = await getDocs(
+              collection(db, "projects", project.id, "folders", folderId, "files")
+            );
+
+            const files = await Promise.all(
+              filesSnapshot.docs.map(async (fileDoc) => {
+                const data = fileDoc.data();
+                const uploadedById = data.uploadedBy;
+
+                let uploadedByName = "Unknown";
+
+                if (uploadedById) {
+                  if (userCache.has(uploadedById)) {
+                    uploadedByName = userCache.get(uploadedById);
+                  } else {
+                    const userSnap = await getDoc(doc(db, "users", uploadedById));
+                    if (userSnap.exists()) {
+                      const userData = userSnap.data();
+                      uploadedByName = userData.fullName || "Unnamed User";
+                      userCache.set(uploadedById, uploadedByName);
+                    }
+                  }
+                }
+
+                return {
+                  fileId: fileDoc.id,
+                  fileName: data.fileName,
+                  uploadedBy: uploadedByName,
+                  uploadedAt: data.uploadedAt?.toDate?.() ?? null,
+                };
+              })
+            );
+
+            return {
+              id: folderId,
+              name: folderData.name ?? "",
+              type: folderData.type ?? "",
+              files,
+            };
+          })
+        );
+
 
         return {
           projectName: project.title,
           projectId: project.id,
-          folders
+
+          folders,
         };
       })
     );
 
-    console.log(projectFolders);
-
     return projectFolders;
   } catch (error) {
-    console.error("Error fetching folders for all projects:", error.message);
-    throw new Error("Failed to fetch folders for all projects");
+    console.error("Error fetching folders and files:", error.message);
+    throw new Error("Failed to fetch folders and files for all projects");
   }
 };
+
+
+
 
 // Returns the date, project Description, feedback, reseacherName and Title of project
 export const getReviewedProjects = async (uid) => {
@@ -98,30 +145,41 @@ export const getReviewedProjects = async (uid) => {
 
     const reviewedProjects = [];
 
+
+    // Cache to avoid duplicate reads
+    const projectCache = new Map();
+    const userCache = new Map();
+
     for (const reviewDoc of reviewsSnapshot.docs) {
-      console.log("Data: ", reviewsSnapshot);
       const reviewData = reviewDoc.data();
       const projectId = reviewData.projectId;
 
-      // Fetch project info
-      const projectRef = doc(db, "projects", projectId);
-      const projectSnap = await getDoc(projectRef);
+      if (!projectId) continue;
 
-      if (!projectSnap.exists()) continue;
+      // Use cache to avoid redundant reads
+      let projectData = projectCache.get(projectId);
+      if (!projectData) {
+        const projectSnap = await getDoc(doc(db, "projects", projectId));
+        if (!projectSnap.exists()) continue;
+        projectData = projectSnap.data();
+        projectCache.set(projectId, projectData);
+      }
 
-      const projectData = projectSnap.data();
       const { title, description, userId } = projectData;
 
-      console.log("Data: ", reviewData);
-
-      // Fetch owner name
+      // Fetch researcher info (cached)
       let researcherName = "Unknown";
       if (userId) {
-        const userRef = doc(db, "users", userId);
-        const userSnap = await getDoc(userRef);
-        if (userSnap.exists()) {
-          researcherName = userSnap.data().fullName || "Unnamed User";
+        let userData = userCache.get(userId);
+        if (!userData) {
+          const userSnap = await getDoc(doc(db, "users", userId));
+          if (userSnap.exists()) {
+            userData = userSnap.data();
+            userCache.set(userId, userData);
+          }
         }
+        researcherName = userData?.fullName || "Unnamed User";
+
       }
 
       reviewedProjects.push({
@@ -129,7 +187,8 @@ export const getReviewedProjects = async (uid) => {
         description,
         researcherName,
         feedback: reviewData.feedback || "",
-        date: reviewData.updatedAt ? reviewData.updatedAt.toDate().toLocaleDateString() : "N/A"
+        date: reviewData.updatedAt?.toDate?.().toLocaleDateString() ?? "N/A"
+
       });
     }
 
@@ -139,5 +198,6 @@ export const getReviewedProjects = async (uid) => {
     throw new Error("Failed to fetch reviewed projects");
   }
 };
+
 
 // left with admin stuff
