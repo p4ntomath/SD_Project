@@ -92,7 +92,7 @@ export default function ProjectDetailsPage() {
         setProject(projectData);
         setError(false);
       } catch (err) {
-        console.error('Error loading project:', err);
+        
         setModalOpen(true);
         setError(true);
         setStatusMessage(err.message);
@@ -131,7 +131,7 @@ export default function ProjectDetailsPage() {
           }
         }
       } catch (err) {
-        console.error('Error loading project:', err);
+        
         setError(err.message);
       } finally {
         setLoading(false);
@@ -168,7 +168,7 @@ export default function ProjectDetailsPage() {
 
         setFolders(processedFolders);
       } catch (err) {
-        console.error('Error loading folders:', err);
+        
         setError(true);
         setModalOpen(true);
         setStatusMessage('Failed to load project documents');
@@ -197,7 +197,7 @@ export default function ProjectDetailsPage() {
         }));
         setReviewRequests(processedRequests);
       } catch (err) {
-        console.error('Error loading review requests:', err);
+        
         setError(true);
         setModalOpen(true);
         setStatusMessage('Failed to load reviewer requests');
@@ -215,7 +215,7 @@ export default function ProjectDetailsPage() {
         const invitations = await getPendingCollaboratorInvitations(projectId);
         setPendingInvitations(invitations);
       } catch (err) {
-        console.error('Error loading pending invitations:', err);
+        
         // Don't show error modal for this as it's not critical
       }
     };
@@ -241,7 +241,7 @@ export default function ProjectDetailsPage() {
           setGroupChatId(projectChat.id);
         }
       } catch (error) {
-        console.error('Error checking project chat:', error);
+        
       }
     };
 
@@ -386,7 +386,7 @@ export default function ProjectDetailsPage() {
         </div>
       );
     } catch (err) {
-      console.error("Error inviting collaborators:", err);
+     
       setModalOpen(true);
       setError(true);
       setStatusMessage(
@@ -413,7 +413,6 @@ export default function ProjectDetailsPage() {
       setError(false);
       setStatusMessage("Collaborator access level updated successfully");
     } catch (err) {
-      console.error("Error updating collaborator access:", err);
       setModalOpen(true); 
       setError(true);
       setStatusMessage("Failed to update collaborator access level");
@@ -431,7 +430,7 @@ export default function ProjectDetailsPage() {
       setError(false);
       setStatusMessage("Collaborator removed successfully");
     } catch (err) {
-      console.error("Error removing collaborator:", err);
+    
       setModalOpen(true);
       setError(true);
       setStatusMessage("Failed to remove collaborator");
@@ -477,7 +476,7 @@ const getDefaultGroupName = (projectTitle) => {
       setStatusMessage('Team chat created successfully!');
       setShowGroupNameModal(false);
     } catch (error) {
-      console.error('Error creating project chat:', error);
+      ;
       setModalOpen(true);
       setError(true);
       setStatusMessage('Failed to create team chat');
@@ -563,7 +562,7 @@ const getDefaultGroupName = (projectTitle) => {
 
   if (loading) {
     return (
-      <main className="flex justify-center items-center min-h-screen">
+      <main aria-label='loading-project' className="flex justify-center items-center min-h-screen">
         <ClipLoader color="#3B82F6" />
       </main>
     );
@@ -571,9 +570,20 @@ const getDefaultGroupName = (projectTitle) => {
 
   if (!project) {
     return (
+      <>
       <main className="flex justify-center items-center min-h-screen">
-        <ClipLoader color="#3B82F6" />
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-800">Project Not Found</h1>
+          <p className="text-gray-600 mt-2">The project you are looking for does not exist or has been deleted.</p>
+          <button
+            onClick={() => navigate('/home')}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Go to Home
+          </button>
+        </div>
       </main>
+      </>
     );
   }
 
