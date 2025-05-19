@@ -478,6 +478,7 @@ export default function DocumentsCard({
         id="file-upload"
         type="file"
         className="hidden"
+        data-testid="file-upload"
         onChange={handleFileUploadWrapper}
       />
 

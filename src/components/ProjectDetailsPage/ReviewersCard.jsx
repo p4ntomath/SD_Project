@@ -9,7 +9,7 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
   const [sendingReviewRequests, setSendingReviewRequests] = useState(false);
   const [processingReRequest, setProcessingReRequest] = useState(null);
   const activeReviewers = project.reviewers || [];
-  const pendingRequests = reviewRequests.filter(
+  const pendingRequests = (reviewRequests || []).filter(
     request => request.status !== 'accepted' && request.status !== 'completed'
   );
 
@@ -18,7 +18,7 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
 
   // Helper function to check if a reviewer has pending requests
   const hasReviewerPendingRequest = (reviewerId) => {
-    return reviewRequests.some(request => 
+    return (reviewRequests || []).some(request => 
       request.reviewerId === reviewerId && 
       (request.status === 'pending' || request.status === 'accepted')
     );

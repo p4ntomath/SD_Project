@@ -132,7 +132,6 @@ describe('RoleSelectionPage', () => {
       </AuthContext.Provider>,
       { wrapper: MemoryRouter }
     );
-    console.log(authFirebase.completeProfile.mock.calls);
     expect(mockNavigate).toHaveBeenCalledWith('/home');
   });
 });

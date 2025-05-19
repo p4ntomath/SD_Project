@@ -57,15 +57,12 @@ export default function FundingCard({
         availableFunds: (project.availableFunds || 0) + amount
       });
 
-      
-
       setShowAddFundsModal(false);
       setFundAmount('');
       setFundingSource('');
       setModalOpen(true);
       setError(false);
       setStatusMessage('Funds added successfully');
-      setError(false);
       loadFundingHistory();
 
       // Notify user about the added funds
@@ -74,7 +71,7 @@ export default function FundingCard({
     } catch (err) {
       setError(true);
       setModalOpen(true);
-      setStatusMessage('Failed to add funds: ' + err.message);
+      setStatusMessage('Failed to add funds');
     } finally {
       setAddFundsLoading(false);
     }
@@ -106,6 +103,7 @@ export default function FundingCard({
         usedFunds: (project.usedFunds || 0) + amount,
         availableFunds: (project.availableFunds || 0) - amount
       });
+      
       setShowAddExpenseModal(false);
       setExpenseAmount('');
       setExpenseDescription('');
@@ -114,10 +112,8 @@ export default function FundingCard({
       setStatusMessage('Expense added successfully');
 
       // Notify user about the added expense
-        notify({type: 'Expense Added', projectId, projectTitle: project.title, amount, description: expenseDescription});
+      notify({type: 'Expense Added', projectId, projectTitle: project.title, amount, description: expenseDescription});
       loadFundingHistory();
-
-      
     } catch (err) {
       setError(true);
       setModalOpen(true);
@@ -385,12 +381,12 @@ export default function FundingCard({
                             {entry.updatedByName}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <span className={`break-words ${entry.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            <span className={entry.amount >= 0 ? 'text-green-600' : 'text-red-600'}>
                               R {Math.abs(entry.amount).toLocaleString()}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            R {entry.totalAfterUpdate.toLocaleString()}
+                            R {(entry.totalAfterUpdate || 0).toLocaleString()}
                           </td>
                         </tr>
                       ))}
