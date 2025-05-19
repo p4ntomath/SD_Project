@@ -158,6 +158,14 @@ function App() {
               <ReviewerHomePage />
             </ProtectedRoute>
           } />
+          <Route path="/reviewer/messages" element={
+            <ProtectedRoute allowedRoles={['reviewer']}>
+              <MessagesLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<MessagesList />} />
+            <Route path=":chatId" element={<ChatView />} />
+          </Route>
           <Route path="/messages" element={
             <ProtectedRoute allowedRoles={['researcher', 'reviewer', 'admin']}>
               <MessagesLayout />
