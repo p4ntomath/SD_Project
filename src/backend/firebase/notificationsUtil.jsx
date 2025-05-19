@@ -36,12 +36,26 @@ export function useUnreadNotificationsCount() {
   return count;
 }
 
+export const getUserById = async (userId) => {
+  const userRef = doc(db, "users", userId);
+  const userSnap = await getDoc(userRef);
+  if (userSnap.exists()) {
+    return userSnap.data(); // Should contain fullName, email, etc.
+  }
+  return null;
+};
+
 const notificationTemplates = {
   // Goals Card
-  "Goal Completion": ({ goalText, projectTitle }) =>
+  "Goal Completed": ({ goalText, projectTitle }) =>
     `You have successfully completed the goal "${goalText}" in the project "${projectTitle}".`,
 
-  "Project Completion": ({ projectTitle }) =>
+  "New Goal Added": ({ goalText, projectTitle }) =>
+    `A new goal "${goalText}" has been added to your project "${projectTitle}".`, 
+  "Goal Deleted": ({ goalText, projectTitle }) =>
+    `The goal "${goalText}" has been deleted from your project "${projectTitle}".`,
+
+  "Project Completed": ({ projectTitle }) =>
     `Congratulations! The project "${projectTitle}" has been marked as complete.`,
 
   "Project Created": ({ projectTitle }) =>
@@ -70,6 +84,9 @@ const notificationTemplates = {
   "Folder Updated": ({ folderName, projectTitle }) =>
     `The folder "${folderName}" was updated in your project "${projectTitle}".`,
 
+  "Folder Renamed": ({ folderName, projectTitle, newFolderName }) =>
+    `The folder "${folderName}" has been renamed to "${newFolderName}" in your project "${projectTitle || 'Untitled Project'}".`,
+
   "File Uploaded": ({ documentName, folderName, projectTitle }) =>
     `The file "${documentName}" was uploaded to the folder "${folderName}" in your project "${projectTitle}".`,
 
@@ -81,10 +98,10 @@ const notificationTemplates = {
 
   // Reviewer Card
   "Reviewer Request Sent": ({ reviewerName, projectTitle }) =>
-    `A review request has been sent to ${reviewerName} for your project "${projectTitle}".`,
+    `Your review request was sent seccussfully, Please wait for a reply from the reviewer.`,
 
   "Reviewer Request Received": ({ researcherName, projectTitle }) =>
-    `You have received a review request from ${researcherName} for the project "${projectTitle}".`,
+    `You have received a review request on a project, go to your requests to check it out!!.`,
 
   "Reviewer Accepted": ({ researcherName, projectTitle }) =>
     `You have accepted the review request for the project "${projectTitle}" by ${researcherName}.`,
@@ -103,6 +120,21 @@ const notificationTemplates = {
 
   "Review Received": ({ reviewerName, projectTitle }) =>
     `You have received a review for your project "${projectTitle}" from ${reviewerName}.`,
+
+//Collaborator Card
+  "Collaboration Request Sent": ({ researcherName, projectTitle }) =>
+    `You have sent a collaboration request to ${researcherName} on your project, "${projectTitle}".`,
+  
+  "Collaboration Request Received": ({ projectTitle, researcherName }) =>
+    `You have received a collaboration request from ${researcherName} on their project, "${projectTitle}".`,
+
+  "Collaboration Request Accepted": ({ projectTitle, researcherName }) =>
+    `Your collaboration request for the project "${projectTitle}" has been accepted by ${researcherName}.`,
+
+  "Collaboration Request Declined": ({ projectTitle, researcherName }) =>
+    `Your collaboration request for the project "${projectTitle}" has been Declined by ${researcherName}.`,
+
+
 };
 
 export const notify = async ({
@@ -111,6 +143,7 @@ export const notify = async ({
   projectTitle,
   goalText,
   folderName,
+  newFolderName,
   documentName,
   amount,
   description,
@@ -136,7 +169,7 @@ export const notify = async ({
     return;
   }
 
-  const message = template({ goalText, projectTitle, documentName, amount, description, folderName, reviewerName, researcherName });
+  const message = template({ goalText, projectTitle, documentName, amount, description, folderName,newFolderName , reviewerName, researcherName });
 
   const notificationsRef = collection(db, "notifications");
   await addDoc(notificationsRef, {

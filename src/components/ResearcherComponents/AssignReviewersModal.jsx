@@ -92,35 +92,38 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
 
   try {
     await onAssign(selectedReviewers);
-    const researcher = auth.currentUser;
-    
-    // Fetch fullName from Firestore
-    const researcherDoc = await getDoc(doc(db, 'users', researcher.uid));
-    const researcherName = researcherDoc.data()?.fullName 
-                        || researcher.email?.split('@')[0] 
-                        || 'Researcher';
 
-    // Notify researcher
-    await notify({
-      type: 'Reviewer Request Sent',
-      projectId,
-      projectTitle,
-      reviewerName: selectedReviewers.map(r => r.name).join(', '),
-      targetUserId: researcher.uid, // <-- updated
-      senderUserId: researcher.uid, // optional, but explicit
-    });
+    // Get sender's name (the researcher assigning reviewers)
+    let senderName = "A researcher";
+    if (auth.currentUser) {
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      const userSnap = await getDoc(userRef);
+      senderName = userSnap.exists() ? userSnap.data().fullName : "A researcher";
+    }
 
-    // Notify reviewers
-    for (const reviewer of selectedReviewers) {
-      await notify({
+    // If you have project title, use it; otherwise, fallback
+    const projectTitle = typeof project !== "undefined" && project?.title
+      ? project.title
+      : "Untitled Project";
+
+    // Notify each reviewer
+    await Promise.all(selectedReviewers.map(reviewer =>
+      notify({
         type: 'Reviewer Request Received',
         projectId,
-        projectTitle,
-        researcherName,
-        targetUserId: reviewer.id, // <-- updated
-        senderUserId: researcher.uid, // optional, but explicit
-      });
-    }
+        targetUserId: reviewer.id,
+        senderUserId: auth.currentUser.uid,
+        message: `You have been requested by ${senderName} to review the project "${projectTitle}".`
+      })
+    ));
+
+    notify({  
+      type: 'Reviewer Request Sent',
+      projectId,
+      targetUserId: auth.currentUser.uid,
+      senderUserId: auth.currentUser.uid,
+    });
+
   } catch (error) {
     console.error('Error assigning reviewers:', error);
   } finally {
