@@ -2,9 +2,9 @@ import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { vi } from 'vitest';
 import { MemoryRouter, useNavigate } from 'react-router-dom';
-import RoleSelectionPage from '@/pages/RoleSelectionPage';
-import AuthContext from '@/context/AuthContext';
-import * as authFirebase from '@/backend/firebase/authFirebase';
+import RoleSelectionPage from '../pages/roleSelectionPage';
+import AuthContext from '../context/AuthContext';
+import * as authFirebase from '../backend/firebase/authFirebase';
 
 
 // Mock Firebase modules
@@ -28,13 +28,13 @@ vi.mock('../backend/firebase/firebaseConfig', () => ({
   auth: {}
 }));
 // Mock the `completeProfile` function
-vi.mock('@/backend/firebase/authFirebase', () => ({
+vi.mock('../backend/firebase/authFirebase', () => ({
   completeProfile: vi.fn(),
 }));
 
 
 // Mock the child form component
-vi.mock('@/components/RoleSelctionForm', () => ({
+vi.mock('../components/RoleSelctionForm', () => ({
   default: ({ onSubmit }) => (
     <form onSubmit={(e) => {
       e.preventDefault();
