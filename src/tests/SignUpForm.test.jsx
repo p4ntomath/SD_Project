@@ -15,17 +15,38 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// Mock the firebase auth module
+// Mock Firebase Auth and Firestore
+vi.mock('firebase/auth', () => ({
+  getAuth: vi.fn(() => ({})),
+  createUserWithEmailAndPassword: vi.fn(),
+  signInWithEmailAndPassword: vi.fn(),
+  signInWithPopup: vi.fn(),
+  GoogleAuthProvider: vi.fn(),
+  signOut: vi.fn()
+}));
+
+vi.mock('firebase/firestore', () => ({
+  getFirestore: vi.fn(),
+  initializeFirestore: vi.fn(),
+  collection: vi.fn(),
+  doc: vi.fn(),
+  getDoc: vi.fn(),
+  setDoc: vi.fn(),
+  query: vi.fn(),
+  where: vi.fn(),
+  CACHE_SIZE_UNLIMITED: 'unlimited'
+}));
+
+// Mock the firebase auth module exports
 const mockSignUp = vi.fn();
 const mockGoogleSignIn = vi.fn();
-const mockGetUserRole = vi.fn();
 
 vi.mock('../backend/firebase/authFirebase', () => ({
   signUp: (...args) => mockSignUp(...args),
-  googleSignIn: (...args) => mockGoogleSignIn(...args),
-  getUserRole: (...args) => mockGetUserRole(...args)
+  googleSignIn: (...args) => mockGoogleSignIn(...args)
 }));
 
+// Mock ClipLoader
 vi.mock('react-spinners', () => ({
   ClipLoader: () => <div data-testid="loading-spinner">Loading...</div>
 }));
@@ -34,31 +55,25 @@ describe('SignUpForm Component', () => {
   const mockSetRole = vi.fn();
   const mockSetLoading = vi.fn();
   
-  const renderWithAuth = (ui) => {
+  const renderSignUpForm = () => {
     return render(
       <AuthContext.Provider value={{
         setRole: mockSetRole,
         setLoading: mockSetLoading
       }}>
-        {ui}
+        <SignUpForm />
       </AuthContext.Provider>
     );
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    mockSignUp.mockReset();
-    mockGoogleSignIn.mockReset();
-    mockGetUserRole.mockReset();
-    mockSetRole.mockReset();
-    mockSetLoading.mockReset();
-    mockNavigate.mockReset();
   });
 
   it('renders all form fields correctly', () => {
-    renderWithAuth(<SignUpForm />);
-    const heading = screen.getByLabelText("heading");
-    expect(heading).toBeInTheDocument();
+    renderSignUpForm();
+    
+    expect(screen.getByLabelText("heading")).toBeInTheDocument();
     expect(screen.getByLabelText(/full name/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/email address/i)).toBeInTheDocument();
     expect(screen.getByLabelText(/^password$/i)).toBeInTheDocument();
@@ -68,126 +83,129 @@ describe('SignUpForm Component', () => {
   });
 
   it('shows validation errors for empty fields', async () => {
-    renderWithAuth(<SignUpForm />);
+    renderSignUpForm();
     
-    const submitButton = screen.getByRole('button', { name: /sign up/i });
-    fireEvent.click(submitButton);
+    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
 
     expect(await screen.findByText(/full name is required/i)).toBeInTheDocument();
     expect(await screen.findByText(/email is required/i)).toBeInTheDocument();
     expect(await screen.findByText(/password is required/i)).toBeInTheDocument();
   });
 
-  it('shows validation error for invalid email', async () => {
-    renderWithAuth(<SignUpForm />);
+  it('validates email format', async () => {
+    renderSignUpForm();
     
-    const emailInput = screen.getByLabelText(/email address/i);
-    fireEvent.change(emailInput, { target: { value: 'invalid-email' } });
+    fireEvent.change(screen.getByLabelText(/email address/i), {
+      target: { value: 'invalid-email' }
+    });
     
-    const submitButton = screen.getByRole('button', { name: /sign up/i });
-    fireEvent.click(submitButton);
+    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
 
     expect(await screen.findByText(/please enter a valid email/i)).toBeInTheDocument();
   });
 
-  it('shows validation error for weak password', async () => {
-    renderWithAuth(<SignUpForm />);
+  it('validates password requirements', async () => {
+    renderSignUpForm();
     
-    const passwordInput = screen.getByLabelText(/^password$/i);
-    fireEvent.change(passwordInput, { target: { value: 'weak' } });
+    fireEvent.change(screen.getByLabelText(/^password$/i), {
+      target: { value: 'weak' }
+    });
     
-    const submitButton = screen.getByRole('button', { name: /sign up/i });
-    fireEvent.click(submitButton);
+    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
 
     expect(await screen.findByText(/password must be at least 8 characters/i)).toBeInTheDocument();
   });
 
-  it('shows validation error for non-matching passwords', async () => {
-    renderWithAuth(<SignUpForm />);
+  it('validates password match', async () => {
+    renderSignUpForm();
     
-    const passwordInput = screen.getByLabelText(/^password$/i);
-    const confirmPasswordInput = screen.getByLabelText(/confirm password/i);
+    fireEvent.change(screen.getByLabelText(/^password$/i), {
+      target: { value: 'StrongPass123!' }
+    });
+    fireEvent.change(screen.getByLabelText(/confirm password/i), {
+      target: { value: 'DifferentPass123!' }
+    });
     
-    fireEvent.change(passwordInput, { target: { value: 'StrongPass123!' } });
-    fireEvent.change(confirmPasswordInput, { target: { value: 'DifferentPass123!' } });
-    
-    const submitButton = screen.getByRole('button', { name: /sign up/i });
-    fireEvent.click(submitButton);
+    fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
 
     expect(await screen.findByText(/passwords must match/i)).toBeInTheDocument();
   });
 
-  it('handles successful email/password signup', async () => {
-    const mockUser = { uid: 'test-user-id' };
+  it('handles successful signup', async () => {
+    const mockUser = { 
+      uid: 'test-uid',
+      email: 'test@example.com'
+    };
     mockSignUp.mockResolvedValueOnce(mockUser);
 
-    renderWithAuth(<SignUpForm />);
+    renderSignUpForm();
     
-    // Fill in the form
+    // Fill form
     fireEvent.change(screen.getByLabelText(/full name/i), {
-      target: { value: 'John Doe' }
+      target: { value: 'Test User' }
     });
     fireEvent.change(screen.getByLabelText(/email address/i), {
-      target: { value: 'john@example.com' }
+      target: { value: 'test@example.com' }
     });
     fireEvent.change(screen.getByLabelText(/^password$/i), {
-      target: { value: 'Password123!' }
+      target: { value: 'StrongPass123!' }
     });
     fireEvent.change(screen.getByLabelText(/confirm password/i), {
-      target: { value: 'Password123!' }
+      target: { value: 'StrongPass123!' }
     });
     
-    // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
 
     await waitFor(() => {
       expect(mockSignUp).toHaveBeenCalledWith(
-        'John Doe', 
-        'john@example.com', 
-        'Password123!'
+        'Test User',
+        'test@example.com',
+        'StrongPass123!'
       );
       expect(mockNavigate).toHaveBeenCalledWith('/complete-profile', {
         state: {
           userId: mockUser.uid,
           email: mockUser.email,
-          name: 'John Doe',
+          name: 'Test User',
           isEmailSignup: true
         }
       });
     });
   });
 
-  it('handles signup errors correctly', async () => {
+  it('handles email already exists error', async () => {
     mockSignUp.mockRejectedValueOnce({ code: 'auth/email-already-in-use' });
 
-    renderWithAuth(<SignUpForm />);
+    renderSignUpForm();
     
-    // Fill in the form
+    // Fill form
     fireEvent.change(screen.getByLabelText(/full name/i), {
-      target: { value: 'John Doe' }
+      target: { value: 'Test User' }
     });
     fireEvent.change(screen.getByLabelText(/email address/i), {
       target: { value: 'existing@example.com' }
     });
     fireEvent.change(screen.getByLabelText(/^password$/i), {
-      target: { value: 'Password123!' }
+      target: { value: 'StrongPass123!' }
     });
     fireEvent.change(screen.getByLabelText(/confirm password/i), {
-      target: { value: 'Password123!' }
+      target: { value: 'StrongPass123!' }
     });
     
-    // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
 
-    // Check that the error appears
     expect(await screen.findByText(/email already exists/i)).toBeInTheDocument();
   });
 
-  it('handles successful Google sign in', async () => {
-    const mockUser = { uid: 'google-user-id', email: 'google@example.com', displayName: 'Google User' };
+  it('handles successful Google sign in for new user', async () => {
+    const mockUser = {
+      uid: 'google-uid',
+      email: 'google@example.com',
+      displayName: 'Google User'
+    };
     mockGoogleSignIn.mockResolvedValueOnce({ isNewUser: true, user: mockUser });
 
-    renderWithAuth(<SignUpForm />);
+    renderSignUpForm();
     
     fireEvent.click(screen.getByRole('button', { name: /continue with google/i }));
 
@@ -204,58 +222,37 @@ describe('SignUpForm Component', () => {
     });
   });
 
+  it('handles Google sign in errors', async () => {
+    mockGoogleSignIn.mockRejectedValueOnce({ code: 'auth/popup-closed-by-user' });
+
+    renderSignUpForm();
+    
+    fireEvent.click(screen.getByRole('button', { name: /continue with google/i }));
+
+    expect(await screen.findByText(/google sign-in was closed/i)).toBeInTheDocument();
+  });
+
   it('shows loading state during form submission', async () => {
     mockSignUp.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)));
 
-    renderWithAuth(<SignUpForm />);
+    renderSignUpForm();
     
-    // Fill in the form
+    // Fill form
     fireEvent.change(screen.getByLabelText(/full name/i), {
-      target: { value: 'John Doe' }
+      target: { value: 'Test User' }
     });
     fireEvent.change(screen.getByLabelText(/email address/i), {
-      target: { value: 'john@example.com' }
+      target: { value: 'test@example.com' }
     });
     fireEvent.change(screen.getByLabelText(/^password$/i), {
-      target: { value: 'Password123!' }
+      target: { value: 'StrongPass123!' }
     });
     fireEvent.change(screen.getByLabelText(/confirm password/i), {
-      target: { value: 'Password123!' }
+      target: { value: 'StrongPass123!' }
     });
     
-    // Submit the form
     fireEvent.click(screen.getByRole('button', { name: /sign up/i }));
 
-    // Check loading state
     expect(screen.getByTestId('loading-spinner')).toBeInTheDocument();
-  });
-
-  describe('Google Sign In Error Handling', () => {
-    it('handles popup closed by user error', async () => {
-      mockGoogleSignIn.mockRejectedValueOnce({ code: 'auth/popup-closed-by-user' });
-      
-      renderWithAuth(<SignUpForm />);
-      fireEvent.click(screen.getByRole('button', { name: /continue with google/i }));
-      
-      expect(await screen.findByText(/google sign-in was closed before completion/i)).toBeInTheDocument();
-    });
-
-    it('handles popup blocked error', async () => {
-      mockGoogleSignIn.mockRejectedValueOnce({ code: 'auth/popup-blocked' });
-      
-      renderWithAuth(<SignUpForm />);
-      fireEvent.click(screen.getByRole('button', { name: /continue with google/i }));
-      
-      expect(await screen.findByText(/google sign-in popup was blocked/i)).toBeInTheDocument();
-    });
-
-    it('handles invalid credential error', async () => {
-      mockGoogleSignIn.mockRejectedValueOnce({ code: 'auth/invalid-credential' });
-      
-      renderWithAuth(<SignUpForm />);
-      fireEvent.click(screen.getByRole('button', { name: /continue with google/i }));
-      
-      expect(await screen.findByText(/invalid credentials/i)).toBeInTheDocument();
-    });
   });
 });

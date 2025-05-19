@@ -241,13 +241,13 @@ export const getProjectReviews = async (projectId) => {
         review.reviewer = { 
           id: reviewerDoc.id, 
           fullName: reviewerData.fullName,
-          fieldOfResearch: reviewerData.fieldOfResearch || 'Not specified'
+          expertise: reviewerData.fieldOfResearch || 'Not specified'
         };
       } else {
         review.reviewer = {
           id: review.reviewerId,
-          fullName: 'Anonymous Reviewer',
-          fieldOfResearch: 'Not specified'
+          name: 'Anonymous Reviewer',
+          expertise: 'Not specified'
         };
       }
       reviews.push(review);

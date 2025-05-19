@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { ClipLoader } from 'react-spinners';
 import { AnimatePresence, motion } from 'framer-motion';
-import { checkPermission, isProjectOwner } from '../../utils/permissions';
+import { checkPermission } from '../../utils/permissions';
 import {
     handleCreateFolder,
     handleFileUpload,
