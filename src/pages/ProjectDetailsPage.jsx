@@ -486,7 +486,6 @@ const getDefaultGroupName = (projectTitle) => {
     }
   };
 
-  // Update the GroupNameModal component
   const GroupNameModal = ({ isOpen, onClose, onSubmit, defaultName, isLoading }) => {
     const [localGroupName, setLocalGroupName] = useState('');
     
@@ -496,8 +495,6 @@ const getDefaultGroupName = (projectTitle) => {
       }
     }, [isOpen]);
 
-    if (!isOpen) return null;
-
     const handleInputChange = (e) => {
       if (e.target.value.length <= 30) {
         setLocalGroupName(e.target.value);
@@ -505,58 +502,70 @@ const getDefaultGroupName = (projectTitle) => {
     };
 
     return (
-      <div className="fixed inset-0 z-50 overflow-y-auto">
-        <div className="flex items-center justify-center min-h-screen px-4">
-          <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            className="relative bg-white rounded-xl shadow-2xl p-6 w-full max-w-md"
-          >
-            <h3 className="text-lg font-semibold mb-4">Create Team Chat</h3>
-            <div className="space-y-2">
-              <input
-                type="text"
-                value={localGroupName}
-                onChange={handleInputChange}
-                placeholder={defaultName}
-                maxLength={30}
-                className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
-              />
-              <p className="text-xs text-gray-500 text-right">
-                {localGroupName.length}/30 characters
-              </p>
-            </div>
-            <div className="flex justify-end gap-3 mt-6">
-              <button
+      <AnimatePresence>
+        {isOpen && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex items-center justify-center min-h-screen px-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 bg-black/30 backdrop-blur-sm"
                 onClick={onClose}
-                className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
-                disabled={isLoading}
+              />
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0, y: 10 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 10 }}
+                transition={{ type: 'spring', duration: 0.3, bounce: 0.25 }}
+                className="relative bg-white rounded-xl shadow-2xl p-6 w-full max-w-md"
               >
-                Cancel
-              </button>
-              <button
-                onClick={() => onSubmit(localGroupName || defaultName)}
-                disabled={isLoading}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center"
-              >
-                {isLoading ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
-                    </svg>
-                    Creating...
-                  </>
-                ) : (
-                  'Create Chat'
-                )}
-              </button>
+                <h3 className="text-lg font-semibold mb-4">Create Team Chat</h3>
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={localGroupName}
+                    onChange={handleInputChange}
+                    placeholder={defaultName}
+                    maxLength={30}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  />
+                  <p className="text-xs text-gray-500 text-right">
+                    {localGroupName.length}/30 characters
+                  </p>
+                </div>
+                <div className="flex justify-end gap-3 mt-6">
+                  <button
+                    onClick={onClose}
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    disabled={isLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => onSubmit(localGroupName || defaultName)}
+                    disabled={isLoading}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center"
+                  >
+                    {isLoading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                        </svg>
+                        Creating...
+                      </>
+                    ) : (
+                      'Create Chat'
+                    )}
+                  </button>
+                </div>
+              </motion.div>
             </div>
-          </motion.div>
-        </div>
-      </div>
+          </div>
+        )}
+      </AnimatePresence>
     );
   };
 

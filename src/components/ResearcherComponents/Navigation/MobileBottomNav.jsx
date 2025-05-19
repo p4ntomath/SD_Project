@@ -39,19 +39,19 @@ export default function MobileBottomNav ({ showForm, setShowForm }) {
         </button>
 
         <button 
-          onClick={() => navigate('/notifications')}
-          className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/notifications' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
-          aria-label="View alerts"
+          onClick={() => navigate('/messages')}
+          className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/messages' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
+          aria-label="View messages"
         >
           <span className="relative">
-            <FiBell className="h-6 w-6 group-hover:text-blue-600" />
-            {unreadCount > 0 && (
+            <FiMessageSquare className="h-6 w-6 group-hover:text-blue-600" />
+            {unreadMessages > 0 && (
               <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 font-bold z-10">
-                {unreadCount}
+                {unreadMessages}
               </span>
             )}
           </span>
-          <p className="text-xs mt-1 group-hover:text-blue-600">Alerts</p>
+          <p className="text-xs mt-1 group-hover:text-blue-600">Messages</p>
         </button>
 
         <button
