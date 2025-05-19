@@ -92,7 +92,7 @@ function App() {
               <AdminDocumentsPage />
             </ProtectedRoute>
           } />
-          <Route path="/trackfunding" element={
+          <Route path="/funding" element={
             <ProtectedRoute allowedRoles={['researcher']}>
               <FundingTrackerPage />
             </ProtectedRoute>

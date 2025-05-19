@@ -805,44 +805,48 @@ const getDefaultGroupName = (projectTitle) => {
               {project.collaborators && project.collaborators.length > 0 && (
                 <div className="mb-6">
                   <h3 className="text-sm font-medium text-gray-700 mb-3">Active Collaborators</h3>
-                  <div className="space-y-3">
-                    {project.collaborators.map((collaborator) => (
-                      <div key={collaborator.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-blue-100 rounded-full">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
+                  <div className="overflow-hidden">
+                    <div className="overflow-y-auto max-h-[230px] pr-2 -mr-2 no-scrollbar">
+                      <div className="space-y-3">
+                        {project.collaborators.map((collaborator) => (
+                          <div key={collaborator.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-blue-100 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                              </div>
+                              <div>
+                                <p className="font-medium">{collaborator.fullName}</p>
+                                <p className="text-sm text-gray-500">{collaborator.institution || 'No institution'}</p>
+                              </div>
+                            </div>
+                            {isProjectOwner(project) && (
+                              <div className="flex items-center gap-2">
+                                <select
+                                  value={collaborator.accessLevel}
+                                  onChange={(e) => handleAccessLevelChange(collaborator.id, e.target.value)}
+                                  className="text-sm bg-white border border-gray-300 rounded-md px-2 py-1"
+                                >
+                                  <option value="Collaborator">Collaborator</option>
+                                  <option value="Editor">Editor</option>
+                                  <option value="Viewer">Viewer</option>
+                                </select>
+                                <button
+                                  onClick={() => handleRemoveCollaborator(collaborator.id)}
+                                  className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                  title="Remove collaborator"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                            )}
                           </div>
-                          <div>
-                            <p className="font-medium">{collaborator.fullName}</p>
-                            <p className="text-sm text-gray-500">{collaborator.institution || 'No institution'}</p>
-                          </div>
-                        </div>
-                        {isProjectOwner(project) && (
-                          <div className="flex items-center gap-2">
-                            <select
-                              value={collaborator.accessLevel}
-                              onChange={(e) => handleAccessLevelChange(collaborator.id, e.target.value)}
-                              className="text-sm bg-white border border-gray-300 rounded-md px-2 py-1"
-                            >
-                              <option value="Collaborator">Collaborator</option>
-                              <option value="Editor">Editor</option>
-                              <option value="Viewer">Viewer</option>
-                            </select>
-                            <button
-                              onClick={() => handleRemoveCollaborator(collaborator.id)}
-                              className="p-1 text-red-600 hover:bg-red-50 rounded"
-                              title="Remove collaborator"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                        )}
+                        ))}
                       </div>
-                    ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -851,25 +855,29 @@ const getDefaultGroupName = (projectTitle) => {
               {pendingInvitations && pendingInvitations.length > 0 && (
                 <div className="mb-6">
                   <h3 className="text-sm font-medium text-gray-700 mb-3">Pending Invitations</h3>
-                  <div className="space-y-3">
-                    {pendingInvitations.map((invitation) => (
-                      <div key={invitation.invitationId} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-gray-100 rounded-full">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
+                  <div className="overflow-hidden">
+                    <div className="overflow-y-auto max-h-[230px] pr-2 -mr-2 no-scrollbar">
+                      <div className="space-y-3">
+                        {pendingInvitations.map((invitation) => (
+                          <div key={invitation.invitationId} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-gray-100 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                              </div>
+                              <div>
+                                <p className="font-medium text-sm">{invitation.researcherName}</p>
+                                <p className="text-xs text-gray-500">Invited: {formatDate(invitation.createdAt)}</p>
+                              </div>
+                            </div>
+                            <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
+                              Pending Response
+                            </span>
                           </div>
-                          <div>
-                            <p className="font-medium text-sm">{invitation.researcherName}</p>
-                            <p className="text-xs text-gray-500">Invited: {formatDate(invitation.createdAt)}</p>
-                          </div>
-                        </div>
-                        <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
-                          Pending Response
-                        </span>
+                        ))}
                       </div>
-                    ))}
+                    </div>
                   </div>
                 </div>
               )}

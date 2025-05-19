@@ -368,9 +368,9 @@ export default function ChatView() {
   };
 
   return (
-    <div className="flex flex-col h-screen bg-gray-50">
-      {/* Chat Header */}
-      <header className="bg-white border-b border-gray-200">
+    <div className="flex flex-col h-[100dvh]">
+      {/* Chat Header - Fixed height */}
+      <header className="flex-none bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4">
           <div className="flex items-center h-16">
             <div className="flex-1 flex items-center min-w-0">
@@ -539,99 +539,103 @@ export default function ChatView() {
         </div>
       )}
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4" ref={chatViewRef}>
-        {Object.entries(messagesByDate).map(([date, dateMessages]) => (
-          <div key={date}>
-            <div className="flex items-center justify-center mb-4">
-              <div className="bg-gray-200 rounded-full px-3 py-1">
-                <span className="text-xs font-medium text-gray-600">{date}</span>
+      {/* Messages Area - Flexible height with scroll */}
+      <div className="flex-1 overflow-y-auto" ref={chatViewRef}>
+        <div className="p-4 space-y-4">
+          {Object.entries(messagesByDate).map(([date, dateMessages]) => (
+            <div key={date}>
+              <div className="flex items-center justify-center mb-4">
+                <div className="bg-gray-200 rounded-full px-3 py-1">
+                  <span className="text-xs font-medium text-gray-600">{date}</span>
+                </div>
               </div>
-            </div>
-            <div className="space-y-4">
-              {dateMessages.map((message, index) => {
-                const isCurrentUser = message.senderId === auth.currentUser.uid;
-                const showSender = !isCurrentUser && chat.type === 'group' && (
-                  index === 0 || 
-                  dateMessages[index - 1]?.senderId !== message.senderId
-                );
-                const senderName = chat.participantNames?.[message.senderId] || 'Unknown User';
+              <div className="space-y-4">
+                {dateMessages.map((message, index) => {
+                  const isCurrentUser = message.senderId === auth.currentUser.uid;
+                  const showSender = !isCurrentUser && chat.type === 'group' && (
+                    index === 0 || 
+                    dateMessages[index - 1]?.senderId !== message.senderId
+                  );
+                  const senderName = chat.participantNames?.[message.senderId] || 'Unknown User';
 
-                return (
-                  <div key={message.id}>
-                    {showSender && (
-                      <p className="text-sm text-gray-500 mb-1">
-                        {senderName}
-                      </p>
-                    )}
-                    <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
+                  return (
+                    <div key={message.id}>
                       {showSender && (
-                        <div className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm font-medium mr-2">
-                          {getAvatarInitials(senderName)}
-                        </div>
+                        <p className="text-sm text-gray-500 mb-1">
+                          {senderName}
+                        </p>
                       )}
-                      <div className={`rounded-lg px-4 py-2 max-w-[70%] break-words ${
-                        isCurrentUser 
-                          ? 'bg-blue-600 text-white' 
-                          : 'bg-gray-100 text-gray-900'
-                      }`}>
-                        {message.text}
+                      <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
+                        {showSender && (
+                          <div className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm font-medium mr-2">
+                            {getAvatarInitials(senderName)}
+                          </div>
+                        )}
+                        <div className={`rounded-lg px-4 py-2 max-w-[70%] break-words ${
+                          isCurrentUser 
+                            ? 'bg-blue-600 text-white' 
+                            : 'bg-gray-100 text-gray-900'
+                        }`}>
+                          {message.text}
+                        </div>
                       </div>
                     </div>
-                  </div>
-                );
-              })}
+                  );
+                })}
+              </div>
             </div>
-          </div>
-        ))}
-        <div ref={messagesEndRef} />
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
       </div>
 
-      {/* Message Input */}
-      <div className="p-4 bg-white border-t border-gray-200 relative">
-        <div className="flex items-end space-x-2 max-w-7xl mx-auto">
-          <div className="flex-1 bg-gray-100 rounded-lg">
-            <textarea
-              rows="1"
-              placeholder="Type your message..."
-              className="w-full bg-transparent outline-none text-gray-900 placeholder-gray-500 px-4 py-3 resize-none min-h-[44px] max-h-[120px]"
-              value={messageInput}
-              onChange={(e) => {
-                setMessageInput(e.target.value);
-                e.target.style.height = '44px';
-                e.target.style.height = `${e.target.scrollHeight}px`;
-              }}
-              onKeyDown={(e) => {
-                if (e.key === 'Enter' && !e.shiftKey) {
-                  e.preventDefault();
-                  handleSendMessage();
-                }
-              }}
-            />
-          </div>
-          <div className="flex items-center space-x-2">
-            <button className="p-3 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
-              <FiPaperclip className="h-5 w-5" />
-            </button>
-            <button 
-              ref={emojiButtonRef}
-              onClick={toggleEmojiPicker}
-              className="p-3 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors relative"
-            >
-              <FiSmile className="h-5 w-5" />
-            </button>
-            <button 
-              onClick={handleSendMessage}
-              disabled={!messageInput.trim() || sendingMessage}
-              className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              <FiSend className="h-5 w-5" />
-            </button>
+      {/* Message Input - Fixed height at bottom */}
+      <div className="flex-none bg-white border-t border-gray-200">
+        <div className="p-4">
+          <div className="flex items-end space-x-2">
+            <div className="flex-1 bg-gray-100 rounded-lg">
+              <textarea
+                rows="1"
+                placeholder="Type your message..."
+                className="w-full bg-transparent outline-none text-gray-900 placeholder-gray-500 px-4 py-3 resize-none min-h-[44px] max-h-[120px] overflow-y-auto"
+                value={messageInput}
+                onChange={(e) => {
+                  setMessageInput(e.target.value);
+                  e.target.style.height = '44px';
+                  e.target.style.height = `${e.target.scrollHeight}px`;
+                }}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSendMessage();
+                  }
+                }}
+              />
+            </div>
+            <div className="flex items-center space-x-2">
+              <button className="p-3 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+                <FiPaperclip className="h-5 w-5" />
+              </button>
+              <button 
+                ref={emojiButtonRef}
+                onClick={toggleEmojiPicker}
+                className="p-3 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors relative"
+              >
+                <FiSmile className="h-5 w-5" />
+              </button>
+              <button 
+                onClick={handleSendMessage}
+                disabled={!messageInput.trim() || sendingMessage}
+                className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                <FiSend className="h-5 w-5" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Emoji Picker */}
+      {/* Emoji Picker - Absolute positioned */}
       {showEmojiPicker && (
         <div 
           ref={emojiPickerRef}
