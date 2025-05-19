@@ -229,7 +229,7 @@ describe('ResearcherHome', () => {
     await waitFor(() => {
       const trackFundingButton = screen.getByText('Track Funding');
       fireEvent.click(trackFundingButton);
-      expect(mockNavigate).toHaveBeenCalledWith('/trackfunding');
+      expect(mockNavigate).toHaveBeenCalledWith('/funding');
     });
   });
 

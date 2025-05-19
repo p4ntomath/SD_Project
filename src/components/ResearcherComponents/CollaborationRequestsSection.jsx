@@ -164,7 +164,7 @@ export default function CollaborationRequestsSection() {
       </div>
 
       <div className="overflow-hidden">
-        <div className="overflow-y-auto max-h-[230px] pr-2 -mr-2">
+        <div className="overflow-y-auto max-h-[230px] pr-2 -mr-2 no-scrollbar">
           <div className="space-y-3">
             {getCurrentPageItems(showSent ? sentInvitations : receivedInvitations).map((invitation) => (
               <div 

@@ -270,7 +270,7 @@ export default function FundingTrackerPage() {
                   Need Funding?
                 </h2>
 
-                <section className="space-y-4">
+                <section className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
                   {fundingLoading ? (
                     // Loading state
                     [...Array(2)].map((_, i) => (
@@ -332,7 +332,7 @@ export default function FundingTrackerPage() {
             <section className="lg:col-span-3">
               <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <h2 className="text-lg font-semibold mb-4">Your Projects</h2>
-                <section className="space-y-4">
+                <section className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
                   {filteredProjects.map((project) => {
                     const availableFunds = (project.availableFunds || 0);
                     const usedFunds = (project.usedFunds || 0);
