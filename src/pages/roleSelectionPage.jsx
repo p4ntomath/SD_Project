@@ -31,7 +31,7 @@ const RoleSelectionPage = () => {
       setRole(formData.role);
       setProfileCompleted(true);
     } catch (error) {
-      console.error("Error completing profile:", error.message);
+      console.error('Error completing profile:', error.message);
     } finally {
       setLocalLoading(false);
       setLoading(false);
