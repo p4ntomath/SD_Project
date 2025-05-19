@@ -368,7 +368,7 @@ export default function ChatView() {
   };
 
   return (
-    <div className="flex flex-col h-[100dvh]">
+    <div className="flex flex-col h-screen">
       {/* Chat Header - Fixed height */}
       <header className="flex-none bg-white border-b border-gray-200">
         <div className="max-w-7xl mx-auto px-4">

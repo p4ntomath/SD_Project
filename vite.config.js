@@ -10,5 +10,9 @@ export default defineConfig({
   ],
   resolve: {
     extensions: ['.js', '.jsx', '.ts', '.tsx']
+  },
+  server: {
+    host: true, // expose to all network interfaces
+    port: 5173
   }
 })
