@@ -1,12 +1,19 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import React from 'react';
+import { cleanup } from '@testing-library/react';
 
 // Make React available globally
 globalThis.React = React;
 
+// Setup test environment
+beforeEach(() => {
+  cleanup();
+});
 
-
+afterEach(() => {
+  cleanup();
+});
 
 vi.mock('../backend/firebase/projectDB', () => ({
   createProject: vi.fn().mockResolvedValue('new-project-id')
