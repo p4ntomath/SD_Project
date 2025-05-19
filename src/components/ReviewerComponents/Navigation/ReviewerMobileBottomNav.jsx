@@ -1,12 +1,13 @@
 import { FiHome, FiUser, FiClock, FiBell, FiInbox, FiMessageSquare } from 'react-icons/fi';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ClipboardDocumentCheckIcon } from "@heroicons/react/24/outline";
-import { useUnreadNotificationsCount } from '../../../backend/firebase/notificationsUtil';
+import { useUnreadNotificationsCount, useUnreadMessagesCount } from '../../../backend/firebase/notificationsUtil';
 
 export default function ReviewerMobileBottomNav() {
   const location = useLocation();
   const navigate = useNavigate();
   const unreadCount = useUnreadNotificationsCount();
+  const unreadMessages = useUnreadMessagesCount();
 
   return (
     <nav className="md:hidden fixed bottom-0 left-0 right-0 bg-white shadow-lg border-t border-gray-200" aria-label="Mobile navigation">
@@ -52,7 +53,14 @@ export default function ReviewerMobileBottomNav() {
           className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/messages' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
           aria-label="View messages"
         >
-          <FiMessageSquare className="h-6 w-6 group-hover:text-blue-600" />
+          <span className="relative">
+            <FiMessageSquare className="h-6 w-6 group-hover:text-blue-600" />
+            {unreadMessages > 0 && (
+              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 font-bold z-10">
+                {unreadMessages}
+              </span>
+            )}
+          </span>
           <p className="text-xs mt-1 group-hover:text-blue-600">Messages</p>
         </button>
 

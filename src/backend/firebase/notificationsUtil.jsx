@@ -36,6 +36,32 @@ export function useUnreadNotificationsCount() {
   return count;
 }
 
+export function useUnreadMessagesCount() {
+  const [count, setCount] = useState(0);
+  const auth = getAuth();
+  const db = getFirestore();
+
+  useEffect(() => {
+    if (!auth.currentUser) return;
+    
+    const userChatsRef = doc(db, 'userChats', auth.currentUser.uid);
+    const unsubscribe = onSnapshot(userChatsRef, (snapshot) => {
+      if (!snapshot.exists()) {
+        setCount(0);
+        return;
+      }
+      
+      const data = snapshot.data();
+      const totalUnread = Object.values(data.unreadCount || {}).reduce((sum, count) => sum + count, 0);
+      setCount(totalUnread);
+    });
+    
+    return () => unsubscribe();
+  }, [auth.currentUser, db]);
+
+  return count;
+}
+
 export const getUserById = async (userId) => {
   const userRef = doc(db, "users", userId);
   const userSnap = await getDoc(userRef);

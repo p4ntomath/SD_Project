@@ -4,14 +4,16 @@ import { DocumentIcon } from "@heroicons/react/24/outline";
 import { logOut } from '../../../backend/firebase/authFirebase';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
-import { useUnreadNotificationsCount } from '../../../backend/firebase/notificationsUtil';
+import { useUnreadNotificationsCount, useUnreadMessagesCount } from '../../../backend/firebase/notificationsUtil';
 
 export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobileMenuOpen, onSearch }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
-   const unreadCount = useUnreadNotificationsCount();
+  const unreadCount = useUnreadNotificationsCount();
+  const unreadMessages = useUnreadMessagesCount();
+  
   const handleSearch = (e) => {
     e.preventDefault();
     onSearch(searchQuery);
@@ -41,7 +43,7 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
                 <FiHome className="h-6 w-6 group-hover:text-blue-600" />
                 <p className="text-xs mt-1 group-hover:text-blue-600">Home</p>
               </button>
-
+            
               <button 
                 onClick={() => navigate('/projects')}
                 className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/projects' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
@@ -66,7 +68,14 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
                 className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/messages' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                 aria-label="View messages"
               >
-                <FiMessageSquare className="h-6 w-6 group-hover:text-blue-600" />
+                <span className="relative">
+                  <FiMessageSquare className="h-6 w-6 group-hover:text-blue-600" />
+                  {unreadMessages > 0 && (
+                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 font-bold z-10">
+                      {unreadMessages}
+                    </span>
+                  )}
+                </span>
                 <p className="text-xs mt-1 group-hover:text-blue-600">Messages</p>
               </button>
 
