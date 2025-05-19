@@ -11,6 +11,8 @@ import {
     handleDownload,
     handleRenameFolder
 } from '../../utils/documentUtils';
+import { notify } from '../../backend/firebase/notificationsUtil';
+
 
 function formatFileSize(bytes) {
     if (bytes === 0) return '0 B';
@@ -59,6 +61,14 @@ export default function DocumentsCard({
             setNewFolderName,
             setShowFolderModal
         });
+        notify({
+            type: 'Folder Created',
+            targetUserId: project.userId,
+            message: `A new folder "${newFolderName}" has been created in your project "${project.title || 'Untitled Project'}".`,
+            projectId: projectId,
+            projectTitle: project.title,
+            folderName: newFolderName
+        });
     };
 
     const handleFileUploadWrapper = (event) => {
@@ -94,7 +104,16 @@ export default function DocumentsCard({
                 setModalOpen,
                 setStatusMessage
             });
-          
+            notify({
+                type: 'File Uploaded',
+                targetUserId: project.userId,
+                message: `The file "${finalFileName}" has been uploaded to the folder "${selectedFolder.name}" in your project "${project.title || 'Untitled Project'}".`,
+                projectId: projectId,
+                projectTitle: project.title,
+                folderName: selectedFolder.name,
+                documentName: finalFileName
+            });
+
         } catch (err) {
             setError(true);
             setModalOpen(true);
@@ -124,6 +143,15 @@ export default function DocumentsCard({
             setStatusMessage,
             setFolderToDelete,
             setShowDeleteFolderModal: setShowDeleteFolderConfirm
+        });
+
+        notify({
+            type: 'Folder Deleted',
+            targetUserId: project.userId,
+            message: `The folder "${folder.name}" has been deleted from your project "${project.title || 'Untitled Project'}".`,
+            projectId: projectId,
+            projectTitle: project.title,
+            folderName: folder.name
         });
       
     };
@@ -159,6 +187,15 @@ export default function DocumentsCard({
 
 
         setFileToDelete({ file, folder });
+        notify({
+            type: 'File Deleted',
+            targetUserId: project.userId,
+            message: `The file "${file.name}" has been deleted from the folder "${folder.name}" in your project "${project.title || 'Untitled Project'}".`,
+            projectId: projectId,
+            projectTitle: project.title,
+            folderName: folder.name,
+            documentName: file.name
+        });
         setShowDeleteFileConfirm(true);
     };
 

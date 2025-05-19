@@ -77,9 +77,14 @@ const NotificationsPage = () => {
                       : 'bg-white border-gray-200'
                   } cursor-pointer`}
                   onClick={() => {
-                    if (notification.projectId) {
-                      navigate(`/projects/${notification.projectId}`);
+                    // Block navigation for "Collaboration Request Received" notifications
+                    if (
+                      notification.type === 'Collaboration Request Received' ||
+                      !notification.projectId
+                    ) {
+                      return;
                     }
+                    navigate(`/projects/${notification.projectId}`);
                   }}
                 >
                   <section className="flex justify-between items-start mb-2">

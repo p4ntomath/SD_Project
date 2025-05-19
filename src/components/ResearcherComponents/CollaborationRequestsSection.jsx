@@ -3,6 +3,9 @@ import { useNavigate } from 'react-router-dom';
 import { getSentInvitations, getReceivedInvitations, respondToResearcherInvitation } from '../../backend/firebase/collaborationDB';
 import { auth } from '../../backend/firebase/firebaseConfig';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
+import { notify } from '../../backend/firebase/notificationsUtil'; // Make sure this import is present
+import {getUserById} from '../../backend/firebase/notificationsUtil'; // Adjust the import based on your file structure
+
 
 export default function CollaborationRequestsSection() {
   const navigate = useNavigate();
@@ -42,30 +45,47 @@ export default function CollaborationRequestsSection() {
     loadInvitations();
   }, []);
 
-  const handleResponse = async (invitationId, accepted) => {
-    try {
-      setRespondingTo(invitationId);
-      await respondToResearcherInvitation(invitationId, accepted);
-      
-      if (accepted) {
-        // Find the invitation that was accepted to get the project ID
-        const invitation = receivedInvitations.find(inv => inv.invitationId === invitationId);
-        if (invitation) {
-          // Navigate to the project page with the correct path
-          navigate(`/projects/${invitation.projectId}`);
-          return; // Return early since we're navigating away
-        }
-      }
-      
-      // Only update the invitations list if we're not navigating away
-      setReceivedInvitations(receivedInvitations.filter(inv => inv.invitationId !== invitationId));
-    } catch (err) {
-      console.error('Error responding to invitation:', err);
-      setError('Failed to respond to invitation');
-    } finally {
-      setRespondingTo(null);
+ const handleResponse = async (invitationId, accepted) => {
+  try {
+    setRespondingTo(invitationId);
+    await respondToResearcherInvitation(invitationId, accepted);
+
+    // Always get the current user's name (the one accepting/declining)
+    const currentUser = auth.currentUser;
+    let researcherName = "A researcher";
+    if (currentUser) {
+      const userProfile = await getUserById(currentUser.uid);
+      researcherName = userProfile?.fullName || "A researcher";
     }
-  };
+
+    // Find the invitation that was accepted/declined to get the requester info
+    const invitation = receivedInvitations.find(inv => inv.invitationId === invitationId);
+
+    if (invitation) {
+      // Notify the requester (sender)
+      await notify({
+        type: 'Collaboration Request ' + (accepted ? 'Accepted' : 'Declined'),
+        targetUserId: invitation.senderId, // requester userId
+        projectId: invitation.projectId,
+        projectTitle: invitation.projectTitle,
+        researcherName,
+        message: `Your collaboration request for project "${invitation.projectTitle}" was ${accepted ? 'accepted' : 'declined'} by ${researcherName}.`
+      });
+    }
+
+    if (accepted && invitation) {
+      navigate(`/projects/${invitation.projectId}`);
+      return;
+    }
+
+    setReceivedInvitations(receivedInvitations.filter(inv => inv.invitationId !== invitationId));
+  } catch (err) {
+    console.error('Error responding to invitation:', err);
+    setError('Failed to respond to invitation');
+  } finally {
+    setRespondingTo(null);
+  }
+};
 
   const toggleExpand = (invitationId) => {
     setExpandedInvitation(expandedInvitation === invitationId ? null : invitationId);

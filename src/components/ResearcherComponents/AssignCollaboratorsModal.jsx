@@ -3,6 +3,8 @@ import { ClipLoader } from 'react-spinners';
 import { motion } from 'framer-motion';
 import { searchResearchers } from '../../backend/firebase/collaborationDB';
 import { auth } from '../../backend/firebase/firebaseConfig';
+import { notify } from '../../backend/firebase/notificationsUtil';
+import { getUserById } from '../../backend/firebase/notificationsUtil';
 
 export default function AssignCollaboratorsModal({ isOpen, onClose, onAssign, projectId, project }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -70,6 +72,35 @@ export default function AssignCollaboratorsModal({ isOpen, onClose, onAssign, pr
       setSelectedResearchers([]);
       setSelectedRoles({});
       setSearchTerm('');
+
+      // Get sender's name
+      const senderUser = await getUserById(auth.currentUser.uid);
+      const senderName = senderUser?.fullName || "A researcher";
+
+      // Notify sender (current user)
+      await notify({
+        type: 'Collaboration Request Sent',
+        projectId,
+        projectTitle: project.title,
+        researcherName: selectedResearchers.map(r => r.fullName).join(', '),
+        targetUserId: auth.currentUser.uid,
+        senderUserId: auth.currentUser.uid,
+        message: `You sent a collaboration request to ${selectedResearchers.map(r => r.fullName).join(', ')} for project "${project.title || 'Untitled Project'}".`
+      });
+
+      // Notify each recipient with correct sender name
+      await Promise.all(selectedResearchers.map(researcher =>
+        notify({
+          type: 'Collaboration Request Received',
+          projectId,
+          projectTitle: project.title,
+          researcherName: senderName, // <-- Use sender's name here
+          targetUserId: researcher.id,
+          senderUserId: auth.currentUser.uid,
+          message: `You have received a collaboration request from ${senderName} for project "${project.title || 'Untitled Project'}".`
+        })
+      ));
+
     } catch (error) {
       console.error('Error assigning collaborators:', error);
     } finally {
