@@ -6,6 +6,26 @@ import ReviewRequestsPanel from '../components/ReviewerComponents/ReviewRequests
 import { auth } from '../backend/firebase/firebaseConfig';
 import { getReviewerRequests, updateReviewRequestStatus } from '../backend/firebase/reviewerDB';
 
+// Mock navigation
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate,
+  };
+});
+
+// Mock Firebase auth
+vi.mock('../backend/firebase/firebaseConfig', () => ({
+  auth: {
+    currentUser: { uid: 'test-user-id' }
+  }
+}));
+
+// Mock review database functions
+vi.mock('../backend/firebase/reviewerDB');
+
 // Mock data
 const mockRequests = [
   {
@@ -29,29 +49,6 @@ const mockRequests = [
     }
   }
 ];
-
-// Mock navigation
-const mockNavigate = vi.fn();
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
-  return {
-    ...actual,
-    useNavigate: () => mockNavigate,
-  };
-});
-
-// Mock Firebase auth
-vi.mock('../backend/firebase/firebaseConfig', () => ({
-  auth: {
-    currentUser: { uid: 'test-user-id' }
-  }
-}));
-
-// Mock review database functions
-vi.mock('../backend/firebase/reviewdb', () => ({
-  getReviewerRequests: vi.fn(),
-  updateReviewRequestStatus: vi.fn()
-}));
 
 // Suppress React act warnings and errors
 const originalError = console.error;
@@ -81,7 +78,7 @@ beforeEach(() => {
   };
 
   vi.clearAllMocks();
-  getReviewerRequests.mockResolvedValue(mockRequests);
+  vi.mocked(getReviewerRequests).mockResolvedValue(mockRequests);
 });
 
 // Restore console functions after tests
@@ -93,7 +90,7 @@ afterEach(() => {
 describe('ReviewRequestsPanel Component', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    getReviewerRequests.mockResolvedValue(mockRequests);
+    vi.mocked(getReviewerRequests).mockResolvedValue(mockRequests);
   });
 
   it('renders loading state initially', async () => {

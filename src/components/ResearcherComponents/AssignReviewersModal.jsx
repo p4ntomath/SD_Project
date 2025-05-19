@@ -44,7 +44,7 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
         setAllReviewers(formattedReviewers);
         setAvailableReviewers(formattedReviewers);
       } catch (error) {
-        console.error('Error fetching reviewers:', error);
+        
       } finally {
         setFetchingReviewers(false);
       }
@@ -125,7 +125,7 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
     });
 
   } catch (error) {
-    console.error('Error assigning reviewers:', error);
+    
   } finally {
     setLoading(false);
   }

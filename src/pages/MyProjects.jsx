@@ -173,7 +173,8 @@ export default function MyProjects() {
                 <option value="On Hold">On Hold</option>
               </select>
               <button
-                onClick={() => setShowForm(true)}
+                onClick={() => setShowForm(true)
+                }
                 className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors flex items-center"
                 disabled={showForm}
                 aria-label="create new research project"
@@ -281,7 +282,7 @@ export default function MyProjects() {
                       {searchQuery ? 'No matching projects found' : 'No projects yet'}
                     </h3>
                     <p className="mt-1 text-gray-500">
-                      {searchQuery ? 'Try a different search term or filter' : 'Get started by creating a new research project.'}
+                      {searchQuery ? 'Try a different search term' : 'Get started by creating a new research project.'}
                     </p>
                   </section>
                 )}

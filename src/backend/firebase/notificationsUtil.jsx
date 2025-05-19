@@ -21,17 +21,34 @@ export function useUnreadNotificationsCount() {
   const db = getFirestore();
 
   useEffect(() => {
-    if (!auth.currentUser) return;
-    const q = query(
-      collection(db, 'notifications'),
-      where('targetUserId', '==', auth.currentUser.uid), // updated field
-      where('readStatus', '==', false)
-    );
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      setCount(snapshot.size);
+    // Early return if auth isn't initialized yet
+    if (!auth) return;
+
+    // Set up auth state listener
+    const unsubscribeAuth = auth.onAuthStateChanged(user => {
+      if (!user) {
+        setCount(0);
+        return;
+      }
+
+      const q = query(
+        collection(db, 'notifications'),
+        where('targetUserId', '==', user.uid),
+        where('readStatus', '==', false)
+      );
+      
+      const unsubscribeSnapshot = onSnapshot(q, (snapshot) => {
+        setCount(snapshot.size);
+      });
+
+      return () => unsubscribeSnapshot();
     });
-    return () => unsubscribe();
-  }, [auth.currentUser, db]);
+
+    // Clean up both subscriptions
+    return () => {
+      unsubscribeAuth();
+    };
+  }, [db]); // Remove auth.currentUser from dependencies since we handle it inside
 
   return count;
 }
@@ -42,22 +59,36 @@ export function useUnreadMessagesCount() {
   const db = getFirestore();
 
   useEffect(() => {
-    if (!auth.currentUser) return;
-    
-    const userChatsRef = doc(db, 'userChats', auth.currentUser.uid);
-    const unsubscribe = onSnapshot(userChatsRef, (snapshot) => {
-      if (!snapshot.exists()) {
+    // Early return if auth isn't initialized yet
+    if (!auth) return;
+
+    // Set up auth state listener
+    const unsubscribeAuth = auth.onAuthStateChanged(user => {
+      if (!user) {
         setCount(0);
         return;
       }
-      
-      const data = snapshot.data();
-      const totalUnread = Object.values(data.unreadCount || {}).reduce((sum, count) => sum + count, 0);
-      setCount(totalUnread);
+
+      const userChatsRef = doc(db, 'userChats', user.uid);
+      const unsubscribeSnapshot = onSnapshot(userChatsRef, (snapshot) => {
+        if (!snapshot.exists()) {
+          setCount(0);
+          return;
+        }
+        
+        const data = snapshot.data();
+        const totalUnread = Object.values(data.unreadCount || {}).reduce((sum, count) => sum + count, 0);
+        setCount(totalUnread);
+      });
+
+      return () => unsubscribeSnapshot();
     });
-    
-    return () => unsubscribe();
-  }, [auth.currentUser, db]);
+
+    // Clean up both subscriptions
+    return () => {
+      unsubscribeAuth();
+    };
+  }, [db]); // Remove auth.currentUser from dependencies since we handle it inside
 
   return count;
 }

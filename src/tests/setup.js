@@ -61,6 +61,7 @@ vi.mock('firebase/auth', () => ({
 
 vi.mock('firebase/firestore', () => ({
   getFirestore: vi.fn(),
+  initializeFirestore: vi.fn(),
   collection: vi.fn(),
   doc: vi.fn(),
   getDoc: vi.fn(),
@@ -70,6 +71,7 @@ vi.mock('firebase/firestore', () => ({
   deleteDoc: vi.fn(),
   query: vi.fn(),
   where: vi.fn(),
+  CACHE_SIZE_UNLIMITED: 'unlimited'
 }));
 
 vi.mock('firebase/storage', () => ({

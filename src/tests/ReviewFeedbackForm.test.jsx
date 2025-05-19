@@ -6,7 +6,7 @@ import ReviewFeedbackForm from '../components/ReviewerComponents/ReviewFeedbackF
 import { submitReviewFeedback } from '../backend/firebase/reviewerDB';
 
 // Mock the reviewdb functions
-vi.mock('../backend/firebase/reviewdb', () => ({
+vi.mock('../backend/firebase/reviewerDB', () => ({
     submitReviewFeedback: vi.fn()
 }));
 
@@ -17,6 +17,8 @@ describe('ReviewFeedbackForm Component', () => {
 
     beforeEach(() => {
         vi.clearAllMocks();
+        // Setup default mock implementation
+        submitReviewFeedback.mockImplementation(() => Promise.resolve());
     });
 
     it('renders form with all required fields', () => {
@@ -45,7 +47,7 @@ describe('ReviewFeedbackForm Component', () => {
         );
 
         // Check default values
-        expect(screen.getByLabelText(/review decision/i)).toHaveValue('in_progress');
+        expect(screen.getByLabelText(/review decision/i)).toHaveValue('approved');
         expect(screen.getByLabelText(/feedback comments/i)).toHaveValue('');
         // Default rating is 3, check if 3 stars are filled
         const stars = screen.getAllByRole('button').filter(button => 

@@ -25,18 +25,24 @@ export default function CollaborationRequestsSection() {
         setLoading(true);
         setError(null);
         const currentUser = auth.currentUser;
-        if (!currentUser) return;
+        if (!currentUser) {
+          setSentInvitations([]);
+          setReceivedInvitations([]);
+          return;
+        }
 
         const [sent, received] = await Promise.all([
           getSentInvitations(currentUser.uid),
           getReceivedInvitations(currentUser.uid)
         ]);
 
-        setSentInvitations(sent);
-        setReceivedInvitations(received);
+        setSentInvitations(sent || []);
+        setReceivedInvitations(received || []);
       } catch (err) {
         console.error('Error loading invitations:', err);
         setError('Failed to load invitations');
+        setSentInvitations([]);
+        setReceivedInvitations([]);
       } finally {
         setLoading(false);
       }
@@ -113,7 +119,8 @@ export default function CollaborationRequestsSection() {
     );
   }
 
-  if (sentInvitations.length === 0 && receivedInvitations.length === 0) {
+  // Handle both undefined and empty arrays
+  if (!sentInvitations?.length && !receivedInvitations?.length) {
     return (
       <p className="text-gray-500 text-center py-4">No pending invitations</p>
     );
