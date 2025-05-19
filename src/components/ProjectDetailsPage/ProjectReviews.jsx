@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
-import { getProjectReviews } from '../../backend/firebase/reviewdb';
+import { getProjectReviews } from '../../backend/firebase/reviewerDB';
 
-export default function ProjectReviews({ projectId }) {
+export default function ProjectReviews({ projectId, formatDate }) {
     const [reviews, setReviews] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -59,7 +59,7 @@ export default function ProjectReviews({ projectId }) {
                                 {review.reviewer?.fullName || 'Anonymous Reviewer'}
                             </h3>
                             <p className="text-sm text-gray-500">
-                                {review.reviewer?.expertise || 'Expertise not specified'}
+                                {review.reviewer?.fieldOfResearch || 'Expertise not specified'}
                             </p>
                         </div>
                         <div className="flex items-center">
@@ -94,12 +94,12 @@ export default function ProjectReviews({ projectId }) {
                                 </div>
                             </div>
                             <div className="text-sm text-gray-500">
-                                {new Date(review.createdAt?.seconds * 1000).toLocaleDateString()}
+                                {formatDate(review.createdAt)}
                             </div>
                         </div>
                     </div>
 
-                    <p className="text-gray-700 whitespace-pre-wrap">{review.feedback}</p>
+                    <p className="text-gray-700 whitespace-pre-wrap break-words">{review.feedback}</p>
                 </div>
             ))}
         </div>

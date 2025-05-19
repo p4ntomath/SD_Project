@@ -9,7 +9,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
     const location = useLocation();
 
     useEffect(() => {
-        if (loading || location.pathname === '/login') {
+        if (loading) {
             return;
         }
 
@@ -18,18 +18,23 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
             return;
         }
 
+        // If user is authenticated but has no role, redirect to complete profile
+        // unless they're already on the complete-profile page
         if (!role && location.pathname !== '/complete-profile') {
-            navigate('/complete-profile');
+            navigate('/complete-profile', { state: { from: location.pathname } });
             return;
         }
 
-        // Check if route requires specific roles
+        // Only check role requirements if the route has allowedRoles specified
         if (allowedRoles && !allowedRoles.includes(role)) {
-            navigate('/home');
+            // Redirect to appropriate home page based on role
+            const homePath = role === 'admin' ? '/admin' : '/home';
+            navigate(homePath);
             return;
         }
     }, [user, role, loading, navigate, location.pathname, allowedRoles]);
 
+    // Show loading spinner while authentication state is being determined
     if (loading && location.pathname !== '/login') {
         return (
             <main className="flex justify-center items-center h-screen bg-gray-50">

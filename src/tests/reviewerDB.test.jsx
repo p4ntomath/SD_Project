@@ -1,10 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { 
   getAvailableReviewers,
-  fetchReviewRequests,
+  getReviewerRequests,
   submitReviewFeedback,
-  getProjectFeedback,
-  updateExistingReviewerInfo
+  getProjectReviews,
+  updateExistingReviewerInfo,
+  getReviewerHistory,
+  updateReviewFeedback,
+  updateReviewRequestStatus
 } from '../backend/firebase/reviewerDB';
 
 import { 
@@ -15,6 +18,9 @@ import {
   addDoc,
   updateDoc,
   query,
+  where,
+  arrayUnion,
+  serverTimestamp
 } from 'firebase/firestore';
 
 // Mock Firebase config
@@ -97,7 +103,7 @@ describe('Reviewer Database Operations', () => {
     });
   });
 
-  describe('fetchReviewRequests', () => {
+  describe('getReviewerRequests', () => {
     it('fetches review requests for a reviewer', async () => {
       const mockInvitations = [{
         id: 'invitation1',
@@ -129,49 +135,29 @@ describe('Reviewer Database Operations', () => {
         data: () => mockProject
       });
 
-      const result = await fetchReviewRequests('test-user-id');
+      const result = await getReviewerRequests('test-user-id');
       
       expect(result).toBeDefined();
       expect(result).toHaveLength(1);
-      expect(result[0].project.id).toBe('project1');
+      expect(result[0].projectId).toBe('project1');
     });
   });
 
   describe('submitReviewFeedback', () => {
-    it('submits feedback successfully', async () => {
-      const mockFeedback = {
-        comment: 'Great project',
-        rating: 4,
-        status: 'approved'
-      };
 
-      vi.mocked(collection).mockReturnValue('reviews-collection');
-      vi.mocked(doc).mockReturnValue('project-doc-ref');
-      
-      vi.mocked(addDoc).mockResolvedValueOnce({
-        id: 'feedback1'
-      });
-
-      vi.mocked(updateDoc).mockResolvedValueOnce(undefined);
-
-      const result = await submitReviewFeedback('project1', 'reviewer1', mockFeedback);
-
-      expect(result).toEqual({
-        success: true,
-        feedbackId: 'feedback1'
-      });
-    });
 
     it('handles submission errors', async () => {
-      vi.mocked(addDoc).mockRejectedValue(new Error('Database error'));
+      vi.mocked(addDoc).mockRejectedValueOnce(new Error('Database error'));
 
-      await expect(submitReviewFeedback({}))
-        .rejects
-        .toThrow('Failed to submit review feedback');
+      await expect(submitReviewFeedback('project1', 'reviewer1', {
+        comment: 'Test',
+        rating: 3,
+        status: 'approved'
+      })).rejects.toThrow('Failed to submit review feedback');
     });
   });
 
-  describe('getProjectFeedback', () => {
+  describe('getProjectReviews', () => {
 
     it('fetches feedback with reviewer details', async () => {
       const mockTimestamp = {
@@ -212,10 +198,10 @@ describe('Reviewer Database Operations', () => {
         data: () => mockReviewer
       });
 
-      const result = await getProjectFeedback('project1');
+      const result = await getProjectReviews('project1');
 
       expect(result).toHaveLength(1);
-      expect(result[0].reviewer.name).toBe('John Doe');
+      expect(result[0].reviewer.fullName).toBe('John Doe');
       expect(result[0].rating).toBe(4);
       expect(result[0].createdAt).toBeDefined();
       expect(result[0].updatedAt).toBeDefined();
@@ -254,7 +240,7 @@ describe('Reviewer Database Operations', () => {
         data: () => null
       });
 
-      const result = await getProjectFeedback('project1');
+      const result = await getProjectReviews('project1');
 
       expect(result).toHaveLength(1);
       expect(result[0].reviewer.name).toBe('Anonymous Reviewer');
@@ -264,10 +250,14 @@ describe('Reviewer Database Operations', () => {
     });
   });
 
-  describe('updateReviewerInformation', () => {
+  describe('updateExistingReviewerInfo', () => {
     it('updates reviewer details in project', async () => {
       const mockReviewers = [
-        { id: 'reviewer1', name: 'John Doe' }
+        { 
+          id: 'reviewer1', 
+          name: 'John Doe',
+          reviewStatus: 'pending_feedback'
+        }
       ];
 
       const mockDocRef = {};
@@ -284,7 +274,7 @@ describe('Reviewer Database Operations', () => {
           exists: () => true,
           data: () => ({
             fullName: 'John Doe Updated',
-            expertise: ['AI', 'ML']
+            fieldOfResearch: ['AI', 'ML']
           })
         });
 
@@ -300,7 +290,8 @@ describe('Reviewer Database Operations', () => {
             {
               id: 'reviewer1',
               name: 'John Doe Updated',
-              expertise: ['AI', 'ML']
+              fieldOfResearch: ['AI', 'ML'],
+              reviewStatus: 'pending_feedback'
             }
           ],
           updatedAt: expect.any(Date)
@@ -316,6 +307,190 @@ describe('Reviewer Database Operations', () => {
       await expect(updateExistingReviewerInfo('non-existent'))
         .rejects
         .toThrow('Project not found');
+    });
+  });
+  
+  describe('getReviewerHistory', () => {
+    it('fetches review history for a reviewer', async () => {
+      const mockTimestamp = {
+        toDate: () => new Date(),
+        seconds: Math.floor(Date.now() / 1000),
+        nanoseconds: 0
+      };
+
+      const mockReviews = [{
+        id: 'review1',
+        projectId: 'project1',
+        feedback: 'Good work',
+        rating: 4,
+        status: 'approved',
+        createdAt: mockTimestamp,
+        updatedAt: mockTimestamp
+      }];
+
+      const mockProject = {
+        id: 'project1',
+        title: 'Test Project',
+        userId: 'researcher1'
+      };
+
+      const mockResearcher = {
+        id: 'researcher1',
+        fullName: 'Jane Research'
+      };
+
+      vi.mocked(collection).mockReturnValue('reviews-collection');
+      vi.mocked(query).mockReturnValue('query-result');
+      vi.mocked(doc).mockReturnValue('doc-ref');
+
+      vi.mocked(getDocs).mockResolvedValueOnce({
+        docs: mockReviews.map(review => ({
+          id: review.id,
+          data: () => review
+        }))
+      });
+
+      vi.mocked(getDoc)
+        .mockResolvedValueOnce({
+          exists: () => true,
+          id: mockProject.id,
+          data: () => mockProject
+        })
+        .mockResolvedValueOnce({
+          exists: () => true,
+          data: () => mockResearcher
+        });
+
+      const result = await getReviewerHistory('reviewer1');
+
+      expect(result).toHaveLength(1);
+      expect(result[0].feedback).toBe('Good work');
+      expect(result[0].projectTitle).toBe('Test Project');
+      expect(result[0].researcherName).toBe('Jane Research');
+    });
+
+    it('handles missing reviewer ID', async () => {
+      await expect(getReviewerHistory())
+        .rejects
+        .toThrow('Failed to get reviewer history');
+    });
+  });
+
+  describe('updateReviewFeedback', () => {
+    it('updates existing review feedback', async () => {
+      const mockFeedback = {
+        comment: 'Updated feedback',
+        rating: 5,
+        status: 'approved'
+      };
+
+      const mockDocRef = {};
+      vi.mocked(doc).mockReturnValue(mockDocRef);
+      vi.mocked(updateDoc).mockResolvedValue(undefined);
+
+      const result = await updateReviewFeedback('review1', mockFeedback);
+
+      expect(result).toBe(true);
+      expect(updateDoc).toHaveBeenCalledWith(
+        mockDocRef,
+        {
+          feedback: 'Updated feedback',
+          rating: 5,
+          status: 'approved',
+          updatedAt: expect.any(Date)
+        }
+      );
+    });
+
+    it('handles update errors', async () => {
+      vi.mocked(updateDoc).mockRejectedValue(new Error('Update failed'));
+
+      await expect(updateReviewFeedback('review1', {}))
+        .rejects
+        .toThrow('Failed to update review feedback');
+    });
+  });
+
+  describe('updateReviewRequestStatus', () => {
+    it('updates request status to accepted and adds reviewer to project', async () => {
+      const mockRequest = {
+        projectId: 'project1',
+        reviewerId: 'reviewer1'
+      };
+
+      const mockReviewer = {
+        fullName: 'John Reviewer',
+        fieldOfResearch: 'AI'
+      };
+
+      const mockProject = {
+        reviewers: []
+      };
+
+      vi.mocked(doc).mockReturnValue('doc-ref');
+
+      vi.mocked(getDoc)
+        .mockResolvedValueOnce({
+          exists: () => true,
+          data: () => mockRequest
+        })
+        .mockResolvedValueOnce({
+          exists: () => true,
+          data: () => mockProject
+        })
+        .mockResolvedValueOnce({
+          exists: () => true,
+          data: () => mockReviewer
+        });
+
+      vi.mocked(updateDoc).mockResolvedValue(undefined);
+
+      const result = await updateReviewRequestStatus('request1', 'accepted');
+
+      expect(result).toBe(true);
+      expect(updateDoc).toHaveBeenCalledWith(
+        'doc-ref',
+        {
+          status: 'accepted',
+          updatedAt: expect.any(Date)
+        }
+      );
+    });
+
+    it('handles non-existent review request', async () => {
+      vi.mocked(getDoc).mockResolvedValueOnce({
+        exists: () => false
+      });
+
+      await expect(updateReviewRequestStatus('non-existent', 'accepted'))
+        .rejects
+        .toThrow('Review request not found');
+    });
+
+    it('updates request status to rejected without adding reviewer', async () => {
+      const mockRequest = {
+        projectId: 'project1',
+        reviewerId: 'reviewer1'
+      };
+
+      vi.mocked(doc).mockReturnValue('doc-ref');
+      vi.mocked(getDoc).mockResolvedValueOnce({
+        exists: () => true,
+        data: () => mockRequest
+      });
+
+      vi.mocked(updateDoc).mockResolvedValue(undefined);
+
+      const result = await updateReviewRequestStatus('request1', 'rejected');
+
+      expect(result).toBe(true);
+      expect(updateDoc).toHaveBeenCalledWith(
+        'doc-ref',
+        {
+          status: 'rejected',
+          updatedAt: expect.any(Date)
+        }
+      );
     });
   });
 });

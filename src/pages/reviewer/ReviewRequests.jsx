@@ -1,11 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../../backend/firebase/firebaseConfig';
-import { getReviewerRequests, updateReviewRequestStatus } from '../../backend/firebase/reviewdb';
+import { getReviewerRequests, updateReviewRequestStatus } from '../../backend/firebase/reviewerDB';
 import { fetchProject } from '../../backend/firebase/projectDB';
 import { ClipLoader } from 'react-spinners';
 import ReviewerMainNav from '../../components/ReviewerComponents/Navigation/ReviewerMainNav';
 import ReviewerMobileBottomNav from '../../components/ReviewerComponents/Navigation/ReviewerMobileBottomNav';
+import { notify } from '../../backend/firebase/notificationsUtil';
+import { getDoc, doc } from 'firebase/firestore';
+import { db } from '../../backend/firebase/firebaseConfig';
+
 
 export default function ReviewRequests() {
   const [requests, setRequests] = useState([]);
@@ -96,6 +100,40 @@ export default function ReviewRequests() {
       setProcessingId(requestId);
       await updateReviewRequestStatus(requestId, 'accepted');
       setStatusMessage('Review request accepted successfully');
+
+      const request = requests.find(req => req.id === requestId);
+      const project = await fetchProject(request.projectId);
+      const researcherId = project.userId;
+
+      // Fetch reviewer name using reviewerId from the request
+      let reviewerName = 'Reviewer';
+      if (request.reviewerId) {
+        const reviewerDoc = await getDoc(doc(project._firestore || project.firestore || db, 'users', request.reviewerId));
+        reviewerName = reviewerDoc.exists() ? reviewerDoc.data().fullName || reviewerDoc.data().displayName || 'Reviewer' : 'Reviewer';
+      }
+
+      // 1. Notify the reviewer (yourself)
+      notify({
+        type: 'Reviewer Accepted',
+        projectId,
+        projectTitle: request?.projectTitle,
+        reviewerName,
+        researcherName: request?.researcherName,
+        targetUserId: auth.currentUser?.uid,
+        senderUserId: auth.currentUser?.uid,
+      });
+
+      // 2. Notify the researcher
+      notify({
+        type: 'Reviewer Request Accepted',
+        projectId,
+        projectTitle: request?.projectTitle,
+        reviewerName,
+        researcherName: request?.researcherName,
+        targetUserId: researcherId,
+        senderUserId: auth.currentUser?.uid,
+      });
+
       navigate(`/reviewer/review/${projectId}`);
     } catch (err) {
       setError('Failed to accept review request: ' + err.message);
@@ -110,6 +148,40 @@ export default function ReviewRequests() {
       await updateReviewRequestStatus(requestId, 'rejected');
       setStatusMessage('Review request rejected');
       setRequests(requests.filter(request => request.id !== requestId));
+
+      const request = requests.find(req => req.id === requestId);
+      const project = await fetchProject(request.projectId);
+      const researcherId = project.userId;
+
+      // Fetch reviewer name using reviewerId from the request
+      let reviewerName = 'Reviewer';
+      if (request.reviewerId) {
+        const reviewerDoc = await getDoc(doc(project._firestore || project.firestore || db, 'users', request.reviewerId));
+        reviewerName = reviewerDoc.exists() ? reviewerDoc.data().fullName || reviewerDoc.data().displayName || 'Reviewer' : 'Reviewer';
+      }
+
+      // 1. Notify the reviewer (yourself)
+      notify({
+        type: 'Reviewer Denied',
+        projectId: request.projectId,
+        projectTitle: request?.projectTitle,
+        reviewerName,
+        researcherName: request?.researcherName,
+        targetUserId: auth.currentUser?.uid,
+        senderUserId: auth.currentUser?.uid,
+      });
+
+      // 2. Notify the researcher
+      notify({
+        type: 'Reviewer Request Denied',
+        projectId: request.projectId,
+        projectTitle: request?.projectTitle,
+        reviewerName,
+        researcherName: request?.researcherName,
+        targetUserId: researcherId,
+        senderUserId: auth.currentUser?.uid,
+      });
+
     } catch (err) {
       setError('Failed to reject review request: ' + err.message);
     } finally {

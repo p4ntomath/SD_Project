@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../../backend/firebase/firebaseConfig';
-import { getReviewerRequests, updateReviewRequestStatus } from '../../backend/firebase/reviewdb';
+import { getReviewerRequests, updateReviewRequestStatus } from '../../backend/firebase/reviewerDB';
 
 export default function ReviewRequestsPanel() {
     const [requests, setRequests] = useState([]);

@@ -8,6 +8,7 @@ import MainNav from '../components/ResearcherComponents/Navigation/MainNav';
 import MobileBottomNav from '../components/ResearcherComponents/Navigation/MobileBottomNav';
 import { FiPlus } from 'react-icons/fi';
 import { useNavigate } from "react-router-dom";
+import { notify } from '../backend/firebase/notificationsUtil';
 
 export const formatDate = (dateString) => {
   if (!dateString) return 'Not specified';
@@ -27,6 +28,8 @@ export default function MyProjects() {
   const projectsRef = useRef(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredProjects, setFilteredProjects] = useState([]);
+  const [projectTypeFilter, setProjectTypeFilter] = useState('all'); // 'all', 'owned', or 'collaborative'
+  const [statusFilter, setStatusFilter] = useState('all'); // 'all', 'In Progress', 'Completed', etc.
 
   const fetchAllProjects = async (user) => {
     try {
@@ -36,7 +39,8 @@ export default function MyProjects() {
         ...project,
         goals: project.goals?.map(goal => 
           typeof goal === 'string' ? { text: goal, completed: false } : goal
-        ) || []
+        ) || [],
+        isOwner: project.userId === user.uid
       }));
       setProjects(projectsWithInitializedGoals);
       setFilteredProjects(projectsWithInitializedGoals);
@@ -58,16 +62,37 @@ export default function MyProjects() {
     return () => unsubscribe();
   }, []);
 
+  const filterProjects = () => {
+    let filtered = [...projects];
+
+    // Apply project type filter
+    if (projectTypeFilter !== 'all') {
+      filtered = filtered.filter(project => 
+        projectTypeFilter === 'owned' ? project.isOwner : !project.isOwner
+      );
+    }
+
+    // Apply status filter
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(project => project.status === statusFilter);
+    }
+
+    // Apply search query
+    if (searchQuery.trim() !== '') {
+      filtered = filtered.filter(project =>
+        project.title.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+    }
+
+    setFilteredProjects(filtered);
+  };
+
+  useEffect(() => {
+    filterProjects();
+  }, [searchQuery, projectTypeFilter, statusFilter, projects]);
+
   const handleSearch = (query) => {
     setSearchQuery(query);
-    if (query.trim() === '') {
-      setFilteredProjects(projects);
-    } else {
-      const filtered = projects.filter(project =>
-        project.title.toLowerCase().includes(query.toLowerCase())
-      );
-      setFilteredProjects(filtered);
-    }
   };
 
   const handleCreateProject = async (newProject) => {
@@ -87,6 +112,19 @@ export default function MyProjects() {
       setFilteredProjects(prevFiltered => [...prevFiltered, fullProject]);
       setModalOpen(true);
       setStatusMessage('Project was successfully created.');
+      
+     notify({
+        type: "Project Created",
+        projectId: createdProjectId,
+        projectTitle: cleanedProject.title,
+        goalText: goalInput,
+        description: cleanedProject.description,
+        folderName: cleanedProject.folderName,
+        amount: cleanedProject.amount,
+        researchField: cleanedProject.researchField,
+        targetUserId: auth.currentUser.uid,   // <-- updated field
+        senderUserId: auth.currentUser.uid,   // <-- updated field (optional, but explicit)
+      });
       setShowForm(false);
       await new Promise(resolve => setTimeout(resolve, 500));
     } catch (err) {
@@ -112,19 +150,41 @@ export default function MyProjects() {
 
       <main className="flex-1 p-4 md:p-8 pb-16 md:pb-8">
         <section className="max-w-6xl mx-auto">
-          <section className="flex justify-between items-center mb-8">
+          <section className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 space-y-4 md:space-y-0">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">My Projects</h1>
-            <button
-              onClick={() => setShowForm(true)}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors flex items-center"
-              disabled={showForm}
-              aria-label="create new research project"
-            >
-              <FiPlus className="mr-2" />
-              Create Project
-            </button>
+            <section className="flex flex-col md:flex-row items-start md:items-center space-y-2 md:space-y-0 md:space-x-4">
+              <select
+                className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                value={projectTypeFilter}
+                onChange={(e) => setProjectTypeFilter(e.target.value)}
+              >
+                <option value="all">All Projects</option>
+                <option value="owned">My Projects</option>
+                <option value="collaborative">Collaborations</option>
+              </select>
+              <select
+                className="bg-white border border-gray-300 rounded-lg px-3 py-2 text-sm"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="all">All Status</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+                <option value="On Hold">On Hold</option>
+              </select>
+              <button
+                onClick={() => setShowForm(true)
+                }
+                className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors flex items-center"
+                disabled={showForm}
+                aria-label="create new research project"
+              >
+                <FiPlus className="mr-2" />
+                Create Project
+              </button>
+            </section>
           </section>
-          
+
           {!showForm ? (
             loading ? (
               <section className="flex justify-center items-center py-20 space-x-2">
@@ -155,8 +215,34 @@ export default function MyProjects() {
                         <section className="flex justify-between items-start">
                           <section>
                             <h2 className="text-xl font-semibold text-gray-800">{project.title}</h2>
-                            <p className="mt-2 text-gray-600">{project.description}</p>
+                            <p className="mt-2 text-gray-600 break">{project.description}</p>
+                            <div className="flex items-center gap-2 mt-2">
+                              {project.collaborators?.length > 0 && (
+                                <span className="text-sm text-gray-500 flex items-center gap-1">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                                  </svg>
+                                  {project.collaborators.length} Collaborator{project.collaborators.length !== 1 ? 's' : ''}
+                                </span>
+                              )}
+                              {project.pendingInvitations?.length > 0 && (
+                                <span className="text-sm text-yellow-600 flex items-center gap-1">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                  </svg>
+                                  {project.pendingInvitations.length} Pending
+                                </span>
+                              )}
+                            </div>
                           </section>
+                          <div 
+                            className={`h-4 w-4 rounded-full border-2 ${
+                              project.isOwner 
+                                ? 'bg-blue-500 border-blue-600' 
+                                : 'bg-green-500 border-green-600'
+                            }`}
+                            title={project.isOwner ? 'Owner' : 'Collaborator'}
+                          />
                         </section>
                         <section className="flex items-center justify-between mt-4">
                           <p className="inline-block px-3 py-1 text-sm font-medium bg-blue-100 text-blue-800 rounded-full">

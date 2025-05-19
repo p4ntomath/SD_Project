@@ -5,7 +5,7 @@ import MobileBottomNav from '../components/ReviewerComponents/Navigation/Reviewe
 import { ClipboardDocumentListIcon, ClockIcon, ChartBarIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
 import { ClipLoader } from "react-spinners";
 import { auth } from "../backend/firebase/firebaseConfig";
-import { getReviewerRequests, updateReviewRequestStatus } from "../backend/firebase/reviewdb";
+import { getReviewerRequests, updateReviewRequestStatus } from "../backend/firebase/reviewerDB";
 
 export default function ReviewerHomePage() {
   const [loading, setLoading] = useState(true);

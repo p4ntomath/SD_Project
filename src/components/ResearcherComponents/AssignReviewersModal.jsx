@@ -1,9 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ClipLoader } from 'react-spinners';
 import { getAvailableReviewers } from '../../backend/firebase/reviewerDB';
+import { notify } from '../../backend/firebase/notificationsUtil';
+import { auth } from '../../backend/firebase/firebaseConfig';
+import { getDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
+import { db } from '../../backend/firebase/firebaseConfig';
+export default function AssignReviewersModal({ isOpen, onClose, onAssign, projectId, reviewRequests }) {
 
-export default function AssignReviewersModal({ isOpen, onClose, onAssign, projectId }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedReviewers, setSelectedReviewers] = useState([]);
   const [availableReviewers, setAvailableReviewers] = useState([]);
@@ -15,16 +19,32 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
     const loadReviewers = async () => {
       try {
         const reviewers = await getAvailableReviewers();
-        const formattedReviewers = reviewers.map(reviewer => ({
+        
+        // Filter out both active reviewers and those with pending/accepted requests
+        const unavailableReviewerIds = [
+          ...reviewRequests
+            .filter(req => req.status === 'pending' || req.status === 'accepted')
+            .map(req => req.reviewerId),
+          ...reviewRequests
+            .filter(req => req.status === 'completed')
+            .map(req => req.reviewerId)
+        ];
+
+        const filteredReviewers = reviewers.filter(reviewer => 
+          !unavailableReviewerIds.includes(reviewer.id)
+        );
+
+        const formattedReviewers = filteredReviewers.map(reviewer => ({
           id: reviewer.id,
           name: reviewer.fullName,
-          expertise: reviewer.expertise || 'Not specified',
+          fieldOfResearch: reviewer.fieldOfResearch || 'Not specified',
           department: reviewer.department || 'Not specified'
         }));
+        
         setAllReviewers(formattedReviewers);
         setAvailableReviewers(formattedReviewers);
       } catch (error) {
-        console.error('Error fetching reviewers:', error);
+        
       } finally {
         setFetchingReviewers(false);
       }
@@ -32,6 +52,15 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
 
     if (isOpen) {
       loadReviewers();
+    }
+  }, [isOpen, reviewRequests]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      // Reset states when modal closes
+      setSelectedReviewers([]);
+      setSearchQuery('');
+      setLoading(false);
     }
   }, [isOpen]);
 
@@ -42,7 +71,7 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
     } else {
       const filtered = allReviewers.filter(reviewer =>
         reviewer.name.toLowerCase().includes(query.toLowerCase()) ||
-        reviewer.expertise.toLowerCase().includes(query.toLowerCase()) ||
+        reviewer.fieldOfResearch.toLowerCase().includes(query.toLowerCase()) ||
         reviewer.department.toLowerCase().includes(query.toLowerCase())
       );
       setAvailableReviewers(filtered);
@@ -57,16 +86,50 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
     }
   };
 
-  const handleAssign = async () => {
-    if (selectedReviewers.length === 0) return;
-    setLoading(true);
-    try {
-      await onAssign(selectedReviewers);
-    } catch (error) {
-      console.error('Error assigning reviewers:', error);
+ const handleAssign = async () => {
+  if (!selectedReviewers.length) return;
+  setLoading(true);
+
+  try {
+    await onAssign(selectedReviewers);
+
+    // Get sender's name (the researcher assigning reviewers)
+    let senderName = "A researcher";
+    if (auth.currentUser) {
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      const userSnap = await getDoc(userRef);
+      senderName = userSnap.exists() ? userSnap.data().fullName : "A researcher";
     }
-    // Note: We don't set loading to false here since onAssign will close the modal
-  };
+
+    // If you have project title, use it; otherwise, fallback
+    const projectTitle = typeof project !== "undefined" && project?.title
+      ? project.title
+      : "Untitled Project";
+
+    // Notify each reviewer
+    await Promise.all(selectedReviewers.map(reviewer =>
+      notify({
+        type: 'Reviewer Request Received',
+        projectId,
+        targetUserId: reviewer.id,
+        senderUserId: auth.currentUser.uid,
+        message: `You have been requested by ${senderName} to review the project "${projectTitle}".`
+      })
+    ));
+
+    notify({  
+      type: 'Reviewer Request Sent',
+      projectId,
+      targetUserId: auth.currentUser.uid,
+      senderUserId: auth.currentUser.uid,
+    });
+
+  } catch (error) {
+    
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (!isOpen) return null;
 
@@ -82,11 +145,23 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
           transition={{ type: 'spring', bounce: 0.3 }}
         >
           <header className="flex justify-between items-center mb-6">
-            <h2 className="text-xl font-semibold">Assign Reviewers</h2>
+            <div className="flex items-center gap-2">
+              <h2 className="text-xl font-semibold">
+                {loading ? (
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
+                    <span>Sending reviewer requests...</span>
+                  </div>
+                ) : (
+                  'Assign Reviewers'
+                )}
+              </h2>
+            </div>
             <button 
               onClick={onClose} 
               className="text-gray-500 hover:text-gray-700"
               aria-label="Close modal"
+              disabled={loading}
             >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -100,7 +175,7 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
                 type="text"
                 value={searchQuery}
                 onChange={(e) => handleSearch(e.target.value)}
-                placeholder="Search reviewers by name, expertise, or department..."
+                placeholder="Search reviewers by name, field Of Research, or department..."
                 className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
               />
               <svg
@@ -152,7 +227,7 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
                     <div>
                       <h3 className="font-medium text-gray-900">{reviewer.name}</h3>
                       <p className="text-sm text-gray-500">
-                        {reviewer.expertise} • {reviewer.department}
+                        {reviewer.fieldOfResearch} • {reviewer.department}
                       </p>
                     </div>
                   </div>

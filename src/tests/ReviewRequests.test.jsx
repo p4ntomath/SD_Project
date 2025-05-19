@@ -1,11 +1,12 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
-import { BrowserRouter, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter } from 'react-router-dom';
 import '@testing-library/jest-dom';
 import ReviewRequests from '../pages/reviewer/ReviewRequests';
 import { auth } from '../backend/firebase/firebaseConfig';
-import { getReviewerRequests, updateReviewRequestStatus } from '../backend/firebase/reviewdb';
+import { notify } from '../backend/firebase/notificationsUtil';
+import { getReviewerRequests, updateReviewRequestStatus } from '../backend/firebase/reviewerDB';
 import { fetchProject } from '../backend/firebase/projectDB';
 
 // Save original console methods
@@ -52,9 +53,7 @@ afterAll(() => {
 
 // Mock navigation components
 vi.mock('../components/ReviewerComponents/Navigation/ReviewerMainNav', () => ({
-  default: ({ setMobileMenuOpen, mobileMenuOpen }) => (
-    <nav>Mock ReviewerMainNav</nav>
-  )
+  default: () => <nav>Mock ReviewerMainNav</nav>
 }));
 
 vi.mock('../components/ReviewerComponents/Navigation/ReviewerMobileBottomNav', () => ({
@@ -68,37 +67,38 @@ vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
-    useNavigate: () => mockNavigate,
-    useLocation: () => ({
-      pathname: '/reviewer/requests',
-      search: '',
-      hash: '',
-      state: null
-    })
+    useNavigate: () => mockNavigate
   };
 });
 
 vi.mock('framer-motion', () => ({
   motion: {
-    article: ({ children, ...props }) => <article {...props}>{children}</article>,
     div: ({ children, ...props }) => <div {...props}>{children}</div>
-  },
-  AnimatePresence: ({ children }) => children
+  }
 }));
 
 vi.mock('../backend/firebase/firebaseConfig', () => ({
   auth: {
     currentUser: { uid: 'test-reviewer-id' }
+  },
+  db: {
+    collection: vi.fn(),
+    doc: vi.fn()
   }
 }));
 
-vi.mock('../backend/firebase/reviewdb', () => ({
+// Mock the Firebase functions
+vi.mock('../backend/firebase/reviewerDB', () => ({
   getReviewerRequests: vi.fn(),
   updateReviewRequestStatus: vi.fn()
 }));
 
 vi.mock('../backend/firebase/projectDB', () => ({
   fetchProject: vi.fn()
+}));
+
+vi.mock('../backend/firebase/notificationsUtil', () => ({
+  notify: vi.fn()
 }));
 
 const renderWithRouter = (component) => {
@@ -114,23 +114,24 @@ describe('ReviewRequests Component', () => {
     id: 'request-1',
     projectId: 'project-1',
     status: 'pending',
-    requestedAt: '3 May 2025 at 22:20:24 UTC+2',
+    requestedAt: new Date('2025-05-03T20:20:24Z'),
     researcherName: 'Test Researcher',
-    projectTitle: 'Test Project', // Add projectTitle as fallback
+    projectTitle: 'Test Project',
     project: {
       id: 'project-1',
       title: 'Test Project',
       description: 'Test Description',
       researchField: 'Computer Science',
-      deadline: '20 May 2025 at 22:20:24 UTC+2'
+      deadline: new Date('2025-05-20T20:20:24Z')
     }
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
     mockNavigate.mockClear();
-    getReviewerRequests.mockResolvedValue([mockRequest]);
-    fetchProject.mockResolvedValue(mockRequest.project);
+    vi.mocked(getReviewerRequests).mockResolvedValue([mockRequest]);
+    vi.mocked(fetchProject).mockResolvedValue(mockRequest.project);
+    vi.mocked(notify).mockImplementation(() => Promise.resolve());
   });
 
   it('renders loading state initially', () => {

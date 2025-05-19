@@ -63,14 +63,25 @@ const mockReviewers = [
   {
     id: '1',
     fullName: 'John Doe',
-    expertise: 'Computer Science',
+    fieldOfResearch: 'Computer Science',
     department: 'Engineering'
   },
   {
     id: '2',
     fullName: 'Jane Smith',
-    expertise: 'Data Science',
+    fieldOfResearch: 'Data Science',
     department: 'Science'
+  }
+];
+
+const mockReviewRequests = [
+  {
+    reviewerId: '3',
+    status: 'pending'
+  },
+  {
+    reviewerId: '4',
+    status: 'accepted'
   }
 ];
 
@@ -81,12 +92,12 @@ describe('AssignReviewersModal', () => {
     isOpen: true,
     onClose: mockOnClose,
     onAssign: mockOnAssign,
-    projectId: 'project-123'
+    projectId: 'project-123',
+    reviewRequests: mockReviewRequests
   };
 
   beforeEach(() => {
     vi.clearAllMocks();
-    // Reset the mock implementation for getAvailableReviewers
     vi.mocked(getAvailableReviewers).mockResolvedValue(mockReviewers);
   });
 
@@ -110,27 +121,30 @@ describe('AssignReviewersModal', () => {
 
   it('displays reviewers after loading', async () => {
     render(<AssignReviewersModal {...defaultProps} />);
+    
     await waitFor(() => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
       expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+      expect(screen.getByText('Computer Science • Engineering')).toBeInTheDocument();
+      expect(screen.getByText('Data Science • Science')).toBeInTheDocument();
     });
   });
 
   it('filters reviewers based on search query', async () => {
     render(<AssignReviewersModal {...defaultProps} />);
     
-    // Wait for reviewers to load
     await waitFor(() => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
     });
 
-    // Get the search input and type
     const searchInput = screen.getByPlaceholderText(/search reviewers/i);
     fireEvent.change(searchInput, { target: { value: 'data science' } });
 
-    // Check that only Jane Smith is visible
-    expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
-    expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
+      expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+      expect(screen.getByText('Data Science • Science')).toBeInTheDocument();
+    });
   });
 
   it('allows selecting and deselecting reviewers', async () => {
@@ -140,12 +154,11 @@ describe('AssignReviewersModal', () => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
     });
 
-    // Click to select a reviewer
-    fireEvent.click(screen.getByText('John Doe'));
+    const reviewerElement = screen.getByText('John Doe').closest('div[role="button"]') || screen.getByText('John Doe').parentElement?.parentElement?.parentElement;
+    fireEvent.click(reviewerElement);
     expect(screen.getByText('1 reviewer selected')).toBeInTheDocument();
 
-    // Click again to deselect
-    fireEvent.click(screen.getByText('John Doe'));
+    fireEvent.click(reviewerElement);
     expect(screen.getByText('0 reviewers selected')).toBeInTheDocument();
   });
 
@@ -156,17 +169,16 @@ describe('AssignReviewersModal', () => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
     });
 
-    // Select a reviewer
-    fireEvent.click(screen.getByText('John Doe'));
-    
-    // Click confirm button
-    const confirmButton = screen.getByText('Confirm Assignment');
+    const reviewerElement = screen.getByText('John Doe').closest('div[role="button"]') || screen.getByText('John Doe').parentElement?.parentElement?.parentElement;
+    fireEvent.click(reviewerElement);
+
+    const confirmButton = screen.getByRole('button', { name: /confirm assignment/i });
     fireEvent.click(confirmButton);
 
     expect(mockOnAssign).toHaveBeenCalledWith([{
       id: '1',
       name: 'John Doe',
-      expertise: 'Computer Science',
+      fieldOfResearch: 'Computer Science',
       department: 'Engineering'
     }]);
   });
@@ -210,6 +222,28 @@ describe('AssignReviewersModal', () => {
     const searchInput = screen.getByPlaceholderText(/search reviewers/i);
     fireEvent.change(searchInput, { target: { value: 'nonexistent reviewer' } });
 
-    expect(screen.getByText('No reviewers found')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
+      expect(screen.queryByText('Jane Smith')).not.toBeInTheDocument();
+      expect(screen.getByText('No reviewers found')).toBeInTheDocument();
+    });
+  });
+
+  it('excludes reviewers with pending or accepted requests', async () => {
+    const busyReviewer = {
+      id: '3',
+      fullName: 'Busy Reviewer',
+      expertise: 'Physics',
+      department: 'Science'
+    };
+
+    vi.mocked(getAvailableReviewers).mockResolvedValueOnce([...mockReviewers, busyReviewer]);
+
+    render(<AssignReviewersModal {...defaultProps} />);
+    
+    await waitFor(() => {
+      expect(screen.getByText('John Doe')).toBeInTheDocument();
+      expect(screen.queryByText('Busy Reviewer')).not.toBeInTheDocument();
+    });
   });
 });

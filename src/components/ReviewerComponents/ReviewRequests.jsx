@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react';
 import { ClipLoader } from 'react-spinners';
-import { getReviewerRequests, updateReviewRequestStatus } from '../../backend/firebase/reviewdb';
+import { getReviewerRequests, updateReviewRequestStatus } from '../../backend/firebase/reviewerDB';
 import { auth } from '../../backend/firebase/firebaseConfig';
 import { useNavigate } from 'react-router-dom';
+
 
 export default function ReviewRequests() {
   const [requests, setRequests] = useState([]);
@@ -13,11 +14,15 @@ export default function ReviewRequests() {
   useEffect(() => {
     const loadRequests = async () => {
       try {
+        setLoading(true);
         const reviewerId = auth.currentUser?.uid;
         if (!reviewerId) return;
         
         const reviewRequests = await getReviewerRequests(reviewerId);
-        setRequests(reviewRequests);
+        console.log('Loaded review requests:', reviewRequests);
+        // Filter out non-pending requests here if needed
+        const pendingRequests = reviewRequests.filter(req => req.status === 'pending');
+        setRequests(pendingRequests);
       } catch (err) {
         console.error('Error loading review requests:', err);
         setError(err.message);
@@ -27,59 +32,21 @@ export default function ReviewRequests() {
     };
 
     loadRequests();
+    
+    // Set up an interval to refresh requests periodically
+    const refreshInterval = setInterval(loadRequests, 30000); // Refresh every 30 seconds
+    
+    // Cleanup interval on component unmount
+    return () => clearInterval(refreshInterval);
   }, []);
 
-  const formatDate = (timestamp) => {
-    if (!timestamp) return 'Date not available';
-    try {
-      // Handle Firebase Timestamp
-      if (typeof timestamp === 'object' && timestamp.seconds) {
-        const date = new Date(timestamp.seconds * 1000);
-        return date.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true
-        });
-      }
-      // Handle regular Date object
-      if (timestamp instanceof Date) {
-        return timestamp.toLocaleDateString('en-US', {
-          year: 'numeric',
-          month: 'long',
-          day: 'numeric',
-          hour: '2-digit',
-          minute: '2-digit',
-          hour12: true
-        });
-      }
-      // Handle date string
-      return new Date(timestamp).toLocaleDateString('en-US', {
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit',
-        hour12: true
-      });
-    } catch (error) {
-      console.error('Error formatting date:', error);
-      return 'Date not available';
-    }
-  };
-
-  const handleAcceptRequest = async (requestId) => {
+  const handleAcceptRequest = async (requestId, projectId) => {
     try {
       await updateReviewRequestStatus(requestId, 'accepted');
       // Update local state to reflect the change
-      const updatedRequest = requests.find(req => req.id === requestId);
-      setRequests(requests.map(req => 
-        req.id === requestId ? { ...req, status: 'accepted' } : req
-      ));
+      setRequests(requests.filter(req => req.id !== requestId));
       // Navigate to the project details page
-      navigate(`/project/${updatedRequest.projectId}`);
+      navigate(`/reviewer/review/${projectId}`);
     } catch (err) {
       console.error('Error accepting request:', err);
       setError(err.message);
@@ -90,9 +57,7 @@ export default function ReviewRequests() {
     try {
       await updateReviewRequestStatus(requestId, 'rejected');
       // Update local state to reflect the change
-      setRequests(requests.map(req => 
-        req.id === requestId ? { ...req, status: 'rejected' } : req
-      ));
+      setRequests(requests.filter(req => req.id !== requestId));
     } catch (err) {
       console.error('Error rejecting request:', err);
       setError(err.message);
@@ -109,15 +74,15 @@ export default function ReviewRequests() {
 
   if (error) {
     return (
-      <div className="text-center py-12">
-        <p className="text-red-600">Error loading review requests: {error}</p>
+      <div className="text-center text-red-600 py-4">
+        Error: {error}
       </div>
     );
   }
 
-  if (requests.length === 0) {
+  if (!requests || requests.length === 0) {
     return (
-      <article className="bg-white p-8 rounded-lg shadow-md text-center max-w-7xl mx-auto">
+      <article className="bg-white rounded-xl shadow-md text-center p-8">
         <div className="text-gray-400 mb-4">
           <svg className="mx-auto h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
@@ -146,32 +111,24 @@ export default function ReviewRequests() {
             </h3>
             <div className="text-sm text-gray-500 space-y-2 mb-4">
               <p>From: {request.researcherName}</p>
-              <p>Requested: {formatDate(request.requestedAt)}</p>
+              <p>Requested: {new Date(request.requestedAt.seconds * 1000).toLocaleDateString()}</p>
               <p>Status: <span className="capitalize">{request.status}</span></p>
             </div>
             {request.status === 'pending' && (
-              <>
-                <div className="mb-4 text-sm bg-blue-50 p-3 rounded-lg text-blue-700">
-                  <p>
-                    Declining a review request means you're opting out of reviewing this project. 
-                    This is different from accepting the request and later submitting a negative review.
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => handleAcceptRequest(request.id)}
-                    className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors"
-                  >
-                    Accept
-                  </button>
-                  <button
-                    onClick={() => handleRejectRequest(request.id)}
-                    className="flex-1 bg-red-600 text-white px-4 py-2 rounded-lg hover:bg-red-700 transition-colors"
-                  >
-                    Decline Task
-                  </button>
-                </div>
-              </>
+              <div className="space-y-2">
+                <button
+                  onClick={() => handleAcceptRequest(request.id, request.projectId)}
+                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors"
+                >
+                  Accept Request
+                </button>
+                <button
+                  onClick={() => handleRejectRequest(request.id)}
+                  className="w-full bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors"
+                >
+                  Decline Request
+                </button>
+              </div>
             )}
           </div>
         </article>

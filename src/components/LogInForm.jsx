@@ -82,6 +82,7 @@ const LoginForm = () => {
       });
     } finally {
       setLoading(false);
+      setIsLoading(false);
     }
   };
 
@@ -164,19 +165,19 @@ const LoginForm = () => {
           className="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 px-4 rounded-md"
         >
           {isLoading ? (
-            <ClipLoader color="#ffffff" loading={isLoading} size={20} />
+            <ClipLoader color="#ffffff" loading={isLoading} size={20} data-testid="login-spinner" />
           ) : (
             "Login"
           )}
         </button>
       </form>
-  
+
       <section className="flex items-center my-6 w-full" aria-label="Separator">
         <hr className="flex-grow border-gray-300" />
         <p className="mx-2 text-sm text-gray-500">OR</p>
         <hr className="flex-grow border-gray-300" />
       </section>
-  
+
       <section className="space-y-3 w-full">
         <button 
           type="button"
@@ -185,7 +186,7 @@ const LoginForm = () => {
           className="w-full flex items-center justify-center gap-3 border border-gray-300 rounded-md py-2 px-4 text-sm font-medium text-gray-700 hover:bg-gray-100 transition"
         >
           {isLoading ? (
-            <ClipLoader color="#4B5563" loading={isLoading} size={20} />
+            <ClipLoader color="#4B5563" loading={isLoading} size={20} data-testid="google-spinner" />
           ) : (
             <>
               <img src={googleLogo} alt="Google" className="w-5 h-5" />

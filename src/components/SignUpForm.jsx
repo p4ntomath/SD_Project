@@ -1,14 +1,14 @@
-import { useState,useContext } from "react";
+import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import FormInput from "./FormInput";
 import googleLogo from "../assets/googleLogo.png";
-import { signUp, googleSignIn,getUserRole } from "../backend/firebase/authFirebase";
-import { ClipLoader } from "react-spinners"; // Import the spinner
+import { signUp, googleSignIn } from "../backend/firebase/authFirebase.jsx";
+import { ClipLoader } from "react-spinners";
 import AuthContext from "../context/AuthContext";
 
 const SignUpForm = () => {
   const paths = {
-    success: "/home",
+    success: "/complete-profile",
     successGoogle: "/complete-profile",
   };
   const navigate = useNavigate();
@@ -17,25 +17,15 @@ const SignUpForm = () => {
     email: "",
     password: "",
     confirmPassword: "",
-    role: "",
-    expertise: "",
-    department: ""
   });
   
-
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
-  const { setRole,setLoading} = useContext(AuthContext);
-
-  const roles = [
-    { value: "", label: "Select your role", disabled: true },
-    { value: "researcher", label: "Researcher" },
-    { value: "reviewer", label: "Reviewer" },
-  ];
+  const { setLoading } = useContext(AuthContext);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setErrors((prev) => ({ ...prev, [name]: "" })); // Clear error for the field being changed
+    setErrors((prev) => ({ ...prev, [name]: "" }));
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
@@ -68,17 +58,6 @@ const SignUpForm = () => {
       newErrors.confirmPassword = "Passwords must match";
     }
 
-    if (!formData.role) newErrors.role = "Please select a role";
-
-    if (formData.role === 'reviewer') {
-      if (!formData.expertise?.trim()) {
-        newErrors.expertise = 'Expertise is required for reviewers';
-      }
-      if (!formData.department?.trim()) {
-        newErrors.department = 'Department is required for reviewers';
-      }
-    }
-
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
@@ -86,19 +65,22 @@ const SignUpForm = () => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
-    setIsLoading(true);
+
     try {
-      const additionalData = formData.role === 'reviewer' ? {
-        expertise: formData.expertise,
-        department: formData.department
-      } : {};
-      
-      await signUp(formData.fullName, formData.email, formData.password, formData.role, additionalData);
-      setRole(formData.role);
-      navigate(paths.success);
+      setIsLoading(true);
+      const user = await signUp(formData.fullName, formData.email, formData.password);
+      setLoading(true);
+      if(user) {
+        navigate(paths.success, { 
+          state: { 
+            userId: user.uid, 
+            email: user.email, 
+            name: formData.fullName,
+            isEmailSignup: true 
+          } 
+        });
+      }
     } catch (error) {
-      
-      // Map Firebase error codes to user-friendly messages
       const errorMessages = {
         'auth/email-already-in-use': 'Email Already Exists: This email address is already registered. Please try logging in or use a different email.',
         'auth/invalid-email': 'Invalid Email: Please enter a valid email address.',
@@ -109,14 +91,15 @@ const SignUpForm = () => {
       
       const errorMessage = errorMessages[error.code] || `Sign up failed: ${error.message || 'An unexpected error occurred'}`;
       
-      // Only set the form-level error for non-field-specific errors
       if (error.code === 'auth/email-already-in-use') {
         setErrors({ email: errorMessage });
       } else {
         setErrors({ form: errorMessage });
       }
+    } finally {
+      setIsLoading(false);
+      setLoading(false);
     }
-    setIsLoading(false);
   };
 
   const handleGoogleAuth = async () => {
@@ -124,10 +107,15 @@ const SignUpForm = () => {
     setLoading(true);
     try {
       const { isNewUser, user } = await googleSignIn();
-      const role = await getUserRole(user.uid);
-      setRole(role);
       if (isNewUser) {
-        navigate(paths.succesGoogle, { state: { userId: user.uid, email: user.email, name: user.displayName } });
+        navigate("/complete-profile", { 
+          state: { 
+            userId: user.uid, 
+            email: user.email, 
+            name: user.displayName,
+            isGoogleSignup: true 
+          } 
+        });
       } else {
         navigate(paths.success);
       }
@@ -141,11 +129,13 @@ const SignUpForm = () => {
       else if (error.code === "auth/invalid-credential") {
         setErrors({ form: "Invalid credentials. Please try again." });
       }
-      else{
-      setErrors({ form: 'Google sign-up failed. Please try again.' });}
+      else {
+        setErrors({ form: 'Google sign-up failed. Please try again.' });
+      }
+    } finally {
+      setIsLoading(false);
+      setLoading(false);
     }
-    setLoading(false);
-    setIsLoading(false);
   };
 
   return (
@@ -159,17 +149,17 @@ const SignUpForm = () => {
           </a>
         </p>
       </header>
-  
+
       {errors.form && (
         <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
           {errors.form}
         </div>
       )}
-  
+
       <form onSubmit={handleSubmit} className="space-y-4">
         <fieldset>
           <legend className="sr-only">Create Account Form</legend>
-  
+
           <FormInput
             label="Full Name"
             name="fullName"
@@ -184,76 +174,7 @@ const SignUpForm = () => {
             onChange={handleChange}
             error={errors.email}
           />
-  
-          {/* Role Dropdown */}
-          <section className="mb-4">
-            <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
-              Role
-            </label>
-            <select
-              id="role"
-              name="role"
-              value={formData.role}
-              onChange={handleChange}
-              className={`w-full px-3 py-2 border rounded-md ${
-                errors.role ? "border-red-500" : "border-gray-300"
-              }`}
-            >
-              {roles.map((role) => (
-                <option
-                  key={role.value}
-                  value={role.value}
-                  disabled={role.disabled}
-                  className={role.disabled ? "text-gray-400" : ""}
-                >
-                  {role.label}
-                </option>
-              ))}
-            </select>
-            {errors.role && <p className="mt-1 text-sm text-red-600">{errors.role}</p>}
-          </section>
 
-          {/* Reviewer specific fields */}
-          {formData.role === 'reviewer' && (
-            <>
-              <section className="mb-4">
-                <label htmlFor="expertise" className="block text-sm font-medium text-gray-700 mb-1">
-                  Area of Expertise
-                </label>
-                <input
-                  type="text"
-                  id="expertise"
-                  name="expertise"
-                  value={formData.expertise}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-md ${
-                    errors.expertise ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="e.g., Computer Science, Data Science"
-                />
-                {errors.expertise && <p className="mt-1 text-sm text-red-600">{errors.expertise}</p>}
-              </section>
-
-              <section className="mb-4">
-                <label htmlFor="department" className="block text-sm font-medium text-gray-700 mb-1">
-                  Department
-                </label>
-                <input
-                  type="text"
-                  id="department"
-                  name="department"
-                  value={formData.department}
-                  onChange={handleChange}
-                  className={`w-full px-3 py-2 border rounded-md ${
-                    errors.department ? 'border-red-500' : 'border-gray-300'
-                  }`}
-                  placeholder="e.g., Computing, Engineering"
-                />
-                {errors.department && <p className="mt-1 text-sm text-red-600">{errors.department}</p>}
-              </section>
-            </>
-          )}
-  
           <FormInput
             label="Password"
             type="password"
@@ -270,6 +191,7 @@ const SignUpForm = () => {
               <br />• Symbols like (@,!,#)
             </p>
           )}
+          
           <FormInput
             label="Confirm Password"
             type="password"
@@ -279,7 +201,7 @@ const SignUpForm = () => {
             error={errors.confirmPassword}
           />
         </fieldset>
-  
+
         <button
           type="submit"
           disabled={isLoading}
@@ -287,15 +209,13 @@ const SignUpForm = () => {
         >
           {isLoading ? <ClipLoader color="#ffffff" loading={isLoading} size={20} /> : "Sign Up"}
         </button>
-  
-        {/* Divider */}
+
         <section className="flex items-center my-6 w-full" aria-label="Separator">
-        <hr className="flex-grow border-gray-300" />
-        <p className="mx-2 text-sm text-gray-500">OR</p>
-        <hr className="flex-grow border-gray-300" />
-      </section>
-  
-        {/* Google Sign-In */}
+          <hr className="flex-grow border-gray-300" />
+          <p className="mx-2 text-sm text-gray-500">OR</p>
+          <hr className="flex-grow border-gray-300" />
+        </section>
+
         <button
           type="button"
           onClick={handleGoogleAuth}
@@ -308,7 +228,6 @@ const SignUpForm = () => {
       </form>
     </main>
   );
-  
 };
 
 export default SignUpForm;

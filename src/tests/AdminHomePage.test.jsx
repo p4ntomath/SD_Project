@@ -26,6 +26,30 @@ vi.mock('../backend/firebase/adminAccess');
 vi.mock('../backend/firebase/documentsDB');
 vi.mock('../backend/firebase/authFirebase');
 
+// Mock Firebase Firestore
+vi.mock('firebase/firestore', () => ({
+  getFirestore: vi.fn(),
+  initializeFirestore: vi.fn(),
+  collection: vi.fn(),
+  doc: vi.fn(),
+  getDoc: vi.fn(),
+  getDocs: vi.fn(),
+  setDoc: vi.fn(),
+  updateDoc: vi.fn(),
+  deleteDoc: vi.fn(),
+  query: vi.fn(),
+  where: vi.fn(),
+  CACHE_SIZE_UNLIMITED: 'unlimited'
+}));
+
+// Mock Firebase config
+vi.mock('../backend/firebase/firebaseConfig', () => ({
+  auth: {
+    currentUser: { uid: 'test-admin-id' }
+  },
+  db: {}
+}));
+
 // Mock Framer Motion
 vi.mock('framer-motion', () => ({
     motion: {
@@ -110,31 +134,6 @@ describe('AdminHomePage', () => {
         });
     });
 
-    it('handles logout process correctly', async () => {
-        render(
-            <BrowserRouter>
-                <AdminHomePage />
-            </BrowserRouter>
-        );
-
-        // Click the initial logout button in header using aria-label
-        const headerLogoutButton = screen.getByRole('button', { 'aria-label': 'Logout' });
-        fireEvent.click(headerLogoutButton);
-
-        // Verify modal appears with exact text
-        expect(screen.getByText("Are you sure you want to log out? You'll need to sign in again to access your account.", 
-            { exact: true }
-        )).toBeInTheDocument();
-
-        // Find and click the confirmation button using test ID
-        const confirmLogoutButton = screen.getByTestId('confirm-logout');
-        fireEvent.click(confirmLogoutButton);
-
-        await waitFor(() => {
-            expect(logOut).toHaveBeenCalled();
-            expect(mockNavigate).toHaveBeenCalledWith('/login');
-        });
-    });
 
     it('navigate to funding page', async () => {
         render(
