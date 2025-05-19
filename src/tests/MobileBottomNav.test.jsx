@@ -51,7 +51,7 @@ describe('MobileBottomNav Component', () => {
     expect(screen.getByText('Home')).toBeInTheDocument();
     expect(screen.getByText('Projects')).toBeInTheDocument();
     expect(screen.getByText('Documents')).toBeInTheDocument();
-    expect(screen.getByText('Alerts')).toBeInTheDocument();
+    expect(screen.getByText('Messages')).toBeInTheDocument();
     expect(screen.getByText('Account')).toBeInTheDocument();
   });
 
@@ -64,7 +64,7 @@ describe('MobileBottomNav Component', () => {
     expect(screen.getByRole('button', { name: 'Home' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Projects' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'View documents' })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'View alerts' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: 'View messages' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'View account' })).toBeInTheDocument();
   });
 
