@@ -49,6 +49,14 @@ vi.mock('../backend/firebase/projectDB', () => ({
   fetchProjects: vi.fn(),
 }));
 
+// Mock notificationsUtil
+vi.mock('../backend/firebase/notificationsUtil', () => ({
+  useUnreadNotificationsCount: vi.fn(() => 0),
+  useUnreadMessagesCount: vi.fn(() => 0),
+  notify: vi.fn(),
+  getUserById: vi.fn()
+}));
+
 describe('Date formatting functions', () => {
   describe('formatDate', () => {
     it('should return "Not specified" for null or undefined input', () => {

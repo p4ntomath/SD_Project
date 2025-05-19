@@ -21,6 +21,22 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
+// Mock Firebase Firestore
+vi.mock('firebase/firestore', () => ({
+  getFirestore: vi.fn(),
+  initializeFirestore: vi.fn(),
+  collection: vi.fn(),
+  doc: vi.fn(),
+  getDoc: vi.fn(),
+  getDocs: vi.fn(),
+  setDoc: vi.fn(),
+  updateDoc: vi.fn(),
+  deleteDoc: vi.fn(),
+  query: vi.fn(),
+  where: vi.fn(),
+  CACHE_SIZE_UNLIMITED: 'unlimited'
+}));
+
 describe('ProtectedRoute Component', () => {
   beforeEach(() => {
     mockNavigate.mockClear();
@@ -55,7 +71,9 @@ describe('ProtectedRoute Component', () => {
       </AuthContext.Provider>
     );
 
-    expect(mockNavigate).toHaveBeenCalledWith('/complete-profile');
+    expect(mockNavigate).toHaveBeenCalledWith('/complete-profile', { 
+      state: { from: '/' } 
+    });
   });
 
   it('renders children when user is authenticated and has role', () => {

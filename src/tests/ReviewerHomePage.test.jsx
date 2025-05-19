@@ -40,9 +40,16 @@ vi.mock('../backend/firebase/firebaseConfig', () => ({
 }));
 
 // Mock reviewdb functions
-vi.mock('../backend/firebase/reviewdb', () => ({
-  getReviewerRequests: vi.fn(),
+vi.mock('../backend/firebase/reviewerDB', () => ({
+  getReviewerRequests: vi.fn(() => Promise.resolve([])),
   updateReviewRequestStatus: vi.fn()
+}));
+
+// Mock notificationsUtil
+vi.mock('../backend/firebase/notificationsUtil', () => ({
+  useUnreadNotificationsCount: vi.fn(() => 0),
+  useUnreadMessagesCount: vi.fn(() => 0),
+  notify: vi.fn()
 }));
 
 // Mock window.matchMedia for Framer Motion
