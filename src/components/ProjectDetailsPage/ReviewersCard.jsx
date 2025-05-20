@@ -9,7 +9,7 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
   const [sendingReviewRequests, setSendingReviewRequests] = useState(false);
   const [processingReRequest, setProcessingReRequest] = useState(null);
   const activeReviewers = project.reviewers || [];
-  const pendingRequests = reviewRequests.filter(
+  const pendingRequests = (reviewRequests || []).filter(
     request => request.status !== 'accepted' && request.status !== 'completed'
   );
 
@@ -18,7 +18,7 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
 
   // Helper function to check if a reviewer has pending requests
   const hasReviewerPendingRequest = (reviewerId) => {
-    return reviewRequests.some(request => 
+    return (reviewRequests || []).some(request => 
       request.reviewerId === reviewerId && 
       (request.status === 'pending' || request.status === 'accepted')
     );
@@ -145,7 +145,7 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
       case 'feedback_submitted':
         return (
           <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
-            Feedback Submitted
+            Feedback Received
           </span>
         );
       default:
@@ -186,75 +186,79 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
       {activeReviewers.length > 0 && (
         <div className="mb-6">
           <h3 className="text-sm font-medium text-gray-700 mb-3">Active Reviewers</h3>
-          <ul className="space-y-2">
-            {activeReviewers.map((reviewer) => (
-              <li key={reviewer.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-blue-100 rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
+          <div className="max-h-[300px] overflow-y-auto pr-2">
+            <ul className="space-y-2">
+              {activeReviewers.map((reviewer) => (
+                <li key={reviewer.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-blue-100 rounded-full">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm break-words">{reviewer.name}</p>
+                      <p className="text-xs text-gray-500 break-words">{reviewer.fieldOfResearch || 'No field of research specified'}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-sm break-words">{reviewer.name}</p>
-                    <p className="text-xs text-gray-500 break-words">{reviewer.fieldOfResearch || 'No field of research specified'}</p>
+                  
+                  <div className="flex items-center gap-2">
+                    {getStatusBadge(reviewer.reviewStatus)}
+                    {canManageReviewers && reviewer.reviewStatus === 'feedback_submitted' && (
+                      <button
+                        onClick={() => handleReRequest(reviewer)}
+                        disabled={processingReRequest === reviewer.id || sendingReviewRequests}
+                        className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                        title="Request another review"
+                      >
+                        {processingReRequest === reviewer.id ? (
+                          <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full" />
+                        ) : (
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                          </svg>
+                        )}
+                      </button>
+                    )}
                   </div>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  {getStatusBadge(reviewer.reviewStatus)}
-                  {canManageReviewers && reviewer.reviewStatus === 'feedback_submitted' && (
-                    <button
-                      onClick={() => handleReRequest(reviewer)}
-                      disabled={processingReRequest === reviewer.id || sendingReviewRequests}
-                      className="p-1.5 text-blue-600 hover:bg-blue-50 rounded-full transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                      title="Request another review"
-                    >
-                      {processingReRequest === reviewer.id ? (
-                        <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full" />
-                      ) : (
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                        </svg>
-                      )}
-                    </button>
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
 
       {pendingRequests.length > 0 && (
         <div className="space-y-4">
           <h3 className="text-sm font-medium text-gray-700">Review Requests</h3>
-          <ul className="space-y-2">
-            {pendingRequests.map((request) => (
-              <li key={request.id} className="flex items-center justify-between p-2 bg-gray-50/80 rounded-lg">
-                <div className="flex items-center gap-3">
-                  <div className="p-2 bg-gray-100 rounded-full">
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                    </svg>
+          <div className="max-h-[300px] overflow-y-auto pr-2">
+            <ul className="space-y-2">
+              {pendingRequests.map((request) => (
+                <li key={request.id} className="flex items-center justify-between p-2 bg-gray-50/80 rounded-lg">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 bg-gray-100 rounded-full">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <p className="font-medium text-sm break-words">{request.reviewerName}</p>
+                      <p className="text-xs text-gray-500 break-words">Requested: {formatDate(request.requestedAt)}</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="font-medium text-sm break-words">{request.reviewerName}</p>
-                    <p className="text-xs text-gray-500 break-words">Requested: {formatDate(request.requestedAt)}</p>
-                  </div>
-                </div>
-                <span className={`px-2 py-1 text-xs rounded-full ${
-                  request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                  request.status === 'rejected' ? 'bg-red-100 text-red-800' :
-                  'bg-gray-100 text-gray-800'
-                }`}>
-                  {request.status === 'pending' ? 'Pending Response' :
-                   request.status === 'rejected' ? 'Request Declined' :
-                   'Unknown Status'}
-                </span>
-              </li>
-            ))}
-          </ul>
+                  <span className={`px-2 py-1 text-xs rounded-full ${
+                    request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
+                    request.status === 'rejected' ? 'bg-red-100 text-red-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {request.status === 'pending' ? 'Pending Response' :
+                     request.status === 'rejected' ? 'Request Declined' :
+                     'Unknown Status'}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
         </div>
       )}
 

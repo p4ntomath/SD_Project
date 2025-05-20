@@ -12,6 +12,7 @@ import {
 } from "firebase/firestore";
 
 /**
+
  * Adds a collaborator to a project with default "Collaborator" access and specific permissions.
  * @param {string} projectId - The ID of the project.
  * @param {string} collaboratorId - The ID of the collaborator to add.
@@ -44,6 +45,7 @@ export const addCollaboratorToProject = async (projectId, collaboratorId) => {
 
         await updateDoc(projectRef, {
             collaborators: arrayUnion(collaboratorData),
+
             updatedAt: serverTimestamp()
         });
 
@@ -204,12 +206,14 @@ export const searchResearchers = async (searchTerm, currentUserId, project) => {
     try {
         const usersCollection = collection(db, "users");
 
+        // First, get all researchers
         const researcherQuery = query(
             usersCollection,
             where("role", "==", "researcher")
         );
         const querySnapshot = await getDocs(researcherQuery);
 
+        // Check pending invitations
         const invitationsQuery = query(
             collection(db, "invitations"),
             where("projectId", "==", project.projectId),
@@ -242,12 +246,13 @@ export const searchResearchers = async (searchTerm, currentUserId, project) => {
             return nameMatches || institutionMatches;
         });
     } catch (error) {
-        console.error("Error searching for researchers:", error);
+        console.error("Error searching for researchers:", error.message, error.stack);
         throw new Error("Failed to search for researchers");
     }
 };
 
 /**
+
  * Adds a researcher as a collaborator to a project
  * @param {string} projectId - The ID of the project
  * @param {string} researcherId - The ID of the researcher to add
@@ -261,7 +266,6 @@ const addResearcherToProject = async (projectId, researcherId, role = 'Collabora
         if (!researcherDoc.exists()) {
             throw new Error("Researcher not found");
         }
-
         const researcherData = researcherDoc.data();
         const permissions = {
             Viewer: {
@@ -397,6 +401,20 @@ export const respondToResearcherInvitation = async (invitationId, accepted) => {
                 status: "accepted",
                 updatedAt: serverTimestamp()
             });
+
+            // Find and add to project group chat if it exists
+            const chatsQuery = query(
+                collection(db, "chats"),
+                where("type", "==", "group"),
+                where("projectId", "==", projectId)
+            );
+            const chatSnapshot = await getDocs(chatsQuery);
+            
+            if (!chatSnapshot.empty) {
+                const projectChat = chatSnapshot.docs[0];
+                const ChatService = (await import("./chatDB.jsx")).ChatService;
+                await ChatService.addUserToGroupChat(projectChat.id, researcherId);
+            }
         } else {
             await updateDoc(invitationRef, {
                 status: "declined",
@@ -466,15 +484,15 @@ export const getSentInvitations = async (senderId) => {
         
         const invitationsSnapshot = await getDocs(invitationsQuery);
         const pendingInvitations = await Promise.all(
-            invitationsSnapshot.docs.map(async (doc) => {
-                const invitationData = doc.data();
+            invitationsSnapshot.docs.map(async (docSnapshot) => {
+                const invitationData = docSnapshot.data();
                 const researcherDoc = await getDoc(doc(db, "users", invitationData.researcherId));
                 const researcherData = researcherDoc.data();
                 const projectDoc = await getDoc(doc(db, "projects", invitationData.projectId));
                 const projectData = projectDoc.data();
                 
                 return {
-                    invitationId: doc.id,
+                    invitationId: docSnapshot.id,
                     researcherId: invitationData.researcherId,
                     researcherName: researcherData?.fullName || "Unknown Researcher",
                     researcherInstitution: researcherData?.institution || "Unknown Institution",

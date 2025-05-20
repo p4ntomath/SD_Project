@@ -3,7 +3,6 @@ import { useLocation } from 'react-router-dom';
 import Select from 'react-select';
 import { getAllTags, getFaculties, getTagsByFaculty } from '../utils/tagSuggestions';
 import { fetchUniversities } from '../utils/universityOptions';
-import { completeProfile } from '../backend/firebase/authFirebase';
 import { ClipLoader } from 'react-spinners';
 
 const RoleSelectionForm = ({ onSubmit }) => {
@@ -134,7 +133,6 @@ const RoleSelectionForm = ({ onSubmit }) => {
         await onSubmit(formData);
 
       } catch (error) {
-        console.error('Error completing profile:', error);
         setErrors(prev => ({
           ...prev,
           submit: error.message

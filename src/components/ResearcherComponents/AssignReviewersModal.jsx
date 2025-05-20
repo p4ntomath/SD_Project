@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { getAvailableReviewers } from '../../backend/firebase/reviewerDB';
-
+import { notify } from '../../backend/firebase/notificationsUtil';
+import { auth } from '../../backend/firebase/firebaseConfig';
+import { getDoc } from 'firebase/firestore';
+import { doc } from 'firebase/firestore';
+import { db } from '../../backend/firebase/firebaseConfig';
 export default function AssignReviewersModal({ isOpen, onClose, onAssign, projectId, reviewRequests }) {
+
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedReviewers, setSelectedReviewers] = useState([]);
   const [availableReviewers, setAvailableReviewers] = useState([]);
@@ -15,13 +20,18 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
       try {
         const reviewers = await getAvailableReviewers();
         
-        // Filter out reviewers who have pending requests
-        const pendingReviewerIds = reviewRequests
-          .filter(req => req.status === 'pending' || req.status === 'accepted')
-          .map(req => req.reviewerId);
+        // Filter out both active reviewers and those with pending/accepted requests
+        const unavailableReviewerIds = [
+          ...reviewRequests
+            .filter(req => req.status === 'pending' || req.status === 'accepted')
+            .map(req => req.reviewerId),
+          ...reviewRequests
+            .filter(req => req.status === 'completed')
+            .map(req => req.reviewerId)
+        ];
 
         const filteredReviewers = reviewers.filter(reviewer => 
-          !pendingReviewerIds.includes(reviewer.id)
+          !unavailableReviewerIds.includes(reviewer.id)
         );
 
         const formattedReviewers = filteredReviewers.map(reviewer => ({
@@ -34,7 +44,7 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
         setAllReviewers(formattedReviewers);
         setAvailableReviewers(formattedReviewers);
       } catch (error) {
-        console.error('Error fetching reviewers:', error);
+        
       } finally {
         setFetchingReviewers(false);
       }
@@ -76,15 +86,50 @@ export default function AssignReviewersModal({ isOpen, onClose, onAssign, projec
     }
   };
 
-  const handleAssign = async () => {
-    if (selectedReviewers.length === 0) return;
-    setLoading(true);
-    try {
-      await onAssign(selectedReviewers);
-    } catch (error) {
-      console.error('Error assigning reviewers:', error);
+ const handleAssign = async () => {
+  if (!selectedReviewers.length) return;
+  setLoading(true);
+
+  try {
+    await onAssign(selectedReviewers);
+
+    // Get sender's name (the researcher assigning reviewers)
+    let senderName = "A researcher";
+    if (auth.currentUser) {
+      const userRef = doc(db, "users", auth.currentUser.uid);
+      const userSnap = await getDoc(userRef);
+      senderName = userSnap.exists() ? userSnap.data().fullName : "A researcher";
     }
-  };
+
+    // If you have project title, use it; otherwise, fallback
+    const projectTitle = typeof project !== "undefined" && project?.title
+      ? project.title
+      : "Untitled Project";
+
+    // Notify each reviewer
+    await Promise.all(selectedReviewers.map(reviewer =>
+      notify({
+        type: 'Reviewer Request Received',
+        projectId,
+        targetUserId: reviewer.id,
+        senderUserId: auth.currentUser.uid,
+        message: `You have been requested by ${senderName} to review the project "${projectTitle}".`
+      })
+    ));
+
+    notify({  
+      type: 'Reviewer Request Sent',
+      projectId,
+      targetUserId: auth.currentUser.uid,
+      senderUserId: auth.currentUser.uid,
+    });
+
+  } catch (error) {
+    
+  } finally {
+    setLoading(false);
+  }
+};
 
   if (!isOpen) return null;
 

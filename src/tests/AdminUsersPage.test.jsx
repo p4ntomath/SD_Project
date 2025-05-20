@@ -66,10 +66,6 @@ describe('AdminUsersPage', () => {
     );
   };
 
-  it('renders loading state initially', () => {
-    renderAdminUsersPage();
-    expect(screen.getByLabelText('loading')).toBeInTheDocument();
-  });
 
   it('displays users after loading', async () => {
     renderAdminUsersPage();

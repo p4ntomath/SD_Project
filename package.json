@@ -14,8 +14,13 @@
   "dependencies": {
     "@heroicons/react": "^2.2.0",
     "@material-tailwind/react": "^2.1.10",
+    "emoji-picker-react": "^4.12.2",
     "firebase": "^11.6.0",
+    "firebase-admin": "^13.4.0",
     "framer-motion": "^12.6.5",
+    "jspdf": "^3.0.1",
+    "jspdf-autotable": "^5.0.2",
+    "papaparse": "^5.5.2",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-easy-crop": "^5.4.1",
@@ -23,6 +28,7 @@
     "react-router-dom": "^7.4.1",
     "react-select": "^5.10.1",
     "react-spinners": "^0.15.0",
+    "select": "^1.1.2",
     "three": "^0.176.0",
     "vanta": "^0.5.24"
   },

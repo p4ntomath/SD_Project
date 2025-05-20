@@ -33,7 +33,7 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// Mock firebase auth
+// Mock firebase auth and db
 vi.mock('../backend/firebase/firebaseConfig', () => ({
   auth: {
     onAuthStateChanged: vi.fn((callback) => {
@@ -41,12 +41,28 @@ vi.mock('../backend/firebase/firebaseConfig', () => ({
       return vi.fn(); // unsubscribe mock
     }),
     currentUser: { uid: 'test-user-id' }
-  }
+  },
+  db: {} // Add the db export mock
 }));
 
 // Mock projectDB
 vi.mock('../backend/firebase/projectDB', () => ({
   fetchProjects: vi.fn(),
+}));
+
+// Mock collaborationDB
+vi.mock('../backend/firebase/collaborationDB', () => ({
+  getSentInvitations: vi.fn().mockResolvedValue([]),
+  getReceivedInvitations: vi.fn().mockResolvedValue([]),
+  respondToResearcherInvitation: vi.fn().mockResolvedValue({ success: true })
+}));
+
+// Mock notificationsUtil
+vi.mock('../backend/firebase/notificationsUtil', () => ({
+  useUnreadNotificationsCount: vi.fn(() => 0),
+  useUnreadMessagesCount: vi.fn(() => 0),
+  notify: vi.fn(),
+  getUserById: vi.fn()
 }));
 
 describe('Date formatting functions', () => {
@@ -213,7 +229,7 @@ describe('ResearcherHome', () => {
     await waitFor(() => {
       const trackFundingButton = screen.getByText('Track Funding');
       fireEvent.click(trackFundingButton);
-      expect(mockNavigate).toHaveBeenCalledWith('/trackfunding');
+      expect(mockNavigate).toHaveBeenCalledWith('/funding');
     });
   });
 

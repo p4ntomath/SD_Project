@@ -32,7 +32,15 @@ vi.mock('firebase/firestore', () => ({
             fullName: 'John Doe'
         })
     })),
-    getFirestore: vi.fn()
+    getFirestore: vi.fn(),
+    initializeFirestore: vi.fn(),
+    collection: vi.fn(),
+    setDoc: vi.fn(),
+    updateDoc: vi.fn(),
+    deleteDoc: vi.fn(),
+    query: vi.fn(),
+    where: vi.fn(),
+    CACHE_SIZE_UNLIMITED: 'unlimited'
 }));
 
 // Mock Framer Motion to prevent the animation-related error

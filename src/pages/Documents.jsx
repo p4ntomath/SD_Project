@@ -8,6 +8,25 @@ import { createFolder, getFolders, deleteFolder, updateFolderName } from '../bac
 import { uploadDocument, fetchDocumentsByFolder, deleteDocument } from '../backend/firebase/documentsDB';
 import { formatFirebaseDate } from '../utils/dateUtils';
 import { fetchProjects } from '../backend/firebase/projectDB';
+import { AnimatePresence, motion } from 'framer-motion';
+import StatusModal from '../components/StatusModal';
+import {
+    handleCreateFolder,
+    handleFileUpload,
+    handleDeleteFolder,
+    confirmDeleteFolder,
+    handleDeleteFile,
+    handleDownload,
+    handleRenameFolder
+} from '../utils/documentUtils';
+
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
+}
 
 export default function DocumentsPage() {
     const [folders, setFolders] = useState([]);
@@ -25,10 +44,14 @@ export default function DocumentsPage() {
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [uploadLoading, setUploadLoading] = useState(false);
     const [sortOption, setSortOption] = useState('date');
-    const [filterOption, setFilterOption] = useState('all');
-    const [projectsMap, setProjectsMap] = useState({});
     const [projects, setProjects] = useState([]);
     const [selectedProjectId, setSelectedProjectId] = useState('');
+    const [modalOpen, setModalOpen] = useState(false);
+    const [statusMessage, setStatusMessage] = useState("");
+    const [isRenamingFolder, setIsRenamingFolder] = useState(null);
+    const [showDeleteFileModal, setShowDeleteFileModal] = useState(false);
+    const [fileToDelete, setFileToDelete] = useState(null);
+    const [deletingFile, setDeletingFile] = useState(null);
 
     useEffect(() => {
         loadFolders();
@@ -45,14 +68,8 @@ export default function DocumentsPage() {
 
             // First get all user's projects
             const projects = await fetchProjects(user.uid);
-            setProjects(projects); // Store all projects
+            setProjects(projects);
             
-            // Create a map of project IDs to project names
-            const projectMapping = {};
-            projects.forEach(project => {
-                projectMapping[project.id] = project.title;
-            });
-            setProjectsMap(projectMapping);
             
             // Then fetch documents for each project
             const allFolders = [];
@@ -60,9 +77,10 @@ export default function DocumentsPage() {
                 try {
                     const projectFolders = await fetchDocumentsByFolder(project.id);
                     if (projectFolders && projectFolders.length > 0) {
-                        // Add project name to each folder
+                        // Add project name and ID to each folder
                         const foldersWithProject = projectFolders.map(folder => ({
                             ...folder,
+                            projectId: project.id, // Ensure projectId is set
                             projectName: project.title
                         }));
                         allFolders.push(...foldersWithProject);
@@ -88,131 +106,112 @@ export default function DocumentsPage() {
         }
     };
 
-    const handleCreateFolder = async () => {
-        if (!newFolderName.trim()) return;
-        if (!selectedProjectId) {
-            setError("Please select a project");
-            return;
-        }
-
-        try {
-            setUploadLoading(true);
-            const user = auth.currentUser;
-            if (!user) throw new Error("Please sign in to create folders");
-            
-            await createFolder(selectedProjectId, newFolderName.trim());
-            await loadFolders(); // Reload folders to get the new one
-            setNewFolderName('');
-            setSelectedProjectId('');
-            setShowFolderModal(false);
-            setError(null);
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setUploadLoading(false);
-        }
+    const handleCreateFolderWrapper = () => {
+        handleCreateFolder({
+            newFolderName,
+            projectId: selectedProjectId,
+            setUploadLoading,
+            setFolders,
+            folders,
+            setModalOpen,
+            setError,
+            setStatusMessage,
+            setNewFolderName,
+            setShowFolderModal,
+            additionalCleanup: () => setSelectedProjectId('')
+        });
     };
 
-    const handleFileUpload = async () => {
-        if (!selectedFile || !selectedFolder || !customName.trim()) {
-            setError("Please select a file, folder and provide a name");
-            setShowUploadModal(false);
-            return;
-        }
-
-        // Validate file size (10MB limit)
-        const maxSize = 10 * 1024 * 1024; // 10MB in bytes
-        if (selectedFile.size > maxSize) {
-            setError("File size exceeds the maximum limit of 10MB");
-            setSelectedFile(null);
-            setShowUploadModal(false);
-            return;
-        }
-
-        // Validate file type
-        const allowedTypes = [
-            'application/pdf',
-            'application/msword',
-            'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'text/plain',
-            'image/jpeg',
-            'image/png',
-            'image/gif'
-        ];
-        if (!allowedTypes.includes(selectedFile.type)) {
-            setError("Invalid file type. Please upload a PDF, Word document, text file, or image.");
-            setSelectedFile(null);
-            setShowUploadModal(false);
-            return;
-        }
-
-        try {
-            setUploadLoading(true);
-            const user = auth.currentUser;
-            if (!user) throw new Error("Please sign in to upload files");
-
-            // Add file extension if it was removed
-            const fileExtension = selectedFile.name.split('.').pop();
-            const finalFileName = customName.endsWith(`.${fileExtension}`) ? customName : `${customName}.${fileExtension}`;
-
-            await uploadDocument(
-                selectedFile,
-                selectedFolder.projectId, // Use the project ID from the selected folder
-                selectedFolder.id,
-                {
-                    displayName: finalFileName,
-                    description: customDescription.trim() || 'No description provided'
-                }
-            );
-
-            await loadFolders(); // Reload to get the new file
-            setShowUploadModal(false);
-            setSelectedFile(null);
-            setCustomName('');
-            setCustomDescription('');
-            setError(null); // Clear any previous errors
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setUploadLoading(false);
-        }
+    const handleFileUploadWrapper = () => {
+        handleFileUpload({
+            selectedFile,
+            selectedFolder,
+            customName,
+            customDescription,
+            setError,
+            setShowUploadModal,
+            setUploadLoading,
+            setFolders,
+            folders,
+            setSelectedFile,
+            setCustomName,
+            setCustomDescription,
+            setModalOpen,
+            setStatusMessage
+        });
     };
 
-    const handleDeleteFolder = async (folder) => {
-        setFolderToDelete(folder);
-        setShowDeleteFolderModal(true);
+    const handleDeleteFolderWrapper = (folder) => {
+        handleDeleteFolder({
+            folder,
+            setError,
+            setModalOpen,
+            setStatusMessage,
+            setFolderToDelete,
+            setShowDeleteFolderModal
+        });
     };
 
-    const confirmDeleteFolder = async () => {
-        try {
-            setUploadLoading(true);
-            await deleteFolder(auth.currentUser.uid, folderToDelete.id);
-            await loadFolders();
-            setShowDeleteFolderModal(false);
-            setFolderToDelete(null);
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setUploadLoading(false);
-        }
+    const confirmDeleteFolderWrapper = () => {
+        confirmDeleteFolder({
+            folderToDelete,
+            setUploadLoading,
+            setFolders,
+            folders,
+            setShowDeleteFolderModal,
+            setFolderToDelete,
+            setModalOpen,
+            setError,
+            setStatusMessage
+        });
     };
 
-    const handleDeleteFile = async (folderId, fileId) => {
-        if (!window.confirm('Are you sure you want to delete this file?')) return;
-
-        try {
-            setUploadLoading(true);
-            await deleteDocument(fileId, auth.currentUser.uid, folderId);
-            await loadFolders();
-        } catch (err) {
-            setError(err.message);
-        } finally {
-            setUploadLoading(false);
-        }
+    const handleDeleteFileWrapper = (folderId, fileId, folder, file) => {
+        setFileToDelete({ folderId, fileId, folderName: folder.name, fileName: file.name });
+        setShowDeleteFileModal(true);
     };
 
-    const handleDownload = (downloadURL) => {
-        window.open(downloadURL, '_blank');
+    const confirmDeleteFileWrapper = () => {
+        if (!fileToDelete) return;
+        
+        handleDeleteFile({
+            folderId: fileToDelete.folderId,
+            fileId: fileToDelete.fileId,
+            folders,
+            setUploadLoading,
+            setFolders,
+            setModalOpen,
+            setError,
+            setStatusMessage,
+            setDeletingFile,
+            onSuccess: () => {
+                setShowDeleteFileModal(false);
+                setFileToDelete(null);
+            }
+        });
+    };
+
+    const handleDownloadWrapper = (downloadURL) => {
+        handleDownload({
+            downloadURL,
+            setError,
+            setModalOpen,
+            setStatusMessage
+        });
+    };
+
+    const handleRenameFolderWrapper = (folder) => {
+        handleRenameFolder({
+            folder,
+            newName: newFolderName,
+            setFolders,
+            folders,
+            setModalOpen,
+            setError,
+            setStatusMessage
+        });
+        setIsRenamingFolder(null);
+        setNewFolderName('');
     };
 
     const sortFolders = (folders) => {
@@ -222,10 +221,19 @@ export default function DocumentsPage() {
                 sorted.sort((a, b) => a.name.localeCompare(b.name));
                 break;
             case 'date':
-                sorted.sort((a, b) => b.createdAt - a.createdAt);
+                sorted.sort((a, b) => {
+                    const dateA = a.createdAt?.seconds || 0;
+                    const dateB = b.createdAt?.seconds || 0;
+                    return dateB - dateA;
+                });
                 break;
             default:
-                break;
+                // Default to date sorting
+                sorted.sort((a, b) => {
+                    const dateA = a.createdAt?.seconds || 0;
+                    const dateB = b.createdAt?.seconds || 0;
+                    return dateB - dateA;
+                });
         }
         return sorted;
     };
@@ -264,12 +272,6 @@ export default function DocumentsPage() {
                     <h1 className="text-3xl font-bold text-gray-900">My Documents</h1>
                     <p className="mt-2 text-sm text-gray-600">Manage and organize your research documents</p>
                 </header>
-
-                {error && (
-                    <div className="mb-4 p-4 bg-red-50 border border-red-200 rounded-lg text-red-600">
-                        {error}
-                    </div>
-                )}
 
                 <section className="mb-6 flex flex-wrap gap-4">
                     <button
@@ -325,13 +327,82 @@ export default function DocumentsPage() {
                                             </svg>
                                         </div>
                                         <div>
-                                            <h3 className="font-semibold text-gray-900">{folder.name}</h3>
+                                            {isRenamingFolder === folder.id ? (
+                                                <div className="flex items-center gap-2">
+                                                    <input
+                                                        type="text"
+                                                        value={newFolderName}
+                                                        onChange={(e) => setNewFolderName(e.target.value)}
+                                                        className="px-2 py-1 border border-gray-300 rounded-md text-sm focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                                                        placeholder="New folder name"
+                                                        autoFocus
+                                                        onKeyDown={(e) => {
+                                                            if (e.key === 'Enter') {
+                                                                handleRenameFolderWrapper(folder);
+                                                            } else if (e.key === 'Escape') {
+                                                                setIsRenamingFolder(null);
+                                                                setNewFolderName('');
+                                                            }
+                                                        }}
+                                                    />
+                                                    <button
+                                                        onClick={() => handleRenameFolderWrapper(folder)}
+                                                        className="p-1 text-green-600 hover:text-green-800"
+                                                        title="Save"
+                                                    >
+                                                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                                        </svg>
+                                                    </button>
+                                                    <button
+                                                        onClick={() => {
+                                                            setIsRenamingFolder(null);
+                                                            setNewFolderName('');
+                                                        }}
+                                                        className="p-1 text-gray-600 hover:text-gray-800"
+                                                        title="Cancel"
+                                                    >
+                                                        <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                                        </svg>
+                                                    </button>
+                                                </div>
+                                            ) : (
+                                                <h3 className="font-semibold text-gray-900 group flex items-center gap-2">
+                                                    {folder.name}
+                                                    <button
+                                                        onClick={() => {
+                                                            setIsRenamingFolder(folder.id);
+                                                            setNewFolderName(folder.name);
+                                                        }}
+                                                        className="p-1 text-gray-500 hover:text-blue-600 transition-colors"
+                                                        title="Rename folder"
+                                                    >
+                                                        <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 003-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
+                                                    </button>
+                                                </h3>
+                                            )}
                                             <p className="text-sm text-gray-500">{folder.files?.length || 0} files</p>
                                             <p className="text-xs text-blue-600 mt-1">Project: {folder.projectName}</p>
+                                            <div className="mt-2 space-y-1">
+                                                <p className="text-xs text-gray-500">Size: {formatFileSize(folder.size || 0)}</p>
+                                                <p className="text-xs text-gray-500">Remaining: {formatFileSize(folder.remainingSpace || 100 * 1024 * 1024)}</p>
+                                                <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                                    <div 
+                                                        className="h-full bg-blue-600 rounded-full transition-all"
+                                                        style={{ 
+                                                            width: `${((folder.size || 0) / (100 * 1024 * 1024)) * 100}%`,
+                                                            backgroundColor: ((folder.size || 0) / (100 * 1024 * 1024)) > 0.9 ? '#ef4444' : '#2563eb'
+                                                        }}
+                                                    />
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                     <button
-                                        onClick={() => handleDeleteFolder(folder)}
+                                        onClick={() => handleDeleteFolderWrapper(folder)}
                                         className="text-red-600 hover:text-red-800 transition-colors"
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -349,7 +420,7 @@ export default function DocumentsPage() {
                                             </div>
                                             <div className="flex items-center space-x-2">
                                                 <button
-                                                    onClick={() => handleDownload(file.downloadURL)}
+                                                    onClick={() => handleDownloadWrapper(file.downloadURL)}
                                                     className="text-blue-600 hover:text-blue-800"
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -357,7 +428,7 @@ export default function DocumentsPage() {
                                                     </svg>
                                                 </button>
                                                 <button
-                                                    onClick={() => handleDeleteFile(folder.id, file.id)}
+                                                    onClick={() => handleDeleteFileWrapper(folder.id, file.id, folder, file)}
                                                     className="text-red-600 hover:text-red-800"
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -441,7 +512,7 @@ export default function DocumentsPage() {
                                     Cancel
                                 </button>
                                 <button
-                                    onClick={handleCreateFolder}
+                                    onClick={handleCreateFolderWrapper}
                                     disabled={!newFolderName.trim() || !selectedProjectId || uploadLoading}
                                     className="px-4 py-2 bg-blue-600/90 backdrop-blur-sm text-white rounded-xl hover:bg-blue-700/90 transition-colors disabled:opacity-50"
                                 >
@@ -521,7 +592,7 @@ export default function DocumentsPage() {
                                     Cancel
                                 </button>
                                 <button
-                                    onClick={handleFileUpload}
+                                    onClick={handleFileUploadWrapper}
                                     disabled={!selectedFile || !customName.trim() || uploadLoading}
                                     className="px-4 py-2 bg-blue-600/90 backdrop-blur-sm text-white rounded-xl hover:bg-blue-700/90 transition-colors disabled:opacity-50"
                                 >
@@ -537,39 +608,107 @@ export default function DocumentsPage() {
                 )}
 
                 {/* Delete Folder Confirmation Modal */}
-                {showDeleteFolderModal && (
-                    <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
-                        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteFolderModal(false)} />
-                        <div className="relative bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200">
-                            <h2 className="text-xl font-semibold mb-4">Delete Folder?</h2>
-                            <p className="text-gray-700 mb-6">
-                                Are you sure you want to delete the folder "{folderToDelete?.name}" and all its contents? This action cannot be undone.
-                            </p>
-                            <div className="flex justify-end space-x-3">
-                                <button
-                                    onClick={() => {
-                                        setShowDeleteFolderModal(false);
-                                        setFolderToDelete(null);
-                                    }}
-                                    className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50/80 transition-colors"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={confirmDeleteFolder}
-                                    disabled={uploadLoading}
-                                    className="px-4 py-2 bg-red-600/90 backdrop-blur-sm text-white rounded-xl hover:bg-red-700/90 transition-colors disabled:opacity-50"
-                                >
-                                    {uploadLoading ? (
-                                        <ClipLoader size={20} color="#ffffff" />
-                                    ) : (
-                                        'Delete Folder'
-                                    )}
-                                </button>
-                            </div>
+                <AnimatePresence>
+                    {showDeleteFolderModal && (
+                        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
+                            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteFolderModal(false)} />
+                            <motion.article
+                                className="relative bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200"
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.8, opacity: 0 }}
+                                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                            >
+                                <h2 className="text-xl font-semibold mb-4 text-gray-900">Delete Folder?</h2>
+                                <p className="text-gray-700 mb-6">
+                                    Are you sure you want to delete the folder "{folderToDelete?.name}" and all its contents? This action cannot be undone.
+                                </p>
+                                <footer className="flex justify-end gap-3">
+                                    <button
+                                        onClick={() => {
+                                            setShowDeleteFolderModal(false);
+                                            setFolderToDelete(null);
+                                        }}
+                                        className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50/80 transition-colors"
+                                        disabled={uploadLoading}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={confirmDeleteFolderWrapper}
+                                        disabled={uploadLoading}
+                                        className="bg-red-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-xl hover:bg-red-700/90 transition-colors flex items-center gap-2"
+                                    >
+                                        {uploadLoading ? (
+                                            <>
+                                                <ClipLoader size={16} color="#FFFFFF" />
+                                                <span>Deleting...</span>
+                                            </>
+                                        ) : (
+                                            'Delete Folder'
+                                        )}
+                                    </button>
+                                </footer>
+                            </motion.article>
                         </div>
-                    </div>
-                )}
+                    )}
+                </AnimatePresence>
+
+                {/* Delete File Confirmation Modal */}
+                <AnimatePresence>
+                    {showDeleteFileModal && fileToDelete && (
+                        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
+                            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteFileModal(false)} />
+                            <motion.article
+                                className="relative bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200"
+                                initial={{ scale: 0.8, opacity: 0 }}
+                                animate={{ scale: 1, opacity: 1 }}
+                                exit={{ scale: 0.8, opacity: 0 }}
+                                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                            >
+                                <h2 className="text-xl font-semibold mb-4 text-gray-900">Delete File?</h2>
+                                <p className="text-gray-700 mb-6">
+                                    Are you sure you want to delete "{fileToDelete.fileName}" from folder "{fileToDelete.folderName}"? This action cannot be undone.
+                                </p>
+                                <footer className="flex justify-end gap-3">
+                                    <button
+                                        onClick={() => {
+                                            setShowDeleteFileModal(false);
+                                            setFileToDelete(null);
+                                        }}
+                                        className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50/80 transition-colors"
+                                        disabled={uploadLoading}
+                                    >
+                                        Cancel
+                                    </button>
+                                    <button
+                                        onClick={confirmDeleteFileWrapper}
+                                        disabled={uploadLoading}
+                                        className="bg-red-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-xl hover:bg-red-700/90 transition-colors flex items-center gap-2"
+                                    >
+                                        {uploadLoading ? (
+                                            <>
+                                                <ClipLoader size={16} color="#FFFFFF" />
+                                                <span>Deleting...</span>
+                                            </>
+                                        ) : (
+                                            'Delete File'
+                                        )}
+                                    </button>
+                                </footer>
+                            </motion.article>
+                        </div>
+                    )}
+                </AnimatePresence>
+
+                {/* Status Modal */}
+                <StatusModal
+                    isOpen={modalOpen}
+                    onClose={() => setModalOpen(false)}
+                    success={!error}
+                    message={statusMessage}
+                />
+
             </section>
 
             <MobileBottomNav />

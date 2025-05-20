@@ -1,12 +1,19 @@
 import '@testing-library/jest-dom';
 import { vi } from 'vitest';
 import React from 'react';
+import { cleanup } from '@testing-library/react';
 
 // Make React available globally
 globalThis.React = React;
 
+// Setup test environment
+beforeEach(() => {
+  cleanup();
+});
 
-
+afterEach(() => {
+  cleanup();
+});
 
 vi.mock('../backend/firebase/projectDB', () => ({
   createProject: vi.fn().mockResolvedValue('new-project-id')
@@ -54,6 +61,7 @@ vi.mock('firebase/auth', () => ({
 
 vi.mock('firebase/firestore', () => ({
   getFirestore: vi.fn(),
+  initializeFirestore: vi.fn(),
   collection: vi.fn(),
   doc: vi.fn(),
   getDoc: vi.fn(),
@@ -63,6 +71,7 @@ vi.mock('firebase/firestore', () => ({
   deleteDoc: vi.fn(),
   query: vi.fn(),
   where: vi.fn(),
+  CACHE_SIZE_UNLIMITED: 'unlimited'
 }));
 
 vi.mock('firebase/storage', () => ({

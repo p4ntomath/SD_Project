@@ -29,9 +29,10 @@ const RoleSelectionPage = () => {
 
       await completeProfile(profileData.fullName, profileData.role, profileData);
       setRole(formData.role);
+      navigate('/home'); // Navigate immediately after setting role
       setProfileCompleted(true);
     } catch (error) {
-      console.error("Error completing profile:", error.message);
+      console.error('Error completing profile:', error.message);
     } finally {
       setLocalLoading(false);
       setLoading(false);

@@ -24,6 +24,8 @@ import ReviewerProjects from './pages/reviewer/ReviewerProjects.jsx';
 import ReviewRequests from './pages/reviewer/ReviewRequests.jsx';
 import ReviewerHistory from './pages/ReviewerPages/ReviewerHistory.jsx';
 import ReviewProjectPage from './pages/ReviewerPages/ReviewProjectPage.jsx';
+import NotificationsPage from './pages/NotificationsPage.jsx';
+import ReviewerNotificationsPage from './pages/reviewer/ReviewerNotificationsPage.jsx';
 import MyProfilePage from './pages/MyProfilePage.jsx';
 import MessagesPage from './pages/Messages.jsx';
 import MessagesList from './pages/MessagesList.jsx';
@@ -91,7 +93,7 @@ function App() {
               <AdminDocumentsPage />
             </ProtectedRoute>
           } />
-          <Route path="/trackfunding" element={
+          <Route path="/funding" element={
             <ProtectedRoute allowedRoles={['researcher']}>
               <FundingTrackerPage />
             </ProtectedRoute>
@@ -109,6 +111,17 @@ function App() {
           <Route path="/documents" element={
             <ProtectedRoute allowedRoles={['researcher', 'reviewer']}>
               <DocumentsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/notifications" element={
+            <ProtectedRoute allowedRoles={['researcher']}>
+              <NotificationsPage />
+            </ProtectedRoute>
+          } />
+
+          <Route path="/reviewer/notifications" element={
+            <ProtectedRoute allowedRoles={['reviewer']}>
+              <ReviewerNotificationsPage />
             </ProtectedRoute>
           } />
           <Route path="/reviewer/review/:projectId" element={
@@ -146,6 +159,14 @@ function App() {
               <ReviewerHomePage />
             </ProtectedRoute>
           } />
+          <Route path="/reviewer/messages" element={
+            <ProtectedRoute allowedRoles={['reviewer']}>
+              <MessagesLayout />
+            </ProtectedRoute>
+          }>
+            <Route index element={<MessagesList />} />
+            <Route path=":chatId" element={<ChatView />} />
+          </Route>
           <Route path="/account" element={<MyProfilePage />} />
           <Route path="/messages" element={
             <ProtectedRoute allowedRoles={['researcher', 'reviewer', 'admin']}>

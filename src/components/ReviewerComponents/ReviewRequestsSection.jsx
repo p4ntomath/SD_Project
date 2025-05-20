@@ -79,17 +79,19 @@ export default function ReviewRequestsSection() {
   return (
     <div className="space-y-6">
       {requests.map((request) => (
-        <div key={request.invitationId} className="bg-white rounded-lg shadow p-6 border border-gray-200">
-          <div className="mb-4">
-            <h3 className="text-lg font-medium text-gray-900">{request.project?.title}</h3>
-            <p className="text-sm text-gray-500">
-              Requested on {formatDate(request.createdAt)}
-            </p>
-          </div>
+        <div key={request.invitationId} className="bg-white rounded-lg shadow p-6 border border-gray-200 overflow-hidden">
+          <div className="overflow-y-auto max-h-[230px] pr-2 -mr-2 no-scrollbar">
+            <div className="mb-4">
+              <h3 className="text-lg font-medium text-gray-900">{request.project?.title}</h3>
+              <p className="text-sm text-gray-500">
+                Requested on {formatDate(request.createdAt)}
+              </p>
+            </div>
 
-          <div className="mb-4">
-            <h4 className="text-sm font-medium text-gray-700">Project Description</h4>
-            <p className="mt-1 text-gray-600">{request.project?.description}</p>
+            <div className="mb-4">
+              <h4 className="text-sm font-medium text-gray-700">Project Description</h4>
+              <p className="mt-1 text-gray-600">{request.project?.description}</p>
+            </div>
           </div>
 
           <div className="border-t pt-4 mt-4">

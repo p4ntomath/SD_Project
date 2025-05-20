@@ -3,6 +3,8 @@ import { ClipLoader } from 'react-spinners';
 import { motion } from 'framer-motion';
 import { searchResearchers } from '../../backend/firebase/collaborationDB';
 import { auth } from '../../backend/firebase/firebaseConfig';
+import { notify } from '../../backend/firebase/notificationsUtil';
+import { getUserById } from '../../backend/firebase/notificationsUtil';
 
 export default function AssignCollaboratorsModal({ isOpen, onClose, onAssign, projectId, project }) {
   const [searchTerm, setSearchTerm] = useState('');
@@ -10,6 +12,7 @@ export default function AssignCollaboratorsModal({ isOpen, onClose, onAssign, pr
   const [selectedResearchers, setSelectedResearchers] = useState([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState({});
+  const [loading, setLoading] = useState(false); // Add loading state
 
   useEffect(() => {
     const searchForResearchers = async () => {
@@ -58,15 +61,51 @@ export default function AssignCollaboratorsModal({ isOpen, onClose, onAssign, pr
     }));
   };
 
-  const handleAssign = () => {
-    const researchersWithRoles = selectedResearchers.map(researcher => ({
-      ...researcher,
-      role: selectedRoles[researcher.id]
-    }));
-    onAssign(researchersWithRoles);
-    setSelectedResearchers([]);
-    setSelectedRoles({});
-    setSearchTerm('');
+  const handleAssign = async () => {
+    setLoading(true);
+    try {
+      const researchersWithRoles = selectedResearchers.map(researcher => ({
+        ...researcher,
+        role: selectedRoles[researcher.id]
+      }));
+      await onAssign(researchersWithRoles);
+      setSelectedResearchers([]);
+      setSelectedRoles({});
+      setSearchTerm('');
+
+      // Get sender's name
+      const senderUser = await getUserById(auth.currentUser.uid);
+      const senderName = senderUser?.fullName || "A researcher";
+
+      // Notify sender (current user)
+      await notify({
+        type: 'Collaboration Request Sent',
+        projectId,
+        projectTitle: project.title,
+        researcherName: selectedResearchers.map(r => r.fullName).join(', '),
+        targetUserId: auth.currentUser.uid,
+        senderUserId: auth.currentUser.uid,
+        message: `You sent a collaboration request to ${selectedResearchers.map(r => r.fullName).join(', ')} for project "${project.title || 'Untitled Project'}".`
+      });
+
+      // Notify each recipient with correct sender name
+      await Promise.all(selectedResearchers.map(researcher =>
+        notify({
+          type: 'Collaboration Request Received',
+          projectId,
+          projectTitle: project.title,
+          researcherName: senderName, // <-- Use sender's name here
+          targetUserId: researcher.id,
+          senderUserId: auth.currentUser.uid,
+          message: `You have received a collaboration request from ${senderName} for project "${project.title || 'Untitled Project'}".`
+        })
+      ));
+
+    } catch (error) {
+      console.error('Error assigning collaborators:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -91,6 +130,7 @@ export default function AssignCollaboratorsModal({ isOpen, onClose, onAssign, pr
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
                 placeholder="Search by name or institution..."
+                disabled={loading}
               />
             </div>
 
@@ -112,6 +152,7 @@ export default function AssignCollaboratorsModal({ isOpen, onClose, onAssign, pr
                           checked={selectedResearchers.some(r => r.id === researcher.id)}
                           onChange={() => handleToggleResearcher(researcher)}
                           className="h-4 w-4 text-blue-600 rounded"
+                          disabled={loading}
                         />
                         <div className="ml-3 flex-1">
                           <p className="text-sm font-medium text-gray-900">{researcher.fullName}</p>
@@ -123,6 +164,7 @@ export default function AssignCollaboratorsModal({ isOpen, onClose, onAssign, pr
                             onChange={(e) => handleRoleChange(researcher.id, e.target.value)}
                             className="ml-4 text-sm bg-white border border-gray-300 rounded-md px-2 py-1"
                             onClick={(e) => e.stopPropagation()}
+                            disabled={loading}
                           >
                             <option value="Collaborator">Collaborator</option>
                             <option value="Editor">Editor</option>
@@ -144,15 +186,23 @@ export default function AssignCollaboratorsModal({ isOpen, onClose, onAssign, pr
               <button
                 onClick={onClose}
                 className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+                disabled={loading}
               >
                 Cancel
               </button>
               <button
                 onClick={handleAssign}
-                disabled={selectedResearchers.length === 0}
-                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50"
+                disabled={selectedResearchers.length === 0 || loading}
+                className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
               >
-                Add Selected
+                {loading ? (
+                  <>
+                    <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                    <span>Adding...</span>
+                  </>
+                ) : (
+                  'Add Selected'
+                )}
               </button>
             </div>
           </div>

@@ -131,9 +131,14 @@ export default function AdminUsersPage() {
                           <div className="text-sm text-gray-900 capitalize">{user.role}</div>
                         </td>
                         <td className="px-4 sm:px-6 py-4 hidden sm:table-cell">
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800" data-testid={`user-status-${user.id}`}>
-                            Active
-                          </span>
+                          <div className="text-sm text-gray-900" data-testid={`user-status-desktop-${user.id}`}>
+                            {user.status}
+                          </div>
+                        </td>
+                        <td className="sm:hidden">
+                          <div className="text-sm text-gray-500 mt-1" data-testid={`user-status-mobile-${user.id}`}>
+                            {user.status}
+                          </div>
                         </td>
                         <td className="px-4 sm:px-6 py-4">
                           <button

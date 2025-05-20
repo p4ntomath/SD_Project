@@ -1,7 +1,7 @@
 import { useNavigate, useParams } from 'react-router-dom';
 import { FiArrowLeft } from 'react-icons/fi';
 import { useState, useEffect } from 'react';
-import { fetchProject, updateProject, deleteProject, getProjectDetails } from '../backend/firebase/projectDB';
+import { fetchProject, updateProject, deleteProject, getProjectDetails} from '../backend/firebase/projectDB';
 import { fetchDocumentsByFolder } from '../backend/firebase/documentsDB';
 import { ClipLoader } from 'react-spinners';
 import StatusModal from '../components/StatusModal';
@@ -15,11 +15,13 @@ import DocumentsCard from '../components/ProjectDetailsPage/DocumentsCard';
 import FundingCard from '../components/ProjectDetailsPage/FundingCard';
 import GoalsCard from '../components/ProjectDetailsPage/GoalsCard';
 import BasicInfoCard from '../components/ProjectDetailsPage/BasicInfoCard';
+import { notify } from '../backend/firebase/notificationsUtil';
 import AssignCollaboratorsModal from '../components/ResearcherComponents/AssignCollaboratorsModal';
 import { sendResearcherInvitation, getPendingCollaboratorInvitations } from '../backend/firebase/collaborationDB';
 import { auth } from '../backend/firebase/firebaseConfig';
 import { checkPermission, isProjectOwner } from '../utils/permissions';
 import { updateCollaboratorAccessLevel, removeCollaboratorFromProject } from "../backend/firebase/collaborationDB";
+import { ChatService } from '../backend/firebase/chatDB';
 
 export default function ProjectDetailsPage() {
   const { projectId } = useParams();
@@ -36,6 +38,10 @@ export default function ProjectDetailsPage() {
   const [showAssignReviewersModal, setShowAssignReviewersModal] = useState(false);
   const [showCollaboratorsModal, setShowCollaboratorsModal] = useState(false);
   const [pendingInvitations, setPendingInvitations] = useState([]);
+  const [groupChatId, setGroupChatId] = useState(null);
+  const [isCreatingChat, setIsCreatingChat] = useState(false);
+  const [showGroupNameModal, setShowGroupNameModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // New state for documents and folders
   const [folders, setFolders] = useState([]);
@@ -55,7 +61,9 @@ export default function ProjectDetailsPage() {
         
         if (projectData.goals) {
           projectData.goals = projectData.goals.map(goal =>
-            typeof goal === 'string' ? { text: goal, completed: false } : goal
+            typeof goal === 'string'
+              ? { text: goal, completed: false, notified: false }
+              : { ...goal, notified: goal.notified || false }
           );
         }
         
@@ -84,7 +92,7 @@ export default function ProjectDetailsPage() {
         setProject(projectData);
         setError(false);
       } catch (err) {
-        console.error('Error loading project:', err);
+        
         setModalOpen(true);
         setError(true);
         setStatusMessage(err.message);
@@ -123,7 +131,7 @@ export default function ProjectDetailsPage() {
           }
         }
       } catch (err) {
-        console.error('Error loading project:', err);
+        
         setError(err.message);
       } finally {
         setLoading(false);
@@ -160,7 +168,7 @@ export default function ProjectDetailsPage() {
 
         setFolders(processedFolders);
       } catch (err) {
-        console.error('Error loading folders:', err);
+        
         setError(true);
         setModalOpen(true);
         setStatusMessage('Failed to load project documents');
@@ -189,7 +197,7 @@ export default function ProjectDetailsPage() {
         }));
         setReviewRequests(processedRequests);
       } catch (err) {
-        console.error('Error loading review requests:', err);
+        
         setError(true);
         setModalOpen(true);
         setStatusMessage('Failed to load reviewer requests');
@@ -207,7 +215,7 @@ export default function ProjectDetailsPage() {
         const invitations = await getPendingCollaboratorInvitations(projectId);
         setPendingInvitations(invitations);
       } catch (err) {
-        console.error('Error loading pending invitations:', err);
+        
         // Don't show error modal for this as it's not critical
       }
     };
@@ -217,12 +225,43 @@ export default function ProjectDetailsPage() {
     }
   }, [projectId]);
 
+  // Check for existing project group chat
+  useEffect(() => {
+    const checkExistingProjectChat = async () => {
+      if (!project?.collaborators?.length) return;
+      
+      try {
+        const chats = await ChatService.getUserChats(auth.currentUser.uid);
+        const projectChat = chats.find(chat => 
+          chat.type === 'group' && 
+          chat.projectId === projectId
+        );
+        
+        if (projectChat) {
+          setGroupChatId(projectChat.id);
+        }
+      } catch (error) {
+        
+      }
+    };
+
+    checkExistingProjectChat();
+  }, [project, projectId]);
 
   const handleDelete = async () => {
     try {
       await deleteProject(projectId);
       setModalOpen(true);
       setStatusMessage("Project deleted successfully");
+
+      notify({
+        type: "Project Deleted",
+        projectId: projectId,
+        projectTitle: project.title,
+        targetUserId: auth.currentUser?.uid,   // <-- add this
+        senderUserId: auth.currentUser?.uid,   // <-- add this (optional, but explicit)
+      });
+
       setTimeout(() => {
         navigate("/home");
       }, 2000);
@@ -260,6 +299,16 @@ export default function ProjectDetailsPage() {
       setIsEditing(false);
       setModalOpen(true);
       setStatusMessage("Project updated successfully");
+
+      notify({
+        type: "Project Updated",
+        projectId,
+        projectTitle: updatedProject.title,
+        goalText: goalInput,
+        targetUserId: auth.currentUser?.uid,   // <-- add this
+        senderUserId: auth.currentUser?.uid,   // <-- add this (optional, but explicit)
+      });
+
     } catch (err) {
       setError(err.message);
       setModalOpen(true);
@@ -295,10 +344,13 @@ export default function ProjectDetailsPage() {
     const completed = project.goals.filter(goal => goal.completed).length;
     if(Math.round((completed / project.goals.length) * 100) === 100){
       project.status = 'Complete';
+       
     }
     else{
       project.status = 'In Progress';
     }
+
+ 
     return Math.round((completed / project.goals.length) * 100);
   };
 
@@ -315,7 +367,12 @@ export default function ProjectDetailsPage() {
         )
       );
 
+      // Wait for all invitations to be sent
       await Promise.all(invitationPromises);
+      
+      // Fetch the updated pending invitations to get complete researcher details
+      const updatedInvitations = await getPendingCollaboratorInvitations(projectId);
+      setPendingInvitations(updatedInvitations);
       
       setShowCollaboratorsModal(false);
       setModalOpen(true);
@@ -329,7 +386,7 @@ export default function ProjectDetailsPage() {
         </div>
       );
     } catch (err) {
-      console.error("Error inviting collaborators:", err);
+     
       setModalOpen(true);
       setError(true);
       setStatusMessage(
@@ -356,7 +413,6 @@ export default function ProjectDetailsPage() {
       setError(false);
       setStatusMessage("Collaborator access level updated successfully");
     } catch (err) {
-      console.error("Error updating collaborator access:", err);
       setModalOpen(true); 
       setError(true);
       setStatusMessage("Failed to update collaborator access level");
@@ -374,16 +430,148 @@ export default function ProjectDetailsPage() {
       setError(false);
       setStatusMessage("Collaborator removed successfully");
     } catch (err) {
-      console.error("Error removing collaborator:", err);
+    
       setModalOpen(true);
       setError(true);
       setStatusMessage("Failed to remove collaborator");
     }
   };
 
+  // Add this helper function at the top of the file with other functions
+const getDefaultGroupName = (projectTitle) => {
+  const MAX_LENGTH = 30;
+  const baseTitle = projectTitle?.length > 20 
+    ? projectTitle.substring(0, 17) + '...'
+    : projectTitle;
+  return `${baseTitle} Team`.substring(0, MAX_LENGTH);
+};
+
+  // Replace the createProjectGroupChat function
+  const createProjectGroupChat = async (customName) => {
+    if (!project?.collaborators?.length || isCreatingChat || !isProjectOwner(project)) return;
+    
+    try {
+      setIsCreatingChat(true);
+      setIsSubmitting(true);
+      
+      // Validate and trim chat name
+      const chatName = (customName || getDefaultGroupName(project.title))
+        .trim()
+        .substring(0, 30);
+
+      // Get collaborator IDs
+      const collaboratorIds = project.collaborators.map(c => c.id);
+
+      // Create the group chat with project metadata
+      const chatId = await ChatService.createGroupChat(
+        auth.currentUser.uid,
+        collaboratorIds,
+        chatName,
+        { projectId }  // Add projectId as metadata
+      );
+
+      setGroupChatId(chatId);
+      setModalOpen(true);
+      setError(false);
+      setStatusMessage('Team chat created successfully!');
+      setShowGroupNameModal(false);
+    } catch (error) {
+      ;
+      setModalOpen(true);
+      setError(true);
+      setStatusMessage('Failed to create team chat');
+    } finally {
+      setIsCreatingChat(false);
+      setIsSubmitting(false);
+    }
+  };
+
+  const GroupNameModal = ({ isOpen, onClose, onSubmit, defaultName, isLoading }) => {
+    const [localGroupName, setLocalGroupName] = useState('');
+    
+    useEffect(() => {
+      if (isOpen) {
+        setLocalGroupName(''); // Reset on open
+      }
+    }, [isOpen]);
+
+    const handleInputChange = (e) => {
+      if (e.target.value.length <= 30) {
+        setLocalGroupName(e.target.value);
+      }
+    };
+
+    return (
+      <AnimatePresence>
+        {isOpen && (
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex items-center justify-center min-h-screen px-4">
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="fixed inset-0 bg-black/30 backdrop-blur-sm"
+                onClick={onClose}
+              />
+              <motion.div
+                initial={{ scale: 0.95, opacity: 0, y: 10 }}
+                animate={{ scale: 1, opacity: 1, y: 0 }}
+                exit={{ scale: 0.95, opacity: 0, y: 10 }}
+                transition={{ type: 'spring', duration: 0.3, bounce: 0.25 }}
+                className="relative bg-white rounded-xl shadow-2xl p-6 w-full max-w-md"
+              >
+                <h3 className="text-lg font-semibold mb-4">Create Team Chat</h3>
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={localGroupName}
+                    onChange={handleInputChange}
+                    placeholder={defaultName}
+                    maxLength={30}
+                    className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
+                  />
+                  <p className="text-xs text-gray-500 text-right">
+                    {localGroupName.length}/30 characters
+                  </p>
+                </div>
+                <div className="flex justify-end gap-3 mt-6">
+                  <button
+                    onClick={onClose}
+                    className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+                    disabled={isLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={() => onSubmit(localGroupName || defaultName)}
+                    disabled={isLoading}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center"
+                  >
+                    {isLoading ? (
+                      <>
+                        <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                        </svg>
+                        Creating...
+                      </>
+                    ) : (
+                      'Create Chat'
+                    )}
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          </div>
+        )}
+      </AnimatePresence>
+    );
+  };
+
   if (loading) {
     return (
-      <main className="flex justify-center items-center min-h-screen">
+      <main aria-label='loading-project' className="flex justify-center items-center min-h-screen">
         <ClipLoader color="#3B82F6" />
       </main>
     );
@@ -391,9 +579,20 @@ export default function ProjectDetailsPage() {
 
   if (!project) {
     return (
+      <>
       <main className="flex justify-center items-center min-h-screen">
-        <ClipLoader color="#3B82F6" />
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-800">Project Not Found</h1>
+          <p className="text-gray-600 mt-2">The project you are looking for does not exist or has been deleted.</p>
+          <button
+            onClick={() => navigate('/home')}
+            className="mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+          >
+            Go to Home
+          </button>
+        </div>
       </main>
+      </>
     );
   }
 
@@ -420,6 +619,7 @@ export default function ProjectDetailsPage() {
   return (
     <>
 
+
       <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <section className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 sm:h-16 gap-3 sm:gap-0">
@@ -436,15 +636,17 @@ export default function ProjectDetailsPage() {
                 </h1>
               </div>
               <nav className="flex gap-2 justify-start sm:justify-end flex-shrink-0">
-                <button
-                  onClick={() => setIsEditing(true)}
-                  className="bg-blue-600 text-white py-2 px-3 sm:px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center text-sm sm:text-base"
-                >
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                  </svg>
-                  Edit Project
-                </button>
+                {(isProjectOwner(project) || checkPermission(project, 'canEditProjectDetails')) && (
+                  <button
+                    onClick={() => setIsEditing(true)}
+                    className="bg-blue-600 text-white py-2 px-3 sm:px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center text-sm sm:text-base"
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                    Edit Project
+                  </button>
+                )}
               </nav>
           </section>
         </section>
@@ -482,6 +684,7 @@ export default function ProjectDetailsPage() {
               setModalOpen={setModalOpen}
               setError={setError}
               setStatusMessage={setStatusMessage}
+              projectTitle={project.title}
             />
 
             {/* Project Reviews Card */}
@@ -493,6 +696,7 @@ export default function ProjectDetailsPage() {
 
           {/* Right Column - Additional Info */}
           <section className="space-y-4 sm:space-y-6">
+
             <FundingCard
               projectId={projectId}
               project={project}
@@ -506,46 +710,77 @@ export default function ProjectDetailsPage() {
             <section className="bg-white rounded-lg shadow p-4 sm:p-6">
               <h2 className="text-lg sm:text-xl font-semibold mb-4">Project Discussion</h2>
               <section className="space-y-4">
-                <article className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-                  <header className="flex items-center mb-3">
-                    <svg className="h-4 w-4 mr-2 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <h3 className="text-blue-700 font-medium text-sm sm:text-base">Project Discussion Coming Soon!</h3>
-                  </header>
-                  <p className="text-sm text-gray-600">
-                    Stay tuned for our new discussion features that will allow you to:
-                  </p>
-                  <ul className="space-y-2 text-xs sm:text-sm text-gray-600 mt-2">
-                    <li className="flex items-center">
-                      <svg className="h-4 w-4 mr-2 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                {project.collaborators?.length > 0 ? (
+                  <>
+                    {groupChatId ? (
+                      <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-3">
+                          <div className="flex items-center">
+                            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white">
+                              💬
+                            </div>
+                            <div className="ml-3">
+                              <h3 className="font-medium text-gray-900">{project.title} Team Chat</h3>
+                              <p className="text-sm text-gray-500">
+                                {project.collaborators.length + 1} members
+                              </p>
+                            </div>
+                          </div>
+                          <button
+                            onClick={() => navigate(`/messages/${groupChatId}`)}
+                            className="flex items-center px-4 py-2 bg-white border border-blue-200 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors text-sm font-medium"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                            Open
+                          </button>
+                        </div>
+                        <div className="text-sm text-gray-600">
+                          Discuss project updates, share ideas, and coordinate with your team in real-time.
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2v-6a2 2 0 012-2h8a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586" />
+                          </svg>
+                        </div>
+                        <h3 className="text-gray-900 font-medium mb-2">Create Team Chat</h3>
+                        <p className="text-gray-500 text-sm mb-4">
+                          {isProjectOwner(project) 
+                            ? "Start a group chat with your project collaborators for real-time discussions."
+                            : "Only the project owner can create the team chat."}
+                        </p>
+                        {isProjectOwner(project) && (
+                          <button
+                            onClick={() => setShowGroupNameModal(true)}
+                            disabled={isCreatingChat}
+                            className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                          >
+                            <svg className="w-4 h-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Create Team Chat
+                          </button>
+                        )}
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2v-6a2 2 0 012-2h8a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586" />
                       </svg>
-                      <span>Communicate with team members in real-time</span>
-                    </li>
-                    <li className="flex items-center">
-                      <svg className="h-4 w-4 mr-2 text-blue-500 flex-shrink-0" fill="none" viewBox="0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>Share updates and announcements</span>
-                    </li>
-                    <li className="flex items-center">
-                      <svg className="h-4 w-4 mr-2 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      <span>Create topic-based discussion threads</span>
-                    </li>
-                  </ul>
-                </article>
-                <button
-                  disabled
-                  className="w-full flex items-center justify-center px-4 py-2 border border-blue-300 text-blue-600 rounded-lg bg-blue-50 opacity-50 cursor-not-allowed text-sm sm:text-base"
-                >
-                  <svg className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18-9-2zm0 0v-8" />
-                  </svg>
-                  Start Discussion (Coming Soon)
-                </button>
+                    </div>
+                    <h3 className="text-gray-900 font-medium mb-2">No Collaborators Yet</h3>
+                    <p className="text-gray-500 text-sm">
+                      Add collaborators to your project to enable team chat functionality.
+                    </p>
+                  </div>
+                )}
               </section>
             </section>
 
@@ -570,44 +805,48 @@ export default function ProjectDetailsPage() {
               {project.collaborators && project.collaborators.length > 0 && (
                 <div className="mb-6">
                   <h3 className="text-sm font-medium text-gray-700 mb-3">Active Collaborators</h3>
-                  <div className="space-y-3">
-                    {project.collaborators.map((collaborator) => (
-                      <div key={collaborator.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-blue-100 rounded-full">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
+                  <div className="overflow-hidden">
+                    <div className="overflow-y-auto max-h-[230px] pr-2 -mr-2 no-scrollbar">
+                      <div className="space-y-3">
+                        {project.collaborators.map((collaborator) => (
+                          <div key={collaborator.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-blue-100 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                              </div>
+                              <div>
+                                <p className="font-medium">{collaborator.fullName}</p>
+                                <p className="text-sm text-gray-500">{collaborator.institution || 'No institution'}</p>
+                              </div>
+                            </div>
+                            {isProjectOwner(project) && (
+                              <div className="flex items-center gap-2">
+                                <select
+                                  value={collaborator.accessLevel}
+                                  onChange={(e) => handleAccessLevelChange(collaborator.id, e.target.value)}
+                                  className="text-sm bg-white border border-gray-300 rounded-md px-2 py-1"
+                                >
+                                  <option value="Collaborator">Collaborator</option>
+                                  <option value="Editor">Editor</option>
+                                  <option value="Viewer">Viewer</option>
+                                </select>
+                                <button
+                                  onClick={() => handleRemoveCollaborator(collaborator.id)}
+                                  className="p-1 text-red-600 hover:bg-red-50 rounded"
+                                  title="Remove collaborator"
+                                >
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                  </svg>
+                                </button>
+                              </div>
+                            )}
                           </div>
-                          <div>
-                            <p className="font-medium">{collaborator.fullName}</p>
-                            <p className="text-sm text-gray-500">{collaborator.institution || 'No institution'}</p>
-                          </div>
-                        </div>
-                        {isProjectOwner(project) && (
-                          <div className="flex items-center gap-2">
-                            <select
-                              value={collaborator.accessLevel}
-                              onChange={(e) => handleAccessLevelChange(collaborator.id, e.target.value)}
-                              className="text-sm bg-white border border-gray-300 rounded-md px-2 py-1"
-                            >
-                              <option value="Collaborator">Collaborator</option>
-                              <option value="Editor">Editor</option>
-                              <option value="Viewer">Viewer</option>
-                            </select>
-                            <button
-                              onClick={() => handleRemoveCollaborator(collaborator.id)}
-                              className="p-1 text-red-600 hover:bg-red-50 rounded"
-                              title="Remove collaborator"
-                            >
-                              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                              </svg>
-                            </button>
-                          </div>
-                        )}
+                        ))}
                       </div>
-                    ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -616,25 +855,29 @@ export default function ProjectDetailsPage() {
               {pendingInvitations && pendingInvitations.length > 0 && (
                 <div className="mb-6">
                   <h3 className="text-sm font-medium text-gray-700 mb-3">Pending Invitations</h3>
-                  <div className="space-y-3">
-                    {pendingInvitations.map((invitation) => (
-                      <div key={invitation.invitationId} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                          <div className="p-2 bg-gray-100 rounded-full">
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                            </svg>
+                  <div className="overflow-hidden">
+                    <div className="overflow-y-auto max-h-[230px] pr-2 -mr-2 no-scrollbar">
+                      <div className="space-y-3">
+                        {pendingInvitations.map((invitation) => (
+                          <div key={invitation.invitationId} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                              <div className="p-2 bg-gray-100 rounded-full">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                              </div>
+                              <div>
+                                <p className="font-medium text-sm">{invitation.researcherName}</p>
+                                <p className="text-xs text-gray-500">Invited: {formatDate(invitation.createdAt)}</p>
+                              </div>
+                            </div>
+                            <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
+                              Pending Response
+                            </span>
                           </div>
-                          <div>
-                            <p className="font-medium text-sm">{invitation.researcherName}</p>
-                            <p className="text-xs text-gray-500">Invited: {formatDate(invitation.createdAt)}</p>
-                          </div>
-                        </div>
-                        <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
-                          Pending Response
-                        </span>
+                        ))}
                       </div>
-                    ))}
+                    </div>
                   </div>
                 </div>
               )}
@@ -718,6 +961,13 @@ export default function ProjectDetailsPage() {
         )}
       </AnimatePresence>
 
+      <GroupNameModal
+        isOpen={showGroupNameModal}
+        onClose={() => setShowGroupNameModal(false)}
+        onSubmit={createProjectGroupChat}
+        defaultName={getDefaultGroupName(project.title)}
+        isLoading={isSubmitting}
+      />
     </main>
   </>
   );

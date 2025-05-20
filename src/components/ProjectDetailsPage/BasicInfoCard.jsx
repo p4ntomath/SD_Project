@@ -3,7 +3,7 @@ import { formatFirebaseDate } from '../../utils/dateUtils';
 import { isProjectOwner } from '../../utils/permissions';
 
 export default function BasicInfoCard({ project, calculateProgress }) {
-  const progressPercentage = calculateProgress();
+  const progress = calculateProgress();
   
   return (
     <article className="bg-white rounded-lg shadow p-4 sm:p-6">
@@ -21,12 +21,12 @@ export default function BasicInfoCard({ project, calculateProgress }) {
         <div>
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium text-gray-700">Project Progress</span>
-            <span className="text-sm font-medium text-gray-700">{progressPercentage}%</span>
+            <span className="text-sm font-medium text-gray-700">{progress}%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2.5">
             <div 
               className="bg-blue-600 h-2.5 rounded-full transition-all duration-500" 
-              style={{ width: `${progressPercentage}%` }}
+              style={{ width: `${progress}%` }}
             />
           </div>
         </div>

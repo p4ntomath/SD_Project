@@ -1,229 +1,197 @@
-import React from 'react';
-import { render, screen, fireEvent, act, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach } from 'vitest';
-import '@testing-library/jest-dom';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { vi } from 'vitest';
+import userEvent from '@testing-library/user-event';
 import RoleSelectionForm from '../components/RoleSelctionForm';
-import { useLocation } from 'react-router-dom';
-import * as tagSuggestions from '../utils/tagSuggestions';
+import { BrowserRouter } from 'react-router-dom';
+import { fetchUniversities } from '../utils/universityOptions';
 
-// Mock react-router-dom
-vi.mock('react-router-dom', () => ({
-  useLocation: vi.fn()
+// Mock the modules
+vi.mock('../utils/tagSuggestions', () => ({
+  getAllTags: vi.fn(() => [
+    { value: 'ml', label: 'Machine Learning' },
+    { value: 'ai', label: 'Artificial Intelligence' },
+    { value: 'ds', label: 'Data Science' }
+  ]),
+  getFaculties: vi.fn(() => ['Science', 'Engineering']),
+  getTagsByFaculty: vi.fn(() => [])
 }));
 
-// Mock react-select
-vi.mock('react-select', () => ({ 
-  default: ({ inputId, options = [], value, onChange, isMulti }) => {
-    const handleChange = (e) => {
-      const selectedValue = e.target.value;
-      // For multi-select, maintain array of selected options
-      if (isMulti) {
-        const option = options.find(opt => opt.value === selectedValue);
-        if (option) {
-          // Add to existing selections if not already selected
-          const newValue = value || [];
-          if (!newValue.some(v => v.value === selectedValue)) {
-            onChange([...newValue, option]);
-          }
-        }
-      } else {
-        const option = options.find(opt => opt.value === selectedValue);
-        onChange(option);
-      }
-    };
-
-    return (
-      <select
-        id={inputId}
-        data-testid={`mock-select-${inputId}`}
-        value={isMulti ? (value || []).map(v => v.value) : (value?.value || '')}
-        onChange={handleChange}
-        multiple={isMulti}
-      >
-        {options.map(option => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-    );
-  }
-}));
-
-// Mock the fetchUniversities function
 vi.mock('../utils/universityOptions', () => ({
-  fetchUniversities: vi.fn().mockResolvedValue([
-    { value: 'university1', label: 'University 1' },
-    { value: 'university2', label: 'University 2' }
-  ])
+  fetchUniversities: vi.fn(() => Promise.resolve([
+    { value: 'uni1', label: 'University 1' },
+    { value: 'uni2', label: 'University 2' }
+  ]))
 }));
 
-describe('RoleSelectionForm Component', () => {
-  const mockOnSubmit = vi.fn();
-  
+const mockOnSubmit = vi.fn();
+
+const originalError = console.error;
+const originalWarn = console.warn;
+
+beforeAll(() => {
+  console.error = (...args) => {
+    const skipMessages = [
+      'inside a test was not wrapped in act',
+      'React state updates should be wrapped in act',
+      'changing a controlled input to be uncontrolled'
+    ];
+    if (skipMessages.some(msg => args[0]?.includes(msg))) return;
+    originalError.call(console, ...args);
+  };
+
+  console.warn = (...args) => {
+    const skipMessages = [
+      'An update to ProjectDetailsPage inside a test was not wrapped in act',
+      'A component is changing a controlled input'
+    ];
+    if (skipMessages.some(msg => args[0]?.includes(msg))) return;
+    originalWarn.call(console, ...args);
+  };
+});
+
+// Helper function to render with router
+const renderWithRouter = (ui, { route = '/' } = {}) => {
+  window.history.pushState({}, 'Test page', route);
+  return render(ui, { wrapper: BrowserRouter });
+};
+
+// Helper function to simulate select event for React-Select
+const selectEvent = {
+  select: async (element, optionText) => {
+    const selectElement = element.querySelector('input');
+    await userEvent.type(selectElement, optionText);
+    const option = await screen.findByText(optionText);
+    await userEvent.click(option);
+  }
+};
+
+describe('RoleSelectionForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    useLocation.mockReturnValue({ state: {} });
-
-    // Setup mocks for tag suggestion functions
-    vi.spyOn(tagSuggestions, 'getAllTags').mockReturnValue([
-      { value: 'tag1', label: 'Tag 1', faculty: 'Computer Science' },
-      { value: 'tag2', label: 'Tag 2', faculty: 'Engineering' }
-    ]);
-
-    vi.spyOn(tagSuggestions, 'getFaculties').mockReturnValue(['Computer Science', 'Engineering']);
-
-    vi.spyOn(tagSuggestions, 'getTagsByFaculty').mockReturnValue([
-      { value: 'tag1', label: 'Tag 1', faculty: 'Computer Science' }
-    ]);
   });
 
-  it('renders form fields correctly', () => {
-    render(<RoleSelectionForm onSubmit={mockOnSubmit} />);
-    
+  it('renders the form with all required fields', async () => {
+    renderWithRouter(<RoleSelectionForm onSubmit={mockOnSubmit} />);
+
+    // Check for main form elements
+    expect(screen.getByTestId('role-selection-form')).toBeInTheDocument();
     expect(screen.getByTestId('fullname-input')).toBeInTheDocument();
-    expect(screen.getByTestId('institution-select')).toBeInTheDocument();
     expect(screen.getByTestId('role-select')).toBeInTheDocument();
+    expect(screen.getByTestId('department-input')).toBeInTheDocument();
     expect(screen.getByTestId('field-of-research-input')).toBeInTheDocument();
-    expect(screen.getByTestId('bio-input')).toBeInTheDocument();
+
+    // Check for React-Select components
+    expect(screen.getByRole('combobox', { name: /institution/i })).toBeInTheDocument();
+    expect(screen.getByLabelText(/research tags/i)).toBeInTheDocument();
+
+    // Verify that universities are fetched
+    expect(fetchUniversities).toHaveBeenCalled();
   });
 
-  it('pre-fills name from location state if available', () => {
-    useLocation.mockReturnValue({ 
-      state: { 
-        name: 'John Doe',
-        isEmailSignup: true 
-      } 
+  it('validates required fields on submission', async () => {
+    renderWithRouter(<RoleSelectionForm onSubmit={mockOnSubmit} />);
+
+    // Try to submit without filling required fields
+    fireEvent.click(screen.getByText('Complete Profile'));
+
+    // Check for error messages
+    await waitFor(() => {
+      expect(screen.getByTestId('fullname-error')).toHaveTextContent('Full name is required');
+      expect(screen.getByTestId('role-error')).toHaveTextContent('Please select a role');
+      expect(screen.getByTestId('department-error')).toHaveTextContent('Department is required');
+      expect(screen.getByTestId('field-of-research-error')).toHaveTextContent('Field of research is required');
+      expect(screen.getByTestId('institution-error')).toHaveTextContent('Institution is required');
+      expect(screen.getByTestId('tags-error')).toHaveTextContent('Please select at least 3 research tags');
     });
 
-    render(<RoleSelectionForm onSubmit={mockOnSubmit} />);
-    expect(screen.getByTestId('fullname-input')).toHaveValue('John Doe');
+    expect(mockOnSubmit).not.toHaveBeenCalled();
   });
 
-  it('handles form submission with valid researcher data', async () => {
-    render(<RoleSelectionForm onSubmit={mockOnSubmit} />);
-    
-    // Fill form
-    fireEvent.change(screen.getByTestId('fullname-input'), { target: { value: 'John Doe' } });
-    fireEvent.change(screen.getByTestId('role-select'), { target: { value: 'researcher' } });
-    fireEvent.change(screen.getByTestId('field-of-research-input'), { target: { value: 'Computer Science' } });
-    
-    // Add 3 tags
-    const tagSelect = screen.getByTestId('mock-select-select-tags');
-    fireEvent.change(tagSelect, { target: { value: 'tag1' } });
-    fireEvent.change(tagSelect, { target: { value: 'tag2' } });
-    
-    // Select institution
-    fireEvent.change(screen.getByTestId('mock-select-select-institution'), { target: { value: 'university1' } });
-    
-    // Add department
-    fireEvent.change(screen.getByTestId('department-input'), { target: { value: 'Computer Science' } });
-    
-    // Optional bio
-    fireEvent.change(screen.getByTestId('bio-input'), { target: { value: 'Test bio' } });
+  it('submits form successfully with valid data', async () => {
+    const user = userEvent.setup();
+    renderWithRouter(<RoleSelectionForm onSubmit={mockOnSubmit} />);
 
-    // Submit form
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('submit-button'));
-    });
-
-    expect(mockOnSubmit).toHaveBeenCalledWith(expect.objectContaining({
-      fullName: 'John Doe',
-      role: 'researcher',
-      fieldOfResearch: 'Computer Science',
-      department: 'Computer Science',
-      institution: 'university1',
-      bio: 'Test bio',
-      tags: expect.arrayContaining([
-        { value: 'tag1', label: 'Tag 1' },
-        { value: 'tag2', label: 'Tag 2' }
-      ])
-    }));
-  });
-
-  it('handles form submission with valid reviewer data', async () => {
-    render(<RoleSelectionForm onSubmit={mockOnSubmit} />);
-    
-    // Fill form
-    fireEvent.change(screen.getByTestId('fullname-input'), { target: { value: 'Jane Smith' } });
-    fireEvent.change(screen.getByTestId('role-select'), { target: { value: 'reviewer' } });
-    fireEvent.change(screen.getByTestId('field-of-research-input'), { target: { value: 'Computer Science' } });
-
-    // Add 3 tags
-    const tagSelect = screen.getByTestId('mock-select-select-tags');
-    fireEvent.change(tagSelect, { target: { value: 'tag1' } });
-    fireEvent.change(tagSelect, { target: { value: 'tag2' } });
+    // Fill in the form
+    await user.type(screen.getByTestId('fullname-input'), 'John Doe');
+    await user.selectOptions(screen.getByTestId('role-select'), 'researcher');
+    await user.type(screen.getByTestId('department-input'), 'Computer Science');
+    await user.type(screen.getByTestId('field-of-research-input'), 'Machine Learning');
 
     // Select institution
-    fireEvent.change(screen.getByTestId('mock-select-select-institution'), { target: { value: 'university1' } });
-    
-    // Add department
-    fireEvent.change(screen.getByTestId('department-input'), { target: { value: 'Engineering' } });
-    
-    // Optional bio
-    fireEvent.change(screen.getByTestId('bio-input'), { target: { value: 'Test bio' } });
+    const institutionSelect = screen.getByLabelText(/institution/i);
+    await selectEvent.select(institutionSelect.parentElement, 'University 1');
+
+    // Select research tags
+    const tagsSelect = screen.getByLabelText(/research tags/i);
+    await selectEvent.select(tagsSelect.parentElement, 'Machine Learning');
+    await selectEvent.select(tagsSelect.parentElement, 'Artificial Intelligence');
+    await selectEvent.select(tagsSelect.parentElement, 'Data Science');
 
     // Submit form
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('submit-button'));
+    await user.click(screen.getByText('Complete Profile'));
+
+    await waitFor(() => {
+      expect(mockOnSubmit).toHaveBeenCalledWith(expect.objectContaining({
+        fullName: 'John Doe',
+        role: 'researcher',
+        department: 'Computer Science',
+        fieldOfResearch: 'Machine Learning',
+        institution: 'uni1',
+        tags: ['Machine Learning', 'Artificial Intelligence', 'Data Science']
+      }));
+    });
+  });
+
+  it('loads and filters research tags by faculty', async () => {
+    renderWithRouter(<RoleSelectionForm onSubmit={mockOnSubmit} />);
+
+    // Check if faculty select is rendered
+    const facultySelect = screen.getByTestId('faculty-select');
+    expect(facultySelect).toBeInTheDocument();
+
+    // Change faculty
+    fireEvent.change(facultySelect, {
+      target: { value: 'Science' }
     });
 
-    expect(mockOnSubmit).toHaveBeenCalledWith(expect.objectContaining({
-      fullName: 'Jane Smith',
-      role: 'reviewer',
-      fieldOfResearch: 'Computer Science',
-      department: 'Engineering',
-      institution: 'university1',
-      bio: 'Test bio',
-      tags: expect.arrayContaining([
-        { value: 'tag1', label: 'Tag 1' },
-        { value: 'tag2', label: 'Tag 2' }
-      ])
-    }));
+    expect(screen.getByTestId('faculty-option-Science')).toBeInTheDocument();
   });
 
-  it('shows validation errors for empty required fields', async () => {
-    render(<RoleSelectionForm onSubmit={mockOnSubmit} />);
-    
-    // Submit without filling required fields
-    fireEvent.click(screen.getByTestId('submit-button'));
-
-    expect(await screen.findByTestId('fullname-error')).toBeInTheDocument();
-    expect(await screen.findByTestId('role-error')).toBeInTheDocument();
-    expect(await screen.findByTestId('institution-error')).toBeInTheDocument();
-    expect(await screen.findByTestId('field-of-research-error')).toBeInTheDocument();
-  });
-
-  it('shows loading state during submission', async () => {
-    render(<RoleSelectionForm onSubmit={async () => {
-      await new Promise(resolve => setTimeout(resolve, 100));
-    }} />);
+  it('handles profile completion loading state', async () => {
+    renderWithRouter(<RoleSelectionForm onSubmit={mockOnSubmit} />);
 
     // Fill required fields
-    fireEvent.change(screen.getByTestId('fullname-input'), { target: { value: 'John Doe' } });
-    fireEvent.change(screen.getByTestId('role-select'), { target: { value: 'researcher' } });
-    fireEvent.change(screen.getByTestId('mock-select-select-institution'), { target: { value: 'University 1' } });
-    fireEvent.change(screen.getByTestId('field-of-research-input'), { target: { value: 'Computer Science' } });
-
-    // Submit form
-    fireEvent.click(screen.getByTestId('submit-button'));
-
-    // Check for loading state
-    expect(await screen.findByText(/completing profile/i)).toBeInTheDocument();
-  });
-
-  it('handles tag selection', async () => {
-    render(<RoleSelectionForm onSubmit={mockOnSubmit} />);
-
-    const tagSelect = screen.getByTestId('mock-select-select-tags');
-    fireEvent.change(tagSelect, { target: { value: 'tag1' } });
-
-    await act(async () => {
-      fireEvent.click(screen.getByTestId('submit-button'));
+    fireEvent.change(screen.getByTestId('fullname-input'), {
+      target: { value: 'John Doe' }
     });
 
-    expect(mockOnSubmit).toHaveBeenCalledWith(expect.objectContaining({
-      tags: expect.arrayContaining([{ value: 'tag1', label: 'Tag 1' }])
-    }));
+    fireEvent.change(screen.getByTestId('role-select'), {
+      target: { value: 'researcher' }
+    });
+    fireEvent.change(screen.getByTestId('department-input'), {
+      target: { value: 'Computer Science' }
+    });
+    fireEvent.change(screen.getByTestId('field-of-research-input'), {
+      target: { value: 'Machine Learning' }
+    });
+
+    // Select institution using React-Select
+    const institutionSelect = screen.getByLabelText(/institution/i);
+    await selectEvent.select(institutionSelect.parentElement, 'University 1');
+
+    // Select tags using React-Select
+    const tagsSelect = screen.getByLabelText(/research tags/i);
+    await selectEvent.select(tagsSelect.parentElement, 'Machine Learning');
+    await selectEvent.select(tagsSelect.parentElement, 'Artificial Intelligence');
+    await selectEvent.select(tagsSelect.parentElement, 'Data Science');
+
+    // Mock a loading state by making onSubmit return a promise
+    mockOnSubmit.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)));
+
+    // Submit form
+    fireEvent.click(screen.getByText('Complete Profile'));
+
+    // Check for loading state
+    expect(await screen.findByText('Completing Profile...')).toBeInTheDocument();
   });
 });

@@ -122,9 +122,23 @@ const ChatService = {
     }
   },
 
-  createGroupChat: async (creatorId, participantIds, groupName) => {
+  createGroupChat: async (creatorId, participantIds, groupName, metadata = {}) => {
     const chatId = doc(collection(db, 'chats')).id;
     const participants = [...new Set([creatorId, ...participantIds])];
+    
+    // Get all participant names
+    const participantNames = {};
+    await Promise.all(
+      participants.map(async (userId) => {
+        const userRef = doc(db, 'users', userId);
+        const userSnap = await getDoc(userRef);
+        if (userSnap.exists()) {
+          participantNames[userId] = userSnap.data().fullName || 'Unknown User';
+        } else {
+          participantNames[userId] = 'Unknown User';
+        }
+      })
+    );
     
     const newChat = {
       chatId,
@@ -132,8 +146,10 @@ const ChatService = {
       createdAt: serverTimestamp(),
       updatedAt: serverTimestamp(),
       participants,
+      participantNames,
       groupName,
-      lastMessage: null
+      lastMessage: null,
+      ...metadata // Add any additional metadata like projectId
     };
     
     await setDoc(doc(db, 'chats', chatId), newChat);
@@ -179,22 +195,44 @@ const ChatService = {
 
   addUserToGroupChat: async (chatId, userId) => {
     try {
+      // First verify the chat exists and is a group chat
       const chatRef = doc(db, 'chats', chatId);
       const chatSnap = await getDoc(chatRef);
       
       if (!chatSnap.exists()) {
-        throw new Error('Chat does not exist');
+        throw new Error('Chat not found');
       }
       
-      if (chatSnap.data().type !== 'group') {
+      const chatData = chatSnap.data();
+      if (chatData.type !== 'group') {
         throw new Error('This is not a group chat');
       }
+
+      // Check if user is already in the chat
+      if (chatData.participants.includes(userId)) {
+        throw new Error('User is already a member of this chat');
+      }
+
+      // Verify the user exists
+      const userRef = doc(db, 'users', userId);
+      const userSnap = await getDoc(userRef);
+      
+      if (!userSnap.exists()) {
+        throw new Error('User not found');
+      }
+
+      const userName = userSnap.data().fullName || 'Unknown User';
+      
+      // Create userChats document if it doesn't exist
+      await ensureUserChatsExists(userId);
       
       const batch = writeBatch(db);
       
-      // Add user to chat participants
+      // Add user to chat participants and update participantNames
       batch.update(chatRef, {
-        participants: arrayUnion(userId)
+        participants: arrayUnion(userId),
+        [`participantNames.${userId}`]: userName,
+        updatedAt: serverTimestamp()
       });
       
       // Add chat to user's chats
@@ -206,6 +244,7 @@ const ChatService = {
       
       await batch.commit();
     } catch (error) {
+      console.error('Error in addUserToGroupChat:', error);
       handleFirebaseError(error);
     }
   },
@@ -311,58 +350,43 @@ const MessageService = {
       const messageId = doc(collection(db, 'messages')).id;
       const messageRef = doc(db, 'messages', messageId);
       const chatRef = doc(db, 'chats', chatId);
+      const batch = writeBatch(db);
       
-      let attachments = [];
-      if (message.attachments && message.attachments.length > 0) {
-        attachments = await Promise.all(message.attachments.map(async (file) => {
-          const storageRef = ref(storage, `attachments/${chatId}/${file.name}_${Date.now()}`);
-          await uploadBytes(storageRef, file);
-          const url = await getDownloadURL(storageRef);
-          return {
-            type: file.type,
-            url,
-            name: file.name
-          };
-        }));
-      }
+      const timestamp = serverTimestamp();
+      const clientTimestamp = new Date(); // Add client-side timestamp
       
-      // Create message object without attachments first
       const newMessage = {
-        messageId,
         chatId,
         senderId,
         text: message.text,
-        timestamp: serverTimestamp(),
-        readBy: [senderId]
+        timestamp,
+        clientTimestamp, // Add client timestamp for immediate sorting
+        readBy: [senderId],
+        readTimestamps: {
+          [senderId]: timestamp
+        },
+        attachments: message.attachments || []
       };
 
-      // Only add attachments field if there are attachments
-      if (attachments.length > 0) {
-        newMessage.attachments = attachments;
-      }
-      
-      const batch = writeBatch(db);
       batch.set(messageRef, newMessage);
       
-      // Get chat data first to avoid multiple serverTimestamp() calls
       const chatSnap = await getDoc(chatRef);
       if (!chatSnap.exists()) {
         throw new Error('Chat does not exist');
       }
       
-      const timestamp = serverTimestamp();
-      
-      // Update chat's last message and timestamp
+      // Update chat with both server and client timestamps
       batch.update(chatRef, {
         lastMessage: {
           text: message.text,
-          timestamp: timestamp,
+          timestamp,
+          clientTimestamp,
           senderId
         },
-        updatedAt: timestamp
+        updatedAt: timestamp,
+        clientUpdatedAt: clientTimestamp // Add client timestamp for immediate sorting
       });
       
-      // Increment unread count for all participants except sender
       const participants = chatSnap.data().participants || [];
       participants.forEach((userId) => {
         if (userId !== senderId) {
@@ -408,24 +432,28 @@ const MessageService = {
   },
 
   markMessagesAsRead: async (chatId, userId) => {
-    // Alternative approach to avoid 'not-in' limitations
+    // Get messages that haven't been read by this user
     const messagesRef = collection(db, 'messages');
     const q = query(
       messagesRef,
       where('chatId', '==', chatId),
       orderBy('timestamp', 'desc'),
-      limit(100) // Adjust limit as needed
+      limit(100)
     );
     
     const snapshot = await getDocs(q);
     const batch = writeBatch(db);
     let count = 0;
     
+    const timestamp = serverTimestamp();
+    
     snapshot.forEach(doc => {
       const message = doc.data();
+      // Only mark as read if user hasn't read it yet
       if (!message.readBy || !message.readBy.includes(userId)) {
         batch.update(doc.ref, {
-          readBy: arrayUnion(userId)
+          readBy: arrayUnion(userId),
+          [`readTimestamps.${userId}`]: timestamp
         });
         count++;
       }
@@ -466,10 +494,12 @@ const ChatRealTimeService = {
             .map(doc => ({
               id: doc.id,
               ...doc.data(),
-              // Ensure timestamp is properly handled for new messages
-              timestamp: doc.data().timestamp?.toDate?.() || new Date()
+              // Ensure timestamp and readTimestamps are properly handled
+              timestamp: doc.data().timestamp?.toDate?.() || new Date(),
+              readTimestamps: doc.data().readTimestamps || {},
+              readBy: doc.data().readBy || []
             }))
-            .sort((a, b) => (a.timestamp - b.timestamp)); // Sort in ascending order for display
+            .sort((a, b) => b.timestamp - a.timestamp); // Sort in descending order (newest first)
           
           callback(messages);
         },
@@ -490,9 +520,44 @@ const ChatRealTimeService = {
 
   subscribeToChat: (chatId, callback) => {
     const chatRef = doc(db, 'chats', chatId);
-    const unsubscribe = onSnapshot(chatRef, (doc) => {
-      if (doc.exists()) {
-        callback({ id: doc.id, ...doc.data() });
+    
+    const unsubscribe = onSnapshot(chatRef, async (snapshot) => {
+      if (snapshot.exists()) {
+        const chatData = snapshot.data();
+        
+        // Initialize participantNames if missing
+        if (!chatData.participantNames) {
+          chatData.participantNames = {};
+        }
+        
+        // Check for any missing participant names
+        const missingParticipants = chatData.participants.filter(
+          userId => !chatData.participantNames[userId]
+        );
+        
+        if (missingParticipants.length > 0) {
+          const batch = writeBatch(db);
+          
+          // Fetch missing user names
+          for (const userId of missingParticipants) {
+            try {
+              const userRef = doc(db, 'users', userId);
+              const userSnap = await getDoc(userRef);
+              const fullName = userSnap.exists() ? userSnap.data()?.fullName : null;
+              chatData.participantNames[userId] = fullName || 'Unknown User';
+            } catch (error) {
+              console.error(`Error fetching user ${userId}:`, error);
+              chatData.participantNames[userId] = 'Unknown User';
+            }
+          }
+          
+          // Update chat with all participant names
+          await updateDoc(chatRef, { participantNames: chatData.participantNames });
+        }
+        
+        callback({ id: snapshot.id, ...chatData });
+      } else {
+        callback(null);
       }
     });
     
@@ -501,24 +566,59 @@ const ChatRealTimeService = {
 
   subscribeToUserChats: (userId, callback) => {
     const userChatsRef = doc(db, 'userChats', userId);
-    const unsubscribe = onSnapshot(userChatsRef, async (docSnapshot) => {
-      if (docSnapshot.exists()) {
-        const chatIds = docSnapshot.data().chatIds || [];
-        
-        // Fetch all chats in parallel
-        const chatPromises = chatIds.map(chatId => 
-          getDoc(doc(db, 'chats', chatId)).then(chatDoc => 
-            chatDoc.exists() ? { id: chatDoc.id, ...chatDoc.data() } : null
-          )
-        );
-        
-        const chats = (await Promise.all(chatPromises)).filter(chat => chat !== null);
-        callback(chats.sort((a, b) => (b.updatedAt?.seconds || 0) - (a.updatedAt?.seconds || 0)));
-      } else {
-        callback([]);
-      }
-    });
     
+    // Listen to changes in the user's chat list
+    const unsubscribe = onSnapshot(userChatsRef, (docSnapshot) => {
+      if (!docSnapshot.exists()) {
+        callback([]);
+        return;
+      }
+
+      const userData = docSnapshot.data();
+      const chatIds = userData.chatIds || [];
+      const unreadCounts = userData.unreadCount || {};
+      
+      if (chatIds.length === 0) {
+        callback([]);
+        return;
+      }
+
+      // Create a query to listen to all relevant chats
+      const chatsRef = collection(db, 'chats');
+      const q = query(chatsRef, where('chatId', 'in', chatIds));
+      
+      // Set up real-time listener for chats
+      const unsubscribeChats = onSnapshot(q, (querySnapshot) => {
+        const chats = querySnapshot.docs.map(doc => ({
+          id: doc.id,
+          ...doc.data(),
+          unreadCount: unreadCounts[doc.id] || 0
+        }))
+        .sort((a, b) => {
+          // First try to sort by client timestamp
+          const aClientTime = a.lastMessage?.clientTimestamp?.toMillis?.() || 0;
+          const bClientTime = b.lastMessage?.clientTimestamp?.toMillis?.() || 0;
+          
+          if (aClientTime !== bClientTime) {
+            return bClientTime - aClientTime;
+          }
+          
+          // Fall back to server timestamp if client timestamps are equal
+          const aTime = a.lastMessage?.timestamp?.seconds || a.updatedAt?.seconds || 0;
+          const bTime = b.lastMessage?.timestamp?.seconds || b.updatedAt?.seconds || 0;
+          return bTime - aTime;
+        });
+        
+        callback(chats);
+      });
+
+      // Return cleanup function that unsubscribes from both listeners
+      return () => {
+        unsubscribe();
+        unsubscribeChats?.();
+      };
+    });
+
     return unsubscribe;
   }
 };

@@ -15,22 +15,22 @@ import {
  */
 
 export const fetchFunding = async () => {
-    try {
-      const fundingCollection = collection(db, "funding");
-      const querySnapshot = await getDocs(fundingCollection);
-  
-      const fundingList = querySnapshot.docs.map((doc) => ({
-        id: doc.id,
-        ...doc.data(),
-      }));
-  
-      return fundingList;
-    } catch (error) {
-      console.error("Error fetching funding data:", error);
-      throw new Error("Failed to fetch funding information");
-    }
-  };
-  
+  try {
+    const fundingCollection = collection(db, "funding");
+    const querySnapshot = await getDocs(fundingCollection);
+
+    const fundingList = querySnapshot.docs.map((doc) => ({
+      id: doc.id,
+      ...doc.data(),
+    }));
+
+    return fundingList;
+  } catch (error) {
+    console.error("Error fetching funding data:", error);
+    throw new Error("Failed to fetch funding information");
+  }
+};
+
 
 
 
@@ -61,7 +61,7 @@ export const updateProjectFunds = async (projectId, additionalFunds, source) => 
       const isCollaborator = projectData.collaborators?.some(collab => 
         collab.id === user.uid && collab.permissions?.canAddFunds
       );
-
+  
       if (!isOwner && !isCollaborator) {
         throw new Error("Not authorized to update funding for this project");
       }
@@ -88,7 +88,7 @@ export const updateProjectFunds = async (projectId, additionalFunds, source) => 
         updatedBy: user.uid,
         updatedByName: userFullName,
         source: source,
-        type: "funding"
+        type: "income"  // Changed from 'funding' to 'income'
       });
   
       return { success: true, message: "Funds updated and history logged", updatedFunds: updatedAvailableFunds };
@@ -96,8 +96,8 @@ export const updateProjectFunds = async (projectId, additionalFunds, source) => 
       console.error("Error updating funds:", error);
       throw new Error(error.message);
     }
-  };
-  
+};
+
 
 /**
  * Retrieves all funding history entries for a given project.
@@ -154,6 +154,9 @@ export const updateProjectExpense = async (projectId, expenseAmount, description
     if (typeof expenseAmount !== "number" || expenseAmount < 0) {
       throw new Error("Invalid expense amount");
     }
+    if (typeof description !== "string" || description.trim() === "") {
+      throw new Error("Expense description is required");
+    }
 
     const projectRef = doc(db, "projects", projectId);
     const projectSnap = await getDoc(projectRef);
@@ -185,7 +188,7 @@ export const updateProjectExpense = async (projectId, expenseAmount, description
     const userFullName = userSnap.exists() ? userSnap.data().fullName : "Unknown User";
 
     // Update the main document with both available and used funds
-    await updateDoc(projectRef, { 
+    await updateDoc(projectRef, {
       availableFunds: currentAvailableFunds - expenseAmount,
       usedFunds: currentUsedFunds + expenseAmount
     });
@@ -202,9 +205,9 @@ export const updateProjectExpense = async (projectId, expenseAmount, description
       type: "expense"
     });
 
-    return { 
-      success: true, 
-      message: "Expense updated and history logged", 
+    return {
+      success: true,
+      message: "Expense updated and history logged",
       updatedAvailableFunds: currentAvailableFunds - expenseAmount,
       updatedUsedFunds: currentUsedFunds + expenseAmount
     };

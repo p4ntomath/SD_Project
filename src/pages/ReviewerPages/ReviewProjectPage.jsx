@@ -5,6 +5,9 @@ import { getProjectDetails } from '../../backend/firebase/projectDB';
 import { fetchDocumentsByFolder } from '../../backend/firebase/documentsDB';
 import ReviewFeedbackForm from '../../components/ReviewerComponents/ReviewFeedbackForm';
 import { ClipLoader } from 'react-spinners';
+import { notify } from '../../backend/firebase/notificationsUtil';
+import { getDoc, doc } from 'firebase/firestore';
+import { db } from '../../backend/firebase/firebaseConfig';
 
 export default function ReviewProjectPage() {
     const { projectId } = useParams();
@@ -32,7 +35,72 @@ export default function ReviewProjectPage() {
         }
     };
 
-    const handleFeedbackSubmitted = () => {
+    const handleFeedbackSubmitted = async () => {
+        // Fetch reviewer name from Firestore for accuracy
+        let reviewerName = auth.currentUser.displayName || 'Reviewer';
+        try {
+            const reviewerDoc = await getDoc(doc(db, 'users', auth.currentUser.uid));
+            if (reviewerDoc.exists()) {
+                reviewerName = reviewerDoc.data().fullName || reviewerDoc.data().displayName || reviewerName;
+            }
+        } catch (err) {
+            console.error('Failed to fetch reviewer name:', err);
+        }
+
+        // Fetch researcher name from Firestore using project.userId
+        let researcherName = 'Researcher';
+        try {
+            if (project.userId) {
+                const researcherDoc = await getDoc(doc(db, 'users', project.userId));
+                if (researcherDoc.exists()) {
+                    researcherName = researcherDoc.data().fullName || researcherDoc.data().displayName || researcherName;
+                }
+            }
+        } catch (err) {
+            console.error('Failed to fetch researcher name:', err);
+        }
+
+        // Debugging: Log all relevant values
+        console.log('Submitting review notification...');
+        console.log('projectId:', projectId);
+        console.log('project:', project);
+        console.log('reviewerName:', reviewerName);
+        console.log('researcherName:', researcherName);
+        console.log('auth.currentUser.uid:', auth.currentUser.uid);
+        console.log('project.userId:', project.userId);
+
+        // Notify reviewer (yourself)
+        try {
+            await notify({
+                type: 'Review Submitted',
+                projectId,
+                projectTitle: project.title,
+                reviewerName,
+                researcherName,
+                targetUserId: auth.currentUser.uid,
+                senderUserId: auth.currentUser.uid
+            });
+            console.log('Review Submitted notification sent');
+        } catch (err) {
+            console.error('Failed to send Review Submitted notification:', err);
+        }
+
+        // Notify researcher (project owner)
+        try {
+            await notify({
+                type: 'Review Received',
+                projectId,
+                projectTitle: project.title,
+                researcherName,
+                reviewerName,
+                targetUserId: project.userId, // Use userId for researcher
+                senderUserId: auth.currentUser.uid
+            });
+            console.log('Review Received notification sent');
+        } catch (err) {
+            console.error('Failed to send Review Received notification:', err);
+        }
+
         navigate('/reviewer/history', {
             state: { message: 'Review submitted successfully' }
         });
@@ -140,7 +208,7 @@ export default function ReviewProjectPage() {
                                 Project Documents
                             </h3>
                             {folders && folders.length > 0 ? (
-                                <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+                                <div className="grid grid-cols-1 gap-6">
                                     {folders.map((folder) => (
                                         <div key={folder.id} className="bg-gray-50 rounded-lg p-4 flex flex-col h-full">
                                             <h4 className="text-md font-medium text-gray-900 mb-4 flex items-center">
@@ -186,14 +254,8 @@ export default function ReviewProjectPage() {
                                     ))}
                                 </div>
                             ) : (
-                                <div className="text-center py-12">
-                                    <div className="mx-auto w-20 h-20 bg-gray-100 rounded-full flex items-center justify-center mb-4">
-                                        <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 19a2 2 0 01-2-2V7a2 2 0 012-2h4l2 2h4a2 2 0 012 2v1M5 19h14a2 2 0 002-2v-5a2 2 0 00-2-2H9a2 2 0 00-2 2v5a2 2 0 01-2 2z" />
-                                        </svg>
-                                    </div>
-                                    <h3 className="text-lg font-medium text-gray-900 mb-1">No documents available</h3>
-                                    <p className="text-sm text-gray-500">This project doesn't have any documents yet.</p>
+                                <div className="text-center py-12 px-4 rounded-lg bg-gray-50">
+                                    <p className="text-gray-500">No documents available</p>
                                 </div>
                             )}
                         </div>

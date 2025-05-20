@@ -8,6 +8,7 @@ import MainNav from '../components/ResearcherComponents/Navigation/MainNav';
 import MobileBottomNav from '../components/ResearcherComponents/Navigation/MobileBottomNav';
 import { FiPlus } from 'react-icons/fi';
 import { useNavigate } from "react-router-dom";
+import { notify } from '../backend/firebase/notificationsUtil';
 
 export const formatDate = (dateString) => {
   if (!dateString) return 'Not specified';
@@ -111,6 +112,19 @@ export default function MyProjects() {
       setFilteredProjects(prevFiltered => [...prevFiltered, fullProject]);
       setModalOpen(true);
       setStatusMessage('Project was successfully created.');
+      
+     notify({
+        type: "Project Created",
+        projectId: createdProjectId,
+        projectTitle: cleanedProject.title,
+        goalText: goalInput,
+        description: cleanedProject.description,
+        folderName: cleanedProject.folderName,
+        amount: cleanedProject.amount,
+        researchField: cleanedProject.researchField,
+        targetUserId: auth.currentUser.uid,   // <-- updated field
+        senderUserId: auth.currentUser.uid,   // <-- updated field (optional, but explicit)
+      });
       setShowForm(false);
       await new Promise(resolve => setTimeout(resolve, 500));
     } catch (err) {
@@ -159,7 +173,8 @@ export default function MyProjects() {
                 <option value="On Hold">On Hold</option>
               </select>
               <button
-                onClick={() => setShowForm(true)}
+                onClick={() => setShowForm(true)
+                }
                 className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors flex items-center"
                 disabled={showForm}
                 aria-label="create new research project"
@@ -200,7 +215,7 @@ export default function MyProjects() {
                         <section className="flex justify-between items-start">
                           <section>
                             <h2 className="text-xl font-semibold text-gray-800">{project.title}</h2>
-                            <p className="mt-2 text-gray-600 break-all">{project.description}</p>
+                            <p className="mt-2 text-gray-600 break">{project.description}</p>
                             <div className="flex items-center gap-2 mt-2">
                               {project.collaborators?.length > 0 && (
                                 <span className="text-sm text-gray-500 flex items-center gap-1">
@@ -267,7 +282,7 @@ export default function MyProjects() {
                       {searchQuery ? 'No matching projects found' : 'No projects yet'}
                     </h3>
                     <p className="mt-1 text-gray-500">
-                      {searchQuery ? 'Try a different search term or filter' : 'Get started by creating a new research project.'}
+                      {searchQuery ? 'Try a different search term' : 'Get started by creating a new research project.'}
                     </p>
                   </section>
                 )}

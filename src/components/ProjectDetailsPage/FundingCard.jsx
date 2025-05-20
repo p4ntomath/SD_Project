@@ -3,6 +3,7 @@ import { ClipLoader } from 'react-spinners';
 import { AnimatePresence } from 'framer-motion';
 import { updateProjectFunds, updateProjectExpense, getFundingHistory } from '../../backend/firebase/fundingDB';
 import { formatFirebaseDate } from '../../utils/dateUtils';
+import { notify } from '../../backend/firebase/notificationsUtil';
 import { checkPermission } from '../../utils/permissions';
 
 export default function FundingCard({ 
@@ -55,6 +56,7 @@ export default function FundingCard({
         ...project,
         availableFunds: (project.availableFunds || 0) + amount
       });
+
       setShowAddFundsModal(false);
       setFundAmount('');
       setFundingSource('');
@@ -62,10 +64,14 @@ export default function FundingCard({
       setError(false);
       setStatusMessage('Funds added successfully');
       loadFundingHistory();
+
+      // Notify user about the added funds
+      notify({type: 'Funds Added', projectId, projectTitle: project.title, amount});
+
     } catch (err) {
       setError(true);
       setModalOpen(true);
-      setStatusMessage('Failed to add funds: ' + err.message);
+      setStatusMessage('Failed to add funds');
     } finally {
       setAddFundsLoading(false);
     }
@@ -97,12 +103,16 @@ export default function FundingCard({
         usedFunds: (project.usedFunds || 0) + amount,
         availableFunds: (project.availableFunds || 0) - amount
       });
+      
       setShowAddExpenseModal(false);
       setExpenseAmount('');
       setExpenseDescription('');
       setModalOpen(true);
       setError(false);
       setStatusMessage('Expense added successfully');
+
+      // Notify user about the added expense
+      notify({type: 'Expense Added', projectId, projectTitle: project.title, amount, description: expenseDescription});
       loadFundingHistory();
     } catch (err) {
       setError(true);
@@ -112,6 +122,7 @@ export default function FundingCard({
       setAddExpenseLoading(false);
     }
   };
+  
 
   useEffect(() => {
     if (showFundingHistory) {
@@ -348,7 +359,7 @@ export default function FundingCard({
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Source</th>
+                        <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Description/Source</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Added By</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance After</th>
@@ -361,7 +372,7 @@ export default function FundingCard({
                             {formatFirebaseDate(entry.updatedAt)}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 break-all">
-                            {entry.type === 'expense' ? 'Expense' : 'Funds Added'}
+                            {entry.type === 'expense' ? 'Expense' : 'Income'}
                           </td>
                           <td className="px-6 py-4 text-sm text-gray-500">
                             {entry.type === 'expense' ? entry.description : entry.source}
@@ -370,12 +381,12 @@ export default function FundingCard({
                             {entry.updatedByName}
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm">
-                            <span className={`break-words ${entry.amount < 0 ? 'text-red-600' : 'text-green-600'}`}>
+                            <span className={entry.amount >= 0 ? 'text-green-600' : 'text-red-600'}>
                               R {Math.abs(entry.amount).toLocaleString()}
                             </span>
                           </td>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                            R {entry.totalAfterUpdate.toLocaleString()}
+                            R {(entry.totalAfterUpdate || 0).toLocaleString()}
                           </td>
                         </tr>
                       ))}

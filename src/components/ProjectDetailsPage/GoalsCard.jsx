@@ -1,7 +1,9 @@
+import { notify } from '../../backend/firebase/notificationsUtil';
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaPlus } from 'react-icons/fa';
 import { checkPermission, isProjectOwner } from '../../utils/permissions';
+
 
 export default function GoalsCard({ 
   project, 
@@ -27,16 +29,41 @@ export default function GoalsCard({
         i === index ? { ...goal, completed: !goal.completed } : goal
       );
 
+      const isComplete = updatedGoals.every(goal => goal.completed);
+
       await updateProject(projectId, {
         goals: updatedGoals,
-        status: updatedGoals.every(goal => goal.completed) ? 'Complete' : 'In Progress'
+        status: isComplete ? 'Complete' : 'In Progress'
       });
 
       setProject({
         ...project,
         goals: updatedGoals,
-        status: updatedGoals.every(goal => goal.completed) ? 'Complete' : 'In Progress'
+        status: isComplete ? 'Complete' : 'In Progress'
       });
+
+      // Notify if a single goal is completed
+      if (!project.goals[index].completed && updatedGoals[index].completed) {
+        await notify({
+          type: 'Goal Completed',
+          targetUserId: project.userId,
+          message: `The goal "${updatedGoals[index].text}" in your project "${project.title || 'Untitled Project'}" has been marked as completed.`,
+          projectId: projectId,
+          projectTitle: project.title,
+          goalText: updatedGoals[index].text
+        });
+      }
+
+      // Notify if project is now complete
+      if (isComplete) {
+        await notify({
+          type: 'Project Completed',
+          targetUserId: project.userId,
+          message: `Congratulations! Your project "${project.title || 'Untitled Project'}" has been marked as complete.`,
+          projectId: projectId,
+          projectTitle: project.title
+        });
+      }
 
       setModalOpen(true);
       setError(false);
@@ -59,6 +86,15 @@ export default function GoalsCard({
       const newGoalObj = { text: newGoal.trim(), completed: false };
       const updatedGoals = [...(project.goals || []), newGoalObj];
 
+      await notify({
+        type: 'New Goal Added', 
+        targetUserId: project.userId,
+        message: `A new goal "${newGoalObj.text}" has been added to your project "${project.title}".`,
+        projectId: projectId,
+        projectTitle: project.title,
+        goalText: newGoalObj.text
+      });
+
       await updateProject(projectId, { goals: updatedGoals });
       setProject({
         ...project,
@@ -70,6 +106,9 @@ export default function GoalsCard({
       setModalOpen(true);
       setError(false);
       setStatusMessage('Goal added successfully');
+
+      
+      
     } catch (err) {
       setError(true);
       setModalOpen(true);
@@ -85,7 +124,18 @@ export default function GoalsCard({
         throw new Error('You do not have permission to delete goals');
       }
 
+      const deletedGoal = project.goals[index];
       const updatedGoals = project.goals.filter((_, i) => i !== index);
+
+      // Notify user about deleted goal
+      await notify({
+        type: 'Goal Deleted',
+        targetUserId: project.userId,
+        message: `The goal "${deletedGoal?.text || 'Unknown'}" was deleted from your project "${project.title || 'Untitled Project'}".`,
+        projectId: projectId,
+        projectTitle: project.title,
+        goalText: deletedGoal?.text
+      });
 
       await updateProject(projectId, { goals: updatedGoals });
       setProject({
@@ -110,9 +160,11 @@ export default function GoalsCard({
         {isProjectOwner(project) && (
           <button
             onClick={() => setShowAddGoalModal(true)}
-            className="text-blue-600 hover:text-blue-700"
+            className="text-blue-600 hover:text-blue-700 flex items-center gap-2"
+            aria-label="Add goal"
           >
             <FaPlus className="h-5 w-5" />
+            
           </button>
         )}
       </div>
@@ -120,29 +172,32 @@ export default function GoalsCard({
       {(!project.goals || project.goals.length === 0) ? (
         <p className="text-gray-500 text-sm">No goals defined yet.</p>
       ) : (
-        <div className="space-y-3">
-          {project.goals.map((goal, index) => (
-            <div key={index} className="flex items-start gap-3 p-2 bg-gray-50 rounded-lg group">
-              <input
-                type="checkbox"
-                checked={goal.completed}
-                onChange={() => checkPermission(project, 'canCompleteGoals') && handleGoalStatusChange(index)}
-                disabled={!checkPermission(project, 'canCompleteGoals')}
-                className="mt-1"
-              />
-              <span className={goal.completed ? 'line-through text-gray-500 flex-1' : 'flex-1'}>{goal.text}</span>
-              {isProjectOwner(project) && (
-                <button
-                  onClick={() => handleDeleteGoal(index)}
-                  className="text-red-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
-                >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                  </svg>
-                </button>
-              )}
-            </div>
-          ))}
+        <div className="max-h-[300px] overflow-y-auto pr-2">
+          <div className="space-y-3">
+            {project.goals.map((goal, index) => (
+              <div key={index} className="flex items-start gap-3 p-2 bg-gray-50 rounded-lg group">
+                <input
+                  type="checkbox"
+                  checked={goal.completed}
+                  onChange={() => checkPermission(project, 'canCompleteGoals') && handleGoalStatusChange(index)}
+                  disabled={!checkPermission(project, 'canCompleteGoals')}
+                  className="mt-1"
+                />
+                <span className={goal.completed ? 'line-through text-gray-500 flex-1' : 'flex-1'}>{goal.text}</span>
+                {isProjectOwner(project) && (
+                  <button
+                    onClick={() => handleDeleteGoal(index)}
+                    className="text-red-500 hover:text-red-600 opacity-0 group-hover:opacity-100 transition-opacity"
+                    aria-label={`Delete goal: ${goal.text}`}
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
