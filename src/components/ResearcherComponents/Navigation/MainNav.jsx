@@ -13,7 +13,7 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
   const location = useLocation();
   const unreadCount = useUnreadNotificationsCount();
   const unreadMessages = useUnreadMessagesCount();
-  
+
   const handleSearch = (e) => {
     e.preventDefault();
     onSearch(searchQuery);
@@ -35,7 +35,7 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <section className="flex justify-between h-16 items-center">
             <section className="hidden md:flex items-center space-x-2">
-              <button 
+              <button
                 onClick={() => navigate('/home')}
                 className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/home' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                 aria-label="Home"
@@ -43,8 +43,8 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
                 <FiHome className="h-6 w-6 group-hover:text-blue-600" />
                 <p className="text-xs mt-1 group-hover:text-blue-600">Home</p>
               </button>
-            
-              <button 
+
+              <button
                 onClick={() => navigate('/projects')}
                 className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/projects' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                 aria-label="My Projects"
@@ -53,7 +53,7 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
                 <p className="text-xs mt-1 group-hover:text-blue-600">Projects</p>
               </button>
 
-              <button 
+              <button
                 onClick={() => navigate('/documents')}
                 className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/documents' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                 aria-label="Documents"
@@ -62,8 +62,8 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
                 <p className="text-xs mt-1 group-hover:text-blue-600">Documents</p>
               </button>
 
-         
-              <button 
+
+              <button
                 onClick={() => navigate('/messages')}
                 className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/messages' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                 aria-label="View messages"
@@ -79,7 +79,7 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
                 <p className="text-xs mt-1 group-hover:text-blue-600">Messages</p>
               </button>
 
-              <button 
+              <button
                 onClick={() => navigate('/account')}
                 className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/account' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                 aria-label="View profile"
@@ -88,7 +88,7 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
                 <p className="text-xs mt-1 group-hover:text-blue-600">Account</p>
               </button>
             </section>
-            
+
             <section className="flex-1 max-w-md mx-4">
               <form onSubmit={handleSearch} className="relative">
                 <section className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -103,21 +103,21 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
                 />
               </form>
             </section>
-                 <button 
-                onClick={() => navigate('/notifications')}
-                className={`group flex flex-col items-center justify-center p-3 relative ${location.pathname === '/notifications' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
-                aria-label="View alerts"
-              >
-                <span className="relative">
-                  <FiBell className="h-6 w-6 group-hover:text-blue-600" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 font-bold z-10">
-                      {unreadCount}
-                    </span>
-                  )}
-                </span>
-               
-              </button>
+            <button
+              onClick={() => navigate('/notifications')}
+              className={`group flex flex-col items-center justify-center p-3 relative ${location.pathname === '/notifications' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
+              aria-label="View alerts"
+            >
+              <span className="relative">
+                <FiBell className="h-6 w-6 group-hover:text-blue-600" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 font-bold z-10">
+                    {unreadCount}
+                  </span>
+                )}
+              </span>
+
+            </button>
 
 
             <section className='hidden md:flex items-center space-x-6'>
@@ -158,13 +158,6 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
           <section className="md:hidden bg-white shadow-md">
             <section className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
               <button
-                onClick={() => navigate('/account')}
-                className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                aria-label="View profile"
-              >
-                My Profile
-              </button>
-              <button
                 onClick={() => setShowLogoutModal(true)}
                 className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
               >
@@ -180,7 +173,7 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
         {showLogoutModal && (
           <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
             <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-              <motion.div 
+              <motion.div
                 className="fixed inset-0 bg-black/30 backdrop-blur-sm"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
@@ -194,7 +187,7 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
                 initial={{ scale: 0.95, opacity: 0, y: 10 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.95, opacity: 0, y: 10 }}
-                transition={{ 
+                transition={{
                   duration: 0.15,
                   ease: "easeOut"
                 }}
