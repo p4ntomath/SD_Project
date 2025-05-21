@@ -167,7 +167,12 @@ function App() {
             <Route index element={<MessagesList />} />
             <Route path=":chatId" element={<ChatView />} />
           </Route>
-          <Route path="/account" element={<MyProfilePage />} />
+          <Route path="/account" element={
+            <ProtectedRoute allowedRoles={['researcher', 'reviewer']}>
+              <MyProfilePage />
+            </ProtectedRoute>
+          } />
+
           <Route path="/messages" element={
             <ProtectedRoute allowedRoles={['researcher', 'reviewer', 'admin']}>
               <MessagesLayout />
