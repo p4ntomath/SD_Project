@@ -1,23 +1,23 @@
 
-import { auth,db,storage } from "./firebaseConfig";
-import { collection, query, where, getDocs, doc, getDoc, updateDoc, /*deleteObject, deleteField*/ } from "firebase/firestore";
+import { auth, db, storage } from "./firebaseConfig";
+import { collection, query, where, getDocs, doc, getDoc, updateDoc, /*deleteField*/ } from "firebase/firestore";
 
-import {  ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
 
 export const uploadUserProfilePicture = async (file) => {
   const user = auth.currentUser;
   if (!user) throw new Error("User not logged in");
 
-  
+
   const fileRef = ref(storage, `profilePictures/${user.uid}/profile.jpg`);
 
-  
+
   await uploadBytes(fileRef, file);
 
-  
+
   const url = await getDownloadURL(fileRef);
 
-  
+
   const userDocRef = doc(db, "users", user.uid);
   await updateDoc(userDocRef, {
     profilePicture: url,
@@ -33,20 +33,20 @@ export const deleteProfilePicture = async () => {
   const fileRef = ref(storage, `profilePictures/${user.uid}/profile.jpg`);
 
   try {
-    // Delete from storage
     await deleteObject(fileRef);
-
-    // Remove the profilePicture field from Firestore
-    const userDocRef = doc(db, "users", user.uid);
-    await updateDoc(userDocRef, {
-      profilePicture: "", 
-    });
-
-    return true;
   } catch (error) {
-    console.error("Error deleting profile picture:", error);
-    throw error;
+    if (error.code !== 'storage/object-not-found') {
+      console.error('Error deleting profile picture:', error);
+      throw error;
+    }
   }
+
+  const userDocRef = doc(db, "users", user.uid);
+  await updateDoc(userDocRef, {
+    profilePicture: "",
+  });
+
+  return true;
 };
 
 export const updateProfilePicture = async (file) => {
@@ -58,7 +58,7 @@ export const updateProfilePicture = async (file) => {
   // Overwrite the file
   await uploadBytes(fileRef, file);
 
-  
+
   const downloadURL = await getDownloadURL(fileRef);
 
   // Update Firestore
