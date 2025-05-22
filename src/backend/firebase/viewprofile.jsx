@@ -50,24 +50,7 @@ export const deleteProfilePicture = async () => {
 };
 
 export const updateProfilePicture = async (file) => {
-  const user = auth.currentUser;
-  if (!user) throw new Error("User not logged in");
-
-  const fileRef = ref(storage, `profilePictures/${user.uid}/profile.jpg`);
-
-  // Overwrite the file
-  await uploadBytes(fileRef, file);
-
-
-  const downloadURL = await getDownloadURL(fileRef);
-
-  // Update Firestore
-  const userDocRef = doc(db, "users", user.uid);
-  await updateDoc(userDocRef, {
-    profilePicture: downloadURL,
-  });
-
-  return downloadURL;
+  return await saveUserProfilePicture(file);
 };
 
 export const getUserProfilePicture = async (uid) => {
