@@ -1,7 +1,7 @@
 export default function getCroppedImg(imageSrc, croppedAreaPixels) {
     return new Promise((resolve, reject) => {
         const image = new Image();
-        image.crossOrigin = 'anonymous'; // Required
+        image.crossOrigin = 'anonymous';
         image.src = imageSrc;
 
         image.onload = () => {
@@ -23,12 +23,15 @@ export default function getCroppedImg(imageSrc, croppedAreaPixels) {
             );
 
             canvas.toBlob(blob => {
-                if (!blob) return reject('Failed to crop image.');
+                if (!blob) return reject(new Error('Failed to crop image.'));
                 const url = URL.createObjectURL(blob);
                 resolve(url);
             }, 'image/jpeg');
         };
 
-        image.onerror = reject;
+        image.onerror = (err) => {
+            console.error("Failed to load image for cropping", err);
+            reject(new Error("Image load failed (bad URL or CORS)."));
+        };
     });
 }
