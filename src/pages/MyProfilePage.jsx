@@ -2,14 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { auth, db } from '../backend/firebase/firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
-import { uploadUserProfilePicture, updateUserProfile } from '../backend/firebase/viewprofile';
+import { uploadUserProfilePicture, updateUserProfile, deleteProfilePicture } from '../backend/firebase/viewprofile';
 import Cropper from 'react-easy-crop';
 import getCroppedImg from '../components/CropImage';
 import accountIcon from '../assets/accountIcon.png';
-import { FaChevronDown, FaEllipsisV } from 'react-icons/fa';
 import MainNav from '../components/ResearcherComponents/Navigation/MainNav';
 import MobileBottomNav from '../components/ResearcherComponents/Navigation/MobileBottomNav';
 import { getStorage } from 'firebase/storage';
+import { FiMenu, FiX } from 'react-icons/fi';
+import ReviewerMainNav from '../components/ReviewerComponents/Navigation/ReviewerMainNav';
+import ReviewerMobileBottomNav from '../components/ReviewerComponents/Navigation/ReviewerMobileBottomNav';
 
 export default function MyProfilePage() {
   const storage = getStorage();
@@ -31,6 +33,10 @@ export default function MyProfilePage() {
   const [openCropModal, setOpenCropModal] = useState(false);
   const [open, setOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showPhotoOptions, setShowPhotoOptions] = useState(false);
+  const [showPhotoModal, setShowPhotoModal] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Load initial profile data
   useEffect(() => {
@@ -39,27 +45,27 @@ export default function MyProfilePage() {
         try {
           const docRef = doc(db, "users", user.uid);
           const docSnap = await getDoc(docRef);
-          
+
           if (docSnap.exists()) {
             const userData = docSnap.data();
             const joinDate = user.metadata?.creationTime
-              ? new Date(user.metadata.creationTime).toLocaleDateString('en-GB', { 
-                  day: '2-digit', 
-                  month: 'short', 
-                  year: 'numeric' 
-                })
+              ? new Date(user.metadata.creationTime).toLocaleDateString('en-GB', {
+                day: '2-digit',
+                month: 'short',
+                year: 'numeric'
+              })
               : '';
-            
+
             const profileData = {
               name: userData.fullName || '',
-              role: userData.role || 'Researcher',
+              role: userData.role || '',
               bio: userData.bio || '',
               researchField: userData.researchField || '',
               photoURL: userData.profilePicture || '',
               joined: joinDate,
               institution: userData.institution || ''
             };
-            
+
             setFormData(profileData);
             setDraftData(profileData);
           }
@@ -85,6 +91,23 @@ export default function MyProfilePage() {
     }
   };
 
+  const handleDeletePicture = async () => {
+    try {
+      setIsDeleting(true);
+      await deleteProfilePicture();
+
+      setPreviewURL('');
+      setDraftData(prev => ({ ...prev, photoURL: '' }));
+      setFormData(prev => ({ ...prev, photoURL: '' }));
+      setShowPhotoModal(false); // close modal
+    } catch (err) {
+      console.error("Failed to delete picture:", err);
+      alert("Failed to delete profile picture");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   const onCropComplete = (_, area) => {
     setCroppedAreaPixels(area);
   };
@@ -92,18 +115,39 @@ export default function MyProfilePage() {
   const handleCropDone = async () => {
     if (!croppedAreaPixels || !selectedFile) return;
     try {
+      setIsLoading(true);
       const croppedImg = await getCroppedImg(selectedFile, croppedAreaPixels);
-      const blob = await fetch(croppedImg).then(r => r.blob());
-      const file = new File([blob], `profile.jpg`, { type: 'image/jpeg' });
-      
-      const downloadURL = await uploadUserProfilePicture(file);
-      
+      // Convert base64 cropped image to Blob
+      let blob;
+      try {
+        const response = await fetch(croppedImg);
+        blob = await response.blob();
+      } catch (err) {
+        console.error("⚠️ Failed to fetch cropped blob:", err);
+        alert("Image processing failed.");
+        return;
+      }
+      const file = new File([blob], 'profile.jpg', { type: 'image/jpeg' });
+
+      //  Compress before upload
+      const compressedFile = await imageCompression(file, {
+        maxSizeMB: 0.5,
+        maxWidthOrHeight: 512,
+        useWebWorker: true,
+      });
+
+      // Upload compressed file
+      const downloadURL = await uploadUserProfilePicture(compressedFile);
+
       setPreviewURL(downloadURL);
       setDraftData(prev => ({ ...prev, photoURL: downloadURL }));
       setOpenCropModal(false);
+
     } catch (error) {
       console.error('Image upload failed:', error);
       alert('Failed to upload profile picture');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -117,8 +161,8 @@ export default function MyProfilePage() {
         institution: draftData.institution,
         profilePicture: draftData.photoURL || null
       });
-      
-      // Update both formData and draftData to ensure UI consistency
+
+
       setFormData(draftData);
       alert('Profile updated successfully!');
     } catch (error) {
@@ -127,55 +171,33 @@ export default function MyProfilePage() {
     }
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-xl">Loading profile...</div>
-      </div>
-    );
-  }
-
   return (
     <>
-      <MainNav />
+      {draftData.role.charAt(0).toUpperCase() + draftData.role.slice(1) === 'Reviewer' ? (
+        <ReviewerMainNav />
+      ) : (
+        <MainNav
+          setMobileMenuOpen={setMobileMenuOpen}
+          mobileMenuOpen={mobileMenuOpen} />
+      )}
       <main className="min-h-screen bg-gray-100 p-8">
-        <header className="relative flex items-center gap-5 mb-7 ml-17">
-          <nav className="relative" aria-label="User navigation">
-            <button
-              onClick={() => setOpen(!open)}
-              className="text-black"
-              aria-expanded={open}
-              aria-haspopup="true"
-              aria-label="Open user menu"
-            >
-              <FaChevronDown
-                className={`transition-transform duration-300 ${open ? 'rotate-180' : ''} hidden md:inline`}
-              />
-              <FaEllipsisV
-                onClick={() => setOpen(!open)}
-                className="md:hidden text-black text-xl cursor-pointer"
-                aria-label="Open user menu"
-              />
-            </button>
 
-            {open && (
-              <ul
-                className="absolute left-0 top-8 w-48 bg-gray-800 text-white rounded-lg shadow-lg p-2 z-50"
-                role="menu"
-              >
-                <li><button className="w-full text-left px-4 py-2 hover:bg-gray-700 rounded" role="menuitem">My Profile</button></li>
-                <li><button className="w-full text-left px-4 py-2 hover:bg-gray-700 rounded" role="menuitem">Settings</button></li>
-                <li><button className="w-full text-left px-4 py-2 hover:bg-gray-700 rounded" role="menuitem">Help</button></li>
-              </ul>
-            )}
-          </nav>
+        <header className="relative flex items-center gap-5 mb-7 ml-12">
           <h1 className="text-3xl font-bold">My Profile</h1>
         </header>
 
-        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-7xl mx-auto min-h-[600px]">
-          {/* Left Profile Card - Now uses draftData for immediate updates */}
-          <aside className="bg-white p-6 rounded-2xl shadow flex flex-col items-center">
-            <input id="profile-image-input" type="file" accept="image/*" onChange={handleImageChange} className="hidden" />
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-7xl mx-auto min-h-[700px]">
+
+          <aside className="bg-white p-6 rounded-2xl shadow flex flex-col items-center  mb-10">
+            <input
+              id="profile-image-input"
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="hidden"
+            />
+
+            {/* Only wrap the image in the button */}
             <button
               type="button"
               onClick={() => document.getElementById('profile-image-input').click()}
@@ -188,6 +210,47 @@ export default function MyProfilePage() {
                 className="w-40 h-40 rounded-full object-cover border-4 border-gray-300 hover:opacity-90"
               />
             </button>
+
+            {(draftData.photoURL || previewURL) && (
+              <section className="mt-2 text-sm text-gray-600">
+                <button
+                  type="button"
+                  onClick={() => setShowPhotoModal(true)}
+                  className="text-blue-600 underline text-sm"
+                >
+                  Edit Photo
+                </button>
+
+
+                {showPhotoOptions && (
+                  <fieldset id="photo-options" className="mt-1 space-y-1 border-0">
+                    <legend className="sr-only">Photo options</legend>
+
+                    <label
+                      htmlFor="change-photo"
+                      className="block cursor-pointer text-blue-600 hover:underline"
+                    >
+                      Change Photo
+                    </label>
+                    <input
+                      type="file"
+                      id="change-photo"
+                      className="hidden"
+                      onChange={handleImageChange}
+                    />
+
+                    <button
+                      type="button"
+                      onClick={handleDeletePicture}
+                      className="text-red-600 hover:underline"
+                    >
+                      Delete Photo
+                    </button>
+                  </fieldset>
+                )}
+              </section>
+            )}
+
             <h1 className="text-xl font-bold mt-2 mb-2">{draftData.name}</h1>
             <p className="text-gray-600 mb-4">
               {draftData.role.charAt(0).toUpperCase() + draftData.role.slice(1)}
@@ -201,10 +264,15 @@ export default function MyProfilePage() {
                 <h2 id="institution-label" className="font-bold">Institution/Department</h2>
                 <p>{draftData.institution}</p>
               </section>
-              <section aria-labelledby="research-field-label">
-                <h2 id="research-field-label" className="font-bold">Research Field</h2>
-                <p>{draftData.researchField}</p>
-              </section>
+
+              {draftData.role.charAt(0).toUpperCase() + draftData.role.slice(1) === 'Researcher' && (
+                <>
+                  <section aria-labelledby="research-field-label">
+                    <h2 id="research-field-label" className="font-bold">Research Field</h2>
+                    <p>{draftData.researchField}</p>
+                  </section>
+                </>
+              )}
               <section aria-labelledby="bio-label">
                 <h2 id="bio-label" className="font-bold">Biography</h2>
                 <p>{draftData.bio}</p>
@@ -212,8 +280,8 @@ export default function MyProfilePage() {
             </section>
           </aside>
 
-          {/* Right Edit Form */}
-          <section className="bg-white p-6 rounded-2xl shadow">
+
+          <section className="bg-white p-6 rounded-2xl shadow mb-10">
             <h2 className="text-xl font-bold mb-6">Edit Your Information</h2>
             <form onSubmit={handleSubmit} className="space-y-4">
               <fieldset>
@@ -239,16 +307,19 @@ export default function MyProfilePage() {
                   onChange={(e) => setDraftData({ ...draftData, institution: e.target.value })}
                   className="w-full p-2 border border-gray-300 rounded"
                 />
-
-                <label htmlFor="researchField" className="block text-sm font-semibold mb-1 mt-4">Research Field</label>
-                <input
-                  id="researchField"
-                  type="text"
-                  name="researchField"
-                  value={draftData.researchField}
-                  onChange={(e) => setDraftData({ ...draftData, researchField: e.target.value })}
-                  className="w-full p-2 border border-gray-300 rounded"
-                />
+                {draftData.role.charAt(0).toUpperCase() + draftData.role.slice(1) === 'Researcher' && (
+                  <>
+                    <label htmlFor="researchField" className="block text-sm font-semibold mb-1 mt-4">Research Field</label>
+                    <input
+                      id="researchField"
+                      type="text"
+                      name="researchField"
+                      value={draftData.researchField}
+                      onChange={(e) => setDraftData({ ...draftData, researchField: e.target.value })}
+                      className="w-full p-2 border border-gray-300 rounded"
+                    />
+                  </>
+                )}
 
                 <label htmlFor="bio" className="block text-sm font-semibold mb-1 mt-4">Biography</label>
                 <textarea
@@ -270,7 +341,7 @@ export default function MyProfilePage() {
           </section>
         </section>
 
-        {/* Image Cropping Modal */}
+
         {openCropModal && selectedFile && (
           <dialog open className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
             <section className="bg-white rounded-xl p-6 w-[90vw] max-w-[500px] shadow-lg max-h-[90vh] overflow-y-auto">
@@ -285,9 +356,60 @@ export default function MyProfilePage() {
             </section>
           </dialog>
         )}
+        {showPhotoModal && (
+          <div className="fixed inset-0 z-50 backdrop-blur-sm bg-white/30 flex items-center justify-center">
+            <section className="bg-white p-6 rounded-lg shadow-md w-80 space-y-4">
+              <h2 className="text-lg font-semibold">Edit Profile Photo</h2>
+
+              <div className="space-y-3">
+                <label
+                  htmlFor="change-photo"
+                  className="block cursor-pointer text-blue-600 hover:underline"
+                >
+                  Change Photo
+                </label>
+                <input
+                  type="file"
+                  id="change-photo"
+                  className="hidden"
+                  onChange={(e) => {
+                    handleImageChange(e);
+                    setShowPhotoModal(false);
+                  }}
+                />
+
+                <button
+                  type="button"
+                  onClick={handleDeletePicture}
+                  disabled={isDeleting}
+                  className={`text-red-600 hover:underline ${isDeleting ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  {isDeleting ? 'Deleting...' : 'Delete Photo'}
+                </button>
+
+              </div>
+
+              <div className="pt-2 text-right">
+                <button
+                  onClick={() => setShowPhotoModal(false)}
+                  className="text-gray-500 hover:text-gray-700"
+                >
+                  Cancel
+                </button>
+              </div>
+            </section>
+          </div>
+        )}
+
+
       </main>
+
       <footer className="md:hidden">
-        <MobileBottomNav />
+        {draftData.role.charAt(0).toUpperCase() + draftData.role.slice(1) === 'Reviewer' ? (
+          <ReviewerMobileBottomNav />
+        ) : (
+          <MobileBottomNav />
+        )}
       </footer>
     </>
   );
