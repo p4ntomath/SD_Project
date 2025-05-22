@@ -2,7 +2,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { FiVideo, FiPhone, FiSettings, FiUserPlus, FiMoreVertical, FiPaperclip, FiSmile, FiSend, FiArrowLeft, FiSearch, FiX } from 'react-icons/fi';
 import { ChatService, MessageService, ChatRealTimeService } from '../backend/firebase/chatDB';
-import { auth } from '../backend/firebase/firebaseConfig';
+import { auth, db } from '../backend/firebase/firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
 import EmojiPicker from 'emoji-picker-react';
 
 export default function ChatView() {
@@ -22,6 +23,7 @@ export default function ChatView() {
   const [addingMember, setAddingMember] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState(new Set());
   const [addingMembers, setAddingMembers] = useState(false);
+  const [participantPhotos, setParticipantPhotos] = useState({});
   const messagesEndRef = useRef(null);
   const chatViewRef = useRef(null);
   const emojiButtonRef = useRef(null);
@@ -234,6 +236,30 @@ export default function ChatView() {
     setShowEmojiPicker(!showEmojiPicker);
   };
 
+  // Add this new effect to fetch participant profile pictures
+  useEffect(() => {
+    if (!chat?.participants) return;
+
+    const fetchParticipantPhotos = async () => {
+      const photos = {};
+      await Promise.all(
+        chat.participants.map(async (userId) => {
+          try {
+            const userDoc = await getDoc(doc(db, 'users', userId));
+            if (userDoc.exists()) {
+              photos[userId] = userDoc.data().profilePicture || null;
+            }
+          } catch (error) {
+            console.error(`Error fetching profile picture for ${userId}:`, error);
+          }
+        })
+      );
+      setParticipantPhotos(photos);
+    };
+
+    fetchParticipantPhotos();
+  }, [chat?.participants]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
@@ -393,9 +419,17 @@ export default function ChatView() {
                       {chat.groupAvatar || '👥'}
                     </div>
                   ) : (
-                    <div className="w-10 h-10 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
-                      {getAvatarInitials(chat?.name)}
-                    </div>
+                    participantPhotos[chat?.participants?.find(id => id !== auth.currentUser.uid)] ? (
+                      <img
+                        src={participantPhotos[chat?.participants?.find(id => id !== auth.currentUser.uid)]}
+                        alt="Profile"
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
+                        {getAvatarInitials(chat?.name)}
+                      </div>
+                    )
                   )}
                 </div>
                 <div className="min-w-0 flex-1">
@@ -566,10 +600,18 @@ export default function ChatView() {
                         </p>
                       )}
                       <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
-                        {showSender && (
-                          <div className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm font-medium mr-2">
-                            {getAvatarInitials(senderName)}
-                          </div>
+                        {!isCurrentUser && showSender && (
+                          participantPhotos[message.senderId] ? (
+                            <img
+                              src={participantPhotos[message.senderId]}
+                              alt={senderName}
+                              className="w-8 h-8 rounded-full object-cover mr-2"
+                            />
+                          ) : (
+                            <div className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm font-medium mr-2">
+                              {getAvatarInitials(senderName)}
+                            </div>
+                          )
                         )}
                         <div className={`rounded-lg px-4 py-2 max-w-[70%] break-words ${
                           isCurrentUser 

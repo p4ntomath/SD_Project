@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiSearch, FiMessageSquare, FiArrowLeft, FiUserPlus, FiUsers, FiX } from 'react-icons/fi';
 import { ChatService, ChatRealTimeService } from '../backend/firebase/chatDB';
-import { auth } from '../backend/firebase/firebaseConfig';
+import { auth, db } from '../backend/firebase/firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function MessagesList() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -16,6 +17,7 @@ export default function MessagesList() {
   const [userSearchResults, setUserSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState(null);
+  const [participantPhotos, setParticipantPhotos] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -170,6 +172,43 @@ export default function MessagesList() {
     if (diff < 86400) return `${Math.floor(diff / 3600)}h ago`;
     return date.toLocaleDateString();
   };
+
+  // Add effect to fetch profile pictures for chat participants
+  useEffect(() => {
+    const fetchProfilePictures = async () => {
+      const photos = {};
+      const uniqueUserIds = new Set();
+
+      // Collect all unique user IDs from chats
+      chats.forEach(chat => {
+        if (chat.type === 'direct') {
+          // For direct chats, get the other participant
+          const otherUserId = chat.participants.find(id => id !== auth.currentUser.uid);
+          if (otherUserId) uniqueUserIds.add(otherUserId);
+        }
+      });
+
+      // Fetch profile pictures for all unique users
+      await Promise.all(
+        Array.from(uniqueUserIds).map(async (userId) => {
+          try {
+            const userDoc = await getDoc(doc(db, 'users', userId));
+            if (userDoc.exists()) {
+              photos[userId] = userDoc.data().profilePicture || null;
+            }
+          } catch (error) {
+            console.error(`Error fetching profile picture for ${userId}:`, error);
+          }
+        })
+      );
+
+      setParticipantPhotos(photos);
+    };
+
+    if (chats.length > 0) {
+      fetchProfilePictures();
+    }
+  }, [chats]);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -413,7 +452,7 @@ export default function MessagesList() {
                 <button 
                   key={chat.id}
                   onClick={() => navigate(`/messages/${chat.id}`)}
-                  className={`w-full text-left p-4 transition-colors hover:bg-gray-50`}
+                  className={`w-full text-left hover:bg-gray-50 p-4 transition-colors`}
                 >
                   <div className="flex items-center">
                     <div className="flex items-center flex-1 min-w-0">
@@ -423,9 +462,17 @@ export default function MessagesList() {
                             {chat.groupAvatar || '👥'}
                           </div>
                         ) : (
-                          <div className="w-12 h-12 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
-                            {getAvatarInitials(getChatDisplayName(chat))}
-                          </div>
+                          participantPhotos[chat.participants.find(id => id !== auth.currentUser.uid)] ? (
+                            <img
+                              src={participantPhotos[chat.participants.find(id => id !== auth.currentUser.uid)]}
+                              alt={getChatDisplayName(chat)}
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
+                              {getAvatarInitials(getChatDisplayName(chat))}
+                            </div>
+                          )
                         )}
                       </div>
                       <div className="ml-4 flex-1 min-w-0">

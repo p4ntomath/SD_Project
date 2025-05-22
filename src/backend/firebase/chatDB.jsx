@@ -329,7 +329,11 @@ const ChatService = {
       const querySnapshot = await getDocs(usersRef);
       
       const searchResults = querySnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .map(doc => ({ 
+          id: doc.id, 
+          ...doc.data(),
+          photoURL: doc.data().profilePicture || null // Include profile picture
+        }))
         .filter(user => 
           user.id !== currentUserId && // Exclude current user
           (user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
