@@ -4,6 +4,7 @@ import { onAuthStateChanged } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import { uploadUserProfilePicture, updateUserProfile, deleteProfilePicture } from '../backend/firebase/viewprofile';
 import Cropper from 'react-easy-crop';
+import imageCompression from 'browser-image-compression';
 import getCroppedImg from '../components/CropImage';
 import accountIcon from '../assets/accountIcon.png';
 import MainNav from '../components/ResearcherComponents/Navigation/MainNav';
@@ -12,6 +13,9 @@ import { getStorage } from 'firebase/storage';
 import { FiMenu, FiX } from 'react-icons/fi';
 import ReviewerMainNav from '../components/ReviewerComponents/Navigation/ReviewerMainNav';
 import ReviewerMobileBottomNav from '../components/ReviewerComponents/Navigation/ReviewerMobileBottomNav';
+import { ClipLoader } from 'react-spinners';
+import Select from 'react-select';
+import { fetchUniversities } from '../utils/universityOptions';
 
 export default function MyProfilePage() {
   const storage = getStorage();
@@ -22,7 +26,8 @@ export default function MyProfilePage() {
     researchField: '',
     photoURL: '',
     joined: '',
-    institution: ''
+    institution: '',
+    department: ''
   });
   const [draftData, setDraftData] = useState({ ...formData });
   const [previewURL, setPreviewURL] = useState('');
@@ -37,6 +42,12 @@ export default function MyProfilePage() {
   const [showPhotoOptions, setShowPhotoOptions] = useState(false);
   const [showPhotoModal, setShowPhotoModal] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [statusMessage, setStatusMessage] = useState({ type: '', message: '' });
+  const [isCropping, setIsCropping] = useState(false);
+  const [universities, setUniversities] = useState([]);
+  const [selectedInstitution, setSelectedInstitution] = useState(null);
 
   // Load initial profile data
   useEffect(() => {
@@ -60,14 +71,16 @@ export default function MyProfilePage() {
               name: userData.fullName || '',
               role: userData.role || '',
               bio: userData.bio || '',
-              researchField: userData.researchField || '',
+              researchField: userData.fieldOfResearch || '',
               photoURL: userData.profilePicture || '',
               joined: joinDate,
-              institution: userData.institution || ''
+              institution: userData.institution || '',
+              department: userData.department || ''
             };
 
             setFormData(profileData);
             setDraftData(profileData);
+            setSelectedInstitution({ value: userData.institution, label: userData.institution });
           }
         } catch (error) {
           console.error("Error loading profile:", error);
@@ -77,6 +90,15 @@ export default function MyProfilePage() {
       }
     });
     return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const loadUniversities = async () => {
+      const uniOptions = await fetchUniversities();
+      setUniversities(uniOptions);
+    };
+
+    loadUniversities();
   }, []);
 
   const handleImageChange = (e) => {
@@ -99,10 +121,13 @@ export default function MyProfilePage() {
       setPreviewURL('');
       setDraftData(prev => ({ ...prev, photoURL: '' }));
       setFormData(prev => ({ ...prev, photoURL: '' }));
-      setShowPhotoModal(false); // close modal
+      setShowPhotoModal(false);
+      setStatusMessage({ type: 'success', message: 'Profile picture deleted successfully!' });
+      setShowStatusModal(true);
     } catch (err) {
       console.error("Failed to delete picture:", err);
-      alert("Failed to delete profile picture");
+      setStatusMessage({ type: 'error', message: 'Failed to delete profile picture' });
+      setShowStatusModal(true);
     } finally {
       setIsDeleting(false);
     }
@@ -115,60 +140,85 @@ export default function MyProfilePage() {
   const handleCropDone = async () => {
     if (!croppedAreaPixels || !selectedFile) return;
     try {
-      setIsLoading(true);
+      setIsCropping(true);
       const croppedImg = await getCroppedImg(selectedFile, croppedAreaPixels);
-      // Convert base64 cropped image to Blob
+      
       let blob;
       try {
         const response = await fetch(croppedImg);
         blob = await response.blob();
       } catch (err) {
-        console.error("⚠️ Failed to fetch cropped blob:", err);
-        alert("Image processing failed.");
+        console.error("Failed to fetch cropped blob:", err);
+        setStatusMessage({ type: 'error', message: 'Image processing failed' });
+        setShowStatusModal(true);
         return;
       }
+      
       const file = new File([blob], 'profile.jpg', { type: 'image/jpeg' });
-
-      //  Compress before upload
       const compressedFile = await imageCompression(file, {
         maxSizeMB: 0.5,
         maxWidthOrHeight: 512,
         useWebWorker: true,
       });
 
-      // Upload compressed file
       const downloadURL = await uploadUserProfilePicture(compressedFile);
 
       setPreviewURL(downloadURL);
       setDraftData(prev => ({ ...prev, photoURL: downloadURL }));
       setOpenCropModal(false);
-
+      setStatusMessage({ type: 'success', message: 'Profile picture updated successfully!' });
+      setShowStatusModal(true);
     } catch (error) {
       console.error('Image upload failed:', error);
-      alert('Failed to upload profile picture');
+      setStatusMessage({ type: 'error', message: 'Failed to upload profile picture' });
+      setShowStatusModal(true);
     } finally {
-      setIsLoading(false);
+      setIsCropping(false);
     }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Check if any changes were made
+    const hasChanges = Object.keys(draftData).some(key => 
+      JSON.stringify(draftData[key]) !== JSON.stringify(formData[key])
+    );
+
+    if (!hasChanges) {
+      setStatusMessage({ type: 'info', message: 'No changes to save' });
+      setShowStatusModal(true);
+      return;
+    }
+
+    setIsSaving(true);
     try {
       await updateUserProfile({
         fullName: draftData.name,
         bio: draftData.bio,
-        researchField: draftData.researchField,
+        fieldOfResearch: draftData.researchField,
         institution: draftData.institution,
+        department: draftData.department,
         profilePicture: draftData.photoURL || null
       });
 
-
       setFormData(draftData);
-      alert('Profile updated successfully!');
+      setStatusMessage({ type: 'success', message: 'Profile updated successfully!' });
+      setShowStatusModal(true);
     } catch (error) {
       console.error("Error updating profile:", error);
-      alert('Failed to update profile: ' + error.message);
+      setStatusMessage({ type: 'error', message: 'Failed to update profile: ' + error.message });
+      setShowStatusModal(true);
+    } finally {
+      setIsSaving(false);
     }
+  };
+
+  const getAvatarInitials = (name) => {
+    if (!name) return '?';
+    const parts = name.trim().split(' ');
+    if (parts.length === 0) return '?';
+    return parts.map(part => part[0]).join('').toUpperCase();
   };
 
   return (
@@ -197,18 +247,23 @@ export default function MyProfilePage() {
               className="hidden"
             />
 
-            {/* Only wrap the image in the button */}
             <button
               type="button"
               onClick={() => document.getElementById('profile-image-input').click()}
               className="focus:outline-none mb-4"
               title="Click to upload new profile image"
             >
-              <img
-                src={previewURL || draftData.photoURL || accountIcon}
-                alt="Profile Avatar"
-                className="w-40 h-40 rounded-full object-cover border-4 border-gray-300 hover:opacity-90"
-              />
+              {previewURL || draftData.photoURL ? (
+                <img
+                  src={previewURL || draftData.photoURL}
+                  alt="Profile Avatar"
+                  className="w-40 h-40 rounded-full object-cover border-4 border-gray-300 hover:opacity-90"
+                />
+              ) : (
+                <div className="w-40 h-40 rounded-full flex items-center justify-center text-3xl font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors border-4 border-gray-300">
+                  {getAvatarInitials(draftData.name)}
+                </div>
+              )}
             </button>
 
             {(draftData.photoURL || previewURL) && (
@@ -261,8 +316,12 @@ export default function MyProfilePage() {
                 <p>{formData.joined}</p>
               </section>
               <section aria-labelledby="institution-label">
-                <h2 id="institution-label" className="font-bold">Institution/Department</h2>
+                <h2 id="institution-label" className="font-bold">Institution</h2>
                 <p>{draftData.institution}</p>
+              </section>
+              <section aria-labelledby="department-label">
+                <h2 id="department-label" className="font-bold">Department</h2>
+                <p>{draftData.department}</p>
               </section>
 
               {draftData.role.charAt(0).toUpperCase() + draftData.role.slice(1) === 'Researcher' && (
@@ -298,15 +357,32 @@ export default function MyProfilePage() {
                   required
                 />
 
-                <label htmlFor="institution" className="block text-sm font-semibold mb-1 mt-4">Institution/Department</label>
-                <input
+                <label htmlFor="institution" className="block text-sm font-semibold mb-1 mt-4">Institution</label>
+                <Select
                   id="institution"
-                  type="text"
                   name="institution"
-                  value={draftData.institution}
-                  onChange={(e) => setDraftData({ ...draftData, institution: e.target.value })}
+                  value={selectedInstitution}
+                  onChange={(option) => {
+                    setSelectedInstitution(option);
+                    setDraftData({ ...draftData, institution: option.value });
+                  }}
+                  options={universities}
+                  classNamePrefix="react-select"
+                  className="react-select-container"
+                  isClearable
+                  placeholder="Select your institution"
+                />
+
+                <label htmlFor="department" className="block text-sm font-semibold mb-1 mt-4">Department</label>
+                <input
+                  id="department"
+                  type="text"
+                  name="department"
+                  value={draftData.department}
+                  onChange={(e) => setDraftData({ ...draftData, department: e.target.value })}
                   className="w-full p-2 border border-gray-300 rounded"
                 />
+
                 {draftData.role.charAt(0).toUpperCase() + draftData.role.slice(1) === 'Researcher' && (
                   <>
                     <label htmlFor="researchField" className="block text-sm font-semibold mb-1 mt-4">Research Field</label>
@@ -333,32 +409,81 @@ export default function MyProfilePage() {
 
               <button
                 type="submit"
-                className="w-full bg-blue-700 text-white font-semibold py-2 rounded hover:bg-blue-800"
+                disabled={isSaving}
+                className="w-full bg-blue-700 text-white font-semibold py-2 rounded hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
               >
-                Save Changes
+                {isSaving ? (
+                  <>
+                    <ClipLoader color="#ffffff" size={20} className="mr-2" />
+                    <span>Saving...</span>
+                  </>
+                ) : (
+                  'Save Changes'
+                )}
               </button>
             </form>
           </section>
         </section>
 
 
+        {/* Photo Crop Modal */}
         {openCropModal && selectedFile && (
-          <dialog open className="fixed inset-0 z-50 bg-black/50 flex items-center justify-center">
-            <section className="bg-white rounded-xl p-6 w-[90vw] max-w-[500px] shadow-lg max-h-[90vh] overflow-y-auto">
-              <header className="mb-4"><h2 className="text-xl font-bold text-center">Crop your profile photo</h2></header>
-              <section className="relative h-[400px] sm:h-[500px] mb-6">
-                <Cropper image={selectedFile} crop={crop} zoom={zoom} aspect={1} onCropChange={setCrop} onZoomChange={setZoom} onCropComplete={onCropComplete} />
-              </section>
-              <footer className="flex justify-end gap-2">
-                <button onClick={() => setOpenCropModal(false)} className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300">Cancel</button>
-                <button onClick={handleCropDone} className="px-4 py-2 text-sm font-medium text-white bg-blue-700 rounded hover:bg-blue-800">Crop & Save</button>
-              </footer>
-            </section>
-          </dialog>
+          <div className="fixed inset-0 z-[9999]">
+            <div className="absolute inset-0 bg-black/50" />
+            <div className="relative z-[9999] h-screen flex items-center justify-center p-4">
+              <div className="bg-white rounded-xl p-6 w-[95vw] max-w-[800px] shadow-lg">
+                <header className="mb-4">
+                  <h2 className="text-xl font-bold text-center">Crop your profile photo</h2>
+                </header>
+                <div className="relative w-full h-[400px]">
+                  <Cropper 
+                    image={selectedFile}
+                    crop={crop}
+                    zoom={zoom}
+                    aspect={1}
+                    onCropChange={setCrop}
+                    onZoomChange={setZoom}
+                    onCropComplete={onCropComplete}
+                    style={{
+                      containerStyle: {
+                        width: "100%",
+                        height: "100%",
+                        backgroundColor: "#ffffff"
+                      }
+                    }}
+                  />
+                </div>
+                <footer className="flex justify-end gap-2 mt-4">
+                  <button 
+                    onClick={() => setOpenCropModal(false)} 
+                    className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-200 rounded hover:bg-gray-300"
+                    disabled={isCropping}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    onClick={handleCropDone}
+                    disabled={isCropping} 
+                    className="px-4 py-2 text-sm font-medium text-white bg-blue-700 rounded hover:bg-blue-800 disabled:opacity-50 disabled:cursor-not-allowed flex items-center"
+                  >
+                    {isCropping ? (
+                      <>
+                        <ClipLoader color="#ffffff" size={16} className="mr-2" />
+                        <span>Processing...</span>
+                      </>
+                    ) : (
+                      'Crop & Save'
+                    )}
+                  </button>
+                </footer>
+              </div>
+            </div>
+          </div>
         )}
+        {/* Photo Edit Modal */}
         {showPhotoModal && (
           <div className="fixed inset-0 z-50 backdrop-blur-sm bg-white/30 flex items-center justify-center">
-            <section className="bg-white p-6 rounded-lg shadow-md w-80 space-y-4">
+            <section className="bg-white p-6 rounded-lg shadow-md w-[110vw] max-w-[500px] space-y-4">
               <h2 className="text-lg font-semibold">Edit Profile Photo</h2>
 
               <div className="space-y-3">
@@ -401,6 +526,23 @@ export default function MyProfilePage() {
           </div>
         )}
 
+        {/* Status Modal */}
+        {showStatusModal && (
+          <div className="fixed inset-0 z-50 backdrop-blur-sm bg-white/30 flex items-center justify-center">
+            <section className="bg-white p-6 rounded-lg shadow-md w-[95vw] max-w-[500px] space-y-4">
+              <h2 className={`text-lg font-semibold ${statusMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
+                {statusMessage.type === 'success' ? 'Success!' : 'Error'}
+              </h2>
+              <p className="text-gray-600">{statusMessage.message}</p>
+              <button
+                onClick={() => setShowStatusModal(false)}
+                className="w-full py-2 px-4 bg-blue-600 text-white rounded hover:bg-blue-700"
+              >
+                Close
+              </button>
+            </section>
+          </div>
+        )}
 
       </main>
 
