@@ -305,15 +305,6 @@ export default function DocumentsPage() {
                         </div>
                         <h3 className="text-lg font-medium text-gray-900 mb-1">No documents yet</h3>
                         <p className="text-sm text-gray-500 mb-4">Get started by creating a new folder to organize your research documents</p>
-                        <button
-                            onClick={() => setShowFolderModal(true)}
-                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
-                        >
-                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                            </svg>
-                            Create First Folder
-                        </button>
                     </div>
                 ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

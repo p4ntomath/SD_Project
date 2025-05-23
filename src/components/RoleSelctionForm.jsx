@@ -28,6 +28,11 @@ const RoleSelectionForm = ({ onSubmit }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [universities, setUniversities] = useState([]);
   const [institutionLoading, setInstitutionLoading] = useState(true);
+  const [customUniversity, setCustomUniversity] = useState('');
+  const [showCustomUniversity, setShowCustomUniversity] = useState(false);
+  const [customTag, setCustomTag] = useState('');
+  const [customFaculty, setCustomFaculty] = useState('');
+  const [showCustomTag, setShowCustomTag] = useState(false);
   const faculties = ['all', ...getFaculties()];
 
   const roles = [
@@ -70,6 +75,48 @@ const RoleSelectionForm = ({ onSubmit }) => {
       ...prev,
       institution: selectedOption ? selectedOption.value : ''
     }));
+    setShowCustomUniversity(false);
+  };
+
+  const handleCustomUniversity = () => {
+    if (customUniversity.trim()) {
+      setFormData(prev => ({
+        ...prev,
+        institution: customUniversity.trim()
+      }));
+      setErrors(prev => ({ ...prev, institution: '' }));
+    }
+  };
+
+  const handleCustomTag = () => {
+    if (customTag.trim()) {
+      const newTag = {
+        value: customTag.toLowerCase().replace(/\s+/g, '-'),
+        label: customTag.trim(),
+        faculty: 'Custom Tags' // Default faculty for custom tags
+      };
+      
+      setFilteredTags(prev => [...prev, newTag]);
+      setSelectedTags(prev => [...prev, newTag].slice(0, 3));
+      setFormData(prev => ({
+        ...prev,
+        tags: [...prev.tags, newTag.label].slice(0, 3)
+      }));
+      
+      setCustomTag('');
+      setShowCustomTag(false);
+      
+      if (errors.tags) {
+        setErrors(prev => ({ ...prev, tags: '' }));
+      }
+    }
+  };
+
+  const handleCustomTagKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // Prevent form submission
+      handleCustomTag();
+    }
   };
 
   // Get all available options by combining filtered tags and selected tags
@@ -126,27 +173,40 @@ const RoleSelectionForm = ({ onSubmit }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (validateForm()) {
-      setIsSubmitting(true);
-      try {
-        // Complete user profile in Firebase
-        await onSubmit(formData);
+    const isValid = validateForm();
+    
+    if (!isValid) {
+      // Scroll to top when there are errors
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
 
-      } catch (error) {
-        setErrors(prev => ({
-          ...prev,
-          submit: error.message
-        }));
-      } finally {
-        setIsSubmitting(false);
-      }
+    setIsSubmitting(true);
+    try {
+      // Complete user profile in Firebase
+      await onSubmit(formData);
+
+    } catch (error) {
+      setErrors(prev => ({
+        ...prev,
+        submit: error.message
+      }));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
     <section className="w-full max-w-md mx-auto p-6 bg-white rounded-lg shadow-md">
       <h2 className="text-2xl font-bold text-center mb-6">Complete Your Profile</h2>
-  
+
+      {Object.keys(errors).length > 0 && (
+        <div className="mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded-md">
+          Please fill in all required fields to complete your profile
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-4" data-testid="role-selection-form">
         <fieldset>
           <legend className="sr-only">Profile Information</legend>
@@ -205,29 +265,72 @@ const RoleSelectionForm = ({ onSubmit }) => {
             <label htmlFor="select-institution" className="block text-sm font-medium text-gray-700 mb-1">
               Institution
             </label>
-            <Select
-              inputId="select-institution"
-              name="institution"
-              data-testid="institution-select"
-              value={universities?.length ? universities.find(uni => uni.value === formData.institution) : null}
-              onChange={handleInstitutionChange}
-              options={universities}
-              className={errors.institution ? 'react-select-error' : ''}
-              classNamePrefix="select"
-              placeholder={institutionLoading ? 'Loading universities...' : 'Select your institution...'}
-              isLoading={institutionLoading}
-              noOptionsMessage={() => "No matching institutions found"}
-              styles={{
-                control: (base, state) => ({
-                  ...base,
-                  borderColor: errors.institution ? '#ef4444' : state.isFocused ? '#3b82f6' : '#d1d5db',
-                  boxShadow: state.isFocused ? '0 0 0 1px #3b82f6' : 'none',
-                  '&:hover': {
-                    borderColor: state.isFocused ? '#3b82f6' : '#d1d5db'
-                  }
-                })
-              }}
-            />
+            <div className="space-y-2">
+              {!showCustomUniversity ? (
+                <>
+                  <Select
+                    inputId="select-institution"
+                    name="institution"
+                    data-testid="institution-select"
+                    value={universities?.length ? universities.find(uni => uni.value === formData.institution) : null}
+                    onChange={handleInstitutionChange}
+                    options={universities}
+                    className={errors.institution ? 'react-select-error' : ''}
+                    classNamePrefix="select"
+                    placeholder={institutionLoading ? 'Loading universities...' : 'Select your institution...'}
+                    isLoading={institutionLoading}
+                    noOptionsMessage={() => "No matching institutions found"}
+                    styles={{
+                      control: (base, state) => ({
+                        ...base,
+                        borderColor: errors.institution ? '#ef4444' : state.isFocused ? '#3b82f6' : '#d1d5db',
+                        boxShadow: state.isFocused ? '0 0 0 1px #3b82f6' : 'none',
+                        '&:hover': {
+                          borderColor: state.isFocused ? '#3b82f6' : '#d1d5db'
+                        }
+                      })
+                    }}
+                  />
+                  <button 
+                    type="button"
+                    onClick={() => setShowCustomUniversity(true)}
+                    className="text-sm text-blue-600 hover:text-blue-800"
+                  >
+                    Can't find your institution? Add it manually
+                  </button>
+                </>
+              ) : (
+                <div className="space-y-2">
+                  <input
+                    type="text"
+                    value={customUniversity}
+                    onChange={(e) => setCustomUniversity(e.target.value)}
+                    placeholder="Enter your institution name"
+                    className="w-full px-3 py-2 border rounded-md border-gray-300"
+                  />
+                  <div className="flex space-x-2">
+                    <button
+                      type="button"
+                      onClick={handleCustomUniversity}
+                      disabled={!customUniversity.trim()}
+                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      Add
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCustomUniversity(false);
+                        setCustomUniversity('');
+                      }}
+                      className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
             {errors.institution && <p data-testid="institution-error" className="mt-1 text-sm text-red-600">{errors.institution}</p>}
           </article>
 
@@ -273,52 +376,97 @@ const RoleSelectionForm = ({ onSubmit }) => {
             <label htmlFor="select-tags" className="block text-sm font-medium text-gray-700 mb-1">
               Research Tags (Select 3)
             </label>
-            <div className="mb-2">
-              <label htmlFor="faculty" className="block text-xs text-gray-600 mb-1">
-                Filter by Faculty
-              </label>
-              <select
-                id="faculty"
-                value={selectedFaculty}
-                onChange={handleFacultyChange}
-                data-testid="faculty-select"
-                className="w-full px-3 py-2 border rounded-md border-gray-300 text-sm"
-              >
-                {faculties.map(faculty => (
-                  <option key={faculty} value={faculty} data-testid={`faculty-option-${faculty}`}>
-                    {faculty === 'all' ? 'All Faculties' : faculty}
-                  </option>
-                ))}
-              </select>
+            <div className="space-y-2">
+              <div className="mb-2">
+                <label htmlFor="faculty" className="block text-xs text-gray-600 mb-1">
+                  Filter by Faculty
+                </label>
+                <select
+                  id="faculty"
+                  value={selectedFaculty}
+                  onChange={handleFacultyChange}
+                  data-testid="faculty-select"
+                  className="w-full px-3 py-2 border rounded-md border-gray-300 text-sm"
+                >
+                  {faculties.map(faculty => (
+                    <option key={faculty} value={faculty} data-testid={`faculty-option-${faculty}`}>
+                      {faculty === 'all' ? 'All Faculties' : faculty}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              
+              <Select
+                inputId="select-tags"
+                isMulti
+                name="tags"
+                data-testid="tags-select"
+                options={getAvailableOptions()}
+                className={`${errors.tags ? 'react-select-error' : ''}`}
+                classNamePrefix="select"
+                value={selectedTags}
+                onChange={handleTagsChange}
+                placeholder="Select exactly 3 research tags..."
+                noOptionsMessage={() => "No matching tags found"}
+                isOptionDisabled={() => selectedTags.length >= 3}
+                styles={{
+                  control: (base, state) => ({
+                    ...base,
+                    borderColor: errors.tags ? '#ef4444' : state.isFocused ? '#3b82f6' : '#d1d5db',
+                    boxShadow: state.isFocused ? '0 0 0 1px #3b82f6' : 'none',
+                    '&:hover': {
+                      borderColor: state.isFocused ? '#3b82f6' : '#d1d5db'
+                    }
+                  }),
+                  menu: (base) => ({
+                    ...base,
+                    zIndex: 9999
+                  })
+                }}
+              />
+              
+              {!showCustomTag ? (
+                <button 
+                  type="button"
+                  onClick={() => setShowCustomTag(true)}
+                  className="text-sm text-blue-600 hover:text-blue-800"
+                >
+                  Can't find your research tag? Add a custom one
+                </button>
+              ) : (
+                <div className="space-y-2 p-3 border rounded-md bg-gray-50">
+                  <input
+                    type="text"
+                    value={customTag}
+                    onChange={(e) => setCustomTag(e.target.value)}
+                    onKeyDown={handleCustomTagKeyDown}
+                    placeholder="Enter your research tag"
+                    className="w-full px-3 py-2 border rounded-md border-gray-300"
+                  />
+                  <div className="flex space-x-2">
+                    <button
+                      type="button"
+                      onClick={handleCustomTag}
+                      disabled={!customTag.trim()}
+                      className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      Add
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowCustomTag(false);
+                        setCustomTag('');
+                      }}
+                      className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
-            <Select
-              inputId="select-tags"
-              isMulti
-              name="tags"
-              data-testid="tags-select"
-              options={getAvailableOptions()}
-              className={`${errors.tags ? 'react-select-error' : ''}`}
-              classNamePrefix="select"
-              value={selectedTags}
-              onChange={handleTagsChange}
-              placeholder="Select exactly 3 research tags..."
-              noOptionsMessage={() => "No matching tags found"}
-              isOptionDisabled={() => selectedTags.length >= 3}
-              styles={{
-                control: (base, state) => ({
-                  ...base,
-                  borderColor: errors.tags ? '#ef4444' : state.isFocused ? '#3b82f6' : '#d1d5db',
-                  boxShadow: state.isFocused ? '0 0 0 1px #3b82f6' : 'none',
-                  '&:hover': {
-                    borderColor: state.isFocused ? '#3b82f6' : '#d1d5db'
-                  }
-                }),
-                menu: (base) => ({
-                  ...base,
-                  zIndex: 9999
-                })
-              }}
-            />
+            
             <p className="mt-1 text-xs text-gray-500" data-testid="tags-count">
               {selectedTags.length}/3 tags selected
             </p>

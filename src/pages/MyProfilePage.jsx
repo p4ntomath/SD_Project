@@ -48,6 +48,8 @@ export default function MyProfilePage() {
   const [isCropping, setIsCropping] = useState(false);
   const [universities, setUniversities] = useState([]);
   const [selectedInstitution, setSelectedInstitution] = useState(null);
+  const [showCustomInstitution, setShowCustomInstitution] = useState(false);
+  const [customInstitution, setCustomInstitution] = useState('');
 
   // Load initial profile data
   useEffect(() => {
@@ -221,6 +223,15 @@ export default function MyProfilePage() {
     return parts.map(part => part[0]).join('').toUpperCase();
   };
 
+  const handleCustomInstitution = () => {
+    if (customInstitution.trim()) {
+      setDraftData({ ...draftData, institution: customInstitution.trim() });
+      setSelectedInstitution({ value: customInstitution.trim(), label: customInstitution.trim() });
+      setShowCustomInstitution(false);
+      setCustomInstitution('');
+    }
+  };
+
   return (
     <>
       {draftData.role.charAt(0).toUpperCase() + draftData.role.slice(1) === 'Reviewer' ? (
@@ -358,20 +369,61 @@ export default function MyProfilePage() {
                 />
 
                 <label htmlFor="institution" className="block text-sm font-semibold mb-1 mt-4">Institution</label>
-                <Select
-                  id="institution"
-                  name="institution"
-                  value={selectedInstitution}
-                  onChange={(option) => {
-                    setSelectedInstitution(option);
-                    setDraftData({ ...draftData, institution: option.value });
-                  }}
-                  options={universities}
-                  classNamePrefix="react-select"
-                  className="react-select-container"
-                  isClearable
-                  placeholder="Select your institution"
-                />
+                {!showCustomInstitution ? (
+                  <>
+                    <Select
+                      id="institution"
+                      name="institution"
+                      value={selectedInstitution}
+                      onChange={(option) => {
+                        setSelectedInstitution(option);
+                        setDraftData({ ...draftData, institution: option?.value || '' });
+                      }}
+                      options={universities}
+                      classNamePrefix="react-select"
+                      className="react-select-container"
+                      isClearable
+                      placeholder="Select your institution"
+                    />
+                    <button 
+                      type="button"
+                      onClick={() => setShowCustomInstitution(true)}
+                      className="text-sm text-blue-600 hover:text-blue-800 mt-1"
+                    >
+                      Can't find your institution? Add it manually
+                    </button>
+                  </>
+                ) : (
+                  <div className="space-y-2">
+                    <input
+                      type="text"
+                      value={customInstitution}
+                      onChange={(e) => setCustomInstitution(e.target.value)}
+                      placeholder="Enter your institution name"
+                      className="w-full px-3 py-2 border rounded-md border-gray-300"
+                    />
+                    <div className="flex space-x-2">
+                      <button
+                        type="button"
+                        onClick={handleCustomInstitution}
+                        disabled={!customInstitution.trim()}
+                        className="px-3 py-1 text-sm bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50"
+                      >
+                        Add
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowCustomInstitution(false);
+                          setCustomInstitution('');
+                        }}
+                        className="px-3 py-1 text-sm border border-gray-300 rounded-md hover:bg-gray-100"
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  </div>
+                )}
 
                 <label htmlFor="department" className="block text-sm font-semibold mb-1 mt-4">Department</label>
                 <input
