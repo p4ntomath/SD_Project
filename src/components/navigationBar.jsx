@@ -1,16 +1,48 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import appLogo from '../assets/appLogo.png';
 import { Link } from 'react-router-dom';
 
 const NavBar = () => {
   const [isOpen, setIsOpen] = useState(false);
 
+  const scrollToSection = (sectionId) => {
+    const element = document.getElementById(sectionId);
+    if (element) {
+      element.scrollIntoView({ behavior: 'smooth' });
+      setIsOpen(false); // Close mobile menu after clicking
+    }
+  };
+
+  // Handle hash changes and initial load
+  useEffect(() => {
+    const handleHashChange = () => {
+      const hash = window.location.hash.replace('#', '');
+      if (hash) {
+        scrollToSection(hash);
+      }
+    };
+
+    // Handle initial load with hash
+    handleHashChange();
+
+    // Listen for hash changes
+    window.addEventListener('hashchange', handleHashChange);
+    return () => window.removeEventListener('hashchange', handleHashChange);
+  }, []);
+
+  const navItems = [
+    { name: 'Home', sectionId: 'home' },
+    { name: 'Features', sectionId: 'features' },
+    { name: 'For Researchers', sectionId: 'for-researchers' },
+    { name: 'For Reviewers', sectionId: 'for-reviewers' }
+  ];
+
   return (
     <header className="fixed w-full z-50 bg-white shadow-md">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" aria-label="Main navigation">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
-          <Link to="/" className="flex items-center space-x-3 group">
+          <button onClick={() => scrollToSection('home')} className="flex items-center space-x-3 group">
             <img 
               src={appLogo} 
               className="h-10 w-auto transition-transform duration-300 group-hover:scale-105" 
@@ -19,25 +51,20 @@ const NavBar = () => {
             <span className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               Re:Search
             </span>
-          </Link>
+          </button>
 
           {/* Desktop Navigation */}
           <div className="hidden md:flex items-center space-x-8">
             <div className="flex space-x-8">
-              {[
-                { name: 'Home', path: '/' },
-                { name: 'Features', path: '/#features' },
-                { name: 'About', path: '/#about' },
-                { name: 'Contact', path: '/#contact' },
-              ].map((item) => (
-                <a
+              {navItems.map((item) => (
+                <button
                   key={item.name}
-                  href={item.path}
+                  onClick={() => scrollToSection(item.sectionId)}
                   className="relative px-2 py-1 text-sm font-medium text-gray-700 hover:text-blue-600 transition-colors duration-200 group"
                 >
                   {item.name}
                   <span className="absolute bottom-0 left-0 w-full h-0.5 bg-blue-600 transform origin-left scale-x-0 transition-transform duration-300 group-hover:scale-x-100" />
-                </a>
+                </button>
               ))}
             </div>
 
@@ -87,19 +114,14 @@ const NavBar = () => {
         {/* Mobile menu */}
         <div className={`${isOpen ? 'block' : 'hidden'} md:hidden bg-white mt-2 rounded-lg shadow-xl border border-gray-100`}>
           <div className="px-2 pt-2 pb-3 space-y-1">
-            {[
-              { name: 'Home', path: '/' },
-              { name: 'Features', path: '/#features' },
-              { name: 'About', path: '/#about' },
-              { name: 'Contact', path: '/#contact' },
-            ].map((item) => (
-              <a
+            {navItems.map((item) => (
+              <button
                 key={item.name}
-                href={item.path}
-                className="block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition-colors duration-200"
+                onClick={() => scrollToSection(item.sectionId)}
+                className="block w-full px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-blue-600 hover:bg-gray-50 transition-colors duration-200 text-left"
               >
                 {item.name}
-              </a>
+              </button>
             ))}
             <div className="pt-4 pb-2 border-t border-gray-200">
               <div className="flex items-center px-3 space-x-3">
