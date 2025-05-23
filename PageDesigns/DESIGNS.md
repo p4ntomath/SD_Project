@@ -43,7 +43,7 @@
   Mobile view for funding tracking
 
 ## User Account
-- ![User Account](./images/MyProfile.png)  
+- ![User Account](./images/MyProfile.png))  
   User profile account
 - ![User Account (Mobile View)](./images/MyProfile-smallScreen.png)  
   Responsive layout for smaller screens
