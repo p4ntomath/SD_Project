@@ -345,7 +345,7 @@ const RoleSelectionForm = ({ onSubmit }) => {
               data-testid="department-input"
               value={formData.department}
               onChange={handleChange}
-              placeholder="e.g., Computer Science, Engineering"
+              placeholder="e.g., School Of Computer Science and Engineering"
               className={`w-full px-3 py-2 border rounded-md ${
                 errors.department ? 'border-red-500' : 'border-gray-300'
               }`}

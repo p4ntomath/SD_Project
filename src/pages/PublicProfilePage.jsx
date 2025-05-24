@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { doc, getDoc, collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../backend/firebase/firebaseConfig';
 import { ClipLoader } from 'react-spinners';
 import MainNav from '../components/ResearcherComponents/Navigation/MainNav';
 import MobileBottomNav from '../components/ResearcherComponents/Navigation/MobileBottomNav';
 import { FiUser, FiBookOpen, FiAward, FiTarget, FiClock, FiMapPin } from 'react-icons/fi';
-import { motion } from 'framer-motion';
+
 
 export default function PublicProfilePage() {
   const { userId } = useParams();
   const [user, setUser] = useState(null);
+  const [ownedProjects, setOwnedProjects] = useState([]);
+  const [collaboratedProjects, setCollaboratedProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [projects, setProjects] = useState([]);
 
   const getAvatarInitials = (name) => {
     if (!name) return '?';
@@ -25,19 +26,53 @@ export default function PublicProfilePage() {
   useEffect(() => {
     const fetchUserProfile = async () => {
       try {
-        const userDoc = await getDoc(doc(db, 'users', userId));
-        if (userDoc.exists()) {
-          setUser({ id: userDoc.id, ...userDoc.data() });
-          // Fetch user's projects if they're a researcher
-          if (userDoc.data().role?.toLowerCase() === 'researcher') {
+        if (userId) {
+          const userRef = doc(db, 'users', userId);
+          const userSnap = await getDoc(userRef);
+
+          if (userSnap.exists()) {
+            setUser({ id: userSnap.id, ...userSnap.data() });
+            
             const projectsRef = collection(db, 'projects');
-            const q = query(projectsRef, where('researcherId', '==', userId));
-            const projectsSnap = await getDocs(q);
-            setProjects(projectsSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })));
+            
+            // Query for owned projects
+            const ownedProjectsQuery = query(
+              projectsRef,
+              where('userId', '==', userId)
+            );
+            
+            // Query to get all projects and filter for collaborations
+            const projectsSnapshot = await getDocs(projectsRef);
+            const collaboratedProjects = projectsSnapshot.docs
+              .filter(doc => {
+                const data = doc.data();
+                return data.collaborators?.some(collab => collab.id === userId);
+              })
+              .map(doc => ({
+                id: doc.id,
+                ...doc.data(),
+                relationship: 'collaborator'
+              }))
+              .filter(project => !project.visibility || project.visibility !== 'private');
+
+            // Get owned projects
+            const ownedProjectsSnap = await getDocs(ownedProjectsQuery);
+            const owned = ownedProjectsSnap.docs
+              .map(doc => ({ 
+                id: doc.id, 
+                ...doc.data(),
+                relationship: 'owner' 
+              }))
+              .filter(project => !project.visibility || project.visibility !== 'private');
+            
+            setOwnedProjects(owned);
+            setCollaboratedProjects(collaboratedProjects);
+          } else {
+            console.log('User not found:', userId);
           }
         }
       } catch (error) {
-        console.error('Error fetching user profile:', error);
+        console.error('Error fetching profile:', error);
       } finally {
         setLoading(false);
       }
@@ -108,15 +143,28 @@ export default function PublicProfilePage() {
 
               {/* Info Section */}
               <div className="text-center w-full">
-                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-sky-600 text-transparent bg-clip-text mb-6">
+                <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-sky-600 text-transparent bg-clip-text mb-4">
                   {user.fullName}
                 </h1>
 
+                {user.bio && (
+                  <p className="text-gray-600 mb-6 max-w-md mx-auto">
+                    {user.bio}
+                  </p>
+                )}
+
                 <div className="space-y-3 max-w-md mx-auto">
-                  {(user.institution || user.department) && (
+                  {user.institution && (
                     <div className="flex items-center gap-3 bg-white/50 p-3 rounded-xl backdrop-blur-sm">
                       <FiUser className="w-5 h-5 text-blue-500" />
-                      <span>{user.institution} {user.department && `• ${user.department}`}</span>
+                      <span>{user.institution}</span>
+                    </div>
+                  )}
+
+                  {user.department && (
+                    <div className="flex items-center gap-3 bg-white/50 p-3 rounded-xl backdrop-blur-sm">
+                      <FiBookOpen className="w-5 h-5 text-sky-500" />
+                      <span>{user.department}</span>
                     </div>
                   )}
 
@@ -159,23 +207,8 @@ export default function PublicProfilePage() {
             </div>
           )}
 
-          {/* About Card */}
-          {user.bio && (
-            <div className="backdrop-blur-xl bg-white/70 rounded-3xl shadow-xl p-8 border border-white/20">
-              <div className="flex items-center gap-3 mb-6">
-                <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-sky-500">
-                  <FiBookOpen className="w-6 h-6 text-white" />
-                </div>
-                <h2 className="text-2xl font-bold text-gray-800">About</h2>
-              </div>
-              <p className="text-gray-600 leading-relaxed whitespace-pre-line">
-                {user.bio}
-              </p>
-            </div>
-          )}
-
           {/* Projects Section */}
-          {projects.length > 0 && (
+          {(ownedProjects.length > 0 || collaboratedProjects.length > 0) && (
             <div className="backdrop-blur-xl bg-white/70 rounded-3xl shadow-xl p-8 border border-white/20">
               <div className="flex items-center gap-3 mb-6">
                 <div className="p-3 rounded-xl bg-gradient-to-br from-blue-500 to-sky-500">
@@ -183,29 +216,83 @@ export default function PublicProfilePage() {
                 </div>
                 <h2 className="text-2xl font-bold text-gray-800">Research Projects</h2>
               </div>
-              
-              <div className="space-y-6">
-                {projects.map(project => (
-                  <div 
-                    key={project.id}
-                    className="bg-white/50 rounded-2xl p-6 backdrop-blur-sm border border-white/20"
-                  >
-                    <h3 className="text-xl font-bold text-gray-800 mb-2">{project.title}</h3>
-                    <p className="text-gray-600 mb-4">{project.description}</p>
-                    {project.status && (
-                      <span className={`inline-block px-4 py-1.5 rounded-full font-medium ${
-                        project.status.toLowerCase() === 'completed' 
-                          ? 'bg-gradient-to-r from-green-400 to-emerald-400 text-white'
-                          : project.status.toLowerCase() === 'in progress'
-                          ? 'bg-gradient-to-r from-blue-400 to-sky-400 text-white'
-                          : 'bg-gradient-to-r from-amber-400 to-orange-400 text-white'
-                      }`}>
-                        {project.status}
-                      </span>
-                    )}
+
+              {/* Owned Projects */}
+              {ownedProjects.length > 0 && (
+                <div className="mb-8">
+                  <h3 className="text-lg font-semibold text-gray-700 mb-4">Projects Owned</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {ownedProjects.map((project) => (
+                      <div 
+                        key={project.id} 
+                        className="bg-white/80 rounded-xl p-6 shadow-md border border-blue-100 hover:shadow-lg transition-all"
+                      >
+                        <div className="inline-block px-3 py-1 bg-blue-100 text-blue-700 rounded-full text-sm font-medium mb-3">
+                          Owner
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">{project.title}</h3>
+                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{project.description}</p>
+                        <div className="flex flex-wrap gap-2 mb-4 text-sm">
+                          <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-md">
+                            Status: {project.status || 'In Progress'}
+                          </span>
+                          <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-md">
+                            Field: {project.researchField || 'Not specified'}
+                          </span>
+                          <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-md">
+                            Deadline: {project.deadline ? new Date(project.deadline.seconds * 1000).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            }) : 'Not set'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
+
+              {/* Collaborated Projects */}
+              {collaboratedProjects.length > 0 && (
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-700 mb-4">Projects Collaborated On</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {collaboratedProjects.map((project) => (
+                      <div 
+                        key={project.id} 
+                        className="bg-white/80 rounded-xl p-6 shadow-md border border-purple-100 hover:shadow-lg transition-all"
+                      >
+                        <div className="inline-block px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-sm font-medium mb-3">
+                          Collaborator
+                        </div>
+                        <h3 className="text-lg font-semibold text-gray-900 mb-2">{project.title}</h3>
+                        <p className="text-gray-600 text-sm mb-4 line-clamp-2">{project.description}</p>
+                        <div className="flex flex-wrap gap-2 mb-4 text-sm">
+                          <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-md">
+                            Status: {project.status || 'In Progress'}
+                          </span>
+                          <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-md">
+                            Field: {project.researchField || 'Not specified'}
+                          </span>
+                          <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded-md">
+                            Deadline: {project.deadline ? new Date(project.deadline.seconds * 1000).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            }) : 'Not set'}
+                          </span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* No Projects Message */}
+              {ownedProjects.length === 0 && collaboratedProjects.length === 0 && (
+                <p className="text-center text-gray-500">No public projects to display.</p>
+              )}
             </div>
           )}
         </div>
