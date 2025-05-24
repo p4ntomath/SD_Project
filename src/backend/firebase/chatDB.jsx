@@ -346,6 +346,38 @@ const ChatService = {
       handleFirebaseError(error);
     }
   },
+
+  updateGroupAvatar: async (chatId, file) => {
+    try {
+      const chatRef = doc(db, 'chats', chatId);
+      const chatSnap = await getDoc(chatRef);
+      
+      if (!chatSnap.exists()) {
+        throw new Error('Chat not found');
+      }
+      
+      if (chatSnap.data().type !== 'group') {
+        throw new Error('This is not a group chat');
+      }
+
+      // Upload the new avatar
+      const storageRef = ref(storage, `chats/${chatId}/avatar/group-avatar.jpg`);
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+
+      // Update the chat document with the new avatar URL
+      await updateDoc(chatRef, {
+        groupAvatar: downloadURL,
+        updatedAt: serverTimestamp()
+      });
+
+      return downloadURL;
+    } catch (error) {
+      handleFirebaseError(error);
+    }
+  },
+
+  // ... rest of ChatService
 };
 
 // Enhanced MessageService with error handling

@@ -477,9 +477,17 @@ export default function MessagesList() {
                     <div className="flex items-center flex-1 min-w-0">
                       <div className="relative flex-shrink-0">
                         {chat.type === 'group' ? (
-                          <div className="w-12 h-12 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-medium text-lg">
-                            {chat.groupAvatar || '👥'}
-                          </div>
+                          chat.groupAvatar ? (
+                            <img
+                              src={chat.groupAvatar}
+                              alt={getChatDisplayName(chat)}
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-medium text-lg">
+                              👥
+                            </div>
+                          )
                         ) : (
                           participantPhotos[chat.participants.find(id => id !== auth.currentUser.uid)] ? (
                             <img

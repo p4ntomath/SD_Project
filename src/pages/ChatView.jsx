@@ -1,11 +1,14 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiVideo, FiPhone, FiSettings, FiUserPlus, FiMoreVertical, FiPaperclip, FiSmile, FiSend, FiArrowLeft, FiSearch, FiX, FiCheck } from 'react-icons/fi';
+import { FiVideo, FiPhone, FiSettings, FiUserPlus, FiPaperclip, FiSmile, FiSend, FiArrowLeft, FiSearch, FiX, FiCheck, FiEdit2 } from 'react-icons/fi';
 import { ChatService, MessageService, ChatRealTimeService } from '../backend/firebase/chatDB';
 import { auth, db } from '../backend/firebase/firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import EmojiPicker from 'emoji-picker-react';
 import MediaPreview from '../components/MediaPreview';
+import Cropper from 'react-easy-crop';
+import imageCompression from 'browser-image-compression';
+import getCroppedImg from '../components/CropImage';
 
 export default function ChatView() {
   const { chatId } = useParams();
@@ -28,11 +31,23 @@ export default function ChatView() {
   const [attachments, setAttachments] = useState([]);
   const [uploadProgress, setUploadProgress] = useState({});
   const [overallProgress, setOverallProgress] = useState(0);
+  const [showGroupInfoModal, setShowGroupInfoModal] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [renamingGroup, setRenamingGroup] = useState(false);
+  const [removingMember, setRemovingMember] = useState('');
+  const [isChangingAvatar, setIsChangingAvatar] = useState(false);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [showCropModal, setShowCropModal] = useState(false);
   const messagesEndRef = useRef(null);
   const chatViewRef = useRef(null);
   const emojiButtonRef = useRef(null);
   const emojiPickerRef = useRef(null);
   const fileInputRef = useRef(null);
+  const avatarInputRef = useRef(null);
 
   // Track if chat is visible and focused
   const [isVisible, setIsVisible] = useState(document.visibilityState === 'visible');
@@ -323,6 +338,85 @@ export default function ChatView() {
     fetchParticipantPhotos();
   }, [chat?.participants]);
 
+  // Function to handle group rename
+  const handleRenameGroup = async () => {
+    if (!newGroupName.trim() || renamingGroup) return;
+    
+    try {
+      setRenamingGroup(true);
+      await ChatService.renameGroupChat(chatId, newGroupName.trim());
+      setIsEditingName(false);
+      setNewGroupName('');
+    } catch (error) {
+      console.error('Error renaming group:', error);
+    } finally {
+      setRenamingGroup(false);
+    }
+  };
+
+  // Function to remove member from group
+  const handleRemoveMember = async (memberId) => {
+    if (removingMember || memberId === auth.currentUser.uid) return;
+    
+    try {
+      setRemovingMember(memberId);
+      await ChatService.removeUserFromGroupChat(chatId, memberId);
+    } catch (error) {
+      console.error('Error removing member:', error);
+    } finally {
+      setRemovingMember('');
+    }
+  };
+
+  // Add this function to handle avatar change
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSelectedImage(reader.result);
+      setShowCropModal(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = (croppedArea, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  };
+
+  const handleCropSave = async () => {
+    try {
+      setIsChangingAvatar(true);
+      const croppedImage = await getCroppedImg(selectedImage, croppedAreaPixels);
+      
+      // Convert base64 to blob
+      const response = await fetch(croppedImage);
+      const blob = await response.blob();
+      
+      // Create a File object
+      const file = new File([blob], 'profile.jpg', { type: 'image/jpeg' });
+
+      // Compress the image
+      const compressedFile = await imageCompression(file, {
+        maxSizeMB: 0.5,
+        maxWidthOrHeight: 512,
+        useWebWorker: true,
+      });
+
+      await ChatService.updateGroupAvatar(chatId, compressedFile);
+      setShowCropModal(false);
+      setSelectedImage(null);
+    } catch (error) {
+      console.error('Error updating group avatar:', error);
+    } finally {
+      setIsChangingAvatar(false);
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = '';
+      }
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen bg-gray-50">
@@ -513,11 +607,23 @@ export default function ChatView() {
                 Back
               </button>
               <div className="flex items-center space-x-4 min-w-0">
-                <div className="relative flex-shrink-0">
+                {/* Make avatar and name clickable for groups */}
+                <div 
+                  className={`relative flex-shrink-0 ${chat?.type === 'group' ? 'cursor-pointer' : ''}`}
+                  onClick={() => chat?.type === 'group' && setShowGroupInfoModal(true)}
+                >
                   {chat?.type === 'group' ? (
-                    <div className="w-10 h-10 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-medium text-lg">
-                      {chat.groupAvatar || '👥'}
-                    </div>
+                    chat.groupAvatar ? (
+                      <img 
+                        src={chat.groupAvatar}
+                        alt="Group Avatar"
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-medium text-lg hover:bg-purple-200 transition-colors">
+                        👥
+                      </div>
+                    )
                   ) : (
                     participantPhotos[chat?.participants?.find(id => id !== auth.currentUser.uid)] ? (
                       <img
@@ -532,8 +638,13 @@ export default function ChatView() {
                     )
                   )}
                 </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-semibold text-gray-900 truncate">{chat?.groupName || chat?.name}</h2>
+                <div 
+                  className={`min-w-0 flex-1 ${chat?.type === 'group' ? 'cursor-pointer' : ''}`}
+                  onClick={() => chat?.type === 'group' && setShowGroupInfoModal(true)}
+                >
+                  <h2 className="font-semibold text-gray-900 truncate hover:text-gray-700 transition-colors">
+                    {chat?.groupName || chat?.name}
+                  </h2>
                   {chat?.type === 'group' && (
                     <p className="text-sm text-gray-500 truncate">
                       {chat.participantNames ?
@@ -554,13 +665,11 @@ export default function ChatView() {
                 <button 
                   onClick={() => setShowAddMemberModal(true)}
                   className="p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+                  title="Add members"
                 >
                   <FiUserPlus className="h-5 w-5" />
                 </button>
               )}
-              <button className="hidden md:block p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
-                <FiMoreVertical className="h-5 w-5" />
-              </button>
             </div>
           </div>
         </div>
@@ -669,6 +778,188 @@ export default function ChatView() {
                 </button>
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {/* Group Info Modal */}
+      {showGroupInfoModal && (
+        <div className="fixed inset-0 bg-gray-900/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl transform transition-all my-4 flex flex-col min-h-0 max-h-[calc(100vh-2rem)]">
+            {/* Header with gradient background */}
+            <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-6">
+              {/* Header Content */}
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold text-white">Group Information</h3>
+                <button 
+                  onClick={() => setShowGroupInfoModal(false)}
+                  className="text-white/80 hover:text-white p-1.5 hover:bg-white/10 rounded-full transition-all"
+                >
+                  <FiX className="h-5 w-5" />
+                </button>
+              </div>
+              {/* Group Avatar and Stats */}
+              <div className="mt-4 flex items-end space-x-4">
+                <div className="relative group">
+                  <input
+                    type="file"
+                    ref={avatarInputRef}
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                    accept="image/*"
+                  />
+                  <div 
+                    onClick={() => !isChangingAvatar && avatarInputRef.current?.click()}
+                    className="w-20 h-20 bg-white/10 text-white rounded-2xl flex items-center justify-center text-3xl backdrop-blur-sm cursor-pointer group-hover:bg-white/20 transition-all relative overflow-hidden"
+                  >
+                    {isChangingAvatar ? (
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    ) : (
+                      <>
+                        {chat?.groupAvatar ? (
+                          <img 
+                            src={chat.groupAvatar}
+                            alt="Group Avatar"
+                            className="w-20 h-20 rounded-2xl object-cover"
+                          />
+                        ) : (
+                          <div className="w-20 h-20 flex items-center justify-center">
+                            👥
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                          <FiEdit2 className="h-6 w-6 text-white" />
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+                <div className="flex-1 mb-2">
+                  <div className="flex items-center space-x-2">
+                    {isEditingName ? (
+                      <input
+                        type="text"
+                        placeholder="Enter new group name"
+                        className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm transition-all"
+                        value={newGroupName}
+                        onChange={(e) => setNewGroupName(e.target.value)}
+                      />
+                    ) : (
+                      <h4 className="text-lg text-white font-medium truncate">{chat?.groupName || chat?.name}</h4>
+                    )}
+                    <button
+                      onClick={() => {
+                        if (isEditingName) {
+                          handleRenameGroup();
+                        } else {
+                          setIsEditingName(true);
+                          setNewGroupName(chat?.groupName || chat?.name);
+                        }
+                      }}
+                      className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-all"
+                    >
+                      {isEditingName ? (
+                        <FiCheck className="h-5 w-5" />
+                      ) : (
+                        <FiEdit2 className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-white/80 text-sm mt-1">
+                    {chat?.participants?.length || 0} participants
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Scrollable content with sticky subheader */}
+            <div className="flex flex-col min-h-0 flex-1">
+              <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
+                <div className="px-6 py-4 flex items-center justify-between">
+                  <h4 className="text-gray-900 font-medium">Participants</h4>
+                  <button
+                    onClick={() => {
+                      setShowGroupInfoModal(false);
+                      setShowAddMemberModal(true);
+                    }}
+                    className="flex items-center space-x-1 text-sm text-purple-600 hover:text-purple-700 font-medium"
+                  >
+                    <FiUserPlus className="h-4 w-4" />
+                    <span>Add People</span>
+                  </button>
+                </div>
+              </div>
+              
+              {/* Scrollable participants list */}
+              <div className="overflow-y-auto flex-1">
+                <div className="p-6 space-y-2 relative">
+                  {chat?.participants?.map((userId) => {
+                    const isCurrentUser = userId === auth.currentUser.uid;
+                    const userName = chat.participantNames?.[userId] || 'Unknown User';
+                    const userPhoto = participantPhotos[userId];
+
+                    return (
+                      <div 
+                        key={userId} 
+                        className="group flex items-center justify-between p-3 rounded-xl transition-all hover:bg-gray-50 bg-white border border-gray-100"
+                      >
+                        <div className="flex items-center space-x-3">
+                          {userPhoto ? (
+                            <img
+                              src={userPhoto}
+                              alt={userName}
+                              className="w-12 h-12 rounded-full object-cover ring-2 ring-white shadow-md"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 text-white rounded-full flex items-center justify-center font-medium ring-2 ring-white shadow-md">
+                              {getAvatarInitials(userName)}
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-gray-900 font-medium">
+                              {userName}
+                              {isCurrentUser && (
+                                <span className="ml-2 text-xs font-normal text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
+                                  You
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {isCurrentUser ? 'Group Admin' : 'Member'}
+                            </p>
+                          </div>
+                        </div>
+                        {!isCurrentUser && chat.type === 'group' && (
+                          <button
+                            onClick={() => handleRemoveMember(userId)}
+                            disabled={removingMember === userId}
+                            className="opacity-0 group-hover:opacity-100 p-2 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          >
+                            {removingMember === userId ? (
+                              <div className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <FiX className="h-5 w-5" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex-none p-4 bg-gray-50 border-t border-gray-100">
+              <button
+                onClick={() => setShowGroupInfoModal(false)}
+                className="w-full py-2.5 px-4 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -841,6 +1132,81 @@ export default function ChatView() {
           />
         </div>
       )}
+
+      {/* Image Crop Modal */}
+      {showCropModal && (
+        <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-lg rounded-2xl overflow-hidden">
+            <div className="p-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Crop Group Avatar</h3>
+            </div>
+            <div className="relative h-[400px] bg-gray-900">
+              <Cropper
+                image={selectedImage}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={handleCropComplete}
+              />
+            </div>
+            <div className="p-4 bg-gray-50 flex justify-end space-x-3">
+              <button
+                onClick={() => {
+                  setShowCropModal(false);
+                  setSelectedImage(null);
+                }}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCropSave}
+                disabled={isChangingAvatar}
+                className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center"
+              >
+                {isChangingAvatar ? (
+                  <>
+                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Add the custom scrollbar styles */}
+      <style jsx>{`
+        /* Existing scrollbar styles */
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background-color: rgba(0, 0, 0, 0.2);
+          border-radius: 3px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background-color: rgba(0, 0, 0, 0.3);
+        }
+
+        /* Prevent content shift and gaps during scroll */
+        .modal-content {
+          transform: translate3d(0, 0, 0);
+          -webkit-transform: translate3d(0, 0, 0);
+          backface-visibility: hidden;
+          -webkit-backface-visibility: hidden;
+          perspective: 1000;
+          -webkit-perspective: 1000;
+        }
+      `}</style>
     </div>
   );
 }
