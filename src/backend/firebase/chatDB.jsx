@@ -214,6 +214,23 @@ const ChatService = {
         throw new Error('User is already a member of this chat');
       }
 
+      // If this is a project group chat, verify the user is a project collaborator
+      if (chatData.projectId) {
+        const projectRef = doc(db, "projects", chatData.projectId);
+        const projectSnap = await getDoc(projectRef);
+        
+        if (!projectSnap.exists()) {
+          throw new Error('Project not found');
+        }
+
+        const projectData = projectSnap.data();
+        const isCollaborator = projectData.collaborators?.some(collab => collab.id === userId);
+        
+        if (!isCollaborator) {
+          throw new Error('User must be a project collaborator to join this chat');
+        }
+      }
+
       // Verify the user exists
       const userRef = doc(db, 'users', userId);
       const userSnap = await getDoc(userRef);
@@ -245,7 +262,7 @@ const ChatService = {
       
       await batch.commit();
     } catch (error) {
-      console.error('Error in addUserToGroupChat:', error);
+      throw new Error(error)
       handleFirebaseError(error);
     }
   },
