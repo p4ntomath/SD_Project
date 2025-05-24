@@ -5,6 +5,7 @@ import { ChatService, MessageService, ChatRealTimeService } from '../backend/fir
 import { auth, db } from '../backend/firebase/firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
 import EmojiPicker from 'emoji-picker-react';
+import MediaPreview from '../components/MediaPreview';
 
 export default function ChatView() {
   const { chatId } = useParams();
@@ -439,52 +440,41 @@ export default function ChatView() {
     return true;
   };
 
-  const renderAttachment = (attachment) => {
-    switch (attachment.type) {
-      case 'image':
-        return (
-          <div className="relative rounded-lg overflow-hidden max-w-xs">
-            <img 
-              src={attachment.url} 
-              alt={attachment.name}
-              className="max-w-full h-auto"
+  const renderMessage = (message, isCurrentUser, showSender, senderName) => {
+    return (
+      <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} group`}>
+        {!isCurrentUser && showSender && (
+          participantPhotos[message.senderId] ? (
+            <img
+              src={participantPhotos[message.senderId]}
+              alt={senderName}
+              className="w-8 h-8 rounded-full object-cover mr-2"
             />
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm font-medium mr-2">
+              {getAvatarInitials(senderName)}
+            </div>
+          )
+        )}
+        <div className={`rounded-lg px-4 py-2 max-w-[70%] space-y-2 ${
+          isCurrentUser 
+            ? 'bg-blue-600 text-white' 
+            : 'bg-gray-100 text-gray-900'
+        }`}>
+          {message.text && <p className="whitespace-pre-wrap">{message.text}</p>}
+          {message.attachments?.map((attachment, index) => (
+            <MediaPreview 
+              key={index} 
+              attachment={attachment}
+              className={index > 0 ? 'mt-2' : ''}
+            />
+          ))}
+          <div className={`text-xs mt-1 ${isCurrentUser ? 'text-blue-200' : 'text-gray-500'}`}>
+            {formatMessageTime(message.timestamp || message.clientTimestamp)}
           </div>
-        );
-      case 'video':
-        return (
-          <div className="relative rounded-lg overflow-hidden max-w-xs">
-            <video 
-              controls 
-              className="max-w-full h-auto"
-            >
-              <source src={attachment.url} type={attachment.type} />
-              Your browser does not support the video tag.
-            </video>
-          </div>
-        );
-      case 'audio':
-        return (
-          <div className="relative rounded-lg overflow-hidden max-w-xs">
-            <audio controls className="w-full">
-              <source src={attachment.url} type={attachment.type} />
-              Your browser does not support the audio element.
-            </audio>
-          </div>
-        );
-      default:
-        return (
-          <a 
-            href={attachment.url} 
-            target="_blank" 
-            rel="noopener noreferrer" 
-            className="flex items-center p-2 bg-gray-100 rounded-lg hover:bg-gray-200"
-          >
-            <FiPaperclip className="h-4 w-4 mr-2" />
-            <span className="text-sm text-gray-700">{attachment.name}</span>
-          </a>
-        );
-    }
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -693,33 +683,7 @@ export default function ChatView() {
                           {senderName}
                         </p>
                       )}
-                      <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
-                        {!isCurrentUser && showSender && (
-                          participantPhotos[message.senderId] ? (
-                            <img
-                              src={participantPhotos[message.senderId]}
-                              alt={senderName}
-                              className="w-8 h-8 rounded-full object-cover mr-2"
-                            />
-                          ) : (
-                            <div className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm font-medium mr-2">
-                              {getAvatarInitials(senderName)}
-                            </div>
-                          )
-                        )}
-                        <div className={`rounded-lg px-4 py-2 max-w-[70%] space-y-2 ${
-                          isCurrentUser 
-                            ? 'bg-blue-600 text-white' 
-                            : 'bg-gray-100 text-gray-900'
-                        }`}>
-                          {message.text && <p>{message.text}</p>}
-                          {message.attachments?.map((attachment, index) => (
-                            <div key={index} className="mt-2">
-                              {renderAttachment(attachment)}
-                            </div>
-                          ))}
-                        </div>
-                      </div>
+                      {renderMessage(message, isCurrentUser, showSender, senderName)}
                     </div>
                   );
                 })}

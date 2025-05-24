@@ -210,6 +210,25 @@ export default function MessagesList() {
     }
   }, [chats]);
 
+  const getMessagePreview = (lastMessage) => {
+    if (!lastMessage) return 'No messages yet';
+    
+    if (lastMessage.attachments?.length > 0) {
+      const attachment = lastMessage.attachments[0];
+      if (attachment.type.startsWith('image/')) {
+        return '📷 Photo' + (lastMessage.attachments.length > 1 ? ` (+${lastMessage.attachments.length - 1})` : '');
+      } else if (attachment.type.startsWith('video/')) {
+        return '🎥 Video' + (lastMessage.attachments.length > 1 ? ` (+${lastMessage.attachments.length - 1})` : '');
+      } else if (attachment.type.startsWith('audio/')) {
+        return '🎵 Audio' + (lastMessage.attachments.length > 1 ? ` (+${lastMessage.attachments.length - 1})` : '');
+      } else {
+        return '📎 File' + (lastMessage.attachments.length > 1 ? ` (+${lastMessage.attachments.length - 1})` : '');
+      }
+    }
+    
+    return lastMessage.text || 'No messages yet';
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
       {/* Top Navigation */}
@@ -484,7 +503,7 @@ export default function MessagesList() {
                         <p className={`text-sm truncate ${
                           chat.unreadCount > 0 ? 'text-gray-800 font-medium' : 'text-gray-500'
                         }`}>
-                          {chat.lastMessage?.text || 'No messages yet'}
+                          {getMessagePreview(chat.lastMessage)}
                         </p>
                       </div>
                     </div>

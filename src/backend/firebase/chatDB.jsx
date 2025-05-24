@@ -23,6 +23,7 @@ import {
 } from 'firebase/firestore';
 import { getStorage, ref, uploadBytes, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { db, storage } from './firebaseConfig';
+import { generateThumbnail } from '../../utils/imageUtils';
 
 // Helper function to ensure userChats document exists
 const ensureUserChatsExists = async (userId) => {
@@ -359,7 +360,18 @@ const MessageService = {
       const safeFileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
       const storageRef = ref(storage, `chats/${chatId}/attachments/${safeFileName}`);
       
-      // Create upload task
+      // If it's an image, generate a thumbnail
+      let thumbnailUrl = null;
+      if (file.type.startsWith('image/')) {
+        const thumbnailBlob = await generateThumbnail(file);
+        if (thumbnailBlob) {
+          const thumbnailRef = ref(storage, `chats/${chatId}/thumbnails/${safeFileName}`);
+          await uploadBytes(thumbnailRef, thumbnailBlob);
+          thumbnailUrl = await getDownloadURL(thumbnailRef);
+        }
+      }
+      
+      // Create upload task for main file
       const uploadTask = uploadBytesResumable(storageRef, file);
 
       // Set up progress monitoring
@@ -380,13 +392,39 @@ const MessageService = {
 
       return {
         url: downloadURL,
+        thumbnailUrl,
         name: file.name,
         type: file.type,
-        size: file.size
+        size: file.size,
+        dimensions: file.type.startsWith('image/') ? await MessageService.getImageDimensions(file) : null
       };
     } catch (error) {
       handleFirebaseError(error);
     }
+  },
+
+  // Helper function to get image dimensions
+  getImageDimensions: (file) => {
+    return new Promise((resolve) => {
+      if (!file.type.startsWith('image/')) {
+        resolve(null);
+        return;
+      }
+
+      const img = new Image();
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        img.onload = () => {
+          resolve({
+            width: img.width,
+            height: img.height
+          });
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
   },
 
   sendMessage: async (chatId, senderId, message) => {
@@ -434,15 +472,21 @@ const MessageService = {
       // Update chat with both server and client timestamps
       batch.update(chatRef, {
         lastMessage: {
-          text: message.text,
+          text: message.text || '',
           timestamp,
           clientTimestamp,
-          senderId
+          senderId,
+          ...(attachments.length > 0 ? {
+            attachments: attachments.map(att => ({
+              type: att.type,
+              name: att.name
+            }))
+          } : {})
         },
         updatedAt: timestamp,
-        clientUpdatedAt: clientTimestamp // Add client timestamp for immediate sorting
+        clientUpdatedAt: clientTimestamp
       });
-      
+
       const participants = chatSnap.data().participants || [];
       participants.forEach((userId) => {
         if (userId !== senderId) {
