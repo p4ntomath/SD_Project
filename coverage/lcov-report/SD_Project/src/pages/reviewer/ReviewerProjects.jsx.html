@@ -442,7 +442,7 @@
 <span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../../backend/firebase/firebaseConfig';
-import { getReviewerRequests } from '../../backend/firebase/reviewdb';
+import { getReviewerRequests } from '../../backend/firebase/reviewerDB';
 import { fetchProject } from '../../backend/firebase/projectDB';
 import { ClipLoader } from 'react-spinners';
 import ReviewerMainNav from '../../components/ReviewerComponents/Navigation/ReviewerMainNav';
@@ -527,9 +527,9 @@ import ReviewerMobileBottomNav from '../../components/ReviewerComponents/Navigat
 &nbsp;
 <span class="cstat-no" title="statement not covered" >  if (loading) {</span>
 <span class="cstat-no" title="statement not covered" >    return (</span>
-<span class="cstat-no" title="statement not covered" >      &lt;div className="flex justify-center items-center min-h-screen"&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;section className="flex justify-center items-center min-h-screen"&gt;</span>
 <span class="cstat-no" title="statement not covered" >        &lt;ClipLoader color="#3B82F6" /&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;/section&gt;</span>
     );
 <span class="cstat-no" title="statement not covered" >  }</span>
 &nbsp;
@@ -539,74 +539,74 @@ import ReviewerMobileBottomNav from '../../components/ReviewerComponents/Navigat
 <span class="cstat-no" title="statement not covered" >        setMobileMenuOpen={setMobileMenuOpen}</span>
 <span class="cstat-no" title="statement not covered" >        mobileMenuOpen={mobileMenuOpen}</span>
 <span class="cstat-no" title="statement not covered" >      /&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;div className="min-h-screen bg-gray-50 py-8 pt-6"&gt;</span>
-<span class="cstat-no" title="statement not covered" >        &lt;div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;div className="mb-6"&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;section className="min-h-screen bg-gray-50 py-8 pt-6"&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8"&gt;</span>
+<span class="cstat-no" title="statement not covered" >          &lt;section className="mb-6"&gt;</span>
 <span class="cstat-no" title="statement not covered" >            &lt;h1 className="text-2xl font-bold text-gray-900"&gt;Approved Projects&lt;/h1&gt;</span>
 <span class="cstat-no" title="statement not covered" >            &lt;p className="mt-1 text-sm text-gray-500"&gt;Projects you've accepted for review&lt;/p&gt;</span>
-<span class="cstat-no" title="statement not covered" >          &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >          &lt;/section&gt;</span>
 &nbsp;
 <span class="cstat-no" title="statement not covered" >          {statusMessage &amp;&amp; (</span>
-<span class="cstat-no" title="statement not covered" >            &lt;div className="mb-6 p-4 rounded-lg bg-green-100 text-green-700"&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;section className="mb-6 p-4 rounded-lg bg-green-100 text-green-700"&gt;</span>
 <span class="cstat-no" title="statement not covered" >              {statusMessage}</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;/section&gt;</span>
           )}
 &nbsp;
 <span class="cstat-no" title="statement not covered" >          {projects.length === 0 ? (</span>
-<span class="cstat-no" title="statement not covered" >            &lt;div className="text-center py-12 bg-white rounded-lg shadow"&gt;</span>
-<span class="cstat-no" title="statement not covered" >              &lt;div className="flex justify-center"&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;section className="text-center py-12 bg-white rounded-lg shadow"&gt;</span>
+<span class="cstat-no" title="statement not covered" >              &lt;section className="flex justify-center"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                &lt;svg className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                  &lt;path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /&gt;</span>
 <span class="cstat-no" title="statement not covered" >                &lt;/svg&gt;</span>
-<span class="cstat-no" title="statement not covered" >              &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >              &lt;/section&gt;</span>
 <span class="cstat-no" title="statement not covered" >              &lt;h3 className="mt-2 text-sm font-medium text-gray-900"&gt;No approved projects&lt;/h3&gt;</span>
 <span class="cstat-no" title="statement not covered" >              &lt;p className="mt-1 text-sm text-gray-500"&gt;Projects you accept for review will appear here.&lt;/p&gt;</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;/section&gt;</span>
           ) : (
-<span class="cstat-no" title="statement not covered" >            &lt;div className="grid grid-cols-1 md:grid-cols-2 gap-4"&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;section className="grid grid-cols-1 md:grid-cols-2 gap-4"&gt;</span>
 <span class="cstat-no" title="statement not covered" >              {projects.map((project) =&gt; (</span>
 <span class="cstat-no" title="statement not covered" >                &lt;article </span>
 <span class="cstat-no" title="statement not covered" >                  key={project.id}</span>
 <span class="cstat-no" title="statement not covered" >                  className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden hover:shadow-md transition-shadow cursor-pointer"</span>
 <span class="cstat-no" title="statement not covered" >                  onClick={() =&gt; handleViewProject(project.projectId)}</span>
                 &gt;
-<span class="cstat-no" title="statement not covered" >                  &lt;div className="p-4"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                  &lt;section className="p-4"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;h2 className="text-lg font-semibold text-gray-900 mb-3"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                      {project.project?.title || project.projectTitle}</span>
 <span class="cstat-no" title="statement not covered" >                    &lt;/h2&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;div className="grid grid-cols-2 gap-3 mb-4 text-sm"&gt;</span>
-<span class="cstat-no" title="statement not covered" >                      &lt;div&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;section className="grid grid-cols-2 gap-3 mb-4 text-sm"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                      &lt;section&gt;</span>
 <span class="cstat-no" title="statement not covered" >                        &lt;h3 className="font-medium text-gray-500"&gt;Research Field&lt;/h3&gt;</span>
 <span class="cstat-no" title="statement not covered" >                        &lt;p className="text-gray-900"&gt;{project.project?.researchField || 'Not specified'}&lt;/p&gt;</span>
-<span class="cstat-no" title="statement not covered" >                      &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                      &lt;div&gt;</span>
+<span class="cstat-no" title="statement not covered" >                      &lt;/section&gt;</span>
+<span class="cstat-no" title="statement not covered" >                      &lt;section&gt;</span>
 <span class="cstat-no" title="statement not covered" >                        &lt;h3 className="font-medium text-gray-500"&gt;Researcher&lt;/h3&gt;</span>
 <span class="cstat-no" title="statement not covered" >                        &lt;p className="text-gray-900"&gt;{project.researcherName}&lt;/p&gt;</span>
-<span class="cstat-no" title="statement not covered" >                      &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                      &lt;div&gt;</span>
+<span class="cstat-no" title="statement not covered" >                      &lt;/section&gt;</span>
+<span class="cstat-no" title="statement not covered" >                      &lt;section&gt;</span>
 <span class="cstat-no" title="statement not covered" >                        &lt;h3 className="font-medium text-gray-500"&gt;Accepted Date&lt;/h3&gt;</span>
 <span class="cstat-no" title="statement not covered" >                        &lt;p className="text-gray-900"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                          {formatDate(project.updatedAt || project.requestedAt)}</span>
 <span class="cstat-no" title="statement not covered" >                        &lt;/p&gt;</span>
-<span class="cstat-no" title="statement not covered" >                      &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >                      &lt;/section&gt;</span>
 <span class="cstat-no" title="statement not covered" >                      {project.project?.deadline &amp;&amp; (</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;div&gt;</span>
+<span class="cstat-no" title="statement not covered" >                        &lt;section&gt;</span>
 <span class="cstat-no" title="statement not covered" >                          &lt;h3 className="font-medium text-gray-500"&gt;Deadline&lt;/h3&gt;</span>
 <span class="cstat-no" title="statement not covered" >                          &lt;p className="text-gray-900"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                            {formatDate(project.project.deadline)}</span>
 <span class="cstat-no" title="statement not covered" >                          &lt;/p&gt;</span>
-<span class="cstat-no" title="statement not covered" >                        &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >                        &lt;/section&gt;</span>
                       )}
-<span class="cstat-no" title="statement not covered" >                    &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;/section&gt;</span>
                     
-<span class="cstat-no" title="statement not covered" >                    &lt;div className="mb-4"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;section className="mb-4"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                      &lt;h3 className="font-medium text-gray-500 mb-1"&gt;Description&lt;/h3&gt;</span>
 <span class="cstat-no" title="statement not covered" >                      &lt;p className="text-gray-700 text-sm line-clamp-2"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                        {project.project?.description || 'No description available'}</span>
 <span class="cstat-no" title="statement not covered" >                      &lt;/p&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;/section&gt;</span>
 &nbsp;
-<span class="cstat-no" title="statement not covered" >                    &lt;div className="flex justify-end"&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;section className="flex justify-end"&gt;</span>
 <span class="cstat-no" title="statement not covered" >                      &lt;button</span>
 <span class="cstat-no" title="statement not covered" >                        onClick={(e) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >                          e.stopPropagation();</span>
@@ -616,14 +616,14 @@ import ReviewerMobileBottomNav from '../../components/ReviewerComponents/Navigat
 <span class="cstat-no" title="statement not covered" >                      &gt;</span>
                         Review Project
 <span class="cstat-no" title="statement not covered" >                      &lt;/button&gt;</span>
-<span class="cstat-no" title="statement not covered" >                    &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >                  &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >                    &lt;/section&gt;</span>
+<span class="cstat-no" title="statement not covered" >                  &lt;/section&gt;</span>
 <span class="cstat-no" title="statement not covered" >                &lt;/article&gt;</span>
 <span class="cstat-no" title="statement not covered" >              ))}</span>
-<span class="cstat-no" title="statement not covered" >            &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >            &lt;/section&gt;</span>
           )}
-<span class="cstat-no" title="statement not covered" >        &lt;/div&gt;</span>
-<span class="cstat-no" title="statement not covered" >      &lt;/div&gt;</span>
+<span class="cstat-no" title="statement not covered" >        &lt;/section&gt;</span>
+<span class="cstat-no" title="statement not covered" >      &lt;/section&gt;</span>
 <span class="cstat-no" title="statement not covered" >      &lt;ReviewerMobileBottomNav /&gt;</span>
 <span class="cstat-no" title="statement not covered" >    &lt;/&gt;</span>
   );
@@ -634,7 +634,7 @@ import ReviewerMobileBottomNav from '../../components/ReviewerComponents/Navigat
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-04T03:47:14.904Z
+                at 2025-05-24T23:15:37.407Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

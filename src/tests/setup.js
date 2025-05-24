@@ -43,7 +43,7 @@ Object.defineProperty(window, 'matchMedia', {
   })),
 });
 
-// Mock Firebase
+// Mock Firebase modules consistently across all tests
 vi.mock('firebase/app', () => ({
   initializeApp: vi.fn(),
 }));
@@ -71,12 +71,35 @@ vi.mock('firebase/firestore', () => ({
   deleteDoc: vi.fn(),
   query: vi.fn(),
   where: vi.fn(),
-  CACHE_SIZE_UNLIMITED: 'unlimited'
+  orderBy: vi.fn(),
+  limit: vi.fn(),
+  startAfter: vi.fn(),
+  onSnapshot: vi.fn(),
+  serverTimestamp: vi.fn(() => 'mocked-timestamp'),
+  arrayUnion: vi.fn(),
+  arrayRemove: vi.fn(),
+  increment: vi.fn(),
+  writeBatch: vi.fn(() => ({
+    set: vi.fn(),
+    update: vi.fn(),
+    delete: vi.fn(),
+    commit: vi.fn()
+  })),
+  deleteField: vi.fn(),
+  persistentLocalCache: vi.fn(() => ({})),
+  persistentMultipleTabManager: vi.fn(() => ({})),
+  CACHE_SIZE_UNLIMITED: 'unlimited',
+  Timestamp: {
+    now: vi.fn(() => ({ seconds: Math.floor(Date.now() / 1000) })),
+    fromDate: vi.fn(date => ({ seconds: Math.floor(date.getTime() / 1000) }))
+  }
 }));
 
 vi.mock('firebase/storage', () => ({
   getStorage: vi.fn(),
   ref: vi.fn(),
   uploadBytes: vi.fn(),
+  uploadBytesResumable: vi.fn(),
   getDownloadURL: vi.fn(),
+  deleteObject: vi.fn(),
 }));

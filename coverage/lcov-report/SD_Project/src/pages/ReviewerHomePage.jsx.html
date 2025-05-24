@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">95.7% </span>
+                <span class="strong">95.78% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>156/163</span>
+                <span class='fraction'>159/166</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">94.73% </span>
+                <span class="strong">95.45% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>18/19</span>
+                <span class='fraction'>21/22</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">95.7% </span>
+                <span class="strong">95.78% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>156/163</span>
+                <span class='fraction'>159/166</span>
             </div>
         
             
@@ -263,7 +263,13 @@
 <a name='L198'></a><a href='#L198'>198</a>
 <a name='L199'></a><a href='#L199'>199</a>
 <a name='L200'></a><a href='#L200'>200</a>
-<a name='L201'></a><a href='#L201'>201</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L201'></a><a href='#L201'>201</a>
+<a name='L202'></a><a href='#L202'>202</a>
+<a name='L203'></a><a href='#L203'>203</a>
+<a name='L204'></a><a href='#L204'>204</a>
+<a name='L205'></a><a href='#L205'>205</a>
+<a name='L206'></a><a href='#L206'>206</a>
+<a name='L207'></a><a href='#L207'>207</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
@@ -298,7 +304,13 @@
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">18x</span>
+<span class="cline-any cline-yes">12x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -470,7 +482,7 @@ import MobileBottomNav from '../components/ReviewerComponents/Navigation/Reviewe
 import { ClipboardDocumentListIcon, ClockIcon, ChartBarIcon, DocumentTextIcon } from "@heroicons/react/24/outline";
 import { ClipLoader } from "react-spinners";
 import { auth } from "../backend/firebase/firebaseConfig";
-import { getReviewerRequests, updateReviewRequestStatus } from "../backend/firebase/reviewdb";
+import { getReviewerRequests, updateReviewRequestStatus } from "../backend/firebase/reviewerDB";
 &nbsp;
 export default function ReviewerHomePage() {
   const [loading, setLoading] = useState(true);
@@ -497,14 +509,20 @@ export default function ReviewerHomePage() {
         const requests = await getReviewerRequests(currentUser.uid);
         setReviewRequests(requests);
         
-        // Calculate stats
-        const pendingRequests = requests.filter(r =&gt; r.status === 'pending').length;
-        const acceptedRequests = requests.filter(r =&gt; r.status === 'accepted').length;
+        // Calculate stats:
+        // - Show automatically accepted requests (for active reviewers) as pending reviews
+        // - Show manually accepted requests as pending reviews
+        // - Show completed reviews as completed
+        const pendingRequests = requests.filter(r =&gt; r.status === 'pending' &amp;&amp; !r.isActiveReviewer).length;
+        const activeAndAcceptedRequests = requests.filter(r =&gt; 
+          (r.status === 'accepted') || // Manually accepted requests
+          (r.status === 'pending' &amp;&amp; r.isActiveReviewer) // Auto-accepted requests for active reviewers
+        ).length;
         const completed = requests.filter(r =&gt; r.status === 'completed').length;
 &nbsp;
         setStats({
-          requests: pendingRequests,
-          pending: acceptedRequests,  // Show accepted requests as pending reviews
+          requests: pendingRequests, // Only show non-active reviewer pending requests in count
+          pending: activeAndAcceptedRequests,
           completed,
           totalReviews: requests.length
         });
@@ -543,88 +561,88 @@ export default function ReviewerHomePage() {
       &lt;/header&gt;
 &nbsp;
       &lt;main className="flex-1 p-4 md:p-8 pb-16 md:pb-8"&gt;
-        &lt;div className="max-w-7xl mx-auto space-y-6"&gt;
+        &lt;section className="max-w-7xl mx-auto space-y-6"&gt;
           {/* Stats Overview */}
           &lt;section className="grid grid-cols-1 md:grid-cols-4 gap-6"&gt;
             &lt;article 
               onClick={handleViewPendingReviews}
               className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-xl shadow-md text-white cursor-pointer hover:shadow-lg transition-shadow"
             &gt;
-              &lt;div className="flex items-center justify-between"&gt;
-                &lt;div&gt;
+              &lt;section className="flex items-center justify-between"&gt;
+                &lt;section&gt;
                   &lt;p className="text-purple-100"&gt;Review Requests&lt;/p&gt;
                   {loading ? (
-                    &lt;div className="h-9 flex items-center" data-testid="loading-spinner"&gt;
+                    &lt;section className="h-9 flex items-center" data-testid="loading-spinner"&gt;
                       &lt;ClipLoader  color="#ffffff" size={24} /&gt;
-                    &lt;/div&gt;
+                    &lt;/section&gt;
                   ) : (
                     &lt;h3 className="text-3xl font-bold"
                     data-testid="review-requests-count"
                     &gt;{stats.requests}&lt;/h3&gt;
                   )}
-                &lt;/div&gt;
+                &lt;/section&gt;
                 &lt;ClipboardDocumentListIcon className="h-12 w-12 opacity-20" /&gt;
-              &lt;/div&gt;
+              &lt;/section&gt;
             &lt;/article&gt;
 &nbsp;
             &lt;article 
               onClick={<span class="fstat-no" title="function not covered" >() =&gt; navigate('/reviewer/assigned')}</span>
               className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-xl shadow-md text-white cursor-pointer hover:shadow-lg transition-shadow"
             &gt;
-              &lt;div className="flex items-center justify-between"&gt;
-                &lt;div&gt;
+              &lt;section className="flex items-center justify-between"&gt;
+                &lt;section&gt;
                   &lt;p className="text-blue-100"&gt;Pending Reviews&lt;/p&gt;
                   {loading ? (
-                    &lt;div className="h-9 flex items-center"&gt;
+                    &lt;section className="h-9 flex items-center"&gt;
                       &lt;ClipLoader color="#ffffff" size={24} /&gt;
-                    &lt;/div&gt;
+                    &lt;/section&gt;
                   ) : (
                     &lt;h3 className="text-3xl font-bold" 
                     data-testid="pending-reviews-count"
                     &gt;{stats.pending}&lt;/h3&gt;
                   )}
-                &lt;/div&gt;
+                &lt;/section&gt;
                 &lt;ClipboardDocumentListIcon className="h-12 w-12 opacity-20" /&gt;
-              &lt;/div&gt;
+              &lt;/section&gt;
             &lt;/article&gt;
 &nbsp;
             &lt;article 
               onClick={handleViewCompletedReviews}
               className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl shadow-md text-white cursor-pointer hover:shadow-lg transition-shadow"
             &gt;
-              &lt;div className="flex items-center justify-between"&gt;
-                &lt;div&gt;
+              &lt;section className="flex items-center justify-between"&gt;
+                &lt;section&gt;
                   &lt;p className="text-green-100"&gt;Completed Reviews&lt;/p&gt;
                   {loading ? (
-                    &lt;div className="h-9 flex items-center"&gt;
+                    &lt;section className="h-9 flex items-center"&gt;
                       &lt;ClipLoader color="#ffffff" size={24} /&gt;
-                    &lt;/div&gt;
+                    &lt;/section&gt;
                   ) : (
                     &lt;h3 className="text-3xl font-bold"
                     data-testid="completed-reviews-count"
                     &gt;{stats.completed}&lt;/h3&gt;
                   )}
-                &lt;/div&gt;
+                &lt;/section&gt;
                 &lt;DocumentTextIcon className="h-12 w-12 opacity-20" /&gt;
-              &lt;/div&gt;
+              &lt;/section&gt;
             &lt;/article&gt;
 &nbsp;
             &lt;article className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 rounded-xl shadow-md text-white"&gt;
-              &lt;div className="flex items-center justify-between"&gt;
-                &lt;div&gt;
+              &lt;section className="flex items-center justify-between"&gt;
+                &lt;section&gt;
                   &lt;p className="text-indigo-100"&gt;Total Reviews&lt;/p&gt;
                   {loading ? (
-                    &lt;div className="h-9 flex items-center"&gt;
+                    &lt;section className="h-9 flex items-center"&gt;
                       &lt;ClipLoader color="#ffffff" size={24} /&gt;
-                    &lt;/div&gt;
+                    &lt;/section&gt;
                   ) : (
                     &lt;h3 className="text-3xl font-bold"
                     data-testid="total-reviews-count"
                     &gt;{stats.totalReviews}&lt;/h3&gt;
                   )}
-                &lt;/div&gt;
+                &lt;/section&gt;
                 &lt;ChartBarIcon className="h-12 w-12 opacity-20" /&gt;
-              &lt;/div&gt;
+              &lt;/section&gt;
             &lt;/article&gt;
           &lt;/section&gt;
 &nbsp;
@@ -655,7 +673,7 @@ export default function ReviewerHomePage() {
               &lt;span className="text-gray-700"&gt;View Analytics&lt;/span&gt;
             &lt;/button&gt;
           &lt;/section&gt;
-        &lt;/div&gt;
+        &lt;/section&gt;
       &lt;/main&gt;
 &nbsp;
       &lt;footer&gt;
@@ -670,7 +688,7 @@ export default function ReviewerHomePage() {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-04T03:47:14.904Z
+                at 2025-05-24T23:15:37.407Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

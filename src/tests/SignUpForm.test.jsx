@@ -34,7 +34,9 @@ vi.mock('firebase/firestore', () => ({
   setDoc: vi.fn(),
   query: vi.fn(),
   where: vi.fn(),
-  CACHE_SIZE_UNLIMITED: 'unlimited'
+  CACHE_SIZE_UNLIMITED: 'unlimited',
+  persistentLocalCache: vi.fn(() => ({})),
+  persistentMultipleTabManager: vi.fn(() => ({}))
 }));
 
 // Mock the firebase auth module exports

@@ -10,6 +10,11 @@ import MainNav from '../components/AdminComponents/Navigation/AdminMainNav';
 import MobileBottomNav from '../components/AdminComponents/Navigation/AdminMobileBottomNav';
 import StatusModal from '../components/StatusModal';
 
+function formatFileSize(bytes) {
+    if (bytes === 0) return '0.00 MB';
+    return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+}
+
 export default function AdminDocumentsPage() {
     const [documents, setDocuments] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -95,7 +100,7 @@ export default function AdminDocumentsPage() {
     };
 
     const handleDownload = (document) => {
-        // Implement download functionality
+        window.open(document.downloadURL, '_blank');
     };
 
     const handleApprove = (document) => {
@@ -198,6 +203,9 @@ export default function AdminDocumentsPage() {
                                         <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Date
                                         </th>
+                                        <th scope="col" className="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Size
+                                        </th>
                                         <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                             Actions
                                         </th>
@@ -206,7 +214,7 @@ export default function AdminDocumentsPage() {
                                 <tbody className="bg-white divide-y divide-gray-200">
                                     {loading ? (
                                         <tr>
-                                            <td colSpan="6" className="px-4 sm:px-6 py-4 text-center">
+                                            <td colSpan="7" className="px-4 sm:px-6 py-4 text-center">
                                                 <ClipLoader color="#3B82F6" />
                                             </td>
                                         </tr>
@@ -228,8 +236,7 @@ export default function AdminDocumentsPage() {
                                             </td>
                                             <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
                                                 <article className="text-sm">
-                                                    <p className="text-gray-900">{document.uploaderName}</p>
-                                                    <p className="text-gray-500">{document.uploaderEmail}</p>
+                                                    <p className="text-gray-900">{document.creatorName}</p>
                                                 </article>
                                             </td>
                                             <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
@@ -242,13 +249,17 @@ export default function AdminDocumentsPage() {
                                                     {formatDate(document.uploadedAt)}
                                                 </time>
                                             </td>
+                                            <td className="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                {formatFileSize(document.size)}
+                                            </td>
                                             <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm">
                                                 <nav className="flex items-center gap-2">
                                                     <button
                                                         onClick={() => handleDownload(document)}
-                                                        className="text-blue-600 hover:text-blue-800 transition-colors"
+                                                        className="text-blue-600 hover:text-blue-800 transition-colors flex items-center gap-1"
                                                     >
                                                         <FaDownload />
+                                                        View
                                                     </button>
                                                     <button
                                                         onClick={() => handleApprove(document)}

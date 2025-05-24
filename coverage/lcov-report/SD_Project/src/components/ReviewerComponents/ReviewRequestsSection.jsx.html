@@ -23,16 +23,16 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">97.19% </span>
+                <span class="strong">97.41% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>104/107</span>
+                <span class='fraction'>113/116</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">85.71% </span>
+                <span class="strong">82.75% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>24/28</span>
+                <span class='fraction'>24/29</span>
             </div>
         
             
@@ -44,9 +44,9 @@
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">97.19% </span>
+                <span class="strong">97.41% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>104/107</span>
+                <span class='fraction'>113/116</span>
             </div>
         
             
@@ -193,7 +193,17 @@
 <a name='L128'></a><a href='#L128'>128</a>
 <a name='L129'></a><a href='#L129'>129</a>
 <a name='L130'></a><a href='#L130'>130</a>
-<a name='L131'></a><a href='#L131'>131</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L131'></a><a href='#L131'>131</a>
+<a name='L132'></a><a href='#L132'>132</a>
+<a name='L133'></a><a href='#L133'>133</a>
+<a name='L134'></a><a href='#L134'>134</a>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
@@ -265,6 +275,8 @@
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
+<span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">3x</span>
 <span class="cline-any cline-yes">3x</span>
@@ -277,11 +289,19 @@
 <span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-yes">9x</span>
 <span class="cline-any cline-yes">9x</span>
@@ -373,65 +393,75 @@ export default function ReviewRequestsSection() {
 &nbsp;
   if (loading) {
     return (
-      &lt;div aria-label='loading-effect' className="flex justify-center items-center p-8"&gt;
+      &lt;section role="status" aria-label="Loading review requests" className="flex justify-center items-center p-8"&gt;
         &lt;div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"&gt;&lt;/div&gt;
-      &lt;/div&gt;
+      &lt;/section&gt;
     );
   }
 &nbsp;
   if (error) {
     return (
-      &lt;div className="text-red-600 text-center p-8"&gt;
+      &lt;section role="alert" className="text-red-600 text-center p-8"&gt;
         Error loading review requests: {error}
-      &lt;/div&gt;
+      &lt;/section&gt;
     );
   }
 &nbsp;
   if (requests.length === 0) {
     return (
-      &lt;div className="text-center p-8"&gt;
-        &lt;svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"&gt;
-          &lt;path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /&gt;
-        &lt;/svg&gt;
-        &lt;h3 className="mt-2 text-sm font-medium text-gray-900"&gt;No review requests&lt;/h3&gt;
+      &lt;section aria-label="No review requests" className="text-center p-8"&gt;
+        &lt;figure&gt;
+          &lt;svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true"&gt;
+            &lt;path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" /&gt;
+          &lt;/svg&gt;
+        &lt;/figure&gt;
+        &lt;h2 className="mt-2 text-sm font-medium text-gray-900"&gt;No review requests&lt;/h2&gt;
         &lt;p className="mt-1 text-sm text-gray-500"&gt;
           You don't have any pending review requests at the moment.
         &lt;/p&gt;
-      &lt;/div&gt;
+      &lt;/section&gt;
     );
   }
 &nbsp;
   return (
-    &lt;div className="space-y-6"&gt;
+    &lt;section className="space-y-6" aria-label="Review requests list"&gt;
       {requests.map((request) =&gt; (
-        &lt;div key={request.invitationId} className="bg-white rounded-lg shadow p-6 border border-gray-200"&gt;
-          &lt;div className="mb-4"&gt;
-            &lt;h3 className="text-lg font-medium text-gray-900"&gt;{request.project?.title}&lt;/h3&gt;
-            &lt;p className="text-sm text-gray-500"&gt;
-              Requested on {formatDate(request.createdAt)}
-            &lt;/p&gt;
+        &lt;article 
+          key={request.invitationId} 
+          className="bg-white rounded-lg shadow p-6 border border-gray-200 overflow-hidden"
+        &gt;
+          &lt;div className="overflow-y-auto max-h-[230px] pr-2 -mr-2 no-scrollbar"&gt;
+            &lt;header className="mb-4"&gt;
+              &lt;h2 className="text-lg font-medium text-gray-900"&gt;{request.project?.title}&lt;/h2&gt;
+              &lt;time 
+                dateTime={request.createdAt instanceof Date ? request.createdAt.toISOString(<span class="branch-0 cbranch-no" title="branch not covered" >) : new Date(request.createdAt?.seconds * 1000).toISOString()} </span>
+                className="text-sm text-gray-500"
+              &gt;
+                Requested on {formatDate(request.createdAt)}
+              &lt;/time&gt;
+            &lt;/header&gt;
+&nbsp;
+            &lt;section className="mb-4"&gt;
+              &lt;h3 className="text-sm font-medium text-gray-700"&gt;Project Description&lt;/h3&gt;
+              &lt;p className="mt-1 text-gray-600"&gt;{request.project?.description}&lt;/p&gt;
+            &lt;/section&gt;
           &lt;/div&gt;
 &nbsp;
-          &lt;div className="mb-4"&gt;
-            &lt;h4 className="text-sm font-medium text-gray-700"&gt;Project Description&lt;/h4&gt;
-            &lt;p className="mt-1 text-gray-600"&gt;{request.project?.description}&lt;/p&gt;
-          &lt;/div&gt;
-&nbsp;
-          &lt;div className="border-t pt-4 mt-4"&gt;
+          &lt;footer className="border-t pt-4 mt-4"&gt;
             &lt;p className="text-sm text-gray-600 mb-4"&gt;
               Would you like to review this project? Accepting means you'll have access to review the full project details and submit your evaluation.
             &lt;/p&gt;
             &lt;div className="flex flex-col sm:flex-row gap-3"&gt;
               &lt;button
-              aria-label='accept review task'
-              name='accept review task'
+                type="button"
+                aria-label="Accept review task"
                 onClick={() =&gt; handleResponse(request.invitationId, true)}
                 disabled={respondingTo === request.invitationId}
                 className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
               &gt;
                 {respondingTo === request.invitationId ? (
                   &lt;span className="flex items-center"&gt;
-                    &lt;div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"&gt;&lt;/div&gt;
+                    &lt;span className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2" role="status" aria-label="Processing"&gt;&lt;/span&gt;
                     Processing...
                   &lt;/span&gt;
                 ) : (
@@ -439,8 +469,8 @@ export default function ReviewRequestsSection() {
                 )}
               &lt;/button&gt;
               &lt;button
-              name='decline review task'
-              aria-label='decline review task'
+                type="button"
+                aria-label="Decline review task"
                 onClick={() =&gt; handleResponse(request.invitationId, false)}
                 disabled={respondingTo === request.invitationId}
                 className="flex-1 inline-flex justify-center items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -448,10 +478,10 @@ export default function ReviewRequestsSection() {
                 {respondingTo === request.invitationId ? 'Processing...' : 'Decline Review Task'}
               &lt;/button&gt;
             &lt;/div&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
+          &lt;/footer&gt;
+        &lt;/article&gt;
       ))}
-    &lt;/div&gt;
+    &lt;/section&gt;
   );
 }</pre></td></tr></table></pre>
 
@@ -460,7 +490,7 @@ export default function ReviewRequestsSection() {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-04T03:47:14.904Z
+                at 2025-05-24T23:15:37.407Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>

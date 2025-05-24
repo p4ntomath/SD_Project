@@ -1,10 +1,9 @@
 import { render, screen } from "@testing-library/react";
 import { MemoryRouter } from "react-router-dom";
-import { vi, describe, it, expect } from "vitest";
-
+import { vi, describe, it, expect, beforeAll } from "vitest";
 import "@testing-library/jest-dom";
-import AuthContext from  "../context/AuthContext";
-import { ClipLoader } from "react-spinners";
+import AuthContext from "../context/AuthContext";
+import HomePage from "../pages/HomePage";
 
 // Mock Firebase Firestore
 vi.mock('firebase/firestore', () => ({
@@ -19,35 +18,34 @@ vi.mock('firebase/firestore', () => ({
   deleteDoc: vi.fn(),
   query: vi.fn(),
   where: vi.fn(),
-  CACHE_SIZE_UNLIMITED: 'unlimited'
+  CACHE_SIZE_UNLIMITED: 'unlimited',
+  persistentLocalCache: vi.fn(() => ({})),
+  persistentMultipleTabManager: vi.fn(() => ({}))
 }));
 
-// Mocks
-// Corrected Mocks
-vi.mock("../ResearcherHomePage", () => ({
-    default: () => <div>Mock ResearcherHomePage</div>, // 👈 was incorrectly set to Reviewer
-  }));
-  
-  vi.mock("../ReviewerHomePage", () => ({
-    default: () => <div>Mock ReviewerHomePage</div>,
-  }));
-  
-  vi.mock("../ResearcherPages/ResearcherHome", () => ({
-    default: () => <div>Mock ResearcherHome</div>,
-  }));
-  
-
-import HomePage from "../pages/HomePage";
+// Mock navigation
 const mockNavigate = vi.fn();
+vi.mock("react-router-dom", async () => {
+  const actual = await vi.importActual("react-router-dom");
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate
+  };
+});
 
-    // Override useNavigate just for this test
-    vi.mock("react-router-dom", async () => {
-      const actual = await vi.importActual("react-router-dom");
-      return {
-        ...actual,
-        useNavigate: () => mockNavigate
-      };
-    });
+// Mock the homepage components
+vi.mock("../pages/ResearcherPages/ResearcherHome", () => ({
+  default: () => <div>Mock ResearcherHome</div>,
+}));
+
+vi.mock("../pages/ReviewerHomePage", () => ({
+  default: () => <div>Mock ReviewerHomePage</div>,
+}));
+
+// Mock ClipLoader
+vi.mock('react-spinners', () => ({
+  ClipLoader: () => <div data-testid="loading-spinner">Loading...</div>
+}));
 
 // Utility to render with AuthContext
 const renderWithContext = (ctxValue) => {
@@ -61,31 +59,34 @@ const renderWithContext = (ctxValue) => {
 };
 
 describe("HomePage Component", () => {
-    beforeEach(() => {
-        vi.clearAllMocks();
-    });
-
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
   it("renders loading spinner if loading is true", () => {
     renderWithContext({ role: null, loading: true, user: null });
-  
-    // Check if the loading container section is present
-    const loadingSection = screen.getAllByLabelText("Loading");
-    expect(loadingSection.length).toBeGreaterThanOrEqual(1);
-  
-    // Optionally, check the loader component exists
+    expect(screen.getByTestId("loading-spinner")).toBeInTheDocument();
   });
-  
 
-  it("renders null if no user, no role, and not loading", () => {
+  it("displays null if no user, no role, and not loading", () => {
     const { container } = renderWithContext({ role: null, loading: false, user: null });
     expect(container.firstChild).toBeNull();
   });
 
   it("navigates to /complete-profile if user exists but role is null", () => {
-
     renderWithContext({ role: null, loading: false, user: { uid: "3" } });
-
     expect(mockNavigate).toHaveBeenCalledWith("/complete-profile");
+  });
+
+  it("renders ResearcherHome for researcher role", () => {
+    renderWithContext({ role: "researcher", loading: false, user: { uid: "1" } });
+    expect(screen.getByText("Mock ResearcherHome")).toBeInTheDocument();
+  });
+
+  
+
+  it("redirects to complete-profile if no role", () => {
+    renderWithContext({ role: null, loading: false, user: { uid: "3" } });
+    expect(mockNavigate).toHaveBeenCalledWith('/complete-profile');
   });
 });

@@ -3,6 +3,38 @@ import userEvent from '@testing-library/user-event';
 import MyProfilePage from '../pages/MyProfilePage';
 import { vi } from 'vitest';
 
+// Suppress console warnings for controlled/uncontrolled input warnings
+const originalError = console.error;
+const originalWarn = console.warn;
+
+beforeAll(() => {
+  console.error = (...args) => {
+    if (typeof args[0] === 'string' && (
+      args[0].includes('Warning:') ||
+      args[0].includes('changing a controlled input to be uncontrolled') ||
+      args[0].includes('A component is changing a controlled input')
+    )) {
+      return;
+    }
+    originalError.call(console, ...args);
+  };
+
+  console.warn = (...args) => {
+    if (typeof args[0] === 'string' && (
+      args[0].includes('Warning:') ||
+      args[0].includes('changing a controlled input')
+    )) {
+      return;
+    }
+    originalWarn.call(console, ...args);
+  };
+});
+
+afterAll(() => {
+  console.error = originalError;
+  console.warn = originalWarn;
+});
+
 vi.mock('firebase/app', () => ({
     initializeApp: vi.fn(() => ({})),
 }));
@@ -15,9 +47,12 @@ vi.mock('firebase/auth', () => ({
     }),
 }));
 
-
 vi.mock('firebase/firestore', () => ({
     getFirestore: vi.fn(() => ({})),
+    initializeFirestore: vi.fn(() => ({})),
+    persistentLocalCache: vi.fn(() => ({})),
+    persistentMultipleTabManager: vi.fn(() => ({})),
+    CACHE_SIZE_UNLIMITED: 'unlimited',
     doc: vi.fn(),
     getDoc: vi.fn(() => Promise.resolve({
         exists: () => true,
@@ -33,7 +68,6 @@ vi.mock('firebase/firestore', () => ({
 vi.mock('firebase/storage', () => ({
     getStorage: vi.fn(() => ({})),
 }));
-
 
 // Mock profile update function
 vi.mock('../backend/firebase/viewprofile', () => ({
@@ -56,7 +90,6 @@ vi.mock('../components/ResearcherComponents/Navigation/MobileBottomNav', () => (
 vi.mock('../components/ReviewerComponents/Navigation/ReviewerMobileBottomNav', () => ({
     default: () => <footer>ReviewerMobileNav</footer>,
 }));
-
 
 test('renders researcher navigation', async () => {
     render(<MyProfilePage />);

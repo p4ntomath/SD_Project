@@ -58,7 +58,6 @@ export default function AdminHomePage() {
 
         setLoading(false);
       } catch (error) {
-        console.error('Error fetching admin stats:', error);
         setLoading(false);
       }
     };

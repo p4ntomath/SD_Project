@@ -244,12 +244,11 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
 
             <ul className="flex flex-wrap mb-2 gap-2" role="list" aria-label="Added goals">
               {formData.goals.map((goal, index) => (
-                <li key={index}>
-                  <ChipComponent
-                    goal={goal}
-                    onDelete={() => deleteGoal(goal)}
-                  />
-                </li>
+                <ChipComponent
+                  key={index}
+                  goal={goal}
+                  onDelete={() => deleteGoal(goal)}
+                />
               ))}
             </ul>
 
