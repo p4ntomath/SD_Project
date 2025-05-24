@@ -22,7 +22,7 @@ export default function AdminMainNav({ setMobileMenuOpen, mobileMenuOpen }) {
   return (
     <>
       <header>
-        <nav className="bg-white shadow-sm" aria-label="Admin main navigation">
+        <nav className="bg-white shadow-sm" aria-label="Admin main navigation" role="navigation">
           <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
             <section className="flex justify-between h-16 items-center">
               {/* Desktop Navigation */}
