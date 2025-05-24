@@ -709,8 +709,8 @@ export default function ChatView() {
   const renderMessage = (message, isCurrentUser, showSender, senderName) => {
     return (
       <article className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} group`}>
-        {/* Add a fixed-width space for avatar to maintain alignment */}
-        {!isCurrentUser && (
+        {/* Only show avatar in group chats or for non-current user */}
+        {!isCurrentUser && chat?.type === 'group' && (
           <figure className="w-8 mr-2 flex-shrink-0">
             {showSender && (
               <Link to={`/profile/${message.senderId}`}>
@@ -732,13 +732,8 @@ export default function ChatView() {
         <section className={`rounded-lg px-4 py-2 max-w-[70%] space-y-2 ${
           isCurrentUser 
             ? 'bg-blue-600 text-white' 
-            : 'bg-gray-100 text-gray-900'
+            : 'bg-gray-200 text-gray-900'
         }`}>
-          {!isCurrentUser && (
-            <header className="text-sm font-medium text-gray-900">
-              {senderName}
-            </header>
-          )}
           {message.text && <p className="whitespace-pre-wrap">{message.text}</p>}
           {message.attachments?.map((attachment, index) => (
             <MediaPreview 

@@ -9,6 +9,18 @@ export default function MediaPreview({ attachment, className = '' }) {
   const isVideo = attachment.type.startsWith('video/');
   const isAudio = attachment.type.startsWith('audio/');
 
+  // Handle escape key for closing fullscreen
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && showFullscreen) {
+        setShowFullscreen(false);
+      }
+    };
+    
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [showFullscreen]);
+
   if (isImage) {
     return (
       <>
@@ -46,26 +58,25 @@ export default function MediaPreview({ attachment, className = '' }) {
         </figure>
 
         {showFullscreen && (
-          <dialog open className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" onClick={() => setShowFullscreen(false)}>
-            <article className="relative max-w-full max-h-[90vh]" onClick={e => e.stopPropagation()}>
-              <nav className="absolute top-4 w-full flex justify-between px-4">
-                <button
-                  onClick={() => setShowFullscreen(false)}
-                  className="p-2 text-white hover:bg-white/10 rounded-full"
-                  aria-label="Exit fullscreen"
-                >
-                  <FiMinimize2 className="h-6 w-6" />
-                </button>
-                <button
-                  onClick={() => setShowFullscreen(false)}
-                  className="p-2 text-white hover:bg-white/10 rounded-full"
-                  aria-label="Close preview"
-                >
-                  <FiX className="h-6 w-6" />
-                </button>
-              </nav>
-              
-              <figure>
+          <dialog 
+            open 
+            className="fixed inset-0 z-50 bg-black/90 flex items-center justify-center p-4" 
+            onClick={() => setShowFullscreen(false)}
+          >
+            <article 
+              className="relative max-w-full max-h-[90vh]" 
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Close button absolutely positioned in the corner */}
+              <button
+                onClick={() => setShowFullscreen(false)}
+                className="absolute -top-4 -right-4 z-10 p-2 bg-white rounded-full shadow-lg hover:bg-gray-100 transition-colors"
+                aria-label="Close preview"
+              >
+                <FiX className="h-6 w-6 text-gray-900" />
+              </button>
+
+              <figure className="relative">
                 <img 
                   src={attachment.url} 
                   alt={attachment.name}
