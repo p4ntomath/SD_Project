@@ -100,28 +100,42 @@ export const deleteUserProfileFields = async (fieldsToDelete) => {
   return true;
 };
 
-export const searchUsers = async (searchTerm) => {
+export const searchUsers = async (searchTerm, page = 1, limit = 10) => {
   try {
     if (!searchTerm) return [];
-
+    
     const usersRef = collection(db, "users");
+    const searchLower = searchTerm.toLowerCase();
     const querySnapshot = await getDocs(usersRef);
     
-    // Filter and map users locally for flexible search
-    return querySnapshot.docs
+    const results = querySnapshot.docs
       .map(doc => ({
         id: doc.id,
         ...doc.data()
       }))
       .filter(user => {
-        const searchLower = searchTerm.toLowerCase();
-        return (
-          user.fullName?.toLowerCase().includes(searchLower) ||
-          user.institution?.toLowerCase().includes(searchLower) ||
-          user.department?.toLowerCase().includes(searchLower) ||
-          user.fieldOfResearch?.toLowerCase().includes(searchLower)
-        );
+        const fullName = user.fullName?.toLowerCase() || '';
+        const institution = user.institution?.toLowerCase() || '';
+        const department = user.department?.toLowerCase() || '';
+        const fieldOfResearch = user.fieldOfResearch?.toLowerCase() || '';
+        
+        return fullName.includes(searchLower) ||
+               institution.includes(searchLower) ||
+               department.includes(searchLower) ||
+               fieldOfResearch.includes(searchLower);
+      })
+      .sort((a, b) => {
+        // Prioritize exact matches in fullName
+        const aFullName = a.fullName?.toLowerCase() || '';
+        const bFullName = b.fullName?.toLowerCase() || '';
+        if (aFullName.includes(searchLower) && !bFullName.includes(searchLower)) return -1;
+        if (!aFullName.includes(searchLower) && bFullName.includes(searchLower)) return 1;
+        return 0;
       });
+
+    const start = (page - 1) * limit;
+    const end = start + limit;
+    return results.slice(start, end);
   } catch (error) {
     console.error("Error searching users:", error);
     throw new Error("Failed to search users");

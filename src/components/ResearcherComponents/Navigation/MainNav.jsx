@@ -1,24 +1,82 @@
 import { FiHome, FiFolder, FiList, FiUser, FiMenu, FiX, FiSearch, FiBell, FiMessageSquare } from 'react-icons/fi';
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { DocumentIcon } from "@heroicons/react/24/outline";
 import { logOut } from '../../../backend/firebase/authFirebase';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useUnreadNotificationsCount, useUnreadMessagesCount } from '../../../backend/firebase/notificationsUtil';
+import { searchUsers } from '../../../backend/firebase/viewprofile';
+import { ClipLoader } from 'react-spinners';
 
 export default function MainNav({ setMobileMenuOpen, mobileMenuOpen }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeoutRef = useRef(null);
+  const searchContainerRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
   const unreadCount = useUnreadNotificationsCount();
   const unreadMessages = useUnreadMessagesCount();
 
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSearchInput = async (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+
+    // Clear any existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (query.trim()) {
+      setIsSearching(true);
+      setShowSuggestions(true);
+
+      // Debounce search by 300ms
+      searchTimeoutRef.current = setTimeout(async () => {
+        try {
+          const results = await searchUsers(query, 1, 5);
+          setSearchResults(results);
+        } catch (error) {
+          console.error('Error searching users:', error);
+          setSearchResults([]);
+        } finally {
+          setIsSearching(false);
+        }
+      }, 300);
+    } else {
+      setShowSuggestions(false);
+      setSearchResults([]);
+      setIsSearching(false);
+    }
+  };
+
   const handleSearch = (e) => {
     e.preventDefault();
     if (searchQuery.trim()) {
       navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+      setShowSuggestions(false);
     }
+  };
+
+  const getAvatarInitials = (name) => {
+    if (!name) return '?';
+    const parts = name.trim().split(' ');
+    if (parts.length === 0) return '?';
+    return parts.map(part => part[0]).join('').toUpperCase();
   };
 
   const handleLogout = async () => {
@@ -91,7 +149,7 @@ export default function MainNav({ setMobileMenuOpen, mobileMenuOpen }) {
               </button>
             </section>
 
-            <section className="flex-1 max-w-md mx-4">
+            <section className="flex-1 max-w-md mx-4" ref={searchContainerRef}>
               <form onSubmit={handleSearch} className="relative">
                 <section className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FiSearch className="h-5 w-5 text-gray-400" />
@@ -101,8 +159,63 @@ export default function MainNav({ setMobileMenuOpen, mobileMenuOpen }) {
                   placeholder="Search people..."
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={handleSearchInput}
+                  onFocus={() => {
+                    if (searchQuery.trim()) {
+                      setShowSuggestions(true);
+                    }
+                  }}
                 />
+
+                {/* Search Suggestions Dropdown */}
+                {showSuggestions && (
+                  <div className="absolute mt-1 w-full bg-white rounded-md shadow-lg border border-gray-200 z-50">
+                    {isSearching ? (
+                      <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                        <ClipLoader color="#3B82F6" size={16} className="mr-2" />
+                        Searching...
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      <div className="max-h-60 overflow-y-auto">
+                        {searchResults.map(user => (
+                          <button
+                            key={user.id}
+                            onClick={() => navigate(`/profile/${user.id}`)}
+                            className="w-full text-left hover:bg-gray-50 p-3 flex items-center space-x-3"
+                          >
+                            <div className="flex-shrink-0">
+                              {user.profilePicture ? (
+                                <img
+                                  src={user.profilePicture}
+                                  alt={user.fullName}
+                                  className="h-10 w-10 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-sm font-medium">
+                                  {getAvatarInitials(user.fullName)}
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-gray-900 truncate">{user.fullName}</p>
+                              <p className="text-xs text-gray-500 truncate">
+                                {[
+                                  user.role && (user.role.charAt(0).toUpperCase() + user.role.slice(1)),
+                                  user.institution,
+                                  user.department
+                                ].filter(Boolean).join(' • ')}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    ) : searchQuery.trim() && (
+                      <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                        No results found
+                      </div>
+                    )}
+                  </div>
+                )}
               </form>
             </section>
             <button
