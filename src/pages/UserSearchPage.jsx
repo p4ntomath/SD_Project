@@ -98,7 +98,7 @@ export default function UserSearchPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <article className="min-h-screen bg-gray-50 flex flex-col">
       <header>
         <MainNav 
           setMobileMenuOpen={setMobileMenuOpen} 
@@ -107,65 +107,67 @@ export default function UserSearchPage() {
       </header>
 
       <main className="flex-1 p-4 md:p-8 pb-16 md:pb-8">
-        <div className="max-w-2xl mx-auto">
-          <div className="mb-6">
-            <form onSubmit={handleSearch} className="relative">
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={handleSearchInput}
-                placeholder="Search researchers and reviewers..."
-                className="w-full px-4 py-3 bg-white border border-gray-300 rounded-md shadow-sm text-base placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-              <button
-                type="submit"
-                className="absolute right-3 top-1/2 transform -translate-y-1/2 px-4 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-              >
-                Search
-              </button>
-            </form>
-          </div>
+        <section className="max-w-2xl mx-auto">
+          <form onSubmit={handleSearch} className="relative mb-6" role="search">
+            <label htmlFor="user-search" className="sr-only">Search users</label>
+            <input
+              id="user-search"
+              type="search"
+              value={searchQuery}
+              onChange={handleSearchInput}
+              placeholder="Search researchers and reviewers..."
+              className="w-full px-4 py-3 bg-white border border-gray-300 rounded-md shadow-sm text-base placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            />
+            <button
+              type="submit"
+              className="absolute right-3 top-1/2 transform -translate-y-1/2 px-4 py-1 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+              aria-label="Search"
+            >
+              Search
+            </button>
+          </form>
 
           {error && (
-            <div className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md mb-6">
+            <aside role="alert" className="bg-red-50 border border-red-200 text-red-600 px-4 py-3 rounded-md mb-6">
               {error}
-            </div>
+            </aside>
           )}
 
           {loading && users.length === 0 ? (
-            <div className="flex justify-center py-12">
+            <div className="flex justify-center py-12" role="status" aria-label="Loading">
               <ClipLoader color="#0a66c2" />
             </div>
           ) : users.length > 0 ? (
             <>
-              <div className="space-y-2">
+              <section className="space-y-2" aria-label="Search results">
                 {users.map(user => (
-                  <div 
+                  <article 
                     key={user.id}
                     onClick={() => navigate(`/profile/${user.id}`)}
                     className="bg-white rounded-lg p-4 border border-gray-300 hover:shadow-md transition-shadow duration-200 cursor-pointer group"
+                    role="button"
                   >
                     <div className="flex items-start space-x-3">
-                      <div className="flex-shrink-0">
+                      <figure className="flex-shrink-0">
                         {user.profilePicture ? (
                           <img
                             src={user.profilePicture}
-                            alt={user.fullName}
+                            alt={`${user.fullName}'s profile`}
                             className="h-14 w-14 rounded-full object-cover border border-gray-200"
                           />
                         ) : (
-                          <div className="h-14 w-14 rounded-full bg-[#dce6f1] flex items-center justify-center text-[#0a66c2] text-xl font-medium border border-gray-200">
+                          <div className="h-14 w-14 rounded-full bg-[#dce6f1] flex items-center justify-center text-[#0a66c2] text-xl font-medium border border-gray-200" role="img" aria-label={`${user.fullName}'s initials`}>
                             {getAvatarInitials(user.fullName)}
                           </div>
                         )}
-                      </div>
+                      </figure>
 
                       <div className="flex-1 min-w-0">
-                        <div className="flex items-start justify-between">
+                        <header className="flex items-start justify-between">
                           <div>
-                            <h3 className="text-[15px] font-medium text-gray-900 group-hover:text-[#0a66c2]">
+                            <h2 className="text-[15px] font-medium text-gray-900 group-hover:text-[#0a66c2]">
                               {user.fullName}
-                            </h3>
+                            </h2>
                             <p className="text-[14px] font-medium text-[#0a66c2] mt-0.5">
                               {(user.role || 'Researcher').charAt(0).toUpperCase() + (user.role || 'Researcher').slice(1).toLowerCase()}
                             </p>
@@ -193,46 +195,45 @@ export default function UserSearchPage() {
                                 navigate(`/messages/${chatId}`);
                               } catch (error) {
                                 console.error('Error creating chat:', error);
-                                // You might want to show an error notification here
                               }
                             }}
                             className="ml-4 px-4 py-1 text-[#0a66c2] text-sm font-medium border border-[#0a66c2] rounded-full hover:bg-[#0073b1]/10 transition-colors"
                           >
                             Message
                           </button>
-                        </div>
+                        </header>
                       </div>
                     </div>
-                  </div>
+                  </article>
                 ))}
-              </div>
+              </section>
               
               {loading ? (
-                <div className="flex justify-center py-4">
+                <div className="flex justify-center py-4" role="status" aria-label="Loading more results">
                   <ClipLoader color="#0a66c2" size={24} />
                 </div>
               ) : users.length >= 10 && (
-                <div className="mt-4 flex justify-center">
+                <nav className="mt-4 flex justify-center">
                   <button
                     onClick={loadMoreUsers}
                     className="px-4 py-2 text-[#0a66c2] text-sm font-medium hover:bg-[#0073b1]/10 rounded-md transition-colors"
                   >
                     Load more
                   </button>
-                </div>
+                </nav>
               )}
             </>
           ) : searchQuery ? (
-            <div className="text-center py-12 bg-white rounded-lg border border-gray-300">
-              <p className="text-gray-500">No results found</p>
-            </div>
+            <p className="text-center py-12 bg-white rounded-lg border border-gray-300" role="status">
+              No results found
+            </p>
           ) : null}
-        </div>
+        </section>
       </main>
 
       <footer>
         <MobileBottomNav />
       </footer>
-    </div>
+    </article>
   );
 }

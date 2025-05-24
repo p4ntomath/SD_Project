@@ -11,6 +11,161 @@ import imageCompression from 'browser-image-compression';
 import getCroppedImg from '../components/CropImage';
 import MainNav from '../components/ResearcherComponents/Navigation/MainNav';
 
+// Message component
+const Message = ({ message, isCurrentUser, userDetails, onDelete }) => {
+  return (
+    <article className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} group`}>
+      {!isCurrentUser && (
+        <figure className="w-8 mr-2 flex-shrink-0">
+          {userDetails?.photoURL ? (
+            <img
+              src={userDetails.photoURL}
+              alt={`${userDetails.displayName || 'User'}'s profile`}
+              className="w-8 h-8 rounded-full"
+            />
+          ) : (
+            <button 
+              onClick={() => {/* Handle click */}}
+              className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm font-medium hover:bg-gray-600 transition-colors"
+            >
+              {userDetails?.displayName?.[0] || 'U'}
+            </button>
+          )}
+        </figure>
+      )}
+      
+      <section className={`rounded-lg px-4 py-2 max-w-[70%] space-y-2 ${
+        isCurrentUser 
+          ? 'bg-blue-600 text-white' 
+          : 'bg-gray-100 text-gray-900'
+      }`}>
+        {!isCurrentUser && (
+          <header className="text-sm font-medium text-gray-900">
+            {userDetails?.displayName || 'Unknown User'}
+          </header>
+        )}
+        <p>{message.text}</p>
+        {message.fileUrl && (
+          <MediaPreview attachment={message.fileUrl} />
+        )}
+        <time 
+          className={`text-xs mt-1 ${isCurrentUser ? 'text-blue-200' : 'text-gray-500'}`}
+          dateTime={message.timestamp?.toDate?.().toISOString()}
+        >
+          {new Date(message.timestamp?.seconds * 1000).toLocaleTimeString()}
+        </time>
+      </section>
+    </article>
+  );
+};
+
+// Chat header
+const ChatHeader = ({ chatData, participants, isGroupChat }) => {
+  return (
+    <header className="flex items-center h-16">
+      <section className="flex-1 flex items-center min-w-0">
+        <nav className="flex items-center space-x-4 min-w-0">
+          {isGroupChat ? (
+            <button 
+              className="w-10 h-10 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-medium text-lg hover:bg-purple-200 transition-colors"
+              aria-label="Group chat"
+            >
+              G
+            </button>
+          ) : (
+            <button 
+              className="w-10 h-10 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium hover:bg-gray-600 transition-colors"
+              aria-label="Direct message"
+            >
+              {participants[0]?.displayName?.[0] || 'U'}
+            </button>
+          )}
+          <h1 className="text-lg font-medium truncate">
+            {isGroupChat ? chatData.name : participants[0]?.displayName || 'Chat'}
+          </h1>
+        </nav>
+      </section>
+    </header>
+  );
+};
+
+// Create Group Chat Modal
+const CreateGroupChatModal = ({ isOpen, onClose, onCreate, loading }) => {
+  const [groupImage, setGroupImage] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(false);
+
+  const handleImageClick = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        setGroupImage(file);
+      }
+    };
+    input.click();
+  };
+
+  return isOpen ? (
+    <dialog 
+      open
+      className="fixed inset-0 bg-gray-900/75 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <article 
+        className="bg-white w-full max-w-md rounded-2xl shadow-2xl transform transition-all my-4 flex flex-col min-h-0 max-h-[calc(100vh-2rem)]"
+        onClick={e => e.stopPropagation()}
+      >
+        <header className="bg-gradient-to-r from-purple-600 to-blue-600 p-6">
+          <section className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-white">Create Group Chat</h2>
+            <button
+              onClick={onClose}
+              className="text-white/80 hover:text-white transition-colors"
+              aria-label="Close modal"
+            >
+              <FiX className="w-6 h-6" />
+            </button>
+          </section>
+
+          <section className="mt-4 flex items-end space-x-4">
+            <figure className="relative group">
+              <button
+                onClick={handleImageClick}
+                className="w-20 h-20 rounded-xl bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors relative overflow-hidden"
+              >
+                {groupImage ? (
+                  <img
+                    src={URL.createObjectURL(groupImage)}
+                    alt="Group chat preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <FiUserPlus className="w-8 h-8" />
+                )}
+                {isUploading && (
+                  <figure className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                    <span className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                  </figure>
+                )}
+                {uploadError && (
+                  <figure className="absolute inset-0 bg-red-500/80 flex items-center justify-center text-white">
+                    <span className="w-20 h-20 flex items-center justify-center">
+                      <FiX className="w-8 h-8" />
+                    </span>
+                  </figure>
+                )}
+              </button>
+            </figure>
+          </section>
+        </header>
+      </article>
+    </dialog>
+  ) : null;
+};
+
 export default function ChatView() {
   const { chatId } = useParams();
   const navigate = useNavigate();
@@ -553,10 +708,10 @@ export default function ChatView() {
 
   const renderMessage = (message, isCurrentUser, showSender, senderName) => {
     return (
-      <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} group`}>
+      <article className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} group`}>
         {/* Add a fixed-width space for avatar to maintain alignment */}
         {!isCurrentUser && (
-          <div className="w-8 mr-2 flex-shrink-0">
+          <figure className="w-8 mr-2 flex-shrink-0">
             {showSender && (
               <Link to={`/profile/${message.senderId}`}>
                 {participantPhotos[message.senderId] ? (
@@ -572,13 +727,18 @@ export default function ChatView() {
                 )}
               </Link>
             )}
-          </div>
+          </figure>
         )}
-        <div className={`rounded-lg px-4 py-2 max-w-[70%] space-y-2 ${
+        <section className={`rounded-lg px-4 py-2 max-w-[70%] space-y-2 ${
           isCurrentUser 
             ? 'bg-blue-600 text-white' 
-            : 'bg-gray-300 text-black'
+            : 'bg-gray-100 text-gray-900'
         }`}>
+          {!isCurrentUser && (
+            <header className="text-sm font-medium text-gray-900">
+              {senderName}
+            </header>
+          )}
           {message.text && <p className="whitespace-pre-wrap">{message.text}</p>}
           {message.attachments?.map((attachment, index) => (
             <MediaPreview 
@@ -587,11 +747,14 @@ export default function ChatView() {
               className={index > 0 ? 'mt-2' : ''}
             />
           ))}
-          <div className={`text-xs mt-1 ${isCurrentUser ? 'text-blue-200' : 'text-gray-500'}`}>
+          <time 
+            className={`text-xs mt-1 ${isCurrentUser ? 'text-blue-200' : 'text-gray-500'}`}
+            dateTime={message.timestamp?.toDate?.().toISOString()}
+          >
             {formatMessageTime(message.timestamp || message.clientTimestamp)}
-          </div>
-        </div>
-      </div>
+          </time>
+        </section>
+      </article>
     );
   };
 
@@ -818,7 +981,7 @@ export default function ChatView() {
                   />
                   <div 
                     onClick={() => !isChangingAvatar && avatarInputRef.current?.click()}
-                    className="w-20 h-20 bg-white/10 text-white rounded-2xl flex items-center justify-center text-3xl backdrop-blur-sm cursor-pointer group-hover:bg-white/20 transition-all relative overflow-hidden"
+                    className="w-20 h-20 rounded-xl bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors relative overflow-hidden"
                   >
                     {isChangingAvatar ? (
                       <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
@@ -830,7 +993,7 @@ export default function ChatView() {
                           <img 
                             src={chat.groupAvatar}
                             alt="Group Avatar"
-                            className="w-20 h-20 rounded-2xl object-cover"
+                            className="w-20 h-20 rounded-xl object-cover"
                           />
                         ) : (
                           <div className="w-20 h-20 flex items-center justify-center">
@@ -1198,34 +1361,6 @@ export default function ChatView() {
           </article>
         </dialog>
       )}
-
-      {/* Add the custom scrollbar styles */}
-      <style jsx>{`
-        /* Existing scrollbar styles */
-        .custom-scrollbar::-webkit-scrollbar {
-          width: 6px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb {
-          background-color: rgba(0, 0, 0, 0.2);
-          border-radius: 3px;
-        }
-        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background-color: rgba(0, 0, 0, 0.3);
-        }
-
-        /* Prevent content shift and gaps during scroll */
-        .modal-content {
-          transform: translate3d(0, 0, 0);
-          -webkit-transform: translate3d(0, 0, 0);
-          backface-visibility: hidden;
-          -webkit-backface-visibility: hidden;
-          perspective: 1000;
-          -webkit-perspective: 1000;
-        }
-      `}</style>
     </main>
   );
-}
+};

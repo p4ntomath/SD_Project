@@ -56,9 +56,9 @@ export default function ReviewerMobileBottomNav() {
           <span className="relative">
             <FiMessageSquare className="h-6 w-6 group-hover:text-blue-600" />
             {unreadMessages > 0 && (
-              <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 font-bold z-10">
+              <mark className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 font-bold z-10">
                 {unreadMessages}
-              </span>
+              </mark>
             )}
           </span>
           <p className="text-xs mt-1 group-hover:text-blue-600">Messages</p>

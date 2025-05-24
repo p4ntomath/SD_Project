@@ -28,7 +28,7 @@ function formatFileSize(bytes) {
     return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
 }
 
-export default function DocumentsPage() {
+export default function Documents() {
     const [folders, setFolders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showFolderModal, setShowFolderModal] = useState(false);
@@ -267,10 +267,7 @@ export default function DocumentsPage() {
     }
 
     return (
-        <main className="min-h-screen bg-gray-50">
-            {/* Main navigation bar */}
-            <MainNav mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} />
-
+        <main className="min-h-screen bg-gray-50/90 backdrop-blur-xl">
             <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                 {/* Page header */}
                 <header className="mb-8">
@@ -304,15 +301,16 @@ export default function DocumentsPage() {
                 </section>
 
                 {folders.length === 0 ? (
-                    <section className="text-center py-12 px-4 rounded-lg bg-white shadow-sm border border-gray-200">
-                        <section className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
-                            <svg className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <section className="flex flex-col items-center justify-center min-h-[400px] text-center">
+                        <figure className="mb-4">
+                            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                             </svg>
-                        </section>
-                        <h3 className="text-lg font-medium text-gray-900 mb-1">No documents yet</h3>
-                        <p className="text-sm text-gray-500 mb-4">Get started by creating a new folder to organize your research documents</p>
-
+                            <figcaption>
+                                <h3 className="text-lg font-medium text-gray-900 mb-1">No documents yet</h3>
+                                <p className="text-sm text-gray-500">Upload your first document to get started</p>
+                            </figcaption>
+                        </figure>
                     </section>
                 ) : (
                     <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -462,10 +460,12 @@ export default function DocumentsPage() {
 
                 {/* Create Folder Modal */}
                 {showFolderModal && (
-                    <section className="fixed inset-0 flex items-center justify-center p-4 z-50">
-                        <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowFolderModal(false)} />
-                        <section className="relative bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200">
-                            <h2 className="text-xl font-semibold mb-4">Create New Folder</h2>
+                    <dialog className="fixed inset-0 flex items-center justify-center p-4 z-50" open>
+                        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowFolderModal(false)} />
+                        <article className="relative bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200">
+                            <header>
+                                <h2 className="text-xl font-semibold mb-4">Create New Folder</h2>
+                            </header>
                             <section className="space-y-4">
                                 <section>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -498,7 +498,7 @@ export default function DocumentsPage() {
                                     />
                                 </section>
                             </section>
-                            <section className="mt-6 flex justify-end space-x-3">
+                            <footer className="mt-6 flex justify-end gap-3">
                                 <button
                                     onClick={() => {
                                         setShowFolderModal(false);
@@ -521,17 +521,19 @@ export default function DocumentsPage() {
                                         'Create Folder'
                                     )}
                                 </button>
-                            </section>
-                        </section>
-                    </section>
+                            </footer>
+                        </article>
+                    </dialog>
                 )}
 
                 {/* Upload File Modal */}
                 {showUploadModal && (
-                    <section className="fixed inset-0 flex items-center justify-center p-4 z-50">
-                        <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowUploadModal(false)} />
-                        <section className="relative bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200">
-                            <h2 className="text-xl font-semibold mb-4">Upload File to {selectedFolder?.name}</h2>
+                    <dialog className="fixed inset-0 flex items-center justify-center p-4 z-50" open>
+                        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowUploadModal(false)} />
+                        <article className="relative bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200">
+                            <header className="mb-4">
+                                <h2 className="text-xl font-semibold">Upload Document</h2>
+                            </header>
                             
                             <section className="space-y-4">
                                 <section>
@@ -578,7 +580,7 @@ export default function DocumentsPage() {
                                 </section>
                             </section>
 
-                            <section className="mt-6 flex justify-end space-x-3">
+                            <footer className="mt-6 flex justify-end gap-3">
                                 <button
                                     onClick={() => {
                                         setShowUploadModal(false);
@@ -601,9 +603,9 @@ export default function DocumentsPage() {
                                         'Upload'
                                     )}
                                 </button>
-                            </section>
-                        </section>
-                    </section>
+                            </footer>
+                        </article>
+                    </dialog>
                 )}
 
                 {/* Delete Folder Confirmation Modal */}
@@ -710,7 +712,9 @@ export default function DocumentsPage() {
 
             </section>
 
-            <MobileBottomNav />
+            <footer>
+                <MobileBottomNav />
+            </footer>
         </main>
     );
 }

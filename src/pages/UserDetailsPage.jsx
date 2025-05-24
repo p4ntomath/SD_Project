@@ -14,7 +14,6 @@ export default function UserDetailsPage() {
   const [loading, setLoading] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
-  // Get avatar initials for users without profile picture
   const getAvatarInitials = (name) => {
     if (!name) return '?';
     const parts = name.trim().split(' ');
@@ -43,37 +42,37 @@ export default function UserDetailsPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <main className="min-h-screen flex items-center justify-center">
         <ClipLoader color="#3B82F6" />
-      </div>
+      </main>
     );
   }
 
   if (!user) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-xl font-semibold text-gray-900">User not found</h2>
+      <main className="min-h-screen flex items-center justify-center">
+        <article className="text-center">
+          <h1 className="text-xl font-semibold text-gray-900">User not found</h1>
           <button
             onClick={() => navigate('/admin/users')}
             className="mt-4 text-blue-600 hover:text-blue-800"
           >
             Back to Users List
           </button>
-        </div>
-      </div>
+        </article>
+      </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <article className="min-h-screen bg-gray-50">
       <header>
         <MainNav setMobileMenuOpen={setMobileMenuOpen} mobileMenuOpen={mobileMenuOpen} />
       </header>
 
       <main className="p-4 md:p-8 pb-16 md:pb-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-6">
+        <section className="max-w-7xl mx-auto">
+          <nav className="mb-6">
             <button
               onClick={() => navigate('/admin/users')}
               className="flex items-center text-gray-600 hover:text-gray-800 transition-colors"
@@ -81,23 +80,25 @@ export default function UserDetailsPage() {
               <FaArrowLeft className="h-5 w-5 mr-2" />
               Back to Users List
             </button>
-          </div>
+          </nav>
 
-          <div className="bg-white rounded-lg shadow p-6">
-            <div className="flex flex-col items-center mb-8">
+          <section className="bg-white rounded-lg shadow p-6">
+            <header className="flex flex-col items-center mb-8">
               {user.profilePicture ? (
-                <img
-                  src={user.profilePicture}
-                  alt={`${user.fullName}'s profile`}
-                  className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
-                />
+                <figure>
+                  <img
+                    src={user.profilePicture}
+                    alt={`${user.fullName}'s profile`}
+                    className="w-32 h-32 rounded-full object-cover border-4 border-gray-200"
+                  />
+                </figure>
               ) : (
-                <div className="w-32 h-32 rounded-full flex items-center justify-center text-3xl font-semibold text-white bg-blue-600 border-4 border-gray-200">
+                <figure className="w-32 h-32 rounded-full flex items-center justify-center text-3xl font-semibold text-white bg-blue-600 border-4 border-gray-200">
                   {getAvatarInitials(user.fullName)}
-                </div>
+                </figure>
               )}
               <h1 className="text-2xl font-bold text-gray-900 mt-4">{user.fullName}</h1>
-              <span className={`mt-2 px-3 py-1 rounded-full text-sm font-medium ${
+              <aside className={`mt-2 px-3 py-1 rounded-full text-sm font-medium ${
                 'active'?.toLowerCase() === 'active' 
                   ? 'bg-green-100 text-green-800'
                   : user.status?.toLowerCase() === 'inactive'
@@ -105,86 +106,88 @@ export default function UserDetailsPage() {
                   : 'bg-yellow-100 text-yellow-800'
               }`}>
                 {user.status || 'Active'}
-              </span>
-            </div>
+              </aside>
+            </header>
             
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <section>
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <section className="space-y-4">
+                <article>
                   <h2 className="text-lg font-semibold text-gray-700">Basic Information</h2>
-                  <div className="mt-2 space-y-2">
-                    <p>
-                      <span className="font-medium">Email:</span>{' '}
-                      <span className="text-gray-600">{user.email}</span>
-                    </p>
-                    <p>
-                      <span className="font-medium">Role:</span>{' '}
-                      <span className="text-gray-600 capitalize">{user.role}</span>
-                    </p>
-                  </div>
-                </section>
+                  <dl className="mt-2 space-y-2">
+                    <div>
+                      <dt className="font-medium inline">Email: </dt>
+                      <dd className="text-gray-600 inline">{user.email}</dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium inline">Role: </dt>
+                      <dd className="text-gray-600 capitalize inline">{user.role}</dd>
+                    </div>
+                  </dl>
+                </article>
 
-                <section>
+                <article>
                   <h2 className="text-lg font-semibold text-gray-700">Institution Details</h2>
-                  <div className="mt-2 space-y-2">
-                    <p>
-                      <span className="font-medium">Institution:</span>{' '}
-                      <span className="text-gray-600">{user.institution || 'Not specified'}</span>
-                    </p>
-                    <p>
-                      <span className="font-medium">Department:</span>{' '}
-                      <span className="text-gray-600">{user.department || 'Not specified'}</span>
-                    </p>
-                  </div>
-                </section>
+                  <dl className="mt-2 space-y-2">
+                    <div>
+                      <dt className="font-medium inline">Institution: </dt>
+                      <dd className="text-gray-600 inline">{user.institution || 'Not specified'}</dd>
+                    </div>
+                    <div>
+                      <dt className="font-medium inline">Department: </dt>
+                      <dd className="text-gray-600 inline">{user.department || 'Not specified'}</dd>
+                    </div>
+                  </dl>
+                </article>
 
                 {user.role === 'researcher' && (
-                  <section>
+                  <article>
                     <h2 className="text-lg font-semibold text-gray-700">Research Information</h2>
-                    <div className="mt-2 space-y-2">
-                      <p>
-                        <span className="font-medium">Field of Research:</span>{' '}
-                        <span className="text-gray-600">{user.fieldOfResearch || 'Not specified'}</span>
-                      </p>
-                    </div>
-                  </section>
+                    <dl className="mt-2 space-y-2">
+                      <div>
+                        <dt className="font-medium inline">Field of Research: </dt>
+                        <dd className="text-gray-600 inline">{user.fieldOfResearch || 'Not specified'}</dd>
+                      </div>
+                    </dl>
+                  </article>
                 )}
-              </div>
+              </section>
 
-              <div className="space-y-4">
-                <section>
+              <section className="space-y-4">
+                <article>
                   <h2 className="text-lg font-semibold text-gray-700">Biography</h2>
                   <p className="mt-2 text-gray-600">
                     {user.bio || 'No biography provided'}
                   </p>
-                </section>
+                </article>
 
                 {user.createdAt && (
-                  <section>
+                  <article>
                     <h2 className="text-lg font-semibold text-gray-700">Account Information</h2>
-                    <div className="mt-2">
-                      <p>
-                        <span className="font-medium">Joined:</span>{' '}
-                        <span className="text-gray-600">
-                          {new Date(user.createdAt.seconds * 1000).toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'long',
-                            day: 'numeric'
-                          })}
-                        </span>
-                      </p>
-                    </div>
-                  </section>
+                    <dl className="mt-2">
+                      <div>
+                        <dt className="font-medium inline">Joined: </dt>
+                        <dd className="text-gray-600 inline">
+                          <time dateTime={new Date(user.createdAt.seconds * 1000).toISOString()}>
+                            {new Date(user.createdAt.seconds * 1000).toLocaleDateString('en-US', {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric'
+                            })}
+                          </time>
+                        </dd>
+                      </div>
+                    </dl>
+                  </article>
                 )}
-              </div>
-            </div>
-          </div>
-        </div>
+              </section>
+            </section>
+          </section>
+        </section>
       </main>
 
       <footer>
         <MobileBottomNav />
       </footer>
-    </div>
+    </article>
   );
 }
