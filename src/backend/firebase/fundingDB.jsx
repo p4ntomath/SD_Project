@@ -130,16 +130,18 @@ export const getFundingHistory = async (projectId) => {
 
     const projectData = projectSnap.data();
     
-    // Check if user is owner or collaborator
+    // Check if user is owner or any collaborator
     const isOwner = projectData.userId === user.uid;
     const isCollaborator = projectData.collaborators?.some(collab => 
-      collab.id === user.uid && collab.permissions?.canAddFunds
+      collab.id === user.uid
     );
 
+    // All collaborators can view history regardless of their canAddFunds permission
     if (!isOwner && !isCollaborator) {
       throw new Error("Not authorized to view this funding history");
     }
 
+    // Get funding history
     const historyRef = collection(db, "projects", projectId, "fundingHistory");
     const snapshot = await getDocs(historyRef);
 
@@ -248,10 +250,10 @@ export const getCurrentFunds = async (projectId) => {
 
     const projectData = projectSnap.data();
 
-    // Check if user is owner or collaborator
+    // Check if user is owner or any collaborator
     const isOwner = projectData.userId === user.uid;
     const isCollaborator = projectData.collaborators?.some(collab => 
-      collab.id === user.uid && collab.permissions?.canAddFunds
+      collab.id === user.uid
     );
 
     if (!isOwner && !isCollaborator) {
@@ -282,10 +284,10 @@ export const getUsedFunds = async (projectId) => {
 
     const projectData = projectSnap.data();
 
-    // Check if user is owner or collaborator
+    // Check if user is owner or any collaborator
     const isOwner = projectData.userId === user.uid;
     const isCollaborator = projectData.collaborators?.some(collab => 
-      collab.id === user.uid && collab.permissions?.canAddFunds
+      collab.id === user.uid
     );
 
     if (!isOwner && !isCollaborator) {
