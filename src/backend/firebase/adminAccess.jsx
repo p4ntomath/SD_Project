@@ -1,4 +1,4 @@
-import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, getDoc, query, where } from 'firebase/firestore';
+import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, getDoc, query, where, Timestamp } from 'firebase/firestore';
 import { db } from './firebaseConfig';
 
 /**
@@ -10,31 +10,48 @@ export const fetchProjectsWithUsers = async () => {
     const projectsRef = collection(db, 'projects');
     const snapshot = await getDocs(projectsRef);
     
-    const projectsWithUsers = await Promise.all(
-      snapshot.docs.map(async (projectDoc) => {
-        const projectData = projectDoc.data();
-        let userFullName = 'Unknown';
-        
-        // Fetch user data if userId exists
-        if (projectData.userId) {
-          const userRef = doc(db, 'users', projectData.userId);
-          const userSnap = await getDoc(userRef);
-          if (userSnap.exists()) {
-            const userData = userSnap.data();
-            userFullName = userData.fullName || userData.name || 'Unknown';
-          }
-        }
-        
-        return {
-          id: projectDoc.id,
-          title: projectData.title,
-          status: projectData.status,
-          researchField: projectData.researchField,
-          userId: projectData.userId,
-          userFullName
-        };
-      })
-    );
+    // Create a map to store user data and avoid duplicate fetches
+    const userDataCache = new Map();
+    const userPromises = [];
+    const userIds = new Set();
+
+    // First collect all unique user IDs
+    snapshot.docs.forEach(projectDoc => {
+      const projectData = projectDoc.data();
+      if (projectData.userId && !userIds.has(projectData.userId)) {
+        userIds.add(projectData.userId);
+        const userRef = doc(db, 'users', projectData.userId);
+        userPromises.push(getDoc(userRef));
+      }
+    });
+
+    // Fetch all user data in parallel
+    const userSnapshots = await Promise.all(userPromises);
+    
+    // Cache user data
+    userSnapshots.forEach(userSnap => {
+      if (userSnap.exists()) {
+        const userData = userSnap.data();
+        userDataCache.set(userSnap.id, userData.fullName || userData.name || 'Unknown');
+      }
+    });
+
+    // Map projects with cached user data
+    const projectsWithUsers = snapshot.docs.map(projectDoc => {
+      const projectData = projectDoc.data();
+      const userFullName = projectData.userId && userDataCache.has(projectData.userId) 
+        ? userDataCache.get(projectData.userId) 
+        : 'Unknown';
+
+      return {
+        id: projectDoc.id,
+        title: projectData.title,
+        status: projectData.status,
+        researchField: projectData.researchField,
+        userId: projectData.userId,
+        userFullName
+      };
+    });
     
     return projectsWithUsers;
   } catch (error) {
@@ -78,9 +95,14 @@ export const createFunding = async (fundingData) => {
   try {
     const docRef = await addDoc(collection(db, fundingCollection), {
       funding_name: fundingData.name,
-      expected_funds: fundingData.expectedFunds,
+      expected_funds: Number(fundingData.expectedFunds),
       external_link: fundingData.externalLink,
-      createdAt: new Date()
+      deadline: fundingData.deadline,
+      category: fundingData.category,
+      eligibility: fundingData.eligibility,
+      description: fundingData.description,
+      status: fundingData.status || 'active',
+      createdAt: Timestamp.now()
     });
     return { id: docRef.id, ...fundingData };
   } catch (error) {
@@ -94,9 +116,15 @@ export const getAllFunding = async () => {
     const querySnapshot = await getDocs(collection(db, fundingCollection));
     return querySnapshot.docs.map(doc => ({
       id: doc.id,
-      name: doc.data().funding_name,
-      expectedFunds: doc.data().expected_funds,
-      externalLink: doc.data().external_link
+      funding_name: doc.data().funding_name,
+      expected_funds: doc.data().expected_funds,
+      external_link: doc.data().external_link,
+      deadline: doc.data().deadline,
+      category: doc.data().category,
+      eligibility: doc.data().eligibility,
+      description: doc.data().description,
+      status: doc.data().status || 'active',
+      createdAt: doc.data().createdAt
     }));
   } catch (error) {
     throw new Error(`Error fetching funding: ${error.message}`);
@@ -109,9 +137,14 @@ export const updateFunding = async (id, fundingData) => {
     const fundingRef = doc(db, fundingCollection, id);
     await updateDoc(fundingRef, {
       funding_name: fundingData.name,
-      expected_funds: fundingData.expectedFunds,
+      expected_funds: Number(fundingData.expectedFunds),
       external_link: fundingData.externalLink,
-      updatedAt: new Date()
+      deadline: fundingData.deadline,
+      category: fundingData.category,
+      eligibility: fundingData.eligibility,
+      description: fundingData.description,
+      status: fundingData.status,
+      updatedAt: Timestamp.now()
     });
     return { id, ...fundingData };
   } catch (error) {

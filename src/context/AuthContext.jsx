@@ -7,6 +7,9 @@ import { ClipLoader } from 'react-spinners';
 
 const AuthContext = createContext();
 
+// Cache for storing user roles
+const roleCache = new Map();
+
 export const AuthProvider = ({ children }) => {
   const location = useLocation();
   const [user, setUser] = useState(null);
@@ -21,66 +24,62 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      // Use a try-catch block specifically for the Firestore operation
+      // Check cache first
+      if (roleCache.has(uid)) {
+        setRole(roleCache.get(uid));
+        return;
+      }
+
       try {
         const docRef = doc(db, 'users', uid);
         const docSnap = await getDoc(docRef);
 
         if (docSnap.exists()) {
           const userData = docSnap.data();
-          setRole(userData?.role || null);
-          setConnectionError(null); // Clear any previous connection errors
+          const userRole = userData?.role || null;
+          
+          // Cache the role
+          roleCache.set(uid, userRole);
+          setRole(userRole);
+          setConnectionError(null);
         } else {
           console.log('No user document found for UID:', uid);
           setRole(null);
         }
       } catch (firestoreError) {
         console.error('Firestore error:', firestoreError);
-        // Handle specific Firestore errors
-        if (firestoreError.code === 'failed-precondition') {
-          setConnectionError('Multiple tabs open, persistence enabled in first tab only');
-        } else if (firestoreError.code === 'unimplemented') {
-          setConnectionError('Your browser does not support offline persistence');
+        setConnectionError('Connection error. Some features may be unavailable.');
+        // Still try to use cached role if available
+        if (roleCache.has(uid)) {
+          setRole(roleCache.get(uid));
         } else {
-          setConnectionError('Connection error. Some features may be unavailable offline.');
+          setRole(null);
         }
-        // Don't set role to null here, keep existing role if any
       }
     } catch (error) {
       console.error('Error in fetchRoleFromDatabase:', error);
-      setConnectionError('Unexpected error occurred while fetching user data');
+      setRole(null);
+    } finally {
+      setLoading(false);
     }
   };
 
   useEffect(() => {
-    let isSubscribed = true;
-
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
-      if (!isSubscribed) return;
-
-      try {
-        if (user) {
-          setUser(user);
-          await fetchRoleFromDatabase(user.uid);
-        } else {
-          setUser(null);
-          setRole(null);
-        }
-      } catch (error) {
-        console.error('Auth state change error:', error);
-        setConnectionError('Error connecting to authentication service');
-      } finally {
+      if (user) {
+        setUser(user);
+        await fetchRoleFromDatabase(user.uid);
+      } else {
+        setUser(null);
+        setRole(null);
         setLoading(false);
       }
     });
 
-    return () => {
-      isSubscribed = false;
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 
-  if (loading) {
+  if (loading && location.pathname !== '/login') {
     return (
       <div className="flex justify-center items-center h-screen bg-gray-50">
         <ClipLoader color="#3498db" size={50} />
@@ -88,7 +87,6 @@ export const AuthProvider = ({ children }) => {
     );
   }
 
-  // Show a warning banner if there's a connection error but the app can still function
   const connectionWarning = connectionError && (
     <div className="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-700 p-4" role="alert">
       <p className="font-bold">Connection Warning</p>
@@ -103,7 +101,8 @@ export const AuthProvider = ({ children }) => {
     setRole,
     loading,
     setLoading,
-    connectionError
+    connectionError,
+    clearRoleCache: () => roleCache.clear()
   };
 
   return (

@@ -14,6 +14,7 @@ export default function ProjectReviews({ projectId, formatDate }) {
         try {
             const projectReviews = await getProjectReviews(projectId);
             setReviews(projectReviews);
+            
         } catch (err) {
             setError(err.message);
         } finally {

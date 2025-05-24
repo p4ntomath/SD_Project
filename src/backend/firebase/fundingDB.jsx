@@ -10,19 +10,35 @@ import {
 } from "firebase/firestore";
 
 /**
- * The function `fetchFunding` retrieves all documents from the Funding collection in Firestore.
+ * The function `fetchFunding` retrieves all active funding opportunities from the Funding collection in Firestore.
  * @returns {Promise<Array>} An array of funding opportunities with their IDs and data.
  */
-
 export const fetchFunding = async () => {
   try {
     const fundingCollection = collection(db, "funding");
+    // Query to get only active opportunities by default
     const querySnapshot = await getDocs(fundingCollection);
 
     const fundingList = querySnapshot.docs.map((doc) => ({
       id: doc.id,
-      ...doc.data(),
-    }));
+      funding_name: doc.data().funding_name,
+      expected_funds: doc.data().expected_funds,
+      external_link: doc.data().external_link,
+      deadline: doc.data().deadline,
+      category: doc.data().category,
+      eligibility: doc.data().eligibility,
+      description: doc.data().description,
+      status: doc.data().status || 'active',
+      createdAt: doc.data().createdAt
+    })).sort((a, b) => {
+      // Sort by status (active first) then by deadline
+      if (a.status === 'active' && b.status !== 'active') return -1;
+      if (a.status !== 'active' && b.status === 'active') return 1;
+      if (a.deadline && b.deadline) {
+        return new Date(a.deadline) - new Date(b.deadline);
+      }
+      return 0;
+    });
 
     return fundingList;
   } catch (error) {
@@ -30,7 +46,6 @@ export const fetchFunding = async () => {
     throw new Error("Failed to fetch funding information");
   }
 };
-
 
 
 

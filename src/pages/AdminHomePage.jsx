@@ -17,7 +17,8 @@ export default function AdminHomePage() {
   });
   const [projects, setProjects] = useState([]);
   const [announcements, setAnnouncements] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loadingStats, setLoadingStats] = useState(true);
+  const [loadingProjects, setLoadingProjects] = useState(true);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
   const [showAddFunding, setShowAddFunding] = useState(false);
@@ -27,47 +28,86 @@ export default function AdminHomePage() {
     expectedFunds: '',
     externalLink: ''
   });
+  const [pageSize] = useState(5);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [paginatedProjects, setPaginatedProjects] = useState([]);
 
+  // Cache key for admin dashboard data
+  const CACHE_KEY = 'adminDashboardData';
+  const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes in milliseconds
+
+  // Load essential stats first
   useEffect(() => {
-    const fetchStats = async () => {
+    const loadData = async () => {
       try {
-        // Fetch users using adminAccess method
-        const users = await fetchAllUsers();
-        const totalUsers = users.length;
+        setLoadingStats(true);
+        
+        // Check cache first
+        const cachedData = localStorage.getItem(CACHE_KEY);
+        if (cachedData) {
+          const { data, timestamp } = JSON.parse(cachedData);
+          const isExpired = Date.now() - timestamp > CACHE_EXPIRY;
+          
+          if (!isExpired) {
+            setStats(data.stats);
+            setProjects(data.projects);
+            setPaginatedProjects(data.projects.slice(0, pageSize));
+            setLoadingStats(false);
+            setLoadingProjects(false);
+            return;
+          }
+        }
 
-        // Fetch active projects with user data using adminAccess method
-        const projectsList = await fetchProjectsWithUsers();
-        const activeProjects = projectsList.length;
+        // If no cache or expired, fetch fresh data
+        const [users, projects, funding, documents] = await Promise.all([
+          fetchAllUsers(),
+          fetchProjectsWithUsers(),
+          getAllFunding(),
+          fetchAllDocuments()
+        ]);
 
-        // Fetch funding opportunities using adminAccess method
-        const fundingOpps = await getAllFunding();
-        const fundingCount = fundingOpps.length;
+        const newStats = {
+          totalUsers: users.length,
+          activeProjects: projects.length,
+          fundingOpportunities: funding.length,
+          totalDocuments: documents.length
+        };
 
-        // Fetch total documents
-        const documents = await fetchAllDocuments();
-        const totalDocuments = documents.length;
+        setStats(newStats);
+        setPaginatedProjects(projects.slice(0, pageSize));
+        setProjects(projects);
 
-        setProjects(projectsList);
+        // Cache the new data
+        localStorage.setItem(CACHE_KEY, JSON.stringify({
+          data: {
+            stats: newStats,
+            projects
+          },
+          timestamp: Date.now()
+        }));
 
-        setStats({
-          totalUsers,
-          activeProjects,
-          fundingOpportunities: fundingCount,
-          totalDocuments
-        });
-
-        setLoading(false);
       } catch (error) {
         console.error('Error fetching admin stats:', error);
-        setLoading(false);
+      } finally {
+        setLoadingStats(false);
+        setLoadingProjects(false);
       }
     };
 
-    fetchStats();
-  }, []);
+    loadData();
+  }, [pageSize]);
 
+  // Handle page change without loading state
+  const handlePageChange = (newPage) => {
+    const startIndex = (newPage - 1) * pageSize;
+    setPaginatedProjects(projects.slice(startIndex, startIndex + pageSize));
+    setCurrentPage(newPage);
+  };
+
+  // Clear cache when logging out
   const handleLogout = async () => {
     try {
+      localStorage.removeItem(CACHE_KEY);
       await logOut();
       navigate('/login');
     } catch (error) {
@@ -112,7 +152,7 @@ export default function AdminHomePage() {
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            {loading ? (
+            {loadingStats ? (
               // Loading skeletons for stats
               <>
                 {[...Array(4)].map((_, index) => (
@@ -194,60 +234,101 @@ export default function AdminHomePage() {
               <h2 className="text-xl font-semibold text-gray-800">Project Oversight</h2>
             </div>
             <div className="overflow-x-auto">
-              {loading ? (
+              {loadingProjects ? (
                 <div className="min-h-[200px] flex items-center justify-center">
                   <ClipLoader color="#3B82F6" />
                 </div>
               ) : (
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
-                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Creator</th>
-                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Status</th>
-                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Research Field</th>
-                      <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {projects.slice(0, 5).map((project) => (
-                      <tr key={project.id} className="hover:bg-gray-50">
-                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{project.title}</div>
-                        </td>
-                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">{project.userFullName}</div>
-                        </td>
-                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap hidden sm:table-cell">
-                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                            {project.status || 'In Progress'}
-                          </span>
-                        </td>
-                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
-                          {project.researchField || 'Not specified'}
-                        </td>
-                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <button 
-                            onClick={() => navigate(`/admin/projects/${project.id}`)}
-                            className="text-blue-600 hover:text-blue-900"
-                          >
-                            View
-                          </button>
-                        </td>
+                <>
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Project</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Creator</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Status</th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell">Research Field</th>
+                        <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider"></th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
-              )}
-              {!loading && projects.length > 5 && (
-                <div className="px-4 sm:px-6 py-3 bg-gray-50 border-t border-gray-200">
-                  <button
-                    onClick={() => navigate('/admin/projects')}
-                    className="text-sm text-blue-600 hover:text-blue-900 font-medium"
-                  >
-                    View all projects
-                  </button>
-                </div>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {paginatedProjects.map((project) => (
+                        <tr key={project.id} className="hover:bg-gray-50">
+                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm font-medium text-gray-900">{project.title}</div>
+                          </td>
+                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                            <div className="text-sm text-gray-900">{project.userFullName}</div>
+                          </td>
+                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap hidden sm:table-cell">
+                            <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                              {project.status || 'In Progress'}
+                            </span>
+                          </td>
+                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500 hidden md:table-cell">
+                            {project.researchField || 'Not specified'}
+                          </td>
+                          <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <button 
+                              onClick={() => navigate(`/admin/projects/${project.id}`)}
+                              className="text-blue-600 hover:text-blue-900"
+                            >
+                              View
+                            </button>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  
+                  {/* Pagination */}
+                  {projects.length > pageSize && (
+                    <div className="px-4 sm:px-6 py-3 flex items-center justify-between border-t border-gray-200">
+                      <div className="flex-1 flex justify-between sm:hidden">
+                        <button
+                          onClick={() => handlePageChange(currentPage - 1)}
+                          disabled={currentPage === 1}
+                          className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          Previous
+                        </button>
+                        <button
+                          onClick={() => handlePageChange(currentPage + 1)}
+                          disabled={currentPage * pageSize >= projects.length}
+                          className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                        >
+                          Next
+                        </button>
+                      </div>
+                      <div className="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between">
+                        <div>
+                          <p className="text-sm text-gray-700">
+                            Showing <span className="font-medium">{((currentPage - 1) * pageSize) + 1}</span> to{' '}
+                            <span className="font-medium">{Math.min(currentPage * pageSize, projects.length)}</span> of{' '}
+                            <span className="font-medium">{projects.length}</span> results
+                          </p>
+                        </div>
+                        <div>
+                          <nav className="relative z-0 inline-flex rounded-md shadow-sm -space-x-px" aria-label="Pagination">
+                            <button
+                              onClick={() => handlePageChange(currentPage - 1)}
+                              disabled={currentPage === 1}
+                              className="relative inline-flex items-center px-2 py-2 rounded-l-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                            >
+                              Previous
+                            </button>
+                            <button
+                              onClick={() => handlePageChange(currentPage + 1)}
+                              disabled={currentPage * pageSize >= projects.length}
+                              className="relative inline-flex items-center px-2 py-2 rounded-r-md border border-gray-300 bg-white text-sm font-medium text-gray-500 hover:bg-gray-50 disabled:opacity-50"
+                            >
+                              Next
+                            </button>
+                          </nav>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
             </div>
           </motion.div>

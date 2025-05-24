@@ -31,6 +31,7 @@ import MessagesPage from './pages/Messages.jsx';
 import MessagesList from './pages/MessagesList.jsx';
 import ChatView from './pages/ChatView.jsx';
 import MessagesLayout from './pages/MessagesLayout.jsx';
+import UserDetailsPage from './pages/UserDetailsPage.jsx';
 
 function App() {
   return (
@@ -81,6 +82,11 @@ function App() {
           <Route path="/admin/users" element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminUsersPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/users/:userId" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <UserDetailsPage />
             </ProtectedRoute>
           } />
           <Route path="/admin/projects" element={

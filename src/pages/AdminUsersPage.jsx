@@ -7,6 +7,9 @@ import { ClipLoader } from 'react-spinners';
 import MainNav from '../components/AdminComponents/Navigation/AdminMainNav';
 import MobileBottomNav from '../components/AdminComponents/Navigation/AdminMobileBottomNav';
 
+// Default status options
+const DEFAULT_STATUSES = ['active', 'inactive', 'pending'];
+
 export default function AdminUsersPage() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -17,7 +20,7 @@ export default function AdminUsersPage() {
 
   // Get unique roles and statuses for filter dropdowns
   const uniqueRoles = [...new Set(users.map(user => user.role))];
-  const uniqueStatuses = [...new Set(users.map(user => user.status))];
+  const uniqueStatuses = [...new Set([...DEFAULT_STATUSES, ...users.map(user => user.status || 'active')])];
 
   // Filter users based on selected role and status
   const filteredUsers = users.filter(user => {
@@ -30,8 +33,14 @@ export default function AdminUsersPage() {
     const loadUsers = async () => {
       try {
         const data = await fetchAllUsers();
-        setUsers(data);
+        // Ensure each user has a status
+        const usersWithStatus = data.map(user => ({
+          ...user,
+          status: user.status || 'Active'
+        }));
+        setUsers(usersWithStatus);
       } catch (error) {
+        console.error('Error loading users:', error);
       } finally {
         setLoading(false);
       }
@@ -114,7 +123,7 @@ export default function AdminUsersPage() {
                       <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Email</th>
                       <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Role</th>
                       <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell">Status</th>
-                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
+                      <th key="actions" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
