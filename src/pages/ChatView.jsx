@@ -344,7 +344,7 @@ export default function ChatView() {
     
     try {
       setRenamingGroup(true);
-      await ChatService.renameGroupChat(chatId, newGroupName.trim());
+      await ChatService.updateGroupChatDetails(chatId, { groupName: newGroupName.trim() });
       setIsEditingName(false);
       setNewGroupName('');
     } catch (error) {
@@ -553,18 +553,23 @@ export default function ChatView() {
   const renderMessage = (message, isCurrentUser, showSender, senderName) => {
     return (
       <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} group`}>
-        {!isCurrentUser && showSender && (
-          participantPhotos[message.senderId] ? (
-            <img
-              src={participantPhotos[message.senderId]}
-              alt={senderName}
-              className="w-8 h-8 rounded-full object-cover mr-2"
-            />
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm font-medium mr-2">
-              {getAvatarInitials(senderName)}
-            </div>
-          )
+        {/* Add a fixed-width space for avatar to maintain alignment */}
+        {!isCurrentUser && (
+          <div className="w-8 mr-2 flex-shrink-0">
+            {showSender && (
+              participantPhotos[message.senderId] ? (
+                <img
+                  src={participantPhotos[message.senderId]}
+                  alt={senderName}
+                  className="w-8 h-8 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm font-medium">
+                  {getAvatarInitials(senderName)}
+                </div>
+              )
+            )}
+          </div>
         )}
         <div className={`rounded-lg px-4 py-2 max-w-[70%] space-y-2 ${
           isCurrentUser 
