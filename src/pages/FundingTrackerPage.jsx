@@ -86,93 +86,32 @@ export default function FundingTrackerPage() {
   
   if (loading) {
     return (
-      <>
-        <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
-          <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <section className="flex justify-between items-center h-16">
-              <section className="flex items-center space-x-4">
-                <button
-                  data-testid="back-button"
-                  onClick={() => navigate(-1)}
-                  className="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
-                >
-                  <FaArrowLeft className="mr-2" />
-                </button>
-                <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent">
-                  Track Funding
-                </h1>
-              </section>
-            </section>
-
-            {/* Center - Search */}
-            <section className="flex-1 max-w-xl mx-4 hidden md:block">
-              <section className="relative">
-                <section className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaSearch className="text-gray-400" />
-                </section>
-                <input
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="Search projects..."
-                  type="search"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  disabled={loading}
-                />
-              </section>
-            </section>
-          </section>
+      <div className="min-h-screen bg-gray-50">
+        <header>
+          <MainNav setMobileMenuOpen={setMobileMenuOpen} mobileMenuOpen={mobileMenuOpen} />
         </header>
 
-        <main className="min-h-screen bg-gray-50 pt-15 px-4 md:px-8 pb-8">
+        <main className="p-4 md:p-8 pb-16 md:pb-8">
           <section className="max-w-7xl mx-auto">
-            {/* Skeleton Stats Overview */}
-            <section className="mb-8 hidden md:grid grid-cols-1 md:grid-cols-3 gap-4">
-              {[...Array(3)].map((_, i) => (
-                <section key={i} className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
-                  <section className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2" />
-                  <section className="h-8 w-32 bg-gray-200 rounded animate-pulse" />
-                </section>
-              ))}
+            {/* Header Section */}
+            <section className="flex flex-col gap-2 mb-8">
+              <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Track Funding</h1>
+              <p className="text-sm text-gray-600">Monitor and manage your research project funding</p>
             </section>
 
-            {/* Skeleton Main Content */}
-            <section className="grid grid-cols-1 lg:grid-cols-4 gap-6">
-              {/* Left Column Skeleton */}
-              <section className="lg:col-span-1 space-y-6">
-                <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                  <section className="flex items-center mb-4">
-                    <section className="w-6 h-6 rounded bg-gray-200 animate-pulse mr-2" />
-                    <section className="h-6 w-32 bg-gray-200 rounded animate-pulse" />
-                  </section>
-                  <section className="space-y-4">
-                    {[...Array(2)].map((_, i) => (
-                      <section key={i} className="h-20 bg-gray-100 rounded-lg animate-pulse" />
-                    ))}
-                  </section>
-                </section>
-              </section>
-
-              {/* Right Column Skeleton */}
-              <section className="lg:col-span-3">
-                <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                  <section className="h-6 w-32 bg-gray-200 rounded animate-pulse mb-6" />
-                  <section className="space-y-4">
-                    {[...Array(3)].map((_, i) => (
-                      <section key={i} className="p-5 border border-gray-100 rounded-lg">
-                        <section className="flex justify-between items-start mb-3">
-                          <section className="h-6 w-48 bg-gray-200 rounded animate-pulse" />
-                          <section className="h-6 w-24 bg-gray-200 rounded-full animate-pulse" />
-                        </section>
-                        <section className="mt-4 h-12 bg-gray-200 rounded animate-pulse" />
-                      </section>
-                    ))}
-                  </section>
-                </section>
-              </section>
+            {/* Loading Animation */}
+            <section className="flex justify-center items-center py-20 space-x-2">
+              {[0, 1, 2].map((i) => (
+                <p
+                  key={i}
+                  className="w-3 h-3 bg-blue-600 rounded-full animate-bounce"
+                  style={{ animationDelay: `${i * 0.1}s` }}
+                />
+              ))}
             </section>
           </section>
         </main>
-      </>
+      </div>
     );
   }
 
@@ -185,6 +124,11 @@ export default function FundingTrackerPage() {
 
       <main className="p-4 md:p-8 pb-16 md:pb-8">
         <section className="max-w-7xl mx-auto">
+          {/* Header Section */}
+          <section className="flex flex-col gap-2 mb-8">
+            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Track Funding</h1>
+            <p className="text-sm text-gray-600">Monitor and manage your research project funding</p>
+          </section>
 
           {/* Stats Overview Banner - Now visible on all screens */}
           <section className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -276,7 +220,7 @@ export default function FundingTrackerPage() {
               <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <h2 className="text-lg font-semibold mb-4 flex items-center">
                   <FaPiggyBank className="text-pink-500 mr-2" size={24} />
-                  Available Funding Opportunities
+                  Need Funding?
                 </h2>
 
                 <section className="space-y-4 max-h-[600px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">

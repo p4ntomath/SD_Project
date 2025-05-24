@@ -185,7 +185,7 @@ describe('Document Database Operations', () => {
 
       await expect(
         uploadDocument(largeFile, 'test-project', 'test-folder')
-      ).rejects.toThrow('Failed to upload document: File size exceeds the maximum limit of 10MB');
+      ).rejects.toThrow('Failed to upload document: File size exceeds the 10MB limit');
     });
 
     it('throws error for unauthorized access', async () => {

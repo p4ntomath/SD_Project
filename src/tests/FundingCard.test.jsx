@@ -83,8 +83,8 @@ describe('FundingCard', () => {
     fireEvent.change(amountInput, { target: { value: '1000' } });
     fireEvent.change(sourceInput, { target: { value: 'Grant' } });
 
-    // Submit the form
-    fireEvent.click(screen.getByRole('button', { name: /add funds$/i }));
+    // Use specific aria-label to target the submit button
+    fireEvent.click(screen.getByRole('button', { name: /submit add funds/i }));
 
     await waitFor(() => {
       expect(updateProjectFunds).toHaveBeenCalledWith(
@@ -100,8 +100,8 @@ describe('FundingCard', () => {
   test('shows funding history', async () => {
     render(<FundingCard {...mockProps} />);
 
-    // Click view history button
-    fireEvent.click(screen.getByRole('button', { name: /view history/i }));
+    // Click view history button using the exact aria-label
+    fireEvent.click(screen.getByRole('button', { name: /view funding history/i }));
 
     await waitFor(() => {
       expect(getFundingHistory).toHaveBeenCalledWith('test-project-id');
@@ -128,7 +128,7 @@ describe('FundingCard', () => {
     fireEvent.change(amountInput, { target: { value: '1000' } });
     fireEvent.change(sourceInput, { target: { value: 'Grant' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /add funds$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /submit add funds/i }));
 
     expect(screen.getByText('Adding...')).toBeInTheDocument();
   });
@@ -145,7 +145,7 @@ describe('FundingCard', () => {
     fireEvent.change(amountInput, { target: { value: '1000' } });
     fireEvent.change(sourceInput, { target: { value: 'Grant' } });
 
-    fireEvent.click(screen.getByRole('button', { name: /add funds$/i }));
+    fireEvent.click(screen.getByRole('button', { name: /submit add funds/i }));
 
     await waitFor(() => {
       expect(mockProps.setError).toHaveBeenCalledWith(true);

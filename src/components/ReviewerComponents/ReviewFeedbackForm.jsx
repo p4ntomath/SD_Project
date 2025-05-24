@@ -50,9 +50,15 @@ export default function ReviewFeedbackForm({ projectId, reviewerId, onSubmitComp
             </section>
 
             <section>
-                <label className="block text-sm font-medium text-gray-700">
+                <label htmlFor="rating" className="block text-sm font-medium text-gray-700">
                     Project Rating
                 </label>
+                <input 
+                    type="hidden"
+                    id="rating"
+                    value={feedback.rating}
+                    aria-label="Project rating value"
+                />
                 <section className="flex items-center space-x-2 mt-1" role="radiogroup" aria-label="Star rating buttons">
                     {[1, 2, 3, 4, 5].map((star) => (
                         <button

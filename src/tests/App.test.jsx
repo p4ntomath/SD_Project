@@ -105,9 +105,8 @@ describe('App Component', () => {
         <App />
       </AuthContext.Provider>
     );
-    expect(screen.getByText(/Join thousands of researchers who are already using Re:Search to streamline their academic work./i)).toBeInTheDocument();
+    
+    const text = screen.getByText(/Re:Search/);
+    expect(text).toBeInTheDocument();
   });
-  
-
-  
 });

@@ -64,14 +64,43 @@ describe('Funding Database Operations', () => {
   describe('fetchFunding', () => {
     it('fetches all funding opportunities', async () => {
       const mockFunding = [
-        { id: '1', name: 'Fund 1', amount: 10000 },
-        { id: '2', name: 'Fund 2', amount: 20000 }
+        { 
+          id: '1', 
+          funding_name: 'Fund 1',
+          expected_funds: 10000,
+          external_link: 'https://example.com',
+          status: 'active',
+          deadline: '2025-12-31',
+          category: 'research_grant',
+          eligibility: 'All researchers',
+          description: 'Research funding opportunity'
+        },
+        { 
+          id: '2', 
+          funding_name: 'Fund 2',
+          expected_funds: 20000,
+          external_link: 'https://example.com',
+          status: 'active',
+          deadline: '2025-12-31',
+          category: 'equipment',
+          eligibility: 'All researchers',
+          description: 'Equipment funding opportunity'
+        }
       ];
 
       vi.mocked(getDocs).mockResolvedValue({
         docs: mockFunding.map(fund => ({
           id: fund.id,
-          data: () => fund
+          data: () => ({
+            funding_name: fund.funding_name,
+            expected_funds: fund.expected_funds,
+            external_link: fund.external_link,
+            status: fund.status,
+            deadline: fund.deadline,
+            category: fund.category,
+            eligibility: fund.eligibility,
+            description: fund.description
+          })
         }))
       });
 

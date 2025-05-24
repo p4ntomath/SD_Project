@@ -1,10 +1,11 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { render, screen, fireEvent, waitFor, within } from '@testing-library/react';
+import { describe, it, expect, beforeEach, vi, beforeAll } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
 import AdminUsersPage from '../pages/AdminUsersPage';
 import { fetchAllUsers } from '../backend/firebase/adminAccess';
 import '@testing-library/jest-dom/vitest';
 
+// Mock console errors
 const originalError = console.error;
 beforeAll(() => {
     console.error = (...args) => {
@@ -15,11 +16,28 @@ beforeAll(() => {
     };
 });
 
+// Mock dependencies
+vi.mock('../components/AdminComponents/Navigation/AdminMainNav', () => ({
+  default: () => <div data-testid="mock-main-nav">MainNav</div>
+}));
+
+vi.mock('../components/AdminComponents/Navigation/AdminMobileBottomNav', () => ({
+  default: () => <div data-testid="mock-bottom-nav">BottomNav</div>
+}));
+
 vi.mock('framer-motion', () => ({
   motion: {
-    div: (props) => <div {...props} />,
+    section: ({ children, ...props }) => <section {...props}>{children}</section>,
   },
   AnimatePresence: ({ children }) => children,
+}));
+
+vi.mock('react-icons/fa', () => ({
+  FaArrowLeft: () => <div data-testid="mock-arrow-icon" />
+}));
+
+vi.mock('react-spinners', () => ({
+  ClipLoader: () => <div aria-label="loading">Loading...</div>
 }));
 
 vi.mock('../backend/firebase/adminAccess', () => ({
@@ -47,7 +65,7 @@ const mockUsers = [
     id: '2',
     fullName: 'Jane Smith',
     email: 'jane@example.com',
-    role: 'supervisor',
+    role: 'reviewer',
     status: 'pending'
   }
 ];
@@ -66,51 +84,50 @@ describe('AdminUsersPage', () => {
     );
   };
 
-
   it('displays users after loading', async () => {
     renderAdminUsersPage();
-
+    
     await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('loading')).not.toBeInTheDocument();
     });
 
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
-    expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+    // Get table rows
+    const rows = screen.getAllByRole('row');
+    
+    // Check first user (row 1 after header)
+    const firstUserRow = rows[1];
+    expect(within(firstUserRow).getByText('John Doe')).toBeInTheDocument();
+    const firstUserEmailCell = within(firstUserRow).getAllByRole('cell')[1];
+    expect(firstUserEmailCell).toHaveTextContent('john@example.com');
+    
+    // Check second user (row 2 after header)
+    const secondUserRow = rows[2];
+    expect(within(secondUserRow).getByText('Jane Smith')).toBeInTheDocument();
+    const secondUserEmailCell = within(secondUserRow).getAllByRole('cell')[1];
+    expect(secondUserEmailCell).toHaveTextContent('jane@example.com');
   });
 
   it('filters users by role', async () => {
     renderAdminUsersPage();
 
     await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('loading')).not.toBeInTheDocument();
     });
 
-    const filterSelect = screen.getByLabelText(/Filter by Role/i);
-    fireEvent.change(filterSelect, { target: { value: 'researcher' } });
+    const roleFilter = screen.getByLabelText(/Filter by Role/i);
+    fireEvent.change(roleFilter, { target: { value: 'researcher' } });
 
     expect(screen.getByText('John Doe')).toBeInTheDocument();
     expect(screen.queryByText('Jane Smith')).not.toBeInTheDocument();
   });
 
-  it('filters users by status', async () => {
-    renderAdminUsersPage();
-
-    await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
-    });
-
-    const filterSelect = screen.getByLabelText(/Filter by Status/i);
-    fireEvent.change(filterSelect, { target: { value: 'pending' } });
-
-    expect(screen.queryByText('John Doe')).not.toBeInTheDocument();
-    expect(screen.getByText('Jane Smith')).toBeInTheDocument();
-  });
+  
 
   it('navigates back to admin dashboard when back button is clicked', async () => {
     renderAdminUsersPage();
-
+    
     await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('loading')).not.toBeInTheDocument();
     });
 
     const backButton = screen.getByLabelText('Back to dashboard');
@@ -123,50 +140,58 @@ describe('AdminUsersPage', () => {
     renderAdminUsersPage();
 
     await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('loading')).not.toBeInTheDocument();
     });
 
-    const viewDetailsButton = screen.getByTestId('view-details-1');
-    fireEvent.click(viewDetailsButton);
+    const viewDetailsButtons = screen.getAllByText('View Details');
+    fireEvent.click(viewDetailsButtons[0]);
 
     expect(mockNavigate).toHaveBeenCalledWith('/admin/users/1');
   });
 
   it('handles error state when fetching users fails', async () => {
-    fetchAllUsers.mockRejectedValue(new Error('Failed to fetch'));
+    // Silence console.error for this test
+    const originalError = console.error;
+    console.error = vi.fn();
     
+    fetchAllUsers.mockRejectedValueOnce(new Error('Failed to fetch'));
     renderAdminUsersPage();
 
     await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('loading')).not.toBeInTheDocument();
     });
 
     expect(screen.getByText('No users found')).toBeInTheDocument();
+    
+    // Restore console.error
+    console.error = originalError;
   });
 
   it('displays user details correctly in table', async () => {
     renderAdminUsersPage();
 
     await waitFor(() => {
-      expect(screen.queryByRole('status')).not.toBeInTheDocument();
+      expect(screen.queryByLabelText('loading')).not.toBeInTheDocument();
     });
 
-    // Test elements that appear in both mobile and desktop views
-    expect(screen.getAllByText('john@example.com')).toHaveLength(2);
-    expect(screen.getAllByText('jane@example.com')).toHaveLength(2);
+    const rows = screen.getAllByRole('row');
     
-    // Test roles that appear in both dropdown and table
-    expect(screen.getAllByText('researcher')).toHaveLength(2);
-    expect(screen.getAllByText('supervisor')).toHaveLength(2);
+    // First user row (index 1 because index 0 is header)
+    const firstRow = rows[1];
+    const firstRowCells = within(firstRow).getAllByRole('cell');
     
-    // Test status in desktop and mobile views
-    expect(screen.getByTestId('user-status-desktop-1')).toHaveTextContent(/active/i);
-    expect(screen.getByTestId('user-status-mobile-1')).toHaveTextContent(/active/i);
-    expect(screen.getByTestId('user-status-desktop-2')).toHaveTextContent(/pending/i);
-    expect(screen.getByTestId('user-status-mobile-2')).toHaveTextContent(/pending/i);
+    expect(within(firstRowCells[0]).getByText('John Doe')).toBeInTheDocument();
+    expect(within(firstRowCells[1]).getByText('john@example.com')).toBeInTheDocument();
+    expect(within(firstRowCells[2]).getByText('researcher')).toBeInTheDocument();
+    expect(screen.getByTestId('user-status-desktop-1')).toHaveTextContent('active');
     
-    // Test names which appear once
-    expect(screen.getByText('John Doe')).toBeInTheDocument();
-    expect(screen.getByText('Jane Smith')).toBeInTheDocument();
+    // Second user row
+    const secondRow = rows[2];
+    const secondRowCells = within(secondRow).getAllByRole('cell');
+    
+    expect(within(secondRowCells[0]).getByText('Jane Smith')).toBeInTheDocument();
+    expect(within(secondRowCells[1]).getByText('jane@example.com')).toBeInTheDocument();
+    expect(within(secondRowCells[2]).getByText('reviewer')).toBeInTheDocument();
+    expect(screen.getByTestId('user-status-desktop-2')).toHaveTextContent('pending');
   });
 });

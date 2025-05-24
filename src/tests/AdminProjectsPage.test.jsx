@@ -1,11 +1,11 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, beforeEach, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi, beforeAll } from 'vitest';
 import { BrowserRouter } from 'react-router-dom';
 import AdminProjectsPage from '../pages/AdminProjectsPage';
 import { fetchProjectsWithUsers } from '../backend/firebase/adminAccess';
 import '@testing-library/jest-dom/vitest';
 
-
+// Mock console errors
 const originalError = console.error;
 beforeAll(() => {
     console.error = (...args) => {
@@ -15,10 +15,20 @@ beforeAll(() => {
         originalError.call(console, ...args);
     };
 });
+
+// Mock MainNav and MobileBottomNav components
+vi.mock('../components/AdminComponents/Navigation/AdminMainNav', () => ({
+  default: () => <div data-testid="mock-main-nav">MainNav</div>
+}));
+
+vi.mock('../components/AdminComponents/Navigation/AdminMobileBottomNav', () => ({
+  default: () => <div data-testid="mock-bottom-nav">BottomNav</div>
+}));
+
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
-    div: (props) => <div {...props} />,
+    section: ({ children, ...props }) => <section {...props}>{children}</section>,
   },
   AnimatePresence: ({ children }) => children,
 }));
@@ -26,6 +36,11 @@ vi.mock('framer-motion', () => ({
 // Mock the external dependencies
 vi.mock('../backend/firebase/adminAccess', () => ({
   fetchProjectsWithUsers: vi.fn()
+}));
+
+// Mock react-icons
+vi.mock('react-icons/fa', () => ({
+  FaArrowLeft: () => <div data-testid="mock-arrow-icon" />
 }));
 
 const mockNavigate = vi.fn();
@@ -36,6 +51,11 @@ vi.mock('react-router-dom', async () => {
     useNavigate: () => mockNavigate,
   };
 });
+
+// Mock ClipLoader
+vi.mock('react-spinners', () => ({
+  ClipLoader: () => <div aria-label="loading">Loading...</div>
+}));
 
 const mockProjects = [
   {
