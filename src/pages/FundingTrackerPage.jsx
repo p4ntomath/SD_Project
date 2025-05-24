@@ -186,27 +186,27 @@ export default function FundingTrackerPage() {
       <main className="p-4 md:p-8 pb-16 md:pb-8">
         <section className="max-w-7xl mx-auto">
 
-          {/* Stats Overview Banner - Hidden on mobile */}
-          <section className="mb-8 hidden md:grid grid-cols-1 md:grid-cols-4 gap-4">
-            <section className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+          {/* Stats Overview Banner - Now visible on all screens */}
+          <section className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <section className="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100">
               <p className="text-sm text-gray-500">Total Projects</p>
-              <p className="text-2xl font-bold">{filteredProjects.length}</p>
+              <p className="text-xl md:text-2xl font-bold">{filteredProjects.length}</p>
             </section>
-            <section className="bg-white p-5 rounded-xl shadow-sm border border-gray-100" data-testid="total-available-stats">
+            <section className="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100" data-testid="total-available-stats">
               <p className="text-sm text-gray-500">Total Available Funds</p>
-              <p className="text-2xl font-bold text-green-600" data-testid="total-available-funds-value">
+              <p className="text-xl md:text-2xl font-bold text-green-600" data-testid="total-available-funds-value">
                 {formatCurrency(totalAvailableFunds)}
               </p>
             </section>
-            <section className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+            <section className="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100">
               <p className="text-sm text-gray-500">Total Used Funds</p>
-              <p className="text-2xl font-bold text-red-600" data-testid="total-used-funds-value">
+              <p className="text-xl md:text-2xl font-bold text-red-600" data-testid="total-used-funds-value">
                 {formatCurrency(totalUsedFunds)}
               </p>
             </section>
-            <section className="bg-white p-5 rounded-xl shadow-sm border border-gray-100" data-testid="utilization-rate">
+            <section className="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100" data-testid="utilization-rate">
               <p className="text-sm text-gray-500">Utilization Rate</p>
-              <p className="text-2xl font-bold text-blue-600" data-testid="utilization-rate-value">
+              <p className="text-xl md:text-2xl font-bold text-blue-600" data-testid="utilization-rate-value">
                 {utilizationRate.toFixed(1)}%
               </p>
             </section>
@@ -214,8 +214,64 @@ export default function FundingTrackerPage() {
 
           {/* Main Content Grid */}
           <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-screen">
+            {/* Right Column - Projects List (moved first for mobile) */}
+            <section className="lg:col-span-2 order-1 lg:order-2">
+              <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h2 className="text-lg font-semibold mb-4">Your Projects</h2>
+                <section className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                  {filteredProjects.map((project) => {
+                    const availableFunds = (project.availableFunds || 0);
+                    const usedFunds = (project.usedFunds || 0);
+                    const totalFunds = availableFunds + usedFunds;
+                    const usedPercentage = totalFunds > 0 ? (usedFunds / totalFunds * 100) : 0;
+                    
+                    return (
+                      <section 
+                        key={project.id} 
+                        className="p-5 border border-gray-100 rounded-lg hover:shadow-md transition-all cursor-pointer"
+                        onClick={() => navigate(`/projects/${project.id}`)}
+                      >
+                        <section className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
+                          <h3 className="text-lg font-medium">{project.title}</h3>
+                          <p className="text-xs sm:text-sm px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full self-start whitespace-nowrap">
+                            {project.status || 'In Progress'}
+                          </p>
+                        </section>
+                        
+                        <section className="flex justify-between items-center gap-4">
+                          <section className="space-y-2">
+                            <section className="flex items-center gap-2">
+                              <p className="text-sm text-gray-600">Available:</p>
+                              <p className="font-medium">{formatCurrency(availableFunds)}</p>
+                            </section>
+                            
+                            <section className="flex items-center gap-2">
+                              <p className="text-sm text-gray-600">Used:</p>
+                              <p className="font-medium">{formatCurrency(project.usedFunds || 0)}</p>
+                            </section>
+                          </section>
+
+                          <section className="flex-1 max-w-xs">
+                            <section className="w-full bg-gray-200 rounded-full h-2">
+                              <section 
+                                className="bg-blue-600 h-2 rounded-full" 
+                                style={{ width: `${usedPercentage}%` }}
+                              />
+                            </section>
+                            <p className="text-xs text-gray-500 text-right mt-1">
+                              {usedPercentage.toFixed(1)}% utilized
+                            </p>
+                          </section>
+                        </section>
+                      </section>
+                    );
+                  })}
+                </section>
+              </section>
+            </section>
+
             {/* Left Column - Funding Cards */}
-            <section className="lg:col-span-1 space-y-6">
+            <section className="lg:col-span-1 space-y-6 order-2 lg:order-1">
               {/* Funding Opportunities Card */}
               <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <h2 className="text-lg font-semibold mb-4 flex items-center">
@@ -330,62 +386,6 @@ export default function FundingTrackerPage() {
                       No funding opportunities available at the moment.
                     </p>
                   )}
-                </section>
-              </section>
-            </section>
-
-            {/* Right Column - Projects List */}
-            <section className="lg:col-span-2">
-              <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <h2 className="text-lg font-semibold mb-4">Your Projects</h2>
-                <section className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                  {filteredProjects.map((project) => {
-                    const availableFunds = (project.availableFunds || 0);
-                    const usedFunds = (project.usedFunds || 0);
-                    const totalFunds = availableFunds + usedFunds;
-                    const usedPercentage = totalFunds > 0 ? (usedFunds / totalFunds * 100) : 0;
-                    
-                    return (
-                      <section 
-                        key={project.id} 
-                        className="p-5 border border-gray-100 rounded-lg hover:shadow-md transition-all cursor-pointer"
-                        onClick={() => navigate(`/projects/${project.id}`)}
-                      >
-                        <section className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 mb-3">
-                          <h3 className="text-lg font-medium">{project.title}</h3>
-                          <p className="text-xs sm:text-sm px-2.5 py-1 bg-blue-100 text-blue-800 rounded-full self-start whitespace-nowrap">
-                            {project.status || 'In Progress'}
-                          </p>
-                        </section>
-                        
-                        <section className="flex justify-between items-center gap-4">
-                          <section className="space-y-2">
-                            <section className="flex items-center gap-2">
-                              <p className="text-sm text-gray-600">Available:</p>
-                              <p className="font-medium">{formatCurrency(availableFunds)}</p>
-                            </section>
-                            
-                            <section className="flex items-center gap-2">
-                              <p className="text-sm text-gray-600">Used:</p>
-                              <p className="font-medium">{formatCurrency(project.usedFunds || 0)}</p>
-                            </section>
-                          </section>
-
-                          <section className="flex-1 max-w-xs">
-                            <section className="w-full bg-gray-200 rounded-full h-2">
-                              <section 
-                                className="bg-blue-600 h-2 rounded-full" 
-                                style={{ width: `${usedPercentage}%` }}
-                              />
-                            </section>
-                            <p className="text-xs text-gray-500 text-right mt-1">
-                              {usedPercentage.toFixed(1)}% utilized
-                            </p>
-                          </section>
-                        </section>
-                      </section>
-                    );
-                  })}
                 </section>
               </section>
             </section>

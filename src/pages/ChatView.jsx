@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, Link } from 'react-router-dom';
 import { FiVideo, FiPhone, FiSettings, FiUserPlus, FiPaperclip, FiSmile, FiSend, FiArrowLeft, FiSearch, FiX, FiCheck, FiEdit2 } from 'react-icons/fi';
 import { ChatService, MessageService, ChatRealTimeService } from '../backend/firebase/chatDB';
 import { auth, db } from '../backend/firebase/firebaseConfig';
@@ -557,17 +557,19 @@ export default function ChatView() {
         {!isCurrentUser && (
           <div className="w-8 mr-2 flex-shrink-0">
             {showSender && (
-              participantPhotos[message.senderId] ? (
-                <img
-                  src={participantPhotos[message.senderId]}
-                  alt={senderName}
-                  className="w-8 h-8 rounded-full object-cover"
-                />
-              ) : (
-                <div className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm font-medium">
-                  {getAvatarInitials(senderName)}
-                </div>
-              )
+              <Link to={`/profile/${message.senderId}`}>
+                {participantPhotos[message.senderId] ? (
+                  <img
+                    src={participantPhotos[message.senderId]}
+                    alt={senderName}
+                    className="w-8 h-8 rounded-full object-cover hover:opacity-80 transition-opacity"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm font-medium hover:bg-gray-600 transition-colors">
+                    {getAvatarInitials(senderName)}
+                  </div>
+                )}
+              </Link>
             )}
           </div>
         )}
@@ -630,17 +632,19 @@ export default function ChatView() {
                       </div>
                     )
                   ) : (
-                    participantPhotos[chat?.participants?.find(id => id !== auth.currentUser.uid)] ? (
-                      <img
-                        src={participantPhotos[chat?.participants?.find(id => id !== auth.currentUser.uid)]}
-                        alt="Profile"
-                        className="w-10 h-10 rounded-full object-cover"
-                      />
-                    ) : (
-                      <div className="w-10 h-10 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
-                        {getAvatarInitials(chat?.name)}
-                      </div>
-                    )
+                    <Link to={`/profile/${chat?.participants?.find(id => id !== auth.currentUser.uid)}`}>
+                      {participantPhotos[chat?.participants?.find(id => id !== auth.currentUser.uid)] ? (
+                        <img
+                          src={participantPhotos[chat?.participants?.find(id => id !== auth.currentUser.uid)]}
+                          alt="Profile"
+                          className="w-10 h-10 rounded-full object-cover hover:opacity-80 transition-opacity"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium hover:bg-gray-600 transition-colors">
+                          {getAvatarInitials(chat?.name)}
+                        </div>
+                      )}
+                    </Link>
                   )}
                 </div>
                 <div 
@@ -910,20 +914,20 @@ export default function ChatView() {
                         key={userId} 
                         className="group flex items-center justify-between p-3 rounded-xl transition-all hover:bg-gray-50 bg-white border border-gray-100"
                       >
-                        <div className="flex items-center space-x-3">
+                        <Link to={`/profile/${userId}`} className="flex items-center space-x-3">
                           {userPhoto ? (
                             <img
                               src={userPhoto}
                               alt={userName}
-                              className="w-12 h-12 rounded-full object-cover ring-2 ring-white shadow-md"
+                              className="w-12 h-12 rounded-full object-cover ring-2 ring-white shadow-md hover:opacity-80 transition-opacity"
                             />
                           ) : (
-                            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 text-white rounded-full flex items-center justify-center font-medium ring-2 ring-white shadow-md">
+                            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 text-white rounded-full flex items-center justify-center font-medium ring-2 ring-white shadow-md hover:bg-gradient-to-br hover:from-purple-600 hover:to-blue-600 transition-colors">
                               {getAvatarInitials(userName)}
                             </div>
                           )}
                           <div>
-                            <p className="text-gray-900 font-medium">
+                            <p className="text-gray-900 font-medium group-hover:text-blue-600 transition-colors">
                               {userName}
                               {isCurrentUser && (
                                 <span className="ml-2 text-xs font-normal text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
@@ -935,7 +939,7 @@ export default function ChatView() {
                               {isCurrentUser ? 'Group Admin' : 'Member'}
                             </p>
                           </div>
-                        </div>
+                        </Link>
                         {!isCurrentUser && chat.type === 'group' && (
                           <button
                             onClick={() => handleRemoveMember(userId)}
