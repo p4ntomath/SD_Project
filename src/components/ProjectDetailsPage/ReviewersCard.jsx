@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import AssignReviewersModal from '../ResearcherComponents/AssignReviewersModal';
 import { auth } from '../../backend/firebase/firebaseConfig';
-import { createReviewRequest, getReviewerRequestsForProject } from '../../backend/firebase/reviewerDB';
+import { createReviewRequest, getReviewerRequestsForProject, updateReviewRequestStatus } from '../../backend/firebase/reviewerDB';
 import { isProjectOwner, checkPermission } from '../../utils/permissions';
+import { notify } from '../../backend/firebase/notificationsUtil';
+import { doc, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../../backend/firebase/firebaseConfig';
 
 export default function ReviewersCard({ project, reviewRequests, formatDate, setReviewRequests, projectId, setModalOpen, setStatusMessage, setError }) {
   const [showAssignReviewersModal, setShowAssignReviewersModal] = useState(false);
@@ -79,7 +82,6 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
 
   const handleReRequest = async (reviewer) => {
     try {
-      // Check if reviewer already has a pending request
       if (hasReviewerPendingRequest(reviewer.id)) {
         setError(true);
         setModalOpen(true);
@@ -95,18 +97,25 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
       }
 
       setProcessingReRequest(reviewer.id);
-      // Create new review request for the reviewer
-      await createReviewRequest(
+
+      const isActive = project.reviewers?.some(r => r.id === reviewer.id);
+      const requestData = await createReviewRequest(
         projectId,
         reviewer.id,
         project.title,
-        auth.currentUser.displayName || 'Researcher'
+        auth.currentUser.displayName || 'Researcher',
+        isActive
       );
 
-      // Reload review requests to update UI
-      const updatedRequests = await getReviewerRequestsForProject(projectId);
-      setReviewRequests(updatedRequests);
+      // Immediately update UI to show pending status
+      const updatedReviewers = project.reviewers.map(r => 
+        r.id === reviewer.id 
+          ? { ...r, reviewStatus: 'pending_feedback' }
+          : r
+      );
+      project.reviewers = updatedReviewers;
 
+      // Show success modal immediately
       setModalOpen(true);
       setStatusMessage(
         <div className="flex items-center gap-2 text-green-600">
@@ -117,15 +126,67 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
         </div>
       );
       setError(false);
+
+      // Continue with backend operations in the background
+      const backgroundOperations = async () => {
+        try {
+          if (isActive) {
+            await updateReviewRequestStatus(requestData.id, 'accepted');
+            
+            // Use regular Date object instead of serverTimestamp
+            const now = new Date();
+            
+            // Update lastRequestedAt timestamp
+            const projectRef = doc(db, 'projects', projectId);
+            await updateDoc(projectRef, {
+              reviewers: project.reviewers.map(r => 
+                r.id === reviewer.id
+                  ? { ...r, lastRequestedAt: now }
+                  : r
+              ),
+              updatedAt: serverTimestamp()
+            });
+
+            await notify({
+              type: 'New Review Requested',
+              projectId,
+              targetUserId: reviewer.id,
+              senderUserId: auth.currentUser.uid,
+              projectTitle: project.title,
+              message: `As an active reviewer, you have received another review request for "${project.title}". You can proceed to submit a new review.`
+            });
+          } else {
+            await notify({
+              type: 'Review Requested',
+              projectId,
+              targetUserId: reviewer.id,
+              senderUserId: auth.currentUser.uid,
+              projectTitle: project.title,
+              message: `You have received a review request for the project "${project.title}".`
+            });
+          }
+
+          const updatedRequests = await getReviewerRequestsForProject(projectId);
+          setReviewRequests(updatedRequests);
+        } catch (err) {
+          console.error("Error in background operations:", err);
+          // Don't show error modal since request was already created successfully
+        }
+      };
+
+      // Start background operations without awaiting them
+      backgroundOperations();
+
     } catch (err) {
       console.error("Error re-requesting review:", err);
       setError(true);
+      setModalOpen(true);
       setStatusMessage(
         <div className="flex items-center gap-2 text-red-600">
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
-          <span>Failed to send review request: {err.message}</span>
+          <span>Failed to send new request: {err.message}</span>
         </div>
       );
     } finally {
