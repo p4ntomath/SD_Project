@@ -1,58 +1,127 @@
 import { useState, useEffect } from 'react';
 import { ClipLoader } from 'react-spinners';
 import { motion } from 'framer-motion';
-import { searchResearchers } from '../../backend/firebase/collaborationDB';
+import { searchResearchers, getAllResearchers } from '../../backend/firebase/collaborationDB';
 import { auth } from '../../backend/firebase/firebaseConfig';
 import { notify } from '../../backend/firebase/notificationsUtil';
 import { getUserById } from '../../backend/firebase/notificationsUtil';
+import { useDebounce } from '../../hooks/useDebounce';
 
 // Modal for assigning collaborators to a project
 export default function AssignCollaboratorsModal({ isOpen, onClose, onAssign, projectId, project }) {
   // State for search input, results, selected researchers, loading, and roles
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults, setSearchResults] = useState([]);
+  const [allResearchers, setAllResearchers] = useState([]);
+  const [filteredResearchers, setFilteredResearchers] = useState([]);
   const [selectedResearchers, setSelectedResearchers] = useState([]);
-  const [searchLoading, setSearchLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [fetchingResearchers, setFetchingResearchers] = useState(true);
   const [selectedRoles, setSelectedRoles] = useState({});
-  const [loading, setLoading] = useState(false); // Loading state for assignment
+  const [lastDoc, setLastDoc] = useState(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  
+  const debouncedSearchTerm = useDebounce(searchTerm, 300);
+  const PAGE_SIZE = 10;
 
-  // Effect: Search for researchers as user types (debounced)
+  // Load initial researchers when modal opens
   useEffect(() => {
-    const searchForResearchers = async () => {
+    const loadInitialResearchers = async () => {
+      if (!isOpen) return;
+      
       try {
-        setSearchLoading(true);
-        // Search researchers, excluding current user and already assigned
-        const researchers = await searchResearchers(searchTerm, auth.currentUser?.uid, project);
-        setSearchResults(researchers || []);
+        setFetchingResearchers(true);
+        const result = await getAllResearchers(auth.currentUser?.uid, project, PAGE_SIZE);
+        setAllResearchers(result.researchers);
+        setFilteredResearchers(result.researchers);
+        setLastDoc(result.lastDoc);
+        setHasMore(result.hasMore);
       } catch (error) {
-        console.error('Error searching for researchers:', error);
+        console.error('Error loading researchers:', error);
       } finally {
-        setSearchLoading(false);
+        setFetchingResearchers(false);
       }
     };
 
-    // Debounce search to avoid excessive requests
-    if (searchTerm.trim()) {
-      const debounceTimer = setTimeout(searchForResearchers, 300);
-      return () => clearTimeout(debounceTimer);
-    } else {
-      setSearchResults([]);
+    loadInitialResearchers();
+  }, [isOpen, project]);
+
+  // Handle debounced search
+  useEffect(() => {
+    const handleSearch = async () => {
+      const searchQuery = debouncedSearchTerm.trim().toLowerCase();
+      if (!searchQuery) {
+        setFilteredResearchers(allResearchers);
+        return;
+      }
+
+      const filtered = allResearchers.filter(researcher => {
+        const fullName = (researcher.fullName || '').toLowerCase();
+        const institution = (researcher.institution || '').toLowerCase();
+        const fieldOfResearch = (researcher.fieldOfResearch || '').toLowerCase();
+
+        // Check if any part of the researcher's name matches
+        const nameMatch = fullName.split(' ').some(part => part.startsWith(searchQuery));
+        
+        return nameMatch || 
+               institution.includes(searchQuery) || 
+               fieldOfResearch.includes(searchQuery);
+      });
+      
+      setFilteredResearchers(filtered);
+    };
+
+    handleSearch();
+  }, [debouncedSearchTerm, allResearchers]);
+
+  // Load more researchers
+  const loadMore = async () => {
+    if (!hasMore || loadingMore || debouncedSearchTerm) return;
+    
+    try {
+      setLoadingMore(true);
+      const result = await getAllResearchers(auth.currentUser?.uid, project, PAGE_SIZE, lastDoc);
+      setAllResearchers(prev => [...prev, ...result.researchers]);
+      setFilteredResearchers(prev => [...prev, ...result.researchers]);
+      setLastDoc(result.lastDoc);
+      setHasMore(result.hasMore);
+    } catch (error) {
+      console.error('Error loading more researchers:', error);
+    } finally {
+      setLoadingMore(false);
     }
-  }, [searchTerm, projectId, project]);
+  };
+
+  // Reset state when modal closes
+  useEffect(() => {
+    if (!isOpen) {
+      setSearchTerm('');
+      setSelectedResearchers([]);
+      setSelectedRoles({});
+      setLastDoc(null);
+      setHasMore(true);
+    }
+  }, [isOpen]);
+
+  // Handle intersection observer for infinite scrolling
+  const handleScroll = (e) => {
+    const { scrollTop, scrollHeight, clientHeight } = e.target;
+    if (scrollHeight - scrollTop <= clientHeight * 1.5) {
+      loadMore();
+    }
+  };
 
   // Toggle researcher selection and manage their role
   const handleToggleResearcher = (researcher) => {
     setSelectedResearchers(prev => {
       const isSelected = prev.some(r => r.id === researcher.id);
       if (isSelected) {
-        // Remove researcher and their role if already selected
         setSelectedRoles(prevRoles => {
           const { [researcher.id]: _, ...rest } = prevRoles;
           return rest;
         });
         return prev.filter(r => r.id !== researcher.id);
       } else {
-        // Add researcher with default role
         setSelectedRoles(prevRoles => ({
           ...prevRoles,
           [researcher.id]: 'Collaborator' // Default role
@@ -70,16 +139,21 @@ export default function AssignCollaboratorsModal({ isOpen, onClose, onAssign, pr
     }));
   };
 
-  // Assign selected researchers to the project and send notifications
+  // Assign selected researchers and send notifications
   const handleAssign = async () => {
+    if (!selectedResearchers.length) return;
     setLoading(true);
+
     try {
       // Prepare researchers with their assigned roles
       const researchersWithRoles = selectedResearchers.map(researcher => ({
         ...researcher,
         role: selectedRoles[researcher.id]
       }));
+
       await onAssign(researchersWithRoles);
+
+      // Reset state
       setSelectedResearchers([]);
       setSelectedRoles({});
       setSearchTerm('');
@@ -88,7 +162,20 @@ export default function AssignCollaboratorsModal({ isOpen, onClose, onAssign, pr
       const senderUser = await getUserById(auth.currentUser.uid);
       const senderName = senderUser?.fullName || "A researcher";
 
-      // Notify sender (current user)
+      // Notify each recipient
+      await Promise.all(selectedResearchers.map(researcher =>
+        notify({
+          type: 'Collaboration Request Received',
+          projectId,
+          projectTitle: project.title,
+          researcherName: senderName,
+          targetUserId: researcher.id,
+          senderUserId: auth.currentUser.uid,
+          message: `You have received a collaboration request from ${senderName} for project "${project.title || 'Untitled Project'}".`
+        })
+      ));
+
+      // Notify sender
       await notify({
         type: 'Collaboration Request Sent',
         projectId,
@@ -96,21 +183,7 @@ export default function AssignCollaboratorsModal({ isOpen, onClose, onAssign, pr
         researcherName: selectedResearchers.map(r => r.fullName).join(', '),
         targetUserId: auth.currentUser.uid,
         senderUserId: auth.currentUser.uid,
-        message: `You sent a collaboration request to ${selectedResearchers.map(r => r.fullName).join(', ')} for project "${project.title || 'Untitled Project'}".`
       });
-
-      // Notify each recipient with correct sender name
-      await Promise.all(selectedResearchers.map(researcher =>
-        notify({
-          type: 'Collaboration Request Received',
-          projectId,
-          projectTitle: project.title,
-          researcherName: senderName, // Use sender's name here
-          targetUserId: researcher.id,
-          senderUserId: auth.currentUser.uid,
-          message: `You have received a collaboration request from ${senderName} for project "${project.title || 'Untitled Project'}".`
-        })
-      ));
 
     } catch (error) {
       console.error('Error assigning collaborators:', error);
@@ -119,7 +192,6 @@ export default function AssignCollaboratorsModal({ isOpen, onClose, onAssign, pr
     }
   };
 
-  // Don't render modal if not open
   if (!isOpen) return null;
 
   return (
@@ -133,81 +205,145 @@ export default function AssignCollaboratorsModal({ isOpen, onClose, onAssign, pr
           exit={{ scale: 0.95, opacity: 0 }}
           className="relative bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6"
         >
-          <h2 className="text-xl font-semibold mb-4 text-gray-900">Add Project Collaborators</h2>
-          <section className="space-y-4">
-            {/* Search input */}
-            <section>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Search Researchers</label>
+          {/* Modal header */}
+          <header className="flex justify-between items-center mb-6">
+            <h2 className="text-xl font-semibold text-gray-900">
+              {loading ? (
+                <span className="flex items-center gap-2">
+                  <span className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
+                  <span>Adding collaborators...</span>
+                </span>
+              ) : (
+                'Add Project Collaborators'
+              )}
+            </h2>
+            <button 
+              onClick={onClose} 
+              className="text-gray-500 hover:text-gray-700"
+              disabled={loading}
+              aria-label="Close modal"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </header>
+
+          {/* Search input */}
+          <section className="mb-4">
+            <section className="relative">
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                placeholder="Search by name or institution..."
+                placeholder="Filter researchers by name, field of research, or institution..."
+                className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                 disabled={loading}
+                aria-label="Search researchers"
               />
+              <svg
+                className="absolute left-3 top-2.5 h-5 w-5 text-gray-400"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                />
+              </svg>
             </section>
+          </section>
 
-            {/* Search results list */}
-            <section className="max-h-64 overflow-y-auto border border-gray-200 rounded-lg">
-              {searchLoading ? (
-                // Show loading spinner while searching
-                <section className="flex justify-center items-center py-8">
-                  <ClipLoader size={20} color="#3B82F6" />
+          {/* Researchers list */}
+          <section 
+            className="max-h-[400px] overflow-y-auto"
+            onScroll={handleScroll}
+          >
+            {fetchingResearchers ? (
+              <section className="flex items-center justify-center py-12">
+                <section className="flex flex-col items-center gap-3">
+                  <span className="animate-spin h-8 w-8 border-3 border-blue-500 border-t-transparent rounded-full" />
+                  <p className="text-sm text-gray-500">Loading researchers...</p>
                 </section>
-              ) : searchResults.length > 0 ? (
-                // List of researchers found
-                <ul className="sectionide-y sectionide-gray-200">
-                  {searchResults.map((researcher) => (
-                    <li 
-                      key={researcher.id}
-                      className="flex items-center justify-between p-4 hover:bg-gray-50"
-                    >
-                      <section className="flex items-center flex-1">
-                        {/* Checkbox to select researcher */}
-                        <input
-                          type="checkbox"
-                          checked={selectedResearchers.some(r => r.id === researcher.id)}
-                          onChange={() => handleToggleResearcher(researcher)}
-                          className="h-4 w-4 text-blue-600 rounded"
-                          disabled={loading}
-                        />
-                        <section className="ml-3 flex-1">
-                          <p className="text-sm font-medium text-gray-900">{researcher.fullName}</p>
-                          <p className="text-xs text-gray-500">{researcher.institution || 'No institution specified'}</p>
-                        </section>
-                        {/* Role selector for selected researcher */}
-                        {selectedResearchers.some(r => r.id === researcher.id) && (
-                          <select
-                            value={selectedRoles[researcher.id] || 'Collaborator'}
-                            onChange={(e) => handleRoleChange(researcher.id, e.target.value)}
-                            className="ml-4 text-sm bg-white border border-gray-300 rounded-md px-2 py-1"
-                            onClick={(e) => e.stopPropagation()}
-                            disabled={loading}
-                          >
-                            <option value="Collaborator">Collaborator</option>
-                            <option value="Editor">Editor</option>
-                            <option value="Viewer">Viewer</option>
-                          </select>
-                        )}
+              </section>
+            ) : (
+              <section className="space-y-2">
+                {filteredResearchers.map((researcher) => (
+                  <article
+                    key={researcher.id}
+                    onClick={() => !loading && handleToggleResearcher(researcher)}
+                    className={`flex items-center justify-between p-3 rounded-lg cursor-pointer transition-colors ${
+                      selectedResearchers.some(r => r.id === researcher.id)
+                        ? 'bg-blue-50 border-2 border-blue-500'
+                        : 'bg-gray-50 hover:bg-gray-100 border-2 border-transparent'
+                    } ${loading ? 'opacity-50 cursor-not-allowed' : ''}`}
+                  >
+                    <section className="flex items-center gap-3 flex-1">
+                      <section className="p-2 bg-blue-100 rounded-full">
+                        <svg className="h-5 w-5 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                          />
+                        </svg>
                       </section>
-                    </li>
-                  ))}
-                </ul>
-              ) : searchTerm ? (
-                // No researchers found
-                <p className="text-gray-500 text-center py-8">No researchers found</p>
-              ) : (
-                // Prompt to start searching
-                <p className="text-gray-500 text-center py-8">Start typing to search for researchers</p>
-              )}
-            </section>
+                      <section>
+                        <h3 className="font-medium text-gray-900">{researcher.fullName}</h3>
+                        <p className="text-sm text-gray-500">
+                          {researcher.institution || 'No institution specified'}
+                          {researcher.fieldOfResearch && ` • ${researcher.fieldOfResearch}`}
+                        </p>
+                      </section>
+                    </section>
 
-            {/* Modal action buttons */}
-            <section className="flex justify-end gap-3 mt-6">
+                    {selectedResearchers.some(r => r.id === researcher.id) && (
+                      <section className="flex items-center">
+                        <select
+                          value={selectedRoles[researcher.id] || 'Collaborator'}
+                          onChange={(e) => handleRoleChange(researcher.id, e.target.value)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="text-sm bg-white border border-gray-300 rounded-md px-2 py-1"
+                          disabled={loading}
+                        >
+                          <option value="Collaborator">Collaborator</option>
+                          <option value="Editor">Editor</option>
+                          <option value="Viewer">Viewer</option>
+                        </select>
+                      </section>
+                    )}
+                  </article>
+                ))}
+
+                {loadingMore && (
+                  <section className="flex justify-center py-4">
+                    <ClipLoader size={20} color="#3B82F6" />
+                  </section>
+                )}
+
+                {filteredResearchers.length === 0 && (
+                  <p className="text-center py-8 text-gray-500">
+                    {searchTerm ? 'No researchers found matching your search' : 'No available researchers found'}
+                  </p>
+                )}
+              </section>
+            )}
+          </section>
+
+          {/* Modal footer */}
+          <footer className="flex items-center justify-between mt-6 pt-4 border-t border-gray-100">
+            <p className="text-sm text-gray-500">
+              {selectedResearchers.length} researcher{selectedResearchers.length !== 1 ? 's' : ''} selected
+            </p>
+            <section className="flex gap-3">
               <button
                 onClick={onClose}
-                className="px-4 py-2 rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors"
+                className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50"
                 disabled={loading}
               >
                 Cancel
@@ -218,17 +354,16 @@ export default function AssignCollaboratorsModal({ isOpen, onClose, onAssign, pr
                 className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 {loading ? (
-                  <>
-                    {/* Loading spinner while assigning */}
-                    <section className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                    <p>Adding...</p>
-                  </>
+                  <span className="flex items-center gap-2">
+                    <span className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                    <span>Adding...</span>
+                  </span>
                 ) : (
                   'Add Selected'
                 )}
               </button>
             </section>
-          </section>
+          </footer>
         </motion.section>
       </section>
     </section>
