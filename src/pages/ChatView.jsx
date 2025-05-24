@@ -38,6 +38,9 @@ export default function ChatView() {
   const [isVisible, setIsVisible] = useState(document.visibilityState === 'visible');
   const [isFocused, setIsFocused] = useState(true);
 
+  // Skip smooth scrolling for bulk message loads
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+
   // Handle tab visibility changes
   useEffect(() => {
     const handleVisibilityChange = () => {
@@ -76,14 +79,27 @@ export default function ChatView() {
     }
   }, [chatId, isVisible, isFocused, messages]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // Helper function for scrolling
+  const scrollToBottom = (behavior = 'auto') => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior });
+    }
   };
 
-  // Scroll to bottom when new messages arrive
+  // Initial load: use instant scroll
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (messages.length > 0 && isInitialLoad) {
+      scrollToBottom('auto');
+      setIsInitialLoad(false);
+    }
+  }, [messages, isInitialLoad]);
+
+  // New messages: use smooth scroll only if it's not the initial load
+  useEffect(() => {
+    if (messages.length > 0 && !isInitialLoad) {
+      scrollToBottom('smooth');
+    }
+  }, [messages, isInitialLoad]);
 
   useEffect(() => {
     let unsubscribeChat;
@@ -459,7 +475,7 @@ export default function ChatView() {
         <div className={`rounded-lg px-4 py-2 max-w-[70%] space-y-2 ${
           isCurrentUser 
             ? 'bg-blue-600 text-white' 
-            : 'bg-gray-100 text-gray-900'
+            : 'bg-gray-300 text-black'
         }`}>
           {message.text && <p className="whitespace-pre-wrap">{message.text}</p>}
           {message.attachments?.map((attachment, index) => (
