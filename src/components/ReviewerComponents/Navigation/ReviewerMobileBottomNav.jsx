@@ -1,4 +1,4 @@
-import { FiHome, FiUser, FiClock, FiBell, FiInbox, FiMessageSquare } from 'react-icons/fi';
+import { FiHome, FiClock, FiInbox, FiMessageSquare } from 'react-icons/fi';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ClipboardDocumentCheckIcon } from "@heroicons/react/24/outline";
 import { useUnreadNotificationsCount, useUnreadMessagesCount } from '../../../backend/firebase/notificationsUtil';
@@ -48,7 +48,7 @@ export default function ReviewerMobileBottomNav() {
           <p className="text-xs mt-1 group-hover:text-blue-600">History</p>
         </button>
 
-        <button 
+        <button
           onClick={() => navigate('/reviewer/messages')}
           className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/reviewer/messages' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
           aria-label="View messages"
@@ -63,7 +63,6 @@ export default function ReviewerMobileBottomNav() {
           </span>
           <p className="text-xs mt-1 group-hover:text-blue-600">Messages</p>
         </button>
-
       </section>
     </nav>
   );

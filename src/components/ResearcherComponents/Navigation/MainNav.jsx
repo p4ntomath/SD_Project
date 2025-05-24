@@ -6,7 +6,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useUnreadNotificationsCount, useUnreadMessagesCount } from '../../../backend/firebase/notificationsUtil';
 
-export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobileMenuOpen, onSearch }) {
+export default function MainNav({ setMobileMenuOpen, mobileMenuOpen }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
   const navigate = useNavigate();
@@ -16,7 +16,9 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
 
   const handleSearch = (e) => {
     e.preventDefault();
-    onSearch(searchQuery);
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+    }
   };
 
   const handleLogout = async () => {
@@ -96,7 +98,7 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
                 </section>
                 <input
                   type="text"
-                  placeholder="Search projects..."
+                  placeholder="Search people..."
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}

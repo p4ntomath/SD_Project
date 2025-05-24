@@ -1,4 +1,3 @@
-
 import { auth, db, storage } from "./firebaseConfig";
 import { collection, query, where, getDocs, doc, getDoc, updateDoc, /*deleteField*/ } from "firebase/firestore";
 
@@ -99,4 +98,56 @@ export const deleteUserProfileFields = async (fieldsToDelete) => {
 
   await updateDoc(userRef, updates);
   return true;
+};
+
+export const searchUsers = async (searchTerm) => {
+  try {
+    if (!searchTerm) return [];
+
+    const usersRef = collection(db, "users");
+    const querySnapshot = await getDocs(usersRef);
+    
+    // Filter and map users locally for flexible search
+    return querySnapshot.docs
+      .map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }))
+      .filter(user => {
+        const searchLower = searchTerm.toLowerCase();
+        return (
+          user.fullName?.toLowerCase().includes(searchLower) ||
+          user.institution?.toLowerCase().includes(searchLower) ||
+          user.department?.toLowerCase().includes(searchLower) ||
+          user.fieldOfResearch?.toLowerCase().includes(searchLower)
+        );
+      });
+  } catch (error) {
+    console.error("Error searching users:", error);
+    throw new Error("Failed to search users");
+  }
+};
+
+export const getPublicProfile = async (userId) => {
+  if (!userId) throw new Error("User ID is required");
+
+  const userRef = doc(db, "users", userId);
+  const userSnap = await getDoc(userRef);
+  
+  if (userSnap.exists()) {
+    const userData = userSnap.data();
+    return {
+      id: userSnap.id,
+      fullName: userData.fullName,
+      role: userData.role,
+      institution: userData.institution,
+      department: userData.department,
+      fieldOfResearch: userData.fieldOfResearch,
+      bio: userData.bio,
+      profilePicture: userData.profilePicture,
+      createdAt: userData.createdAt
+    };
+  } else {
+    throw new Error("User not found");
+  }
 };

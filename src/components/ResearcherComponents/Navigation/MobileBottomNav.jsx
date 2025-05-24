@@ -1,4 +1,4 @@
-import { FiHome, FiFolder, FiBell, FiUser, FiFileText, FiMessageSquare } from 'react-icons/fi';
+import { FiHome, FiFolder, FiBell, FiUser, FiFileText, FiMessageSquare, FiUsers } from 'react-icons/fi';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useUnreadNotificationsCount, useUnreadMessagesCount } from '../../../backend/firebase/notificationsUtil';
 
@@ -61,6 +61,15 @@ export default function MobileBottomNav ({ showForm, setShowForm }) {
         >
           <FiUser className="h-6 w-6 group-hover:text-blue-600" />
           <p className="text-xs mt-1 group-hover:text-blue-600">Account</p>
+        </button>
+
+        <button 
+          onClick={() => navigate('/search')}
+          className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/search' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
+          aria-label="Search People"
+        >
+          <FiUsers className="h-6 w-6 group-hover:text-blue-600" />
+          <p className="text-xs mt-1 group-hover:text-blue-600">People</p>
         </button>
       </section>
     </nav>

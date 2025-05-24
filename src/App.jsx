@@ -27,11 +27,12 @@ import ReviewProjectPage from './pages/ReviewerPages/ReviewProjectPage.jsx';
 import NotificationsPage from './pages/NotificationsPage.jsx';
 import ReviewerNotificationsPage from './pages/reviewer/ReviewerNotificationsPage.jsx';
 import MyProfilePage from './pages/MyProfilePage.jsx';
-import MessagesPage from './pages/Messages.jsx';
 import MessagesList from './pages/MessagesList.jsx';
 import ChatView from './pages/ChatView.jsx';
 import MessagesLayout from './pages/MessagesLayout.jsx';
 import UserDetailsPage from './pages/UserDetailsPage.jsx';
+import UserSearchPage from './pages/UserSearchPage.jsx';
+import PublicProfilePage from './pages/PublicProfilePage.jsx';
 
 function App() {
   return (
@@ -187,6 +188,16 @@ function App() {
             <Route index element={<MessagesList />} />
             <Route path=":chatId" element={<ChatView />} />
           </Route>
+          <Route path="/search" element={
+            <ProtectedRoute allowedRoles={['researcher', 'reviewer', 'admin']}>
+              <UserSearchPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile/:userId" element={
+            <ProtectedRoute allowedRoles={['researcher', 'reviewer', 'admin']}>
+              <PublicProfilePage />
+            </ProtectedRoute>
+          } />
         </Routes>
       </AuthProvider>
     </Router>
