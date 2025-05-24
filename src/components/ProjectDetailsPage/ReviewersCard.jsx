@@ -53,24 +53,24 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
       setShowAssignReviewersModal(false);
       setModalOpen(true);
       setStatusMessage(
-        <div className="flex items-center gap-2 text-green-600">
+        <section className="flex items-center gap-2 text-green-600">
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
-          <span>Successfully sent {selectedReviewers.length} reviewer request{selectedReviewers.length !== 1 ? 's' : ''}</span>
-        </div>
+          <p>Successfully sent {selectedReviewers.length} reviewer request{selectedReviewers.length !== 1 ? 's' : ''}</p>
+        </section>
       );
       setError(false);
     } catch (err) {
       console.error("Error assigning reviewers:", err);
       setError(true);
       setStatusMessage(
-        <div className="flex items-center gap-2 text-red-600">
+        <section className="flex items-center gap-2 text-red-600">
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
-          <span>Failed to send reviewer requests: {err.message}</span>
-        </div>
+          <p>Failed to send reviewer requests: {err.message}</p>
+        </section>
       );
     } finally {
       setSendingReviewRequests(false);
@@ -84,12 +84,12 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
         setError(true);
         setModalOpen(true);
         setStatusMessage(
-          <div className="flex items-center gap-2 text-yellow-600">
+          <section className="flex items-center gap-2 text-yellow-600">
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
             </svg>
-            <span>Cannot send new request: {reviewer.name} already has a pending review request</span>
-          </div>
+            <p>Cannot send new request: {reviewer.name} already has a pending review request</p>
+          </section>
         );
         return;
       }
@@ -109,24 +109,24 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
 
       setModalOpen(true);
       setStatusMessage(
-        <div className="flex items-center gap-2 text-green-600">
+        <section className="flex items-center gap-2 text-green-600">
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
-          <span>Successfully sent new review request to {reviewer.name}</span>
-        </div>
+          <p>Successfully sent new review request to {reviewer.name}</p>
+        </section>
       );
       setError(false);
     } catch (err) {
       console.error("Error re-requesting review:", err);
       setError(true);
       setStatusMessage(
-        <div className="flex items-center gap-2 text-red-600">
+        <section className="flex items-center gap-2 text-red-600">
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
-          <span>Failed to send review request: {err.message}</span>
-        </div>
+          <p>Failed to send review request: {err.message}</p>
+        </section>
       );
     } finally {
       setProcessingReRequest(null);
@@ -138,28 +138,28 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
     switch (status) {
       case 'pending_feedback':
         return (
-          <span className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+          <p className="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
             Pending Feedback
-          </span>
+          </p>
         );
       case 'feedback_submitted':
         return (
-          <span className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
+          <p className="px-2 py-1 text-xs rounded-full bg-green-100 text-green-800">
             Feedback Received
-          </span>
+          </p>
         );
       default:
         return (
-          <span className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
+          <p className="px-2 py-1 text-xs rounded-full bg-gray-100 text-gray-800">
             Status Unknown
-          </span>
+          </p>
         );
     }
   };
 
   return (
     <section className="bg-white rounded-lg shadow p-4 sm:p-6">
-      <div className="flex justify-between items-center mb-4">
+      <section className="flex justify-between items-center mb-4">
         <h2 className="text-lg sm:text-xl font-semibold">Project Reviewers</h2>
         {canManageReviewers && (
           <button
@@ -173,7 +173,7 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
             Assign Reviewers
           </button>
         )}
-      </div>
+      </section>
 
       <AssignReviewersModal
         isOpen={showAssignReviewersModal}
@@ -184,25 +184,25 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
       />
 
       {activeReviewers.length > 0 && (
-        <div className="mb-6">
+        <section className="mb-6">
           <h3 className="text-sm font-medium text-gray-700 mb-3">Active Reviewers</h3>
-          <div className="max-h-[300px] overflow-y-auto pr-2">
+          <section className="max-h-[300px] overflow-y-auto pr-2">
             <ul className="space-y-2">
               {activeReviewers.map((reviewer) => (
                 <li key={reviewer.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-blue-100 rounded-full">
+                  <section className="flex items-center gap-3">
+                    <section className="p-2 bg-blue-100 rounded-full">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
-                    </div>
-                    <div>
+                    </section>
+                    <section>
                       <p className="font-medium text-sm break-words">{reviewer.name}</p>
                       <p className="text-xs text-gray-500 break-words">{reviewer.fieldOfResearch || 'No field of research specified'}</p>
-                    </div>
-                  </div>
+                    </section>
+                  </section>
                   
-                  <div className="flex items-center gap-2">
+                  <section className="flex items-center gap-2">
                     {getStatusBadge(reviewer.reviewStatus)}
                     {canManageReviewers && reviewer.reviewStatus === 'feedback_submitted' && (
                       <button
@@ -212,7 +212,7 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
                         title="Request another review"
                       >
                         {processingReRequest === reviewer.id ? (
-                          <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full" />
+                          <section className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full" />
                         ) : (
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -220,33 +220,33 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
                         )}
                       </button>
                     )}
-                  </div>
+                  </section>
                 </li>
               ))}
             </ul>
-          </div>
-        </div>
+          </section>
+        </section>
       )}
 
       {pendingRequests.length > 0 && (
-        <div className="space-y-4">
+        <section className="space-y-4">
           <h3 className="text-sm font-medium text-gray-700">Review Requests</h3>
-          <div className="max-h-[300px] overflow-y-auto pr-2">
+          <section className="max-h-[300px] overflow-y-auto pr-2">
             <ul className="space-y-2">
               {pendingRequests.map((request) => (
                 <li key={request.id} className="flex items-center justify-between p-2 bg-gray-50/80 rounded-lg">
-                  <div className="flex items-center gap-3">
-                    <div className="p-2 bg-gray-100 rounded-full">
+                  <section className="flex items-center gap-3">
+                    <section className="p-2 bg-gray-100 rounded-full">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                       </svg>
-                    </div>
-                    <div>
+                    </section>
+                    <section>
                       <p className="font-medium text-sm break-words">{request.reviewerName}</p>
                       <p className="text-xs text-gray-500 break-words">Requested: {formatDate(request.requestedAt)}</p>
-                    </div>
-                  </div>
-                  <span className={`px-2 py-1 text-xs rounded-full ${
+                    </section>
+                  </section>
+                  <p className={`px-2 py-1 text-xs rounded-full ${
                     request.status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
                     request.status === 'rejected' ? 'bg-red-100 text-red-800' :
                     'bg-gray-100 text-gray-800'
@@ -254,12 +254,12 @@ export default function ReviewersCard({ project, reviewRequests, formatDate, set
                     {request.status === 'pending' ? 'Pending Response' :
                      request.status === 'rejected' ? 'Request Declined' :
                      'Unknown Status'}
-                  </span>
+                  </p>
                 </li>
               ))}
             </ul>
-          </div>
-        </div>
+          </section>
+        </section>
       )}
 
       {activeReviewers.length === 0 && pendingRequests.length === 0 && (

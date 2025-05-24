@@ -241,23 +241,26 @@ export default function DocumentsPage() {
     if (loading) {
         return (
             <main className="min-h-screen bg-gray-50">
+                {/* Main navigation bar */}
                 <MainNav mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} />
                 
+                {/* Loading state with animated dots */}
                 <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     <header className="mb-8">
                         <h1 className="text-3xl font-bold text-gray-900">My Documents</h1>
                         <p className="mt-2 text-sm text-gray-600">Manage and organize your research documents</p>
                     </header>
 
-                    <div className="flex items-center justify-center min-h-[400px]">
-                        <div className="flex items-center space-x-2">
-                            <div className="w-3 h-3 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                            <div className="w-3 h-3 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                            <div className="w-3 h-3 bg-blue-600 rounded-full animate-bounce"></div>
-                        </div>
-                    </div>
+                    <section className="flex items-center justify-center min-h-[400px]">
+                        <section className="flex items-center space-x-2">
+                            <section className="w-3 h-3 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.3s]"></section>
+                            <section className="w-3 h-3 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.15s]"></section>
+                            <section className="w-3 h-3 bg-blue-600 rounded-full animate-bounce"></section>
+                        </section>
+                    </section>
                 </section>
 
+                {/* Mobile bottom navigation */}
                 <MobileBottomNav />
             </main>
         );
@@ -265,14 +268,17 @@ export default function DocumentsPage() {
 
     return (
         <main className="min-h-screen bg-gray-50">
+            {/* Main navigation bar */}
             <MainNav mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} />
 
             <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+                {/* Page header */}
                 <header className="mb-8">
                     <h1 className="text-3xl font-bold text-gray-900">My Documents</h1>
                     <p className="mt-2 text-sm text-gray-600">Manage and organize your research documents</p>
                 </header>
 
+                {/* Folder actions: create and sort */}
                 <section className="mb-6 flex flex-wrap gap-4">
                     <button
                         onClick={() => setShowFolderModal(true)}
@@ -284,6 +290,7 @@ export default function DocumentsPage() {
                         New Folder
                     </button>
 
+                    {/* Sort folders dropdown, only if folders exist */}
                     {folders.length > 0 && (
                         <select
                             value={sortOption}
@@ -297,12 +304,12 @@ export default function DocumentsPage() {
                 </section>
 
                 {folders.length === 0 ? (
-                    <div className="text-center py-12 px-4 rounded-lg bg-white shadow-sm border border-gray-200">
-                        <div className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+                    <section className="text-center py-12 px-4 rounded-lg bg-white shadow-sm border border-gray-200">
+                        <section className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
                             <svg className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                             </svg>
-                        </div>
+                        </section>
                         <h3 className="text-lg font-medium text-gray-900 mb-1">No documents yet</h3>
                         <p className="text-sm text-gray-500 mb-4">Get started by creating a new folder to organize your research documents</p>
                         <button
@@ -314,21 +321,21 @@ export default function DocumentsPage() {
                             </svg>
                             Create First Folder
                         </button>
-                    </div>
+                    </section>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {sortFolders(folders).map((folder) => (
                             <article key={folder.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
                                 <header className="flex items-start justify-between mb-4">
-                                    <div className="flex items-center">
-                                        <div className="p-2 bg-blue-50 rounded-lg mr-3">
+                                    <section className="flex items-center">
+                                        <section className="p-2 bg-blue-50 rounded-lg mr-3">
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                                             </svg>
-                                        </div>
-                                        <div>
+                                        </section>
+                                        <section>
                                             {isRenamingFolder === folder.id ? (
-                                                <div className="flex items-center gap-2">
+                                                <section className="flex items-center gap-2">
                                                     <input
                                                         type="text"
                                                         value={newFolderName}
@@ -366,7 +373,7 @@ export default function DocumentsPage() {
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                                         </svg>
                                                     </button>
-                                                </div>
+                                                </section>
                                             ) : (
                                                 <h3 className="font-semibold text-gray-900 group flex items-center gap-2">
                                                     {folder.name}
@@ -386,21 +393,21 @@ export default function DocumentsPage() {
                                             )}
                                             <p className="text-sm text-gray-500">{folder.files?.length || 0} files</p>
                                             <p className="text-xs text-blue-600 mt-1">Project: {folder.projectName}</p>
-                                            <div className="mt-2 space-y-1">
+                                            <section className="mt-2 space-y-1">
                                                 <p className="text-xs text-gray-500">Size: {formatFileSize(folder.size || 0)}</p>
                                                 <p className="text-xs text-gray-500">Remaining: {formatFileSize(folder.remainingSpace || 100 * 1024 * 1024)}</p>
-                                                <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
-                                                    <div 
+                                                <section className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                                    <section 
                                                         className="h-full bg-blue-600 rounded-full transition-all"
                                                         style={{ 
                                                             width: `${((folder.size || 0) / (100 * 1024 * 1024)) * 100}%`,
                                                             backgroundColor: ((folder.size || 0) / (100 * 1024 * 1024)) > 0.9 ? '#ef4444' : '#2563eb'
                                                         }}
                                                     />
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
+                                                </section>
+                                            </section>
+                                        </section>
+                                    </section>
                                     <button
                                         onClick={() => handleDeleteFolderWrapper(folder)}
                                         className="text-red-600 hover:text-red-800 transition-colors"
@@ -411,14 +418,14 @@ export default function DocumentsPage() {
                                     </button>
                                 </header>
 
-                                <div className="space-y-2">
+                                <section className="space-y-2">
                                     {folder.files?.map((file) => (
-                                        <div key={file.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-sm">
-                                            <div className="flex items-center space-x-2 min-w-0">
+                                        <section key={file.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-sm">
+                                            <section className="flex items-center space-x-2 min-w-0">
                                                 <DocumentIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                                                <span className="truncate">{file.name}</span>
-                                            </div>
-                                            <div className="flex items-center space-x-2">
+                                                <p className="truncate">{file.name}</p>
+                                            </section>
+                                            <section className="flex items-center space-x-2">
                                                 <button
                                                     onClick={() => handleDownloadWrapper(file.downloadURL)}
                                                     className="text-blue-600 hover:text-blue-800"
@@ -435,8 +442,8 @@ export default function DocumentsPage() {
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                     </svg>
                                                 </button>
-                                            </div>
-                                        </div>
+                                            </section>
+                                        </section>
                                     ))}
 
                                     <button
@@ -451,24 +458,24 @@ export default function DocumentsPage() {
                                         </svg>
                                         Upload File
                                     </button>
-                                </div>
+                                </section>
 
-                                <div className="mt-4 pt-4 border-t border-gray-100">
+                                <section className="mt-4 pt-4 border-t border-gray-100">
                                     <p className="text-xs text-gray-500">Created {formatFirebaseDate(folder.createdAt)}</p>
-                                </div>
+                                </section>
                             </article>
                         ))}
-                    </div>
+                    </section>
                 )}
 
                 {/* Create Folder Modal */}
                 {showFolderModal && (
-                    <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
-                        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowFolderModal(false)} />
-                        <div className="relative bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200">
+                    <section className="fixed inset-0 flex items-center justify-center p-4 z-50">
+                        <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowFolderModal(false)} />
+                        <section className="relative bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200">
                             <h2 className="text-xl font-semibold mb-4">Create New Folder</h2>
-                            <div className="space-y-4">
-                                <div>
+                            <section className="space-y-4">
+                                <section>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Select Project*
                                     </label>
@@ -485,8 +492,8 @@ export default function DocumentsPage() {
                                             </option>
                                         ))}
                                     </select>
-                                </div>
-                                <div>
+                                </section>
+                                <section>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Folder Name*
                                     </label>
@@ -497,9 +504,9 @@ export default function DocumentsPage() {
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         placeholder="Enter folder name"
                                     />
-                                </div>
-                            </div>
-                            <div className="mt-6 flex justify-end space-x-3">
+                                </section>
+                            </section>
+                            <section className="mt-6 flex justify-end space-x-3">
                                 <button
                                     onClick={() => {
                                         setShowFolderModal(false);
@@ -522,20 +529,20 @@ export default function DocumentsPage() {
                                         'Create Folder'
                                     )}
                                 </button>
-                            </div>
-                        </div>
-                    </div>
+                            </section>
+                        </section>
+                    </section>
                 )}
 
                 {/* Upload File Modal */}
                 {showUploadModal && (
-                    <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
-                        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowUploadModal(false)} />
-                        <div className="relative bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200">
+                    <section className="fixed inset-0 flex items-center justify-center p-4 z-50">
+                        <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowUploadModal(false)} />
+                        <section className="relative bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200">
                             <h2 className="text-xl font-semibold mb-4">Upload File to {selectedFolder?.name}</h2>
                             
-                            <div className="space-y-4">
-                                <div>
+                            <section className="space-y-4">
+                                <section>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Choose File
                                     </label>
@@ -550,9 +557,9 @@ export default function DocumentsPage() {
                                         }}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     />
-                                </div>
+                                </section>
 
-                                <div>
+                                <section>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Display Name
                                     </label>
@@ -563,9 +570,9 @@ export default function DocumentsPage() {
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         placeholder="Enter display name"
                                     />
-                                </div>
+                                </section>
 
-                                <div>
+                                <section>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Description (optional)
                                     </label>
@@ -576,10 +583,10 @@ export default function DocumentsPage() {
                                         rows={3}
                                         placeholder="Enter file description"
                                     />
-                                </div>
-                            </div>
+                                </section>
+                            </section>
 
-                            <div className="mt-6 flex justify-end space-x-3">
+                            <section className="mt-6 flex justify-end space-x-3">
                                 <button
                                     onClick={() => {
                                         setShowUploadModal(false);
@@ -602,16 +609,16 @@ export default function DocumentsPage() {
                                         'Upload'
                                     )}
                                 </button>
-                            </div>
-                        </div>
-                    </div>
+                            </section>
+                        </section>
+                    </section>
                 )}
 
                 {/* Delete Folder Confirmation Modal */}
                 <AnimatePresence>
                     {showDeleteFolderModal && (
-                        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
-                            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteFolderModal(false)} />
+                        <section className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
+                            <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteFolderModal(false)} />
                             <motion.article
                                 className="relative bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200"
                                 initial={{ scale: 0.8, opacity: 0 }}
@@ -650,15 +657,15 @@ export default function DocumentsPage() {
                                     </button>
                                 </footer>
                             </motion.article>
-                        </div>
+                        </section>
                     )}
                 </AnimatePresence>
 
                 {/* Delete File Confirmation Modal */}
                 <AnimatePresence>
                     {showDeleteFileModal && fileToDelete && (
-                        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
-                            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteFileModal(false)} />
+                        <section className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
+                            <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteFileModal(false)} />
                             <motion.article
                                 className="relative bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200"
                                 initial={{ scale: 0.8, opacity: 0 }}
@@ -697,7 +704,7 @@ export default function DocumentsPage() {
                                     </button>
                                 </footer>
                             </motion.article>
-                        </div>
+                        </section>
                     )}
                 </AnimatePresence>
 

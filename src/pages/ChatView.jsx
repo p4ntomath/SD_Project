@@ -262,26 +262,26 @@ export default function ChatView() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-gray-500">Loading chat...</div>
-      </div>
+      <section className="flex items-center justify-center h-screen bg-gray-50">
+        <section className="text-gray-500">Loading chat...</section>
+      </section>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-gray-500">{error}</div>
-      </div>
+      <section className="flex items-center justify-center h-screen bg-gray-50">
+        <section className="text-gray-500">{error}</section>
+      </section>
     );
   }
 
   // Add check for chat existence
   if (!chat) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-gray-500">Chat not found</div>
-      </div>
+      <section className="flex items-center justify-center h-screen bg-gray-50">
+        <section className="text-gray-500">Chat not found</section>
+      </section>
     );
   }
 
@@ -394,12 +394,12 @@ export default function ChatView() {
   };
 
   return (
-    <div className="flex flex-col h-screen">
+    <section className="flex flex-col h-screen">
       {/* Chat Header - Fixed height */}
       <header className="flex-none bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4">
-          <div className="flex items-center h-16">
-            <div className="flex-1 flex items-center min-w-0">
+        <section className="max-w-7xl mx-auto px-4">
+          <section className="flex items-center h-16">
+            <section className="flex-1 flex items-center min-w-0">
               <button 
                 onClick={() => {
                   // First mark all messages as read before navigating back
@@ -412,12 +412,12 @@ export default function ChatView() {
                 <FiArrowLeft className="h-5 w-5 mr-1" />
                 Back
               </button>
-              <div className="flex items-center space-x-4 min-w-0">
-                <div className="relative flex-shrink-0">
+              <section className="flex items-center space-x-4 min-w-0">
+                <section className="relative flex-shrink-0">
                   {chat?.type === 'group' ? (
-                    <div className="w-10 h-10 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-medium text-lg">
+                    <section className="w-10 h-10 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-medium text-lg">
                       {chat.groupAvatar || '👥'}
-                    </div>
+                    </section>
                   ) : (
                     participantPhotos[chat?.participants?.find(id => id !== auth.currentUser.uid)] ? (
                       <img
@@ -426,13 +426,13 @@ export default function ChatView() {
                         className="w-10 h-10 rounded-full object-cover"
                       />
                     ) : (
-                      <div className="w-10 h-10 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
+                      <section className="w-10 h-10 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
                         {getAvatarInitials(chat?.name)}
-                      </div>
+                      </section>
                     )
                   )}
-                </div>
-                <div className="min-w-0 flex-1">
+                </section>
+                <section className="min-w-0 flex-1">
                   <h2 className="font-semibold text-gray-900 truncate">{chat?.groupName || chat?.name}</h2>
                   {chat?.type === 'group' && (
                     <p className="text-sm text-gray-500 truncate">
@@ -445,11 +445,11 @@ export default function ChatView() {
                         : `${chat.participants?.length || 0} members`}
                     </p>
                   )}
-                </div>
-              </div>
-            </div>
+                </section>
+              </section>
+            </section>
 
-            <div className="flex items-center space-x-2 flex-shrink-0">
+            <section className="flex items-center space-x-2 flex-shrink-0">
               {chat?.type === 'group' && (
                 <button 
                   onClick={() => setShowAddMemberModal(true)}
@@ -461,17 +461,17 @@ export default function ChatView() {
               <button className="hidden md:block p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
                 <FiMoreVertical className="h-5 w-5" />
               </button>
-            </div>
-          </div>
-        </div>
+            </section>
+          </section>
+        </section>
       </header>
 
       {/* Add Member Modal */}
       {showAddMemberModal && (
-        <div className="fixed inset-0 bg-gray-500/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-xl shadow-2xl transform transition-all">
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center justify-between">
+        <section className="fixed inset-0 bg-gray-500/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <section className="bg-white w-full max-w-md rounded-xl shadow-2xl transform transition-all">
+            <section className="p-6 border-b border-gray-100">
+              <section className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">Add Members</h3>
                 <button 
                   onClick={() => {
@@ -484,9 +484,9 @@ export default function ChatView() {
                 >
                   <FiX className="h-5 w-5" />
                 </button>
-              </div>
-              <div className="mt-4">
-                <div className="relative">
+              </section>
+              <section className="mt-4">
+                <section className="relative">
                   <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
@@ -498,34 +498,34 @@ export default function ChatView() {
                       searchUsers(e.target.value);
                     }}
                   />
-                </div>
-              </div>
-            </div>
-            <div className="max-h-96 overflow-y-auto">
+                </section>
+              </section>
+            </section>
+            <section className="max-h-96 overflow-y-auto">
               {searching ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-gray-500">Searching users...</div>
-                </div>
+                <section className="flex items-center justify-center py-8">
+                  <section className="text-gray-500">Searching users...</section>
+                </section>
               ) : userSearchResults.length > 0 ? (
-                <div className="divide-y divide-gray-100">
+                <section className="sectionide-y sectionide-gray-100">
                   {userSearchResults.map(user => (
-                    <div
+                    <section
                       key={user.id}
                       onClick={() => toggleUserSelection(user.id)}
                       className="w-full text-left hover:bg-gray-50 p-4 transition-colors cursor-pointer"
                     >
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                          <div className="w-10 h-10 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-medium">
+                      <section className="flex items-center">
+                        <section className="flex-shrink-0">
+                          <section className="w-10 h-10 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-medium">
                             {getAvatarInitials(user.fullName)}
-                          </div>
-                        </div>
-                        <div className="ml-4 flex-1">
+                          </section>
+                        </section>
+                        <section className="ml-4 flex-1">
                           <p className="font-medium text-gray-900">{user.fullName}</p>
                           <p className="text-sm text-gray-500">{user.email}</p>
-                        </div>
-                        <div className="flex-shrink-0">
-                          <div className={`w-5 h-5 border-2 rounded ${
+                        </section>
+                        <section className="flex-shrink-0">
+                          <section className={`w-5 h-5 border-2 rounded ${
                             selectedUsers.has(user.id)
                               ? 'bg-purple-600 border-purple-600'
                               : 'border-gray-300'
@@ -535,24 +535,24 @@ export default function ChatView() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                               </svg>
                             )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                          </section>
+                        </section>
+                      </section>
+                    </section>
                   ))}
-                </div>
+                </section>
               ) : searchQuery ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-gray-500">No users found</div>
-                </div>
+                <section className="flex items-center justify-center py-8">
+                  <section className="text-gray-500">No users found</section>
+                </section>
               ) : (
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-gray-500">Type to search for users</div>
-                </div>
+                <section className="flex items-center justify-center py-8">
+                  <section className="text-gray-500">Type to search for users</section>
+                </section>
               )}
-            </div>
+            </section>
             {selectedUsers.size > 0 && (
-              <div className="p-4 border-t border-gray-100">
+              <section className="p-4 border-t border-gray-100">
                 <button
                   onClick={addUsersToGroup}
                   disabled={addingMembers}
@@ -560,30 +560,30 @@ export default function ChatView() {
                 >
                   {addingMembers ? (
                     <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
+                      <section className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></section>
                       Adding members...
                     </>
                   ) : (
                     `Add ${selectedUsers.size} member${selectedUsers.size > 1 ? 's' : ''}`
                   )}
                 </button>
-              </div>
+              </section>
             )}
-          </div>
-        </div>
+          </section>
+        </section>
       )}
 
       {/* Messages Area - Flexible height with scroll */}
-      <div className="flex-1 overflow-y-auto" ref={chatViewRef}>
-        <div className="p-4 space-y-4">
+      <section className="flex-1 overflow-y-auto" ref={chatViewRef}>
+        <section className="p-4 space-y-4">
           {Object.entries(messagesByDate).map(([date, dateMessages]) => (
-            <div key={date}>
-              <div className="flex items-center justify-center mb-4">
-                <div className="bg-gray-200 rounded-full px-3 py-1">
+            <section key={date}>
+              <section className="flex items-center justify-center mb-4">
+                <section className="bg-gray-200 rounded-full px-3 py-1">
                   <span className="text-xs font-medium text-gray-600">{date}</span>
-                </div>
-              </div>
-              <div className="space-y-4">
+                </section>
+              </section>
+              <section className="space-y-4">
                 {dateMessages.map((message, index) => {
                   const isCurrentUser = message.senderId === auth.currentUser.uid;
                   const showSender = !isCurrentUser && chat.type === 'group' && (
@@ -593,13 +593,13 @@ export default function ChatView() {
                   const senderName = chat.participantNames?.[message.senderId] || 'Unknown User';
 
                   return (
-                    <div key={message.id}>
+                    <section key={message.id}>
                       {showSender && (
                         <p className="text-sm text-gray-500 mb-1">
                           {senderName}
                         </p>
                       )}
-                      <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
+                      <section className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
                         {!isCurrentUser && showSender && (
                           participantPhotos[message.senderId] ? (
                             <img
@@ -608,34 +608,34 @@ export default function ChatView() {
                               className="w-8 h-8 rounded-full object-cover mr-2"
                             />
                           ) : (
-                            <div className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm font-medium mr-2">
+                            <section className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm font-medium mr-2">
                               {getAvatarInitials(senderName)}
-                            </div>
+                            </section>
                           )
                         )}
-                        <div className={`rounded-lg px-4 py-2 max-w-[70%] break-words ${
+                        <section className={`rounded-lg px-4 py-2 max-w-[70%] break-words ${
                           isCurrentUser 
                             ? 'bg-blue-600 text-white' 
                             : 'bg-gray-100 text-gray-900'
                         }`}>
                           {message.text}
-                        </div>
-                      </div>
-                    </div>
+                        </section>
+                      </section>
+                    </section>
                   );
                 })}
-              </div>
-            </div>
+              </section>
+            </section>
           ))}
-          <div ref={messagesEndRef} />
-        </div>
-      </div>
+          <section ref={messagesEndRef} />
+        </section>
+      </section>
 
       {/* Message Input - Fixed height at bottom */}
-      <div className="flex-none bg-white border-t border-gray-200">
-        <div className="p-4">
-          <div className="flex items-end space-x-2">
-            <div className="flex-1 bg-gray-100 rounded-lg">
+      <section className="flex-none bg-white border-t border-gray-200">
+        <section className="p-4">
+          <section className="flex items-end space-x-2">
+            <section className="flex-1 bg-gray-100 rounded-lg">
               <textarea
                 rows="1"
                 placeholder="Type your message..."
@@ -653,8 +653,8 @@ export default function ChatView() {
                   }
                 }}
               />
-            </div>
-            <div className="flex items-center space-x-2">
+            </section>
+            <section className="flex items-center space-x-2">
               <button className="p-3 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
                 <FiPaperclip className="h-5 w-5" />
               </button>
@@ -672,14 +672,14 @@ export default function ChatView() {
               >
                 <FiSend className="h-5 w-5" />
               </button>
-            </div>
-          </div>
-        </div>
-      </div>
+            </section>
+          </section>
+        </section>
+      </section>
 
       {/* Emoji Picker - Absolute positioned */}
       {showEmojiPicker && (
-        <div 
+        <section 
           ref={emojiPickerRef}
           className="absolute bottom-20 right-16 z-50"
         >
@@ -698,8 +698,8 @@ export default function ChatView() {
             previewConfig={{ showPreview: false }}
             lazyLoadEmojis={true}
           />
-        </div>
+        </section>
       )}
-    </div>
+    </section>
   );
 }

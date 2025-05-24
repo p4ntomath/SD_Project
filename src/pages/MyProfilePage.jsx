@@ -260,9 +260,9 @@ export default function MyProfilePage() {
                   className="w-40 h-40 rounded-full object-cover border-4 border-gray-300 hover:opacity-90"
                 />
               ) : (
-                <div className="w-40 h-40 rounded-full flex items-center justify-center text-3xl font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors border-4 border-gray-300">
+                <section className="w-40 h-40 rounded-full flex items-center justify-center text-3xl font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors border-4 border-gray-300">
                   {getAvatarInitials(draftData.name)}
-                </div>
+                </section>
               )}
             </button>
 
@@ -428,14 +428,14 @@ export default function MyProfilePage() {
 
         {/* Photo Crop Modal */}
         {openCropModal && selectedFile && (
-          <div className="fixed inset-0 z-[9999]">
-            <div className="absolute inset-0 bg-black/50" />
-            <div className="relative z-[9999] h-screen flex items-center justify-center p-4">
-              <div className="bg-white rounded-xl p-6 w-[95vw] max-w-[800px] shadow-lg">
+          <section className="fixed inset-0 z-[9999]">
+            <section className="absolute inset-0 bg-black/50" />
+            <section className="relative z-[9999] h-screen flex items-center justify-center p-4">
+              <section className="bg-white rounded-xl p-6 w-[95vw] max-w-[800px] shadow-lg">
                 <header className="mb-4">
                   <h2 className="text-xl font-bold text-center">Crop your profile photo</h2>
                 </header>
-                <div className="relative w-full h-[400px]">
+                <section className="relative w-full h-[400px]">
                   <Cropper 
                     image={selectedFile}
                     crop={crop}
@@ -452,7 +452,7 @@ export default function MyProfilePage() {
                       }
                     }}
                   />
-                </div>
+                </section>
                 <footer className="flex justify-end gap-2 mt-4">
                   <button 
                     onClick={() => setOpenCropModal(false)} 
@@ -476,17 +476,17 @@ export default function MyProfilePage() {
                     )}
                   </button>
                 </footer>
-              </div>
-            </div>
-          </div>
+              </section>
+            </section>
+          </section>
         )}
         {/* Photo Edit Modal */}
         {showPhotoModal && (
-          <div className="fixed inset-0 z-50 backdrop-blur-sm bg-white/30 flex items-center justify-center">
+          <section className="fixed inset-0 z-50 backdrop-blur-sm bg-white/30 flex items-center justify-center">
             <section className="bg-white p-6 rounded-lg shadow-md w-[110vw] max-w-[500px] space-y-4">
               <h2 className="text-lg font-semibold">Edit Profile Photo</h2>
 
-              <div className="space-y-3">
+              <section className="space-y-3">
                 <label
                   htmlFor="change-photo"
                   className="block cursor-pointer text-blue-600 hover:underline"
@@ -512,23 +512,23 @@ export default function MyProfilePage() {
                   {isDeleting ? 'Deleting...' : 'Delete Photo'}
                 </button>
 
-              </div>
+              </section>
 
-              <div className="pt-2 text-right">
+              <section className="pt-2 text-right">
                 <button
                   onClick={() => setShowPhotoModal(false)}
                   className="text-gray-500 hover:text-gray-700"
                 >
                   Cancel
                 </button>
-              </div>
+              </section>
             </section>
-          </div>
+          </section>
         )}
 
         {/* Status Modal */}
         {showStatusModal && (
-          <div className="fixed inset-0 z-50 backdrop-blur-sm bg-white/30 flex items-center justify-center">
+          <section className="fixed inset-0 z-50 backdrop-blur-sm bg-white/30 flex items-center justify-center">
             <section className="bg-white p-6 rounded-lg shadow-md w-[95vw] max-w-[500px] space-y-4">
               <h2 className={`text-lg font-semibold ${statusMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
                 {statusMessage.type === 'success' ? 'Success!' : 'Error'}
@@ -541,7 +541,7 @@ export default function MyProfilePage() {
                 Close
               </button>
             </section>
-          </div>
+          </section>
         )}
 
       </main>

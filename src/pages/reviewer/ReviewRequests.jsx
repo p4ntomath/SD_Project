@@ -191,9 +191,9 @@ export default function ReviewRequests() {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
+      <section className="flex justify-center items-center min-h-screen">
         <ClipLoader color="#3B82F6" aria-label="Loading" role="status" />
-      </div>
+      </section>
     );
   }
 
@@ -203,79 +203,79 @@ export default function ReviewRequests() {
         setMobileMenuOpen={setMobileMenuOpen}
         mobileMenuOpen={mobileMenuOpen}
       />
-      <div className="min-h-screen bg-gray-50 py-8 pt-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="mb-6">
+      <section className="min-h-screen bg-gray-50 py-8 pt-6">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <section className="mb-6">
             <h1 className="text-2xl font-bold text-gray-900">Pending Review Requests</h1>
             <p className="mt-1 text-sm text-gray-500">Review requests awaiting your response</p>
-          </div>
+          </section>
 
           {statusMessage && (
-            <div className="mb-6 p-4 rounded-lg bg-green-100 text-green-700">
+            <section className="mb-6 p-4 rounded-lg bg-green-100 text-green-700">
               {statusMessage}
-            </div>
+            </section>
           )}
 
           {error && (
-            <div className="mb-6 p-4 rounded-lg bg-red-100 text-red-700">
+            <section className="mb-6 p-4 rounded-lg bg-red-100 text-red-700">
               {error}
-            </div>
+            </section>
           )}
 
           {requests.length === 0 ? (
-            <div className="text-center py-12 bg-white rounded-lg shadow">
-              <div className="flex justify-center">
+            <section className="text-center py-12 bg-white rounded-lg shadow">
+              <section className="flex justify-center">
                 <svg className="h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                 </svg>
-              </div>
+              </section>
               <h3 className="mt-2 text-sm font-medium text-gray-900">No pending review requests</h3>
               <p className="mt-1 text-sm text-gray-500">You don't have any pending review requests at the moment.</p>
-            </div>
+            </section>
           ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {requests.map((request) => (
                 <article 
                   key={request.id}
                   className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
                 >
-                  <div className="p-4">
+                  <section className="p-4">
                     <h2 className="text-lg font-semibold text-gray-900 mb-3">
                       {request.project?.title || request.projectTitle}
                     </h2>
-                    <div className="grid grid-cols-2 gap-3 mb-4 text-sm">
-                      <div>
+                    <section className="grid grid-cols-2 gap-3 mb-4 text-sm">
+                      <section>
                         <h3 className="font-medium text-gray-500">Research Field</h3>
                         <p className="text-gray-900">{request.project?.researchField || 'Not specified'}</p>
-                      </div>
-                      <div>
+                      </section>
+                      <section>
                         <h3 className="font-medium text-gray-500">Researcher</h3>
                         <p className="text-gray-900">{request.researcherName}</p>
-                      </div>
-                      <div>
+                      </section>
+                      <section>
                         <h3 className="font-medium text-gray-500">Request Date</h3>
                         <p className="text-gray-900">
                           {formatDate(request.requestedAt)}
                         </p>
-                      </div>
+                      </section>
                       {request.project?.deadline && (
-                        <div>
+                        <section>
                           <h3 className="font-medium text-gray-500">Deadline</h3>
                           <p className="text-gray-900">
                             {formatDate(request.project.deadline)}
                           </p>
-                        </div>
+                        </section>
                       )}
-                    </div>
+                    </section>
                     
-                    <div className="mb-4">
+                    <section className="mb-4">
                       <h3 className="font-medium text-gray-500 mb-1">Description</h3>
                       <p className="text-gray-700 text-sm line-clamp-2">
                         {request.project?.description || 'No description available'}
                       </p>
-                    </div>
+                    </section>
 
-                    <div className="flex gap-2">
+                    <section className="flex gap-2">
                       <button
                         onClick={() => handleAccept(request.projectId, request.id)}
                         disabled={processingId !== null}
@@ -306,14 +306,14 @@ export default function ReviewRequests() {
                           </span>
                         ) : 'Decline'}
                       </button>
-                    </div>
-                  </div>
+                    </section>
+                  </section>
                 </article>
               ))}
-            </div>
+            </section>
           )}
-        </div>
-      </div>
+        </section>
+      </section>
       <ReviewerMobileBottomNav />
     </>
   );

@@ -216,7 +216,7 @@ export default function MyProjects() {
                           <section>
                             <h2 className="text-xl font-semibold text-gray-800">{project.title}</h2>
                             <p className="mt-2 text-gray-600 break">{project.description}</p>
-                            <div className="flex items-center gap-2 mt-2">
+                            <section className="flex items-center gap-2 mt-2">
                               {project.collaborators?.length > 0 && (
                                 <span className="text-sm text-gray-500 flex items-center gap-1">
                                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -233,9 +233,9 @@ export default function MyProjects() {
                                   {project.pendingInvitations.length} Pending
                                 </span>
                               )}
-                            </div>
+                            </section>
                           </section>
-                          <div 
+                          <section 
                             className={`h-4 w-4 rounded-full border-2 ${
                               project.isOwner 
                                 ? 'bg-blue-500 border-blue-600' 

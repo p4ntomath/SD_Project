@@ -30,6 +30,7 @@ export default function FundingManagementPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Load all funding opportunities on mount
     const loadFunding = async () => {
       try {
         const data = await getAllFunding();
@@ -44,17 +45,21 @@ export default function FundingManagementPage() {
     loadFunding();
   }, []);
 
+  // Handle add/edit funding form submission
   const handleSubmit = async (e) => {
     e.preventDefault();
     setUpdateLoading(true);
     try {
       if (showEditModal) {
+        // Update existing funding
         await updateFunding(currentFunding.id, formData);
         setSuccess("Funding opportunity updated successfully");
       } else {
+        // Create new funding
         await createFunding(formData);
         setSuccess("Funding opportunity created successfully");
       }
+      // Refresh funding list after update/create
       const updatedFundings = await getAllFunding();
       setFundings(updatedFundings);
       setShowAddModal(false);
@@ -68,9 +73,11 @@ export default function FundingManagementPage() {
     }
   };
 
+  // Handle funding deletion
   const handleDelete = async () => {
     try {
       await deleteFunding(fundingToDelete.id);
+      // Refresh funding list after deletion
       const updatedFundings = await getAllFunding();
       setFundings(updatedFundings);
       setSuccess("Funding opportunity deleted successfully");
@@ -83,15 +90,16 @@ export default function FundingManagementPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <section className="min-h-screen bg-gray-50">
+      {/* Main navigation bar */}
       <header>
         <MainNav setMobileMenuOpen={setMobileMenuOpen} mobileMenuOpen={mobileMenuOpen} />
       </header>
 
       <main className="p-4 md:p-8 pb-16 md:pb-8">
-        <div className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-6">
-            <div className="flex items-center gap-4">
+        <section className="max-w-6xl mx-auto">
+          <section className="flex items-center justify-between mb-6">
+            <section className="flex items-center gap-4">
               <button
                 onClick={() => navigate('/admin')}
                 className="text-gray-600 hover:text-blue-600 transition-colors"
@@ -99,7 +107,7 @@ export default function FundingManagementPage() {
                 <FaArrowLeft size={24} />
               </button>
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Manage Funding Opportunities</h1>
-            </div>
+            </section>
             <button
               onClick={() => {
                 setCurrentFunding(null);
@@ -111,16 +119,16 @@ export default function FundingManagementPage() {
               <FaPlus />
               Add New
             </button>
-          </div>
+          </section>
 
           {loading ? (
-            <div className="flex justify-center">
+            <section className="flex justify-center">
               <ClipLoader color="#3B82F6" />
-            </div>
+            </section>
           ) : (
-            <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+            <section className="bg-white rounded-lg shadow-sm overflow-hidden">
+              <section className="overflow-x-auto">
+                <table className="min-w-full sectionide-y sectionide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
@@ -129,14 +137,14 @@ export default function FundingManagementPage() {
                       <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white sectionide-y sectionide-gray-200">
                     {fundings.map((funding) => (
                       <tr key={funding.id} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm font-medium text-gray-900">{funding.name}</div>
+                          <section className="text-sm font-medium text-gray-900">{funding.name}</section>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">R{funding.expectedFunds}</div>
+                          <section className="text-sm text-gray-900">R{funding.expectedFunds}</section>
                         </td>
                         <td className="px-6 py-4">
                           <a 
@@ -177,26 +185,26 @@ export default function FundingManagementPage() {
                     ))}
                   </tbody>
                 </table>
-              </div>
-            </div>
+              </section>
+            </section>
           )}
-        </div>
+        </section>
 
         {/* Add/Edit Modal */}
         {(showAddModal || showEditModal) && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex min-h-screen items-center justify-center p-4">
-              <div className="fixed inset-0 bg-gray-500/50 backdrop-blur-sm transition-all" onClick={() => {
+          <section className="fixed inset-0 z-50 overflow-y-auto">
+            <section className="flex min-h-screen items-center justify-center p-4">
+              <section className="fixed inset-0 bg-gray-500/50 backdrop-blur-sm transition-all" onClick={() => {
                 setShowAddModal(false);
                 setShowEditModal(false);
               }} />
-              <div className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+              <section className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
                 <h2 className="text-xl font-semibold mb-4">
                   {showEditModal ? 'Edit Funding Opportunity' : 'Add New Funding Opportunity'}
                 </h2>
                 <form onSubmit={handleSubmit}>
-                  <div className="space-y-4">
-                    <div>
+                  <section className="space-y-4">
+                    <section>
                       <label className="block text-sm font-medium text-gray-700">Name</label>
                       <input
                         type="text"
@@ -205,8 +213,8 @@ export default function FundingManagementPage() {
                         className="mt-1 block w-full px-4 py-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         required
                       />
-                    </div>
-                    <div>
+                    </section>
+                    <section>
                       <label className="block text-sm font-medium text-gray-700">Expected Funds (R)</label>
                       <input
                         type="number"
@@ -215,8 +223,8 @@ export default function FundingManagementPage() {
                         className="mt-1 block w-full px-4 py-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         required
                       />
-                    </div>
-                    <div>
+                    </section>
+                    <section>
                       <label className="block text-sm font-medium text-gray-700">External Link</label>
                       <input
                         type="url"
@@ -225,9 +233,9 @@ export default function FundingManagementPage() {
                         className="mt-1 block w-full px-4 py-2 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         required
                       />
-                    </div>
-                  </div>
-                  <div className="mt-6 flex justify-end gap-3">
+                    </section>
+                  </section>
+                  <section className="mt-6 flex justify-end gap-3">
                     <button
                       type="button"
                       onClick={() => {
@@ -255,24 +263,24 @@ export default function FundingManagementPage() {
                         'Add Funding'
                       )}
                     </button>
-                  </div>
+                  </section>
                 </form>
-              </div>
-            </div>
-          </div>
+              </section>
+            </section>
+          </section>
         )}
 
         {/* Delete Confirmation Modal */}
         {showDeleteConfirm && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex min-h-screen items-center justify-center p-4">
-              <div className="fixed inset-0 bg-gray-500/50 backdrop-blur-sm transition-all" onClick={() => setShowDeleteConfirm(false)} />
-              <div className="relative bg-white rounded-xl shadow-lg w-full max-w-md p-6">
+          <section className="fixed inset-0 z-50 overflow-y-auto">
+            <section className="flex min-h-screen items-center justify-center p-4">
+              <section className="fixed inset-0 bg-gray-500/50 backdrop-blur-sm transition-all" onClick={() => setShowDeleteConfirm(false)} />
+              <section className="relative bg-white rounded-xl shadow-lg w-full max-w-md p-6">
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Confirm Delete</h3>
                 <p className="text-sm text-gray-500 mb-4">
                   Are you sure you want to delete "{fundingToDelete?.name}"? This action cannot be undone.
                 </p>
-                <div className="flex justify-end gap-3">
+                <section className="flex justify-end gap-3">
                   <button
                     onClick={() => setShowDeleteConfirm(false)}
                     className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-md"
@@ -285,10 +293,10 @@ export default function FundingManagementPage() {
                   >
                     Delete
                   </button>
-                </div>
-              </div>
-            </div>
-          </div>
+                </section>
+              </section>
+            </section>
+          </section>
         )}
 
         {/* Status Modal */}
@@ -303,6 +311,6 @@ export default function FundingManagementPage() {
       <footer>
         <MobileBottomNav />
       </footer>
-    </div>
+    </section>
   );
 }

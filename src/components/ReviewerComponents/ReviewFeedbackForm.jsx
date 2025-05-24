@@ -27,7 +27,7 @@ export default function ReviewFeedbackForm({ projectId, reviewerId, onSubmitComp
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
+            <section>
                 <label htmlFor="status" className="block text-sm font-medium text-gray-700">
                     Review Decision
                 </label>
@@ -45,9 +45,9 @@ export default function ReviewFeedbackForm({ projectId, reviewerId, onSubmitComp
                 <p className="mt-1 text-sm text-gray-500">
                     Choose your final review decision for this project
                 </p>
-            </div>
+            </section>
 
-            <div>
+            <section>
                 <label htmlFor="rating" className="block text-sm font-medium text-gray-700">
                     Rating (1-5)
                 </label>
@@ -57,7 +57,7 @@ export default function ReviewFeedbackForm({ projectId, reviewerId, onSubmitComp
                     value={feedback.rating}
                     aria-label="Current rating value"
                 />
-                <div className="flex items-center space-x-2 mt-1" role="radiogroup" aria-label="Star rating buttons">
+                <section className="flex items-center space-x-2 mt-1" role="radiogroup" aria-label="Star rating buttons">
                     {[1, 2, 3, 4, 5].map((star) => (
                         <button
                             key={star}
@@ -79,10 +79,10 @@ export default function ReviewFeedbackForm({ projectId, reviewerId, onSubmitComp
                             </svg>
                         </button>
                     ))}
-                </div>
-            </div>
+                </section>
+            </section>
 
-            <div>
+            <section>
                 <label htmlFor="comment" className="block text-sm font-medium text-gray-700">
                     Feedback Comments
                 </label>
@@ -95,12 +95,12 @@ export default function ReviewFeedbackForm({ projectId, reviewerId, onSubmitComp
                     placeholder="Provide detailed feedback about the project..."
                     required
                 />
-            </div>
+            </section>
 
             {error && (
-                <div className="text-red-600 text-sm">
+                <section className="text-red-600 text-sm">
                     {error}
-                </div>
+                </section>
             )}
 
             <button

@@ -77,7 +77,7 @@ export default function WelcomePage() {
   };
 
   return (
-    <div ref={vantaRef} className="min-h-screen">
+    <section ref={vantaRef} className="min-h-screen">
       <section className="min-h-screen flex flex-col relative">
         <NavBar />
         
@@ -134,7 +134,7 @@ export default function WelcomePage() {
 
         {/* Features Section */}
         <section className="py-16">
-          <motion.div
+          <motion.section
             className="container mx-auto px-4"
             initial="hidden"
             whileInView="visible"
@@ -147,56 +147,56 @@ export default function WelcomePage() {
             >
               Why Choose Re:Search?
             </motion.h2>
-            <motion.div
+            <motion.section
               className="grid md:grid-cols-3 gap-8"
               variants={staggerContainer}
             >
               {/* Feature 1 */}
-              <motion.div
+              <motion.section
                 className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20"
                 variants={fadeInUp}
                 whileHover={{ y: -5, transition: { duration: 0.2 } }}
               >
-                <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mb-4">
+                <section className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mb-4">
                   <svg className="w-6 h-6 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
-                </div>
+                </section>
                 <h3 className="text-xl font-semibold mb-2 text-white">Project Management</h3>
                 <p className="text-gray-300">Create, track, and manage research projects with ease. Set milestones and monitor progress in real-time.</p>
-              </motion.div>
+              </motion.section>
 
               {/* Feature 2 */}
-              <motion.div
+              <motion.section
                 className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20"
                 variants={fadeInUp}
                 whileHover={{ y: -5, transition: { duration: 0.2 } }}
               >
-                <div className="w-12 h-12 bg-pink-500/20 rounded-lg flex items-center justify-center mb-4">
+                <section className="w-12 h-12 bg-pink-500/20 rounded-lg flex items-center justify-center mb-4">
                   <svg className="w-6 h-6 text-pink-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
-                </div>
+                </section>
                 <h3 className="text-xl font-semibold mb-2 text-white">Collaboration Tools</h3>
                 <p className="text-gray-300">Connect with researchers, share resources, and work together seamlessly on projects.</p>
-              </motion.div>
+              </motion.section>
 
               {/* Feature 3 */}
-              <motion.div
+              <motion.section
                 className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20"
                 variants={fadeInUp}
                 whileHover={{ y: -5, transition: { duration: 0.2 } }}
               >
-                <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4">
+                <section className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4">
                   <svg className="w-6 h-6 text-purple-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                   </svg>
-                </div>
+                </section>
                 <h3 className="text-xl font-semibold mb-2 text-white">Fund Management</h3>
                 <p className="text-gray-300">Track research funding, manage expenses, and generate comprehensive financial reports.</p>
-              </motion.div>
-            </motion.div>
-          </motion.div>
+              </motion.section>
+            </motion.section>
+          </motion.section>
         </section>
 
         {/* Call to Action Section */}
@@ -207,7 +207,7 @@ export default function WelcomePage() {
           viewport={{ once: true }}
           variants={fadeInUp}
         >
-          <div className="container mx-auto px-4 text-center">
+          <section className="container mx-auto px-4 text-center">
             <motion.h2
               className="text-3xl md:text-4xl font-bold text-white mb-6"
               variants={fadeInUp}
@@ -228,9 +228,9 @@ export default function WelcomePage() {
             >
               Sign Up Now
             </motion.button>
-          </div>
+          </section>
         </motion.section>
       </section>
-    </div>
+    </section>
   );
 }

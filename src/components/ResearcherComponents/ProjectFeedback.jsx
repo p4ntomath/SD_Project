@@ -38,42 +38,42 @@ export default function ProjectFeedback({ projectId }) {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center py-8">
-        <div role="status" className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
+      <section className="flex justify-center items-center py-8">
+        <section role="status" className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></section>
+      </section>
     );
   }
 
   if (error) {
     return (
-      <div className="text-red-600 text-center py-8">
+      <section className="text-red-600 text-center py-8">
         Error loading feedback: {error}
-      </div>
+      </section>
     );
   }
 
   if (feedback.length === 0) {
     return (
-      <div className="text-gray-500 text-center py-8">
+      <section className="text-gray-500 text-center py-8">
         No feedback available yet
-      </div>
+      </section>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <section className="space-y-6">
       {feedback.map((review) => (
-        <div key={review.id} className="bg-white p-6 rounded-lg shadow border border-gray-200">
-          <div className="flex items-center justify-between mb-4">
-            <div>
+        <section key={review.id} className="bg-white p-6 rounded-lg shadow border border-gray-200">
+          <section className="flex items-center justify-between mb-4">
+            <section>
               <h3 className="text-lg font-medium text-gray-900">
                 {review.reviewer?.name || 'Anonymous Reviewer'}
               </h3>
               <p className="text-sm text-gray-500">
                 {review.reviewer?.expertise || 'Field of Research not specified'}
               </p>
-            </div>
-            <div className="flex items-center">
+            </section>
+            <section className="flex items-center">
               {review.status && (
                 <span 
                   className="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium"
@@ -82,13 +82,13 @@ export default function ProjectFeedback({ projectId }) {
                   {getStatusDisplay(review.status).text}
                 </span>
               )}
-            </div>
-          </div>
+            </section>
+          </section>
 
-          <div className="mb-4">
-            <div className="flex items-center mb-2">
-              <div className="flex-1">
-                <div className="flex items-center">
+          <section className="mb-4">
+            <section className="flex items-center mb-2">
+              <section className="flex-1">
+                <section className="flex items-center">
                   {[1, 2, 3, 4, 5].map((star) => (
                     <svg
                       key={star}
@@ -100,17 +100,17 @@ export default function ProjectFeedback({ projectId }) {
                       <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
                     </svg>
                   ))}
-                </div>
-              </div>
-              <div className="text-sm text-gray-500">
+                </section>
+              </section>
+              <section className="text-sm text-gray-500">
                 {new Date(review.createdAt).toLocaleDateString()}
-              </div>
-            </div>
-          </div>
+              </section>
+            </section>
+          </section>
 
           <p className="text-gray-700 whitespace-pre-wrap">{review.feedback}</p>
-        </div>
+        </section>
       ))}
-    </div>
+    </section>
   );
 }
