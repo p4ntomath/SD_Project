@@ -147,7 +147,6 @@ export default function AdminDocumentsPage() {
                         <h1 className="text-2xl font-bold text-gray-900">Project Documents</h1>
                     </nav>
                     <section className="flex items-center gap-4">
-                        {/* Search input */}
                         <section className="relative">
                             <input
                                 type="text"
@@ -159,7 +158,6 @@ export default function AdminDocumentsPage() {
                             <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                         </section>
                         
-                        {/* Filter dropdown */}
                         <select
                             value={currentFilter}
                             onChange={(e) => setCurrentFilter(e.target.value)}
@@ -181,105 +179,102 @@ export default function AdminDocumentsPage() {
 
                 <section className="bg-white rounded-lg shadow">
                     <section className="p-4 sm:p-6">
-                        <section className="flex flex-col">
-                            <section className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                                <section className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                                    <section className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                                        <section className="overflow-x-auto">
-                                            <table className="min-w-full divide-y divide-gray-200">
-                                                <thead className="bg-gray-50">
-                                                    <tr>
-                                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            Document
-                                                        </th>
-                                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            Project
-                                                        </th>
-                                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            Uploaded By
-                                                        </th>
-                                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            Status
-                                                        </th>
-                                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            Date
-                                                        </th>
-                                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            Actions
-                                                        </th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="bg-white divide-y divide-gray-200">
-                                                    {loading ? (
-                                                        <tr>
-                                                            <td colSpan="6" className="px-4 sm:px-6 py-4 text-center">
-                                                                <ClipLoader color="#3B82F6" />
-                                                            </td>
-                                                        </tr>
-                                                    ) : paginatedDocuments.map((document) => (
-                                                        <motion.tr 
-                                                            key={document.id}
-                                                            initial={{ opacity: 0 }}
-                                                            animate={{ opacity: 1 }}
-                                                            transition={{ duration: 0.3 }}
-                                                        >
-                                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                                                <section className="text-sm font-medium text-gray-900">{document.fileName}</section>
-                                                                <section className="text-sm text-gray-500 hidden sm:block">{document.description}</section>
-                                                            </td>
-                                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                                                <section className="text-sm text-gray-900">{document.projectName}</section>
-                                                            </td>
-                                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                                                <section className="text-sm text-gray-900">{document.uploaderName}</section>
-                                                                <section className="text-sm text-gray-500">{document.uploaderEmail}</section>
-                                                            </td>
-                                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyles[document.status]}`}>
-                                                                    {document.status}
-                                                                </span>
-                                                            </td>
-                                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                                {formatDate(document.uploadedAt)}
-                                                            </td>
-                                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm">
-                                                                <section className="flex items-center gap-2">
-                                                                    <button
-                                                                        onClick={() => handleDownload(document)}
-                                                                        className="text-blue-600 hover:text-blue-800 transition-colors"
-                                                                    >
-                                                                        <FaDownload />
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => handleApprove(document)}
-                                                                        className="text-green-600 hover:text-green-800 transition-colors"
-                                                                        disabled={document.status === 'approved'}
-                                                                    >
-                                                                        <FaCheck />
-                                                                    </button>
-                                                                    <button
-                                                                        onClick={() => handleReject(document)}
-                                                                        className="text-red-600 hover:text-red-800 transition-colors"
-                                                                        disabled={document.status === 'rejected'}
-                                                                    >
-                                                                        <FaTimes />
-                                                                    </button>
-                                                                </section>
-                                                            </td>
-                                                        </motion.tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </section>
-                                    </section>
-                                </section>
-                            </section>
+                        <section className="overflow-hidden">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Document
+                                        </th>
+                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Project
+                                        </th>
+                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Uploaded By
+                                        </th>
+                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Status
+                                        </th>
+                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Date
+                                        </th>
+                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {loading ? (
+                                        <tr>
+                                            <td colSpan="6" className="px-4 sm:px-6 py-4 text-center">
+                                                <ClipLoader color="#3B82F6" />
+                                            </td>
+                                        </tr>
+                                    ) : paginatedDocuments.map((document) => (
+                                        <motion.tr 
+                                            key={document.id}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                                <article className="text-sm">
+                                                    <h3 className="font-medium text-gray-900">{document.fileName}</h3>
+                                                    <p className="text-gray-500 hidden sm:block">{document.description}</p>
+                                                </article>
+                                            </td>
+                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                                <p className="text-sm text-gray-900">{document.projectName}</p>
+                                            </td>
+                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                                <article className="text-sm">
+                                                    <p className="text-gray-900">{document.uploaderName}</p>
+                                                    <p className="text-gray-500">{document.uploaderEmail}</p>
+                                                </article>
+                                            </td>
+                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyles[document.status]}`}>
+                                                    {document.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <time dateTime={document.uploadedAt?.toDate?.().toISOString()}>
+                                                    {formatDate(document.uploadedAt)}
+                                                </time>
+                                            </td>
+                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm">
+                                                <nav className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => handleDownload(document)}
+                                                        className="text-blue-600 hover:text-blue-800 transition-colors"
+                                                    >
+                                                        <FaDownload />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleApprove(document)}
+                                                        className="text-green-600 hover:text-green-800 transition-colors"
+                                                        disabled={document.status === 'approved'}
+                                                    >
+                                                        <FaCheck />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleReject(document)}
+                                                        className="text-red-600 hover:text-red-800 transition-colors"
+                                                        disabled={document.status === 'rejected'}
+                                                    >
+                                                        <FaTimes />
+                                                    </button>
+                                                </nav>
+                                            </td>
+                                        </motion.tr>
+                                    ))}
+                                </tbody>
+                            </table>
                         </section>
                     </section>
                 </section>
             </article>
 
-            {/* Pagination */}
             <nav className="mt-4 flex items-center justify-between">
                 <section className="flex-1 flex justify-between sm:hidden">
                     <button

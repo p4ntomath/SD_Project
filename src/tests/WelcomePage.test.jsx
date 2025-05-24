@@ -5,7 +5,7 @@ import { describe, it, expect, vi } from 'vitest';
 import '@testing-library/jest-dom';
 import WelcomePage from '../pages/welcomePage';
 
-// ✅ Mock navigation
+// Mock navigation
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
@@ -15,7 +15,7 @@ vi.mock('react-router-dom', async () => {
   };
 });
 
-// ✅ Utility to remove framer-motion-only props
+// Utility to remove framer-motion-only props
 const omitMotionProps = (props) => {
   const {
     whileHover,
@@ -27,12 +27,13 @@ const omitMotionProps = (props) => {
     transition,
     variants,
     layout,
+    viewport,
     ...rest
   } = props;
   return rest;
 };
 
-// ✅ Mock framer-motion to avoid animation-related warnings/errors
+// Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
     section: ({ children, ...props }) => <section {...omitMotionProps(props)}>{children}</section>,
@@ -40,10 +41,12 @@ vi.mock('framer-motion', () => ({
     figure: ({ children, ...props }) => <figure {...omitMotionProps(props)}>{children}</figure>,
     h1: ({ children, ...props }) => <h1 {...omitMotionProps(props)}>{children}</h1>,
     h2: ({ children, ...props }) => <h2 {...omitMotionProps(props)}>{children}</h2>,
+    h3: ({ children, ...props }) => <h3 {...omitMotionProps(props)}>{children}</h3>,
     p: ({ children, ...props }) => <p {...omitMotionProps(props)}>{children}</p>,
     button: ({ children, onClick, ...props }) => (
       <button onClick={onClick} {...omitMotionProps(props)}>{children}</button>
     ),
+    article: ({ children, ...props }) => <article {...omitMotionProps(props)}>{children}</article>
   }
 }));
 
@@ -60,7 +63,7 @@ describe('WelcomePage Component', () => {
     renderWelcomePage();
     const mainHeading = screen.getByRole('heading', {
       level: 1,
-      name: /one platform.*endless academic possibilities/i
+      name: /Research Management.*Collaboration Hub/i
     });
     expect(mainHeading).toBeInTheDocument();
   });
@@ -80,7 +83,7 @@ describe('WelcomePage Component', () => {
 
   it('contains the welcome message and description', () => {
     renderWelcomePage();
-    const description = screen.getByText(/All your research tools, in one brilliant place./i);
+    const description = screen.getByText(/A comprehensive platform for researchers/i);
     expect(description).toBeInTheDocument();
   });
 
@@ -98,15 +101,15 @@ describe('WelcomePage Component', () => {
 
   it('displays the features section', () => {
     renderWelcomePage();
-    expect(screen.getByText('Why Choose Re:Search?')).toBeInTheDocument();
-    expect(screen.getByText('Project Management')).toBeInTheDocument();
-    expect(screen.getByText('Collaboration Tools')).toBeInTheDocument();
-    expect(screen.getByText('Fund Management')).toBeInTheDocument();
+    expect(screen.getByText('Complete Research Management Solution')).toBeInTheDocument();
+    expect(screen.getByText('Expert Review System')).toBeInTheDocument();
+    expect(screen.getByText('Document Sharing')).toBeInTheDocument();
+    expect(screen.getByText('Funding Tracker')).toBeInTheDocument();
   });
 
   it('displays the CTA section', () => {
     renderWelcomePage();
-    expect(screen.getByText('Ready to Transform Your Research Journey?')).toBeInTheDocument();
+    expect(screen.getByText('Ready to Accelerate Your Research?')).toBeInTheDocument();
     const signUpButton = screen.getByText('Sign Up Now');
     expect(signUpButton).toBeInTheDocument();
   });

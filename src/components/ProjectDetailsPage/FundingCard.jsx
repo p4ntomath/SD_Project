@@ -5,14 +5,7 @@ import { updateProjectFunds, updateProjectExpense, getFundingHistory } from '../
 import { formatFirebaseDate } from '../../utils/dateUtils';
 import { notify } from '../../backend/firebase/notificationsUtil';
 import { checkPermission } from '../../utils/permissions';
-import { useAuth } from '../../context/AuthContext';
 
-/**
- * FundingCard Component - Manages project funding operations including:
- * - Adding funds
- * - Adding expenses
- * - Viewing funding history
- */
 export default function FundingCard({ 
   projectId, 
   project, 
@@ -21,7 +14,6 @@ export default function FundingCard({
   setError, 
   setStatusMessage 
 }) {
-  // State management
   const [showAddFundsModal, setShowAddFundsModal] = useState(false);
   const [showAddExpenseModal, setShowAddExpenseModal] = useState(false);
   const [showFundingHistory, setShowFundingHistory] = useState(false);
@@ -32,11 +24,7 @@ export default function FundingCard({
   const [fundingSource, setFundingSource] = useState('');
   const [addFundsLoading, setAddFundsLoading] = useState(false);
   const [addExpenseLoading, setAddExpenseLoading] = useState(false);
-  const { role } = useAuth();
 
-  /**
-   * Loads funding history from Firebase and sorts by date
-   */
   const loadFundingHistory = async () => {
     try {
       const history = await getFundingHistory(projectId);
@@ -47,10 +35,6 @@ export default function FundingCard({
     }
   };
 
-  /**
-   * Handles adding funds to the project
-   * @param {Event} e - Form submit event
-   */
   const handleAddFunds = async (e) => {
     e.preventDefault();
     try {
@@ -93,10 +77,6 @@ export default function FundingCard({
     }
   };
 
-  /**
-   * Handles adding expenses to the project
-   * @param {Event} e - Form submit event
-   */
   const handleAddExpense = async (e) => {
     e.preventDefault();
     try {
@@ -143,7 +123,7 @@ export default function FundingCard({
     }
   };
   
-  // Load funding history when modal opens
+
   useEffect(() => {
     if (showFundingHistory) {
       loadFundingHistory();
@@ -152,107 +132,91 @@ export default function FundingCard({
 
   return (
     <>
-     {/* 
-        Project Funding Dashboard Card 
-        Displays funding summary, utilization, and action buttons
-      */}
       <article className="bg-white rounded-lg shadow p-4 sm:p-6">
-        {/* Card Header with Title and Total Funds */}
         <header className="flex justify-between items-center mb-4">
           <h2 className="text-lg sm:text-xl font-semibold">Project Funding</h2>
-          
-          {/* Total Funds Display */}
-          <section className="text-right" aria-labelledby="total-funds-label">
-            <p id="total-funds-label" className="text-sm text-gray-500">Total Funds</p>
-            <p className="text-lg font-semibold" aria-live="polite">
+          <aside className="text-right">
+            <p className="text-sm text-gray-500">Total Funds</p>
+            <p className="text-lg font-semibold">
               R {((project.availableFunds || 0) + (project.usedFunds || 0)).toLocaleString()}
             </p>
-          </section>
+          </aside>
         </header>
 
-        {/* Funds Breakdown Section */}
         <section className="grid grid-cols-2 gap-4 mb-6">
-          {/* Available Funds Card */}
-          <article className="bg-green-50 p-4 rounded-lg" aria-labelledby="available-funds-label">
-            <h3 id="available-funds-label" className="text-sm text-gray-600 mb-1">Available</h3>
+          <article className="bg-green-50 p-4 rounded-lg">
+            <h3 className="text-sm text-gray-600 mb-1">Available</h3>
             <p className="text-xl font-semibold text-green-600">
               R {(project.availableFunds || 0).toLocaleString()}
             </p>
           </article>
-
-          {/* Used Funds Card */}
-          <article className="bg-blue-50 p-4 rounded-lg" aria-labelledby="used-funds-label">
-            <h3 id="used-funds-label" className="text-sm text-gray-600 mb-1">Used</h3>
+          <article className="bg-blue-50 p-4 rounded-lg">
+            <h3 className="text-sm text-gray-600 mb-1">Used</h3>
             <p className="text-xl font-semibold text-blue-600">
               R {(project.usedFunds || 0).toLocaleString()}
             </p>
           </article>
         </section>
 
-        {/* Utilization Progress Section */}
-        <section className="mb-6" aria-labelledby="utilization-label">
-          <h3 id="utilization-label" className="sr-only">Funds Utilization</h3>
-          <figure className="w-full bg-gray-200 rounded-full h-2">
-            {/* Progress bar showing used funds percentage */}
-            <section 
+        <section className="mb-6">
+          <div className="w-full bg-gray-200 rounded-full h-2">
+            <div 
               className="bg-blue-600 h-2 rounded-full transition-all duration-500"
-              role="progressbar"
-              aria-valuenow={((project.usedFunds || 0) / ((project.availableFunds || 0) + (project.usedFunds || 0)) * 100) || 0}
-              aria-valuemin="0"
-              aria-valuemax="100"
               style={{ 
                 width: `${(((project.usedFunds || 0) / ((project.availableFunds || 0) + (project.usedFunds || 0)) * 100) || 0)}%` 
               }}
+              role="progressbar"
+              aria-valuenow={(((project.usedFunds || 0) / ((project.availableFunds || 0) + (project.usedFunds || 0)) * 100) || 0)}
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-label="Funding utilization progress"
             />
-          </figure>
-          <figcaption className="text-sm text-gray-500 mt-2">
+          </div>
+          <p className="text-sm text-gray-500 mt-2">
             {(((project.usedFunds || 0) / ((project.availableFunds || 0) + (project.usedFunds || 0)) * 100) || 0).toFixed(1)}% utilized
-          </figcaption>
+          </p>
         </section>
 
-        {/* Action Buttons */}
-        <nav className="grid grid-cols-3 gap-3" aria-label="Funding actions">
+        <nav className="grid grid-cols-3 gap-3">
           {checkPermission(project, 'canAddFunds') && (
             <>
               <button
+                aria-label="Add Funds"
                 onClick={() => setShowAddFundsModal(true)}
                 className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
-                aria-label="Add funds to project"
               >
                 Add Funds
               </button>
               <button
+                aria-label="Add Expense"
                 onClick={() => setShowAddExpenseModal(true)}
                 className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base"
-                aria-label="Add expense to project"
               >
                 Add Expense
               </button>
             </>
           )}
-
-          {role !== 'admin' && (
-            <button
-              onClick={() => setShowFundingHistory(true)}
-              className="bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors text-sm sm:text-base"
-            >
-              View History
-            </button>
-          )}
+          <button
+            aria-label="View Funding History"
+            onClick={() => setShowFundingHistory(true)}
+            className="bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors text-sm sm:text-base"
+          >
+            View History
+          </button>
         </nav>
       </article>
 
       {/* Add Funds Modal */}
       <AnimatePresence>
         {showAddFundsModal && (
-          <section className="fixed inset-0 z-50 overflow-y-auto">
-            <section className="flex min-h-screen items-center justify-center p-4">
-              <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => !addFundsLoading && setShowAddFundsModal(false)} />
-              <section className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex min-h-screen items-center justify-center p-4">
+              <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => !addFundsLoading && setShowAddFundsModal(false)} />
+              <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
                 <h2 className="text-xl font-semibold mb-4 text-gray-900">Add Funds</h2>
                 <form onSubmit={handleAddFunds}>
-                  <section className="space-y-4">
-                    <section>
+                  <div className="space-y-4">
+                    <div>
                       <label className="block text-sm font-medium text-gray-700">Amount (R)</label>
                       <input
                         type="number"
@@ -264,8 +228,8 @@ export default function FundingCard({
                         step="0.01"
                         required
                       />
-                    </section>
-                    <section>
+                    </div>
+                    <div>
                       <label className="block text-sm font-medium text-gray-700">Source</label>
                       <input
                         type="text"
@@ -275,9 +239,9 @@ export default function FundingCard({
                         className="mt-1 block w-full h-12 px-4 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         required
                       />
-                    </section>
-                  </section>
-                  <section className="mt-6 flex justify-end gap-3">
+                    </div>
+                  </div>
+                  <div className="mt-6 flex justify-end gap-3">
                     <button
                       type="button"
                       onClick={() => setShowAddFundsModal(false)}
@@ -301,25 +265,25 @@ export default function FundingCard({
                         'Add Funds'
                       )}
                     </button>
-                  </section>
+                  </div>
                 </form>
-              </section>
-            </section>
-          </section>
+              </div>
+            </div>
+          </div>
         )}
       </AnimatePresence>
 
       {/* Add Expense Modal */}
       <AnimatePresence>
         {showAddExpenseModal && (
-          <section className="fixed inset-0 z-50 overflow-y-auto">
-            <section className="flex min-h-screen items-center justify-center p-4">
-              <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => !addExpenseLoading && setShowAddExpenseModal(false)} />
-              <section className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex min-h-screen items-center justify-center p-4">
+              <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => !addExpenseLoading && setShowAddExpenseModal(false)} />
+              <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
                 <h2 className="text-xl font-semibold mb-4 text-gray-900">Add Expense</h2>
                 <form onSubmit={handleAddExpense}>
-                  <section className="space-y-4">
-                    <section>
+                  <div className="space-y-4">
+                    <div>
                       <label className="block text-sm font-medium text-gray-700">Amount (R)</label>
                       <input
                         aria-label="Amount"
@@ -331,8 +295,8 @@ export default function FundingCard({
                         step="0.01"
                         required
                       />
-                    </section>
-                    <section>
+                    </div>
+                    <div>
                       <label className="block text-sm font-medium text-gray-700">Description</label>
                       <input
                         type="text"
@@ -342,9 +306,9 @@ export default function FundingCard({
                         className="mt-1 block w-full h-12 px-4 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                         required
                       />
-                    </section>
-                  </section>
-                  <section className="mt-6 flex justify-end gap-3">
+                    </div>
+                  </div>
+                  <div className="mt-6 flex justify-end gap-3">
                     <button
                       type="button"
                       name="Cancel"
@@ -370,21 +334,21 @@ export default function FundingCard({
                         'Add Expense'
                       )}
                     </button>
-                  </section>
+                  </div>
                 </form>
-              </section>
-            </section>
-          </section>
+              </div>
+            </div>
+          </div>
         )}
       </AnimatePresence>
 
       {/* Funding History Modal */}
       <AnimatePresence>
         {showFundingHistory && (
-          <section className="fixed inset-0 z-50 overflow-y-auto">
-            <section className="flex min-h-screen items-center justify-center p-4">
-              <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowFundingHistory(false)} />
-              <section className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl p-6">
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex min-h-screen items-center justify-center p-4">
+              <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowFundingHistory(false)} />
+              <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-4xl p-6">
                 <header className="flex justify-between items-center mb-6">
                   <h2 className="text-xl font-semibold text-gray-900">Funding History</h2>
                   <button
@@ -396,8 +360,8 @@ export default function FundingCard({
                     </svg>
                   </button>
                 </header>
-                <section className="max-h-[60vh] overflow-y-auto">
-                  <table className="min-w-full sectionide-y sectionide-gray-200">
+                <div className="max-h-[60vh] overflow-y-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
                     <thead className="bg-gray-50">
                       <tr>
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
@@ -408,7 +372,7 @@ export default function FundingCard({
                         <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Balance After</th>
                       </tr>
                     </thead>
-                    <tbody className="bg-white sectionide-y sectionide-gray-200">
+                    <tbody className="bg-white divide-y divide-gray-200">
                       {fundingHistory.map((entry) => (
                         <tr key={entry.id}>
                           <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -435,10 +399,10 @@ export default function FundingCard({
                       ))}
                     </tbody>
                   </table>
-                </section>
-              </section>
-            </section>
-          </section>
+                </div>
+              </div>
+            </div>
+          </div>
         )}
       </AnimatePresence>
     </>

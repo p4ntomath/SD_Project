@@ -100,7 +100,7 @@ describe('CreateProjectForm Component', () => {
     });
     
     // Add two goals
-    const goalInput = screen.getByRole('textbox', { name: /^Goals/i });
+    const goalInput = screen.getByLabelText(/^Goals/);
     fireEvent.change(goalInput, { target: { value: 'First goal' } });
     fireEvent.keyDown(goalInput, { key: 'Enter' });
     fireEvent.change(goalInput, { target: { value: 'Second goal' } });
@@ -135,14 +135,15 @@ describe('CreateProjectForm Component', () => {
     fireEvent.change(screen.getByLabelText(/^deadline/i), { target: { value: futureDate.toISOString().split('T')[0] } });
     
     // Add two goals
-    const goalInput = screen.getByRole('textbox', { name: /^Goals/i });
+    const goalInput = screen.getByLabelText(/^Goals/);
     fireEvent.change(goalInput, { target: { value: 'First goal' } });
-    fireEvent.keyDown(goalInput, { key: 'Enter' });
+    fireEvent.keyDown(goalInput, { key: 'Enter', code: 'Enter' });
+  
     fireEvent.change(goalInput, { target: { value: 'Second goal' } });
-    fireEvent.keyDown(goalInput, { key: 'Enter' });
-    
-    const submitButton = screen.getByRole('button', { name: /create project/i });
-    fireEvent.click(submitButton);
+    fireEvent.keyDown(goalInput, { key: 'Enter', code: 'Enter' });
+  
+    // Submit the form
+    fireEvent.click(screen.getByRole('button', { name: /create project/i }));
 
     await waitFor(() => {
       expect(mockProps.onCreate).toHaveBeenCalled();

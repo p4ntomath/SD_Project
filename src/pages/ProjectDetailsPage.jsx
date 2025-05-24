@@ -378,24 +378,24 @@ export default function ProjectDetailsPage() {
       setModalOpen(true);
       setError(false);
       setStatusMessage(
-        <section className="flex items-center gap-2 text-green-600">
+        <div className="flex items-center gap-2 text-green-600">
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
           <span>Successfully sent {selectedResearchers.length} collaboration invitation{selectedResearchers.length !== 1 ? 's' : ''}</span>
-        </section>
+        </div>
       );
     } catch (err) {
      
       setModalOpen(true);
       setError(true);
       setStatusMessage(
-        <section className="flex items-center gap-2 text-red-600">
+        <div className="flex items-center gap-2 text-red-600">
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
           <span>{err.message || "Failed to send collaborator invitations"}</span>
-        </section>
+        </div>
       );
     }
   };
@@ -504,9 +504,9 @@ const getDefaultGroupName = (projectTitle) => {
     return (
       <AnimatePresence>
         {isOpen && (
-          <section className="fixed inset-0 z-50 overflow-y-auto">
-            <section className="flex items-center justify-center min-h-screen px-4">
-              <motion.section
+          <div className="fixed inset-0 z-50 overflow-y-auto">
+            <div className="flex items-center justify-center min-h-screen px-4">
+              <motion.div
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -514,7 +514,7 @@ const getDefaultGroupName = (projectTitle) => {
                 className="fixed inset-0 bg-black/30 backdrop-blur-sm"
                 onClick={onClose}
               />
-              <motion.section
+              <motion.div
                 initial={{ scale: 0.95, opacity: 0, y: 10 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.95, opacity: 0, y: 10 }}
@@ -522,7 +522,7 @@ const getDefaultGroupName = (projectTitle) => {
                 className="relative bg-white rounded-xl shadow-2xl p-6 w-full max-w-md"
               >
                 <h3 className="text-lg font-semibold mb-4">Create Team Chat</h3>
-                <section className="space-y-2">
+                <div className="space-y-2">
                   <input
                     type="text"
                     value={localGroupName}
@@ -534,8 +534,8 @@ const getDefaultGroupName = (projectTitle) => {
                   <p className="text-xs text-gray-500 text-right">
                     {localGroupName.length}/30 characters
                   </p>
-                </section>
-                <section className="flex justify-end gap-3 mt-6">
+                </div>
+                <div className="flex justify-end gap-3 mt-6">
                   <button
                     onClick={onClose}
                     className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -560,10 +560,10 @@ const getDefaultGroupName = (projectTitle) => {
                       'Create Chat'
                     )}
                   </button>
-                </section>
-              </motion.section>
-            </section>
-          </section>
+                </div>
+              </motion.div>
+            </div>
+          </div>
         )}
       </AnimatePresence>
     );
@@ -571,7 +571,7 @@ const getDefaultGroupName = (projectTitle) => {
 
   if (loading) {
     return (
-      <main aria-label='loading-project' className="flex justify-center items-center min-h-screen">
+      <main aria-label="loading-project" className="flex justify-center items-center min-h-screen">
         <ClipLoader color="#3B82F6" />
       </main>
     );
@@ -579,7 +579,6 @@ const getDefaultGroupName = (projectTitle) => {
 
   if (!project) {
     return (
-      <>
       <main className="flex justify-center items-center min-h-screen">
         <section className="text-center">
           <h1 className="text-2xl font-bold text-gray-800">Project Not Found</h1>
@@ -592,19 +591,20 @@ const getDefaultGroupName = (projectTitle) => {
           </button>
         </section>
       </main>
-      </>
     );
   }
 
   if (isEditing) {
     return (
       <main className="p-6">
-        <button 
-          onClick={() => setIsEditing(false)}
-          className="mb-4 flex items-center text-gray-600 hover:text-blue-600 transition-colors"
-        >
-          <FiArrowLeft className="mr-2" /> Back to Details
-        </button>
+        <nav>
+          <button 
+            onClick={() => setIsEditing(false)}
+            className="mb-4 flex items-center text-gray-600 hover:text-blue-600 transition-colors"
+          >
+            <FiArrowLeft className="mr-2" /> Back to Details
+          </button>
+        </nav>
         <CreateProjectForm
           projectToUpdate={project}
           isUpdateMode={true}
@@ -618,86 +618,83 @@ const getDefaultGroupName = (projectTitle) => {
 
   return (
     <>
-
-
-      <header className="bg-white shadow-sm border-b border-gray-200">
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
-          <section className="flex justify-between items-center">
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-3">
-                <span>{project?.name || 'Loading...'}</span>
-                {project?.status && (
-                  <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                    statusStyles[project.status]?.badge || 'bg-gray-100 text-gray-800'
-                  }`}>
-                    {project?.status}
-                  </span>
-                )}
-              </h1>
-              <nav className="flex items-center gap-4">
-                {checkPermission(project, 'canEdit') && (
-                  <button
-                    onClick={() => navigate(`/projects/${projectId}/edit`)}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    <svg className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                    </svg>
-                    Edit Project
-                  </button>
-                )}
+      <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <section className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 sm:h-16 gap-3 sm:gap-0">
+            <hgroup className="flex items-center min-w-0 flex-shrink">
+              <nav>
+                <button
+                  onClick={() => navigate(-1)}
+                  className="text-gray-600 hover:text-blue-600 transition-colors flex items-center mr-3 flex-shrink-0"
+                >
+                  <FiArrowLeft className="text-xl mr-2" />
+                  Back
+                </button>
               </nav>
+              <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent truncate max-w-[150px] md:max-w-[300px] lg:max-w-none">
+                {project.title}
+              </h1>
+            </hgroup>
+            <nav className="flex gap-2 justify-start sm:justify-end flex-shrink-0">
+              {(isProjectOwner(project) || checkPermission(project, 'canEditProjectDetails')) && (
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="bg-blue-600 text-white py-2 px-3 sm:px-4 rounded-lg hover:bg-blue-700 transition-colors flex items-center text-sm sm:text-base"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                  Edit Project
+                </button>
+              )}
+            </nav>
           </section>
         </section>
       </header>
 
       <main className="min-h-screen bg-gray-50 px-4 sm:px-6 py-4 sm:py-6">
         <article className="max-w-7xl mx-auto">
+
           <section className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
-            {/* Project Details Section */}
-            <section className="bg-white rounded-xl shadow-lg p-6 lg:row-span-2 border border-gray-100">
-              <header className="flex items-center justify-between mb-6">
-                <h2 className="text-xl font-semibold text-gray-900">Project Details</h2>
-              </header>
+            {/* Left Column - Main Info */}
+            <section className="space-y-4 sm:space-y-6">
+              <BasicInfoCard 
+                project={project}
+                calculateProgress={calculateProgress}
+                isEditable={isProjectOwner(project)}
+              />
 
-              <section className="space-y-4 sm:space-y-6">
-                <BasicInfoCard 
-                  project={project}
-                  calculateProgress={calculateProgress}
-                  isEditable={isProjectOwner(project)}
-                />
+              <GoalsCard 
+                project={project}
+                calculateProgress={calculateProgress}
+                setProject={setProject}
+                projectId={projectId}
+                setModalOpen={setModalOpen}
+                setError={setError}
+                setStatusMessage={setStatusMessage}
+                updateProject={updateProject}
+              />
 
-                <GoalsCard 
-                  project={project}
-                  calculateProgress={calculateProgress}
-                  setProject={setProject}
-                  projectId={projectId}
-                  setModalOpen={setModalOpen}
-                  setError={setError}
-                  setStatusMessage={setStatusMessage}
-                  updateProject={updateProject}
-                />
+              <DocumentsCard 
+                projectId={projectId}
+                project={project} // Add project prop
+                folders={folders}
+                setFolders={setFolders}
+                foldersLoading={foldersLoading}
+                setModalOpen={setModalOpen}
+                setError={setError}
+                setStatusMessage={setStatusMessage}
+                projectTitle={project.title}
+              />
 
-                <DocumentsCard 
-                  projectId={projectId}
-                  project={project} // Add project prop
-                  folders={folders}
-                  setFolders={setFolders}
-                  foldersLoading={foldersLoading}
-                  setModalOpen={setModalOpen}
-                  setError={setError}
-                  setStatusMessage={setStatusMessage}
-                  projectTitle={project.title}
-                />
-
-                {/* Project Reviews Card */}
-                <article className="bg-white rounded-lg shadow p-4 sm:p-6">
-                  <h2 className="text-lg sm:text-xl font-semibold mb-4">Project Reviews</h2>
-                  <ProjectReviews projectId={projectId} formatDate={formatDate} />
-                </article>
-              </section>
+              {/* Project Reviews Card */}
+              <article className="bg-white rounded-lg shadow p-4 sm:p-6">
+                <h2 className="text-lg sm:text-xl font-semibold mb-4">Project Reviews</h2>
+                <ProjectReviews projectId={projectId} formatDate={formatDate} />
+              </article>
             </section>
 
-            {/* Additional Info Section */}
+            {/* Right Column - Additional Info */}
             <section className="space-y-4 sm:space-y-6">
 
               <FundingCard
@@ -710,24 +707,24 @@ const getDefaultGroupName = (projectTitle) => {
               />
 
               {/* Message Board Card */}
-              <section className="bg-white rounded-lg shadow p-4 sm:p-6">
+              <article className="bg-white rounded-lg shadow p-4 sm:p-6">
                 <h2 className="text-lg sm:text-xl font-semibold mb-4">Project Discussion</h2>
                 <section className="space-y-4">
                   {project.collaborators?.length > 0 ? (
                     <>
                       {groupChatId ? (
-                        <section className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 rounded-lg p-4">
+                        <article className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 rounded-lg p-4">
                           <section className="flex items-center justify-between mb-3">
                             <section className="flex items-center">
-                              <section className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white">
+                              <figure className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white">
                                 💬
-                              </section>
-                              <section className="ml-3">
+                              </figure>
+                              <figcaption className="ml-3">
                                 <h3 className="font-medium text-gray-900">{project.title} Team Chat</h3>
                                 <p className="text-sm text-gray-500">
                                   {project.collaborators.length + 1} members
                                 </p>
-                              </section>
+                              </figcaption>
                             </section>
                             <button
                               onClick={() => navigate(`/messages/${groupChatId}`)}
@@ -735,21 +732,21 @@ const getDefaultGroupName = (projectTitle) => {
                             >
                               <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
-                              </svg>
+                            </svg>
                               Open
                             </button>
                           </section>
-                          <section className="text-sm text-gray-600">
+                          <p className="text-sm text-gray-600">
                             Discuss project updates, share ideas, and coordinate with your team in real-time.
-                          </section>
-                        </section>
+                          </p>
+                        </article>
                       ) : (
                         <section className="text-center p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                          <section className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                          <figure className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
                             <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2v-6a2 2 0 012-2h8a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586" />
                             </svg>
-                          </section>
+                          </figure>
                           <h3 className="text-gray-900 font-medium mb-2">Create Team Chat</h3>
                           <p className="text-gray-500 text-sm mb-4">
                             {isProjectOwner(project) 
@@ -773,11 +770,11 @@ const getDefaultGroupName = (projectTitle) => {
                     </>
                   ) : (
                     <section className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                      <section className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <figure className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
                         <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2v-6a2 2 0 012-2h8a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586" />
                         </svg>
-                      </section>
+                      </figure>
                       <h3 className="text-gray-900 font-medium mb-2">No Collaborators Yet</h3>
                       <p className="text-gray-500 text-sm">
                         Add collaborators to your project to enable team chat functionality.
@@ -785,11 +782,11 @@ const getDefaultGroupName = (projectTitle) => {
                     </section>
                   )}
                 </section>
-              </section>
+              </article>
 
               {/* Collaborators Card */}
-              <section className="bg-white rounded-lg shadow p-4 sm:p-6">
-                <section className="flex justify-between items-center mb-4">
+              <article className="bg-white rounded-lg shadow p-4 sm:p-6">
+                <header className="flex justify-between items-center mb-4">
                   <h2 className="text-lg sm:text-xl font-semibold">Project Collaborators</h2>
                   {isProjectOwner(project) && (
                     <button
@@ -802,7 +799,7 @@ const getDefaultGroupName = (projectTitle) => {
                       Add Collaborator
                     </button>
                   )}
-                </section>
+                </header>
 
                 {/* Active Collaborators */}
                 {project.collaborators && project.collaborators.length > 0 && (
@@ -812,15 +809,15 @@ const getDefaultGroupName = (projectTitle) => {
                       <section className="overflow-y-auto max-h-[230px] pr-2 -mr-2 no-scrollbar">
                         <section className="space-y-3">
                           {project.collaborators.map((collaborator) => (
-                            <section key={collaborator.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <article key={collaborator.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
                               <section className="flex items-center gap-3">
-                                <section className="p-2 bg-blue-100 rounded-full">
+                                <figure className="p-2 bg-blue-100 rounded-full">
                                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                   </svg>
-                                </section>
+                                </figure>
                                 <section>
-                                  <p className="font-medium">{collaborator.fullName}</p>
+                                  <h4 className="font-medium">{collaborator.fullName}</h4>
                                   <p className="text-sm text-gray-500">{collaborator.institution || 'No institution'}</p>
                                 </section>
                               </section>
@@ -846,7 +843,7 @@ const getDefaultGroupName = (projectTitle) => {
                                   </button>
                                 </section>
                               )}
-                            </section>
+                            </article>
                           ))}
                         </section>
                       </section>
@@ -862,22 +859,22 @@ const getDefaultGroupName = (projectTitle) => {
                       <section className="overflow-y-auto max-h-[230px] pr-2 -mr-2 no-scrollbar">
                         <section className="space-y-3">
                           {pendingInvitations.map((invitation) => (
-                            <section key={invitation.invitationId} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <article key={invitation.invitationId} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
                               <section className="flex items-center gap-3">
-                                <section className="p-2 bg-gray-100 rounded-full">
+                                <figure className="p-2 bg-gray-100 rounded-full">
                                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                   </svg>
-                                </section>
+                                </figure>
                                 <section>
-                                  <p className="font-medium text-sm">{invitation.researcherName}</p>
+                                  <h4 className="font-medium text-sm">{invitation.researcherName}</h4>
                                   <p className="text-xs text-gray-500">Invited: {formatDate(invitation.createdAt)}</p>
                                 </section>
                               </section>
                               <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
                                 Pending Response
                               </span>
-                            </section>
+                            </article>
                           ))}
                         </section>
                       </section>
@@ -888,7 +885,7 @@ const getDefaultGroupName = (projectTitle) => {
                 {(!project.collaborators || project.collaborators.length === 0) && (!pendingInvitations || pendingInvitations.length === 0) && (
                   <p className="text-sm text-gray-500 text-center py-4">No collaborators yet</p>
                 )}
-              </section>
+              </article>
 
               {/* Add Collaborator Modal */}
               <AnimatePresence>
@@ -928,41 +925,38 @@ const getDefaultGroupName = (projectTitle) => {
           message={statusMessage}
         />
 
-        {/* Delete Confirmation Modal */}
-        <AnimatePresence>
-          {showDeleteConfirm && (
-            <section className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
-              <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
-              <motion.article
-                className="relative bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200"
-                initial={{ scale: 0.8, opacity: 0 }}
-                animate={{ scale: 1, opacity: 1 }}
-                exit={{ scale: 0.8, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+        <dialog className={`fixed inset-0 z-50 overflow-y-auto flex items-center justify-center ${showDeleteConfirm ? '' : 'hidden'}`}>
+          <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
+          <motion.article
+            className="relative bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200"
+            initial={{ scale: 0.8, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.8, opacity: 0 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+          >
+            <header>
+              <h2 className="text-xl font-semibold mb-4 text-gray-900">Delete Project?</h2>
+            </header>
+            <p className="text-gray-700 mb-6">Are you sure you want to delete this project? This action cannot be undone.</p>
+            <footer className="flex justify-end gap-3">
+              <button
+                onClick={() => setShowDeleteConfirm(false)}
+                className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50/80 transition-colors"
               >
-                <h2 className="text-xl font-semibold mb-4 text-gray-900">Delete Project?</h2>
-                <p className="text-gray-700 mb-6">Are you sure you want to delete this project? This action cannot be undone.</p>
-                <footer className="flex justify-end gap-3">
-                  <button
-                    onClick={() => setShowDeleteConfirm(false)}
-                    className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50/80 transition-colors"
-                  >
-                    Cancel
-                  </button>
-                  <button
-                    onClick={() => {
-                      setShowDeleteConfirm(false);
-                      handleDelete();
-                    }}
-                    className="bg-red-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-xl hover:bg-red-700/90 transition-colors"
-                  >
-                    Delete
-                  </button>
-                </footer>
-              </motion.article>
-            </section>
-          )}
-        </AnimatePresence>
+                Cancel
+              </button>
+              <button
+                onClick={() => {
+                  setShowDeleteConfirm(false);
+                  handleDelete();
+                }}
+                className="bg-red-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-xl hover:bg-red-700/90 transition-colors"
+              >
+                Delete
+              </button>
+            </footer>
+          </motion.article>
+        </dialog>
 
         <GroupNameModal
           isOpen={showGroupNameModal}

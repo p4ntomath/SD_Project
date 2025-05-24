@@ -89,11 +89,11 @@ const originalWarn = console.warn;
 beforeAll(() => {
   console.error = (...args) => {
     const skipMessages = [
-      'inside a test was not wrapped in act',
-      'React state updates should be wrapped in act',
+      'Warning: Invalid value for prop',
       'changing a controlled input to be uncontrolled'
     ];
-    if (skipMessages.some(msg => args[0]?.includes(msg))) return;
+    // Check if first arg exists and is a string before calling includes
+    if (typeof args[0] === 'string' && skipMessages.some(msg => args[0].includes(msg))) return;
     originalError.call(console, ...args);
   };
 
@@ -192,7 +192,8 @@ describe('ProjectDetailsPage', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/back to details/i)).toBeInTheDocument();
+      const backButton = screen.getByText(/back to details/i);
+      expect(backButton).toBeInTheDocument();
     });
   });
 
