@@ -166,6 +166,11 @@ function App() {
               <ReviewerHomePage />
             </ProtectedRoute>
           } />
+          <Route path="/reviewer/account" element={
+            <ProtectedRoute allowedRoles={['reviewer']}>
+              <MyProfilePage />
+            </ProtectedRoute>
+          } />
           <Route path="/reviewer/messages" element={
             <ProtectedRoute allowedRoles={['reviewer']}>
               <MessagesLayout />
