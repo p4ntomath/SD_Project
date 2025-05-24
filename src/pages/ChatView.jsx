@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { FiVideo, FiPhone, FiSettings, FiUserPlus, FiMoreVertical, FiPaperclip, FiSmile, FiSend, FiArrowLeft, FiSearch, FiX } from 'react-icons/fi';
+import { FiVideo, FiPhone, FiSettings, FiUserPlus, FiMoreVertical, FiPaperclip, FiSmile, FiSend, FiArrowLeft, FiSearch, FiX, FiCheck } from 'react-icons/fi';
 import { ChatService, MessageService, ChatRealTimeService } from '../backend/firebase/chatDB';
 import { auth, db } from '../backend/firebase/firebaseConfig';
 import { doc, getDoc } from 'firebase/firestore';
@@ -24,10 +24,14 @@ export default function ChatView() {
   const [selectedUsers, setSelectedUsers] = useState(new Set());
   const [addingMembers, setAddingMembers] = useState(false);
   const [participantPhotos, setParticipantPhotos] = useState({});
+  const [attachments, setAttachments] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState({});
+  const [overallProgress, setOverallProgress] = useState(0);
   const messagesEndRef = useRef(null);
   const chatViewRef = useRef(null);
   const emojiButtonRef = useRef(null);
   const emojiPickerRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   // Track if chat is visible and focused
   const [isVisible, setIsVisible] = useState(document.visibilityState === 'visible');
@@ -145,15 +149,57 @@ export default function ChatView() {
     };
   }, [chatId, navigate]);
 
+  const handleFileSelect = async (e) => {
+    const files = Array.from(e.target.files);
+    setAttachments(files);
+    // Initialize progress for each file
+    const initialProgress = {};
+    files.forEach(file => {
+      initialProgress[file.name] = 0;
+    });
+    setUploadProgress(initialProgress);
+  };
+
   const handleSendMessage = async () => {
-    if (!messageInput.trim() || sendingMessage) return;
+    if ((!messageInput.trim() && attachments.length === 0) || sendingMessage) return;
 
     try {
       setSendingMessage(true);
-      await MessageService.sendMessage(chatId, auth.currentUser.uid, {
-        text: messageInput
-      });
+      setOverallProgress(0);
+
+      // If there are attachments, we'll track their upload progress
+      if (attachments.length > 0) {
+        const totalFiles = attachments.length;
+        let completed = 0;
+
+        await MessageService.sendMessage(chatId, auth.currentUser.uid, {
+          text: messageInput,
+          attachments,
+          onProgress: (fileName, progress) => {
+            setUploadProgress(prev => ({
+              ...prev,
+              [fileName]: progress
+            }));
+            if (progress === 100) {
+              completed++;
+              setOverallProgress((completed / totalFiles) * 100);
+            }
+          }
+        });
+      } else {
+        // Just send the text message
+        await MessageService.sendMessage(chatId, auth.currentUser.uid, {
+          text: messageInput
+        });
+      }
+
       setMessageInput('');
+      setAttachments([]);
+      setUploadProgress({});
+      setOverallProgress(0);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {
@@ -393,6 +439,54 @@ export default function ChatView() {
     return true;
   };
 
+  const renderAttachment = (attachment) => {
+    switch (attachment.type) {
+      case 'image':
+        return (
+          <div className="relative rounded-lg overflow-hidden max-w-xs">
+            <img 
+              src={attachment.url} 
+              alt={attachment.name}
+              className="max-w-full h-auto"
+            />
+          </div>
+        );
+      case 'video':
+        return (
+          <div className="relative rounded-lg overflow-hidden max-w-xs">
+            <video 
+              controls 
+              className="max-w-full h-auto"
+            >
+              <source src={attachment.url} type={attachment.type} />
+              Your browser does not support the video tag.
+            </video>
+          </div>
+        );
+      case 'audio':
+        return (
+          <div className="relative rounded-lg overflow-hidden max-w-xs">
+            <audio controls className="w-full">
+              <source src={attachment.url} type={attachment.type} />
+              Your browser does not support the audio element.
+            </audio>
+          </div>
+        );
+      default:
+        return (
+          <a 
+            href={attachment.url} 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            className="flex items-center p-2 bg-gray-100 rounded-lg hover:bg-gray-200"
+          >
+            <FiPaperclip className="h-4 w-4 mr-2" />
+            <span className="text-sm text-gray-700">{attachment.name}</span>
+          </a>
+        );
+    }
+  };
+
   return (
     <div className="flex flex-col h-screen">
       {/* Chat Header - Fixed height */}
@@ -613,12 +707,17 @@ export default function ChatView() {
                             </div>
                           )
                         )}
-                        <div className={`rounded-lg px-4 py-2 max-w-[70%] break-words ${
+                        <div className={`rounded-lg px-4 py-2 max-w-[70%] space-y-2 ${
                           isCurrentUser 
                             ? 'bg-blue-600 text-white' 
                             : 'bg-gray-100 text-gray-900'
                         }`}>
-                          {message.text}
+                          {message.text && <p>{message.text}</p>}
+                          {message.attachments?.map((attachment, index) => (
+                            <div key={index} className="mt-2">
+                              {renderAttachment(attachment)}
+                            </div>
+                          ))}
                         </div>
                       </div>
                     </div>
@@ -653,24 +752,86 @@ export default function ChatView() {
                   }
                 }}
               />
+              {attachments.length > 0 && (
+                <div className="px-4 pb-3 space-y-2">
+                  {attachments.map((file, index) => (
+                    <div key={index} className="flex items-center space-x-2 text-sm text-gray-600">
+                      <FiPaperclip className="h-4 w-4" />
+                      <span className="truncate flex-1">{file.name}</span>
+                      {uploadProgress[file.name] > 0 && uploadProgress[file.name] < 100 && (
+                        <span className="text-xs text-blue-600">{Math.round(uploadProgress[file.name])}%</span>
+                      )}
+                      {uploadProgress[file.name] === 100 && (
+                        <FiCheck className="h-4 w-4 text-green-500" />
+                      )}
+                      {!sendingMessage && (
+                        <button
+                          onClick={() => {
+                            setAttachments(files => files.filter((_, i) => i !== index));
+                            setUploadProgress(prev => {
+                              const newProgress = { ...prev };
+                              delete newProgress[file.name];
+                              return newProgress;
+                            });
+                          }}
+                          className="text-red-500 hover:text-red-600"
+                        >
+                          <FiX className="h-4 w-4" />
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                  {sendingMessage && attachments.length > 0 && (
+                    <div className="mt-2">
+                      <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
+                        <div 
+                          className="h-full bg-blue-600 transition-all duration-300"
+                          style={{ width: `${overallProgress}%` }}
+                        />
+                      </div>
+                      <p className="text-xs text-gray-500 mt-1">
+                        Uploading {attachments.length} file{attachments.length > 1 ? 's' : ''}...
+                      </p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
             <div className="flex items-center space-x-2">
-              <button className="p-3 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                className="hidden"
+                multiple
+                accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                disabled={sendingMessage}
+              />
+              <button 
+                onClick={() => fileInputRef.current?.click()}
+                disabled={sendingMessage}
+                className="p-3 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 <FiPaperclip className="h-5 w-5" />
               </button>
               <button 
                 ref={emojiButtonRef}
                 onClick={toggleEmojiPicker}
-                className="p-3 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors relative"
+                disabled={sendingMessage}
+                className="p-3 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors relative disabled:opacity-50 disabled:cursor-not-allowed"
               >
                 <FiSmile className="h-5 w-5" />
               </button>
               <button 
                 onClick={handleSendMessage}
-                disabled={!messageInput.trim() || sendingMessage}
-                className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                disabled={(!messageInput.trim() && attachments.length === 0) || sendingMessage}
+                className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               >
-                <FiSend className="h-5 w-5" />
+                {sendingMessage ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <FiSend className="h-5 w-5" />
+                )}
               </button>
             </div>
           </div>

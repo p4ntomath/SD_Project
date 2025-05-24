@@ -21,7 +21,7 @@ import {
   CACHE_SIZE_UNLIMITED,
   deleteField
 } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref, uploadBytes, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { db, storage } from './firebaseConfig';
 
 // Helper function to ensure userChats document exists
@@ -349,6 +349,46 @@ const ChatService = {
 
 // Enhanced MessageService with error handling
 const MessageService = {
+  uploadAttachment: async (file, chatId, onProgress) => {
+    try {
+      const maxSize = 50 * 1024 * 1024; // 50MB limit
+      if (file.size > maxSize) {
+        throw new Error('File size exceeds 50MB limit');
+      }
+
+      const safeFileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const storageRef = ref(storage, `chats/${chatId}/attachments/${safeFileName}`);
+      
+      // Create upload task
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      // Set up progress monitoring
+      await new Promise((resolve, reject) => {
+        uploadTask.on('state_changed',
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            if (onProgress) {
+              onProgress(file.name, progress);
+            }
+          },
+          (error) => reject(error),
+          () => resolve()
+        );
+      });
+
+      const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+
+      return {
+        url: downloadURL,
+        name: file.name,
+        type: file.type,
+        size: file.size
+      };
+    } catch (error) {
+      handleFirebaseError(error);
+    }
+  },
+
   sendMessage: async (chatId, senderId, message) => {
     try {
       const messageId = doc(collection(db, 'messages')).id;
@@ -357,19 +397,31 @@ const MessageService = {
       const batch = writeBatch(db);
       
       const timestamp = serverTimestamp();
-      const clientTimestamp = new Date(); // Add client-side timestamp
+      const clientTimestamp = new Date();
+      
+      // Upload any attachments first
+      let attachments = [];
+      if (message.attachments?.length > 0) {
+        attachments = await Promise.all(
+          message.attachments.map(file => MessageService.uploadAttachment(file, chatId, message.onProgress))
+        );
+      }
       
       const newMessage = {
         chatId,
         senderId,
         text: message.text,
         timestamp,
-        clientTimestamp, // Add client timestamp for immediate sorting
+        clientTimestamp,
         readBy: [senderId],
         readTimestamps: {
           [senderId]: timestamp
         },
-        attachments: message.attachments || []
+        attachments,
+        type: attachments.length > 0 ? 
+          (attachments[0].type.startsWith('image/') ? 'image' :
+           attachments[0].type.startsWith('video/') ? 'video' :
+           attachments[0].type.startsWith('audio/') ? 'audio' : 'file') : 'text'
       };
 
       batch.set(messageRef, newMessage);
