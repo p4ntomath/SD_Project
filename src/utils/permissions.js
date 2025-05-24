@@ -37,8 +37,8 @@ export const isProjectOwner = (project) => {
 };
 
 export const isCollaborator = (project) => {
-  if (!project || !auth.currentUser) return false;
-  return project.collaborators?.some(collab => collab.id === auth.currentUser.uid);
+  if (!project || !auth.currentUser || !project.collaborators) return false;
+  return project.collaborators.some(collab => collab.id === auth.currentUser.uid);
 };
 
 export const getCollaboratorPermissions = (project) => {

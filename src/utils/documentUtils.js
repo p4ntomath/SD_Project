@@ -80,7 +80,7 @@ export const handleCreateFolder = async ({
         setStatusMessage('Folder created successfully');
         additionalCleanup(); // Call any additional cleanup function
     } catch (err) {
-        console.error('Error creating folder:', err);
+        
         setModalOpen(true);
         setError(true);
         setStatusMessage('Failed to create folder: ' + err.message);

@@ -1,6 +1,6 @@
 export const generateThumbnail = async (file) => {
   return new Promise((resolve) => {
-    if (!file.type.startsWith('image/')) {
+    if (!file || !file.type || !file.type.startsWith('image/')) {
       resolve(null);
       return;
     }
