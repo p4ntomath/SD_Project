@@ -9,6 +9,7 @@ import MediaPreview from '../components/MediaPreview';
 import Cropper from 'react-easy-crop';
 import imageCompression from 'browser-image-compression';
 import getCroppedImg from '../components/CropImage';
+import MainNav from '../components/ResearcherComponents/Navigation/MainNav';
 
 export default function ChatView() {
   const { chatId } = useParams();
@@ -595,17 +596,15 @@ export default function ChatView() {
   };
 
   return (
-    <section className="flex flex-col h-screen">
+    <main className="flex flex-col h-screen">
       {/* Chat Header - Fixed height */}
       <header className="flex-none bg-white border-b border-gray-200">
-        <section className="max-w-7xl mx-auto px-4">
-          <section className="flex items-center h-16">
-            <section className="flex-1 flex items-center min-w-0">
+        <nav className="max-w-7xl mx-auto px-4">
+          <div className="flex items-center h-16">
+            <div className="flex-1 flex items-center min-w-0">
               <button 
                 onClick={() => {
-                  // First mark all messages as read before navigating back
                   MessageService.markMessagesAsRead(chatId, auth.currentUser.uid);
-                  // Navigate without replace to ensure MessagesList remounts
                   navigate('/messages');
                 }}
                 className="md:hidden text-gray-600 hover:text-gray-800 font-medium flex items-center mr-4 flex-shrink-0"
@@ -614,8 +613,7 @@ export default function ChatView() {
                 Back
               </button>
               <div className="flex items-center space-x-4 min-w-0">
-                {/* Make avatar and name clickable for groups */}
-                <div 
+                <figure 
                   className={`relative flex-shrink-0 ${chat?.type === 'group' ? 'cursor-pointer' : ''}`}
                   onClick={() => chat?.type === 'group' && setShowGroupInfoModal(true)}
                 >
@@ -646,8 +644,8 @@ export default function ChatView() {
                       )}
                     </Link>
                   )}
-                </div>
-                <div 
+                </figure>
+                <article 
                   className={`min-w-0 flex-1 ${chat?.type === 'group' ? 'cursor-pointer' : ''}`}
                   onClick={() => chat?.type === 'group' && setShowGroupInfoModal(true)}
                 >
@@ -665,11 +663,11 @@ export default function ChatView() {
                         : `${chat.participants?.length || 0} members`}
                     </p>
                   )}
-                </section>
-              </section>
-            </section>
+                </article>
+              </div>
+            </div>
 
-            <section className="flex items-center space-x-2 flex-shrink-0">
+            <nav className="flex items-center space-x-2 flex-shrink-0">
               {chat?.type === 'group' && (
                 <button 
                   onClick={() => setShowAddMemberModal(true)}
@@ -680,9 +678,9 @@ export default function ChatView() {
                 </button>
               )}
 
-            </div>
+            </nav>
           </div>
-        </div>
+        </nav>
       </header>
 
       {/* Add Member Modal */}
@@ -980,9 +978,9 @@ export default function ChatView() {
           {Object.entries(messagesByDate).map(([date, dateMessages]) => (
             <section key={date}>
               <section className="flex items-center justify-center mb-4">
-                <section className="bg-gray-200 rounded-full px-3 py-1">
+                <time className="bg-gray-200 rounded-full px-3 py-1">
                   <span className="text-xs font-medium text-gray-600">{date}</span>
-                </section>
+                </time>
               </section>
               <section className="space-y-4">
                 {dateMessages.map((message, index) => {
@@ -994,27 +992,32 @@ export default function ChatView() {
                   const senderName = chat.participantNames?.[message.senderId] || 'Unknown User';
 
                   return (
-                    <section key={message.id}>
+                    <article key={message.id}>
                       {showSender && (
                         <p className="text-sm text-gray-500 mb-1">
                           {senderName}
                         </p>
                       )}
-
                       {renderMessage(message, isCurrentUser, showSender, senderName)}
-                    </div>
+                    </article>
                   );
                 })}
               </section>
             </section>
           ))}
-          <section ref={messagesEndRef} />
+          <div ref={messagesEndRef} />
         </section>
       </section>
 
       {/* Message Input - Fixed height at bottom */}
-      <section className="flex-none bg-white border-t border-gray-200">
-        <section className="p-4">
+      <footer className="flex-none bg-white border-t border-gray-200">
+        <form 
+          className="p-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSendMessage();
+          }}
+        >
           <section className="flex items-end space-x-2">
             <section className="flex-1 bg-gray-100 rounded-lg">
               <textarea
@@ -1034,10 +1037,11 @@ export default function ChatView() {
                   }
                 }}
               />
+              {/* File attachments preview */}
               {attachments.length > 0 && (
-                <div className="px-4 pb-3 space-y-2">
+                <section className="px-4 pb-3 space-y-2">
                   {attachments.map((file, index) => (
-                    <div key={index} className="flex items-center space-x-2 text-sm text-gray-600">
+                    <article key={index} className="flex items-center space-x-2 text-sm text-gray-600">
                       <FiPaperclip className="h-4 w-4" />
                       <span className="truncate flex-1">{file.name}</span>
                       {uploadProgress[file.name] > 0 && uploadProgress[file.name] < 100 && (
@@ -1048,6 +1052,7 @@ export default function ChatView() {
                       )}
                       {!sendingMessage && (
                         <button
+                          type="button"
                           onClick={() => {
                             setAttachments(files => files.filter((_, i) => i !== index));
                             setUploadProgress(prev => {
@@ -1061,24 +1066,23 @@ export default function ChatView() {
                           <FiX className="h-4 w-4" />
                         </button>
                       )}
-                    </div>
+                    </article>
                   ))}
                   {sendingMessage && attachments.length > 0 && (
-                    <div className="mt-2">
-                      <div className="h-1 bg-gray-200 rounded-full overflow-hidden">
-                        <div 
-                          className="h-full bg-blue-600 transition-all duration-300"
-                          style={{ width: `${overallProgress}%` }}
-                        />
-                      </div>
+                    <section className="mt-2">
+                      <progress 
+                        value={overallProgress} 
+                        max="100"
+                        className="w-full h-1 bg-gray-200 rounded-full overflow-hidden"
+                      />
                       <p className="text-xs text-gray-500 mt-1">
                         Uploading {attachments.length} file{attachments.length > 1 ? 's' : ''}...
                       </p>
-                    </div>
+                    </section>
                   )}
-                </div>
+                </section>
               )}
-            </div>
+            </section>
             <div className="flex items-center space-x-2">
               <input
                 type="file"
@@ -1090,6 +1094,7 @@ export default function ChatView() {
                 disabled={sendingMessage}
               />
               <button 
+                type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={sendingMessage}
                 className="p-3 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
@@ -1097,6 +1102,7 @@ export default function ChatView() {
                 <FiPaperclip className="h-5 w-5" />
               </button>
               <button 
+                type="button"
                 ref={emojiButtonRef}
                 onClick={toggleEmojiPicker}
                 disabled={sendingMessage}
@@ -1105,24 +1111,24 @@ export default function ChatView() {
                 <FiSmile className="h-5 w-5" />
               </button>
               <button 
-                onClick={handleSendMessage}
+                type="submit"
                 disabled={(!messageInput.trim() && attachments.length === 0) || sendingMessage}
                 className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
               >
                 {sendingMessage ? (
-                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 ) : (
                   <FiSend className="h-5 w-5" />
                 )}
               </button>
-            </section>
+            </div>
           </section>
-        </section>
-      </section>
+        </form>
+      </footer>
 
       {/* Emoji Picker - Absolute positioned */}
       {showEmojiPicker && (
-        <section 
+        <aside 
           ref={emojiPickerRef}
           className="absolute bottom-20 right-16 z-50"
         >
@@ -1141,17 +1147,17 @@ export default function ChatView() {
             previewConfig={{ showPreview: false }}
             lazyLoadEmojis={true}
           />
-        </section>
+        </aside>
       )}
 
       {/* Image Crop Modal */}
       {showCropModal && (
-        <div className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-lg rounded-2xl overflow-hidden">
-            <div className="p-4 border-b border-gray-200">
+        <dialog className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
+          <article className="bg-white w-full max-w-lg rounded-2xl overflow-hidden">
+            <header className="p-4 border-b border-gray-200">
               <h3 className="text-lg font-semibold text-gray-900">Crop Group Avatar</h3>
-            </div>
-            <div className="relative h-[400px] bg-gray-900">
+            </header>
+            <section className="relative h-[400px] bg-gray-900">
               <Cropper
                 image={selectedImage}
                 crop={crop}
@@ -1161,9 +1167,10 @@ export default function ChatView() {
                 onZoomChange={setZoom}
                 onCropComplete={handleCropComplete}
               />
-            </div>
-            <div className="p-4 bg-gray-50 flex justify-end space-x-3">
+            </section>
+            <footer className="p-4 bg-gray-50 flex justify-end space-x-3">
               <button
+                type="button"
                 onClick={() => {
                   setShowCropModal(false);
                   setSelectedImage(null);
@@ -1173,22 +1180,23 @@ export default function ChatView() {
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={handleCropSave}
                 disabled={isChangingAvatar}
                 className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center"
               >
                 {isChangingAvatar ? (
                   <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
                     Saving...
                   </>
                 ) : (
                   'Save'
                 )}
               </button>
-            </div>
-          </div>
-        </div>
+            </footer>
+          </article>
+        </dialog>
       )}
 
       {/* Add the custom scrollbar styles */}
@@ -1218,6 +1226,6 @@ export default function ChatView() {
           -webkit-perspective: 1000;
         }
       `}</style>
-    </div>
+    </main>
   );
 }
