@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { auth, db } from '../backend/firebase/firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -48,6 +49,7 @@ export default function MyProfilePage() {
   const [isCropping, setIsCropping] = useState(false);
   const [universities, setUniversities] = useState([]);
   const [selectedInstitution, setSelectedInstitution] = useState(null);
+
   const [showCustomInstitution, setShowCustomInstitution] = useState(false);
   const [customInstitution, setCustomInstitution] = useState('');
 
@@ -231,7 +233,6 @@ export default function MyProfilePage() {
       setCustomInstitution('');
     }
   };
-
   return (
     <>
       {draftData.role.charAt(0).toUpperCase() + draftData.role.slice(1) === 'Reviewer' ? (
@@ -271,6 +272,7 @@ export default function MyProfilePage() {
                   className="w-40 h-40 rounded-full object-cover border-4 border-gray-300 hover:opacity-90"
                 />
               ) : (
+
                 <section className="w-40 h-40 rounded-full flex items-center justify-center text-3xl font-semibold text-white bg-blue-600 hover:bg-blue-700 transition-colors border-4 border-gray-300">
                   {getAvatarInitials(draftData.name)}
                 </section>
@@ -424,7 +426,6 @@ export default function MyProfilePage() {
                     </div>
                   </div>
                 )}
-
                 <label htmlFor="department" className="block text-sm font-semibold mb-1 mt-4">Department</label>
                 <input
                   id="department"
@@ -564,6 +565,7 @@ export default function MyProfilePage() {
                   {isDeleting ? 'Deleting...' : 'Delete Photo'}
                 </button>
 
+
               </section>
 
               <section className="pt-2 text-right">
@@ -573,6 +575,7 @@ export default function MyProfilePage() {
                 >
                   Cancel
                 </button>
+
               </section>
             </section>
           </section>
@@ -580,6 +583,7 @@ export default function MyProfilePage() {
 
         {/* Status Modal */}
         {showStatusModal && (
+
           <section className="fixed inset-0 z-50 backdrop-blur-sm bg-white/30 flex items-center justify-center">
             <section className="bg-white p-6 rounded-lg shadow-md w-[95vw] max-w-[500px] space-y-4">
               <h2 className={`text-lg font-semibold ${statusMessage.type === 'success' ? 'text-green-600' : 'text-red-600'}`}>
@@ -593,6 +597,7 @@ export default function MyProfilePage() {
                 Close
               </button>
             </section>
+
           </section>
         )}
 
@@ -607,4 +612,6 @@ export default function MyProfilePage() {
       </footer>
     </>
   );
+
 }
+

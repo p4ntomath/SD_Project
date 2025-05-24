@@ -1,9 +1,12 @@
 import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "firebase/storage";
-import { collection, doc, setDoc, getDocs, getDoc, updateDoc, deleteDoc, serverTimestamp, query, where } from "firebase/firestore";
+import { collection, doc, setDoc, getDocs, getDoc, updateDoc, deleteDoc, serverTimestamp, query, where, increment } from "firebase/firestore";
 import { auth, db } from "./firebaseConfig";
 
 const storage = getStorage();
 
+const cache = {
+  folderSizes: new Map()
+};
 /**
  * Uploads a document file to Firebase Storage and stores metadata in Firestore
  * @param {File} file - The file object from input
@@ -12,6 +15,8 @@ const storage = getStorage();
  * @param {Object} metadata - Optional metadata for the file
  * @returns {Promise<string>} - The document ID created in Firestore
  */
+
+
 export const uploadDocument = async (file, projectId, folderId, metadata = {}) => {
   try {
     if (!file) throw new Error("No file provided");
@@ -22,27 +27,26 @@ export const uploadDocument = async (file, projectId, folderId, metadata = {}) =
       throw new Error("You don't have permission");
     }
 
-    const maxFileSize = 10 * 1024 * 1024; // 10MB in bytes
+    const maxFileSize = 10 * 1024 * 1024; // 10MB
     if (file.size > maxFileSize) {
-      throw new Error("File size exceeds the maximum limit of 10MB");
+      throw new Error("File size exceeds the 10MB limit");
     }
 
-    // Create a safe filename for storage while preserving custom name
+    // Generate unique safe file name
     const fileExtension = file.name.split('.').pop();
     const safeFileName = `${Date.now()}.${fileExtension}`;
     const storageRef = ref(storage, `projects/${projectId}/folders/${folderId}/${safeFileName}`);
 
-    // Upload the file to Firebase Storage
+    // Upload to Firebase Storage
     const snapshot = await uploadBytes(storageRef, file);
     const downloadURL = await getDownloadURL(snapshot.ref);
 
-    // Create document reference in Firestore
+    // Save metadata in Firestore
     const projectRef = doc(db, "projects", projectId);
     const folderRef = doc(projectRef, "folders", folderId);
     const filesCollectionRef = collection(folderRef, "files");
     const docRef = doc(filesCollectionRef);
 
-    // Store comprehensive file metadata in Firestore
     const fileMetadata = {
       documentId: docRef.id,
       fileName: file.name,
@@ -55,22 +59,31 @@ export const uploadDocument = async (file, projectId, folderId, metadata = {}) =
       type: file.type,
       description: metadata.description || '',
       uploadedBy: auth.currentUser?.uid,
-      folderId: folderId,
-      projectId: projectId
+      folderId,
+      projectId,
     };
 
     await setDoc(docRef, fileMetadata);
 
-    // Update folder's total size
-    const folderSnap = await getDoc(folderRef);
-    if (folderSnap.exists()) {
-      const folderData = folderSnap.data();
-      const currentSize = folderData.size || 0;
-      await updateDoc(folderRef, {
-        size: currentSize + file.size,
-        updatedAt: serverTimestamp()
-      });
+    // Update folder size with in-memory cache
+    const folderKey = `${projectId}/${folderId}`;
+    let currentSize;
+
+    if (cache.folderSizes.has(folderKey)) {
+      currentSize = cache.folderSizes.get(folderKey);
+    } else {
+      const folderSnap = await getDoc(folderRef);
+      currentSize = folderSnap.exists() ? folderSnap.data().size || 0 : 0;
     }
+
+    const updatedSize = currentSize + file.size;
+    await updateDoc(folderRef, {
+      size: updatedSize,
+      updatedAt: serverTimestamp(),
+    });
+
+    // Update the cache
+    cache.folderSizes.set(folderKey, updatedSize);
 
     return docRef.id;
   } catch (error) {
@@ -78,6 +91,7 @@ export const uploadDocument = async (file, projectId, folderId, metadata = {}) =
     throw new Error("Failed to upload document: " + error.message);
   }
 };
+
 
 /**
  * Fetch documents by projectId
@@ -315,3 +329,5 @@ export const fetchAllDocuments = async () => {
         throw new Error("Failed to fetch all documents");
     }
 };
+
+

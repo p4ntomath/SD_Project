@@ -36,16 +36,25 @@
 - ![Documents View (Mobile)](./images/documentsSmallScreen.png)  
   Mobile view for document management
 
-## Profile Management
-- ![My Profile](./images/myProfile.png)  
-  User profile interface
-- ![My Profile (Mobile View)](./images/myProfileSmallScreen.png)  
-  Mobile-responsive profile page
-
 ## Project Funding
 - ![Track Project Funding](./images/trackProjectFundingPage.png)  
   Funding tracking interface
 - ![Track Project Funding (Mobile View)](./images/trackProjectFundingPageSmallScreen.png)  
   Mobile view for funding tracking
 
+## User Account
+- ![MyProfile](./images/MyProfile.png)  
+  User profile account
+- ![MyProfile(Mobile View)](./images/MyProfile-smallScreen.png)  
+  Responsive layout for smaller screens
+
+  ## Notifications
+- ![Notifications](./images/Notifications2.png) 
+- ![Notifications(Mobile View)](./images/Notifications-smallScreen.png)  
+  Responsive layout for smaller screens
+
+  ## Messages
+- ![messages](./images/Messages.png) 
+- ![messagesPage(Mobile View)](./images/messagesPage-smallScreen.png)  
+- ![messageType(Mobile View)](./images/messageType-smallScreen.png) 
 
