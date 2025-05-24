@@ -313,24 +313,21 @@ export default function DocumentsPage() {
                             </svg>
                             Create First Folder
                         </button>
-                    </div>
+                    </section>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                    <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {sortFolders(folders).map((folder) => (
                             <article key={folder.id} className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 hover:shadow-md transition-shadow">
                                 <header className="flex items-start justify-between mb-4">
-                                    <div className="flex items-center">
-                                        <figure className="p-2 bg-blue-50 rounded-lg mr-3">
+                                    <section className="flex items-center">
+                                        <section className="p-2 bg-blue-50 rounded-lg mr-3">
                                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                                             </svg>
-                                        </figure>
-                                        <div>
+                                        </section>
+                                        <section>
                                             {isRenamingFolder === folder.id ? (
-                                                <form className="flex items-center gap-2" onSubmit={(e) => {
-                                                    e.preventDefault();
-                                                    handleRenameFolderWrapper(folder);
-                                                }}>
+                                                <section className="flex items-center gap-2">
                                                     <input
                                                         type="text"
                                                         value={newFolderName}
@@ -339,14 +336,16 @@ export default function DocumentsPage() {
                                                         placeholder="New folder name"
                                                         autoFocus
                                                         onKeyDown={(e) => {
-                                                            if (e.key === 'Escape') {
+                                                            if (e.key === 'Enter') {
+                                                                handleRenameFolderWrapper(folder);
+                                                            } else if (e.key === 'Escape') {
                                                                 setIsRenamingFolder(null);
                                                                 setNewFolderName('');
                                                             }
                                                         }}
                                                     />
                                                     <button
-                                                        type="submit"
+                                                        onClick={() => handleRenameFolderWrapper(folder)}
                                                         className="p-1 text-green-600 hover:text-green-800"
                                                         title="Save"
                                                     >
@@ -355,7 +354,6 @@ export default function DocumentsPage() {
                                                         </svg>
                                                     </button>
                                                     <button
-                                                        type="button"
                                                         onClick={() => {
                                                             setIsRenamingFolder(null);
                                                             setNewFolderName('');
@@ -367,7 +365,7 @@ export default function DocumentsPage() {
                                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                                                         </svg>
                                                     </button>
-                                                </form>
+                                                </section>
                                             ) : (
                                                 <h3 className="font-semibold text-gray-900 group flex items-center gap-2">
                                                     {folder.name}
@@ -568,7 +566,7 @@ export default function DocumentsPage() {
                                     />
                                 </div>
 
-                                <div>
+                                <section>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Display Name
                                     </label>
@@ -579,9 +577,9 @@ export default function DocumentsPage() {
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         placeholder="Enter display name"
                                     />
-                                </div>
+                                </section>
 
-                                <div>
+                                <section>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Description (optional)
                                     </label>
@@ -592,10 +590,10 @@ export default function DocumentsPage() {
                                         rows={3}
                                         placeholder="Enter file description"
                                     />
-                                </div>
-                            </div>
+                                </section>
+                            </section>
 
-                            <div className="mt-6 flex justify-end space-x-3">
+                            <section className="mt-6 flex justify-end space-x-3">
                                 <button
                                     onClick={() => {
                                         setShowUploadModal(false);
@@ -666,15 +664,15 @@ export default function DocumentsPage() {
                                     </button>
                                 </footer>
                             </motion.article>
-                        </dialog>
+                        </section>
                     )}
                 </AnimatePresence>
 
                 {/* Delete File Confirmation Modal */}
                 <AnimatePresence>
                     {showDeleteFileModal && fileToDelete && (
-                        <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
-                            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteFileModal(false)} />
+                        <section className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
+                            <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteFileModal(false)} />
                             <motion.article
                                 className="relative bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200"
                                 initial={{ scale: 0.8, opacity: 0 }}
@@ -713,7 +711,7 @@ export default function DocumentsPage() {
                                     </button>
                                 </footer>
                             </motion.article>
-                        </div>
+                        </section>
                     )}
                 </AnimatePresence>
 
