@@ -378,24 +378,24 @@ export default function ProjectDetailsPage() {
       setModalOpen(true);
       setError(false);
       setStatusMessage(
-        <div className="flex items-center gap-2 text-green-600">
+        <section className="flex items-center gap-2 text-green-600">
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
           <span>Successfully sent {selectedResearchers.length} collaboration invitation{selectedResearchers.length !== 1 ? 's' : ''}</span>
-        </div>
+        </section>
       );
     } catch (err) {
      
       setModalOpen(true);
       setError(true);
       setStatusMessage(
-        <div className="flex items-center gap-2 text-red-600">
+        <section className="flex items-center gap-2 text-red-600">
           <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
           </svg>
           <span>{err.message || "Failed to send collaborator invitations"}</span>
-        </div>
+        </section>
       );
     }
   };
@@ -504,9 +504,9 @@ const getDefaultGroupName = (projectTitle) => {
     return (
       <AnimatePresence>
         {isOpen && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex items-center justify-center min-h-screen px-4">
-              <motion.div
+          <section className="fixed inset-0 z-50 overflow-y-auto">
+            <section className="flex items-center justify-center min-h-screen px-4">
+              <motion.section
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
@@ -514,7 +514,7 @@ const getDefaultGroupName = (projectTitle) => {
                 className="fixed inset-0 bg-black/30 backdrop-blur-sm"
                 onClick={onClose}
               />
-              <motion.div
+              <motion.section
                 initial={{ scale: 0.95, opacity: 0, y: 10 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.95, opacity: 0, y: 10 }}
@@ -522,7 +522,7 @@ const getDefaultGroupName = (projectTitle) => {
                 className="relative bg-white rounded-xl shadow-2xl p-6 w-full max-w-md"
               >
                 <h3 className="text-lg font-semibold mb-4">Create Team Chat</h3>
-                <div className="space-y-2">
+                <section className="space-y-2">
                   <input
                     type="text"
                     value={localGroupName}
@@ -534,8 +534,8 @@ const getDefaultGroupName = (projectTitle) => {
                   <p className="text-xs text-gray-500 text-right">
                     {localGroupName.length}/30 characters
                   </p>
-                </div>
-                <div className="flex justify-end gap-3 mt-6">
+                </section>
+                <section className="flex justify-end gap-3 mt-6">
                   <button
                     onClick={onClose}
                     className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
@@ -560,10 +560,10 @@ const getDefaultGroupName = (projectTitle) => {
                       'Create Chat'
                     )}
                   </button>
-                </div>
-              </motion.div>
-            </div>
-          </div>
+                </section>
+              </motion.section>
+            </section>
+          </section>
         )}
       </AnimatePresence>
     );
@@ -581,7 +581,7 @@ const getDefaultGroupName = (projectTitle) => {
     return (
       <>
       <main className="flex justify-center items-center min-h-screen">
-        <div className="text-center">
+        <section className="text-center">
           <h1 className="text-2xl font-bold text-gray-800">Project Not Found</h1>
           <p className="text-gray-600 mt-2">The project you are looking for does not exist or has been deleted.</p>
           <button
@@ -590,7 +590,7 @@ const getDefaultGroupName = (projectTitle) => {
           >
             Go to Home
           </button>
-        </div>
+        </section>
       </main>
       </>
     );
@@ -623,7 +623,7 @@ const getDefaultGroupName = (projectTitle) => {
       <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <section className="flex flex-col sm:flex-row sm:justify-between sm:items-center py-4 sm:h-16 gap-3 sm:gap-0">
-              <div className="flex items-center min-w-0 flex-shrink">
+              <section className="flex items-center min-w-0 flex-shrink">
                 <button
                   onClick={() => navigate(-1)}
                   className="text-gray-600 hover:text-blue-600 transition-colors flex items-center mr-3 flex-shrink-0"
@@ -634,7 +634,7 @@ const getDefaultGroupName = (projectTitle) => {
                 <h1 className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent truncate max-w-[150px] md:max-w-[300px] lg:max-w-none">
                   {project.title}
                 </h1>
-              </div>
+              </section>
               <nav className="flex gap-2 justify-start sm:justify-end flex-shrink-0">
                 {(isProjectOwner(project) || checkPermission(project, 'canEditProjectDetails')) && (
                   <button
@@ -713,19 +713,19 @@ const getDefaultGroupName = (projectTitle) => {
                 {project.collaborators?.length > 0 ? (
                   <>
                     {groupChatId ? (
-                      <div className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 rounded-lg p-4">
-                        <div className="flex items-center justify-between mb-3">
-                          <div className="flex items-center">
-                            <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white">
+                      <section className="bg-gradient-to-r from-blue-50 to-purple-50 border border-blue-100 rounded-lg p-4">
+                        <section className="flex items-center justify-between mb-3">
+                          <section className="flex items-center">
+                            <section className="w-10 h-10 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white">
                               💬
-                            </div>
-                            <div className="ml-3">
+                            </section>
+                            <section className="ml-3">
                               <h3 className="font-medium text-gray-900">{project.title} Team Chat</h3>
                               <p className="text-sm text-gray-500">
                                 {project.collaborators.length + 1} members
                               </p>
-                            </div>
-                          </div>
+                            </section>
+                          </section>
                           <button
                             onClick={() => navigate(`/messages/${groupChatId}`)}
                             className="flex items-center px-4 py-2 bg-white border border-blue-200 rounded-lg text-blue-600 hover:bg-blue-50 transition-colors text-sm font-medium"
@@ -735,18 +735,18 @@ const getDefaultGroupName = (projectTitle) => {
                             </svg>
                             Open
                           </button>
-                        </div>
-                        <div className="text-sm text-gray-600">
+                        </section>
+                        <section className="text-sm text-gray-600">
                           Discuss project updates, share ideas, and coordinate with your team in real-time.
-                        </div>
-                      </div>
+                        </section>
+                      </section>
                     ) : (
-                      <div className="text-center p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-                        <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
+                      <section className="text-center p-6 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+                        <section className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-3">
                           <svg className="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2v-6a2 2 0 012-2h8a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586" />
                           </svg>
-                        </div>
+                        </section>
                         <h3 className="text-gray-900 font-medium mb-2">Create Team Chat</h3>
                         <p className="text-gray-500 text-sm mb-4">
                           {isProjectOwner(project) 
@@ -765,28 +765,28 @@ const getDefaultGroupName = (projectTitle) => {
                             Create Team Chat
                           </button>
                         )}
-                      </div>
+                      </section>
                     )}
                   </>
                 ) : (
-                  <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
-                    <div className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
+                  <section className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center">
+                    <section className="w-12 h-12 bg-gray-200 rounded-full flex items-center justify-center mx-auto mb-3">
                       <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8h2a2 2 0 012 2v6a2 2 0 01-2 2h-2v4l-4-4H9a2 2 0 01-2-2v-6a2 2 0 012-2h8a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2v4l.586-.586" />
                       </svg>
-                    </div>
+                    </section>
                     <h3 className="text-gray-900 font-medium mb-2">No Collaborators Yet</h3>
                     <p className="text-gray-500 text-sm">
                       Add collaborators to your project to enable team chat functionality.
                     </p>
-                  </div>
+                  </section>
                 )}
               </section>
             </section>
 
             {/* Collaborators Card */}
             <section className="bg-white rounded-lg shadow p-4 sm:p-6">
-              <div className="flex justify-between items-center mb-4">
+              <section className="flex justify-between items-center mb-4">
                 <h2 className="text-lg sm:text-xl font-semibold">Project Collaborators</h2>
                 {isProjectOwner(project) && (
                   <button
@@ -799,30 +799,30 @@ const getDefaultGroupName = (projectTitle) => {
                     Add Collaborator
                   </button>
                 )}
-              </div>
+              </section>
 
               {/* Active Collaborators */}
               {project.collaborators && project.collaborators.length > 0 && (
-                <div className="mb-6">
+                <section className="mb-6">
                   <h3 className="text-sm font-medium text-gray-700 mb-3">Active Collaborators</h3>
-                  <div className="overflow-hidden">
-                    <div className="overflow-y-auto max-h-[230px] pr-2 -mr-2 no-scrollbar">
-                      <div className="space-y-3">
+                  <section className="overflow-hidden">
+                    <section className="overflow-y-auto max-h-[230px] pr-2 -mr-2 no-scrollbar">
+                      <section className="space-y-3">
                         {project.collaborators.map((collaborator) => (
-                          <div key={collaborator.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-blue-100 rounded-full">
+                          <section key={collaborator.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <section className="flex items-center gap-3">
+                              <section className="p-2 bg-blue-100 rounded-full">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
-                              </div>
-                              <div>
+                              </section>
+                              <section>
                                 <p className="font-medium">{collaborator.fullName}</p>
                                 <p className="text-sm text-gray-500">{collaborator.institution || 'No institution'}</p>
-                              </div>
-                            </div>
+                              </section>
+                            </section>
                             {isProjectOwner(project) && (
-                              <div className="flex items-center gap-2">
+                              <section className="flex items-center gap-2">
                                 <select
                                   value={collaborator.accessLevel}
                                   onChange={(e) => handleAccessLevelChange(collaborator.id, e.target.value)}
@@ -841,45 +841,45 @@ const getDefaultGroupName = (projectTitle) => {
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                   </svg>
                                 </button>
-                              </div>
+                              </section>
                             )}
-                          </div>
+                          </section>
                         ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                      </section>
+                    </section>
+                  </section>
+                </section>
               )}
 
               {/* Pending Invitations */}
               {pendingInvitations && pendingInvitations.length > 0 && (
-                <div className="mb-6">
+                <section className="mb-6">
                   <h3 className="text-sm font-medium text-gray-700 mb-3">Pending Invitations</h3>
-                  <div className="overflow-hidden">
-                    <div className="overflow-y-auto max-h-[230px] pr-2 -mr-2 no-scrollbar">
-                      <div className="space-y-3">
+                  <section className="overflow-hidden">
+                    <section className="overflow-y-auto max-h-[230px] pr-2 -mr-2 no-scrollbar">
+                      <section className="space-y-3">
                         {pendingInvitations.map((invitation) => (
-                          <div key={invitation.invitationId} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
-                            <div className="flex items-center gap-3">
-                              <div className="p-2 bg-gray-100 rounded-full">
+                          <section key={invitation.invitationId} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg">
+                            <section className="flex items-center gap-3">
+                              <section className="p-2 bg-gray-100 rounded-full">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                 </svg>
-                              </div>
-                              <div>
+                              </section>
+                              <section>
                                 <p className="font-medium text-sm">{invitation.researcherName}</p>
                                 <p className="text-xs text-gray-500">Invited: {formatDate(invitation.createdAt)}</p>
-                              </div>
-                            </div>
+                              </section>
+                            </section>
                             <span className="px-2 py-1 text-xs rounded-full bg-yellow-100 text-yellow-800">
                               Pending Response
                             </span>
-                          </div>
+                          </section>
                         ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                      </section>
+                    </section>
+                  </section>
+                </section>
               )}
 
               {(!project.collaborators || project.collaborators.length === 0) && (!pendingInvitations || pendingInvitations.length === 0) && (
@@ -928,8 +928,8 @@ const getDefaultGroupName = (projectTitle) => {
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {showDeleteConfirm && (
-          <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
-            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
+          <section className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
+            <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteConfirm(false)} />
             <motion.article
               className="relative bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200"
               initial={{ scale: 0.8, opacity: 0 }}
@@ -957,7 +957,7 @@ const getDefaultGroupName = (projectTitle) => {
                 </button>
               </footer>
             </motion.article>
-          </div>
+          </section>
         )}
       </AnimatePresence>
 

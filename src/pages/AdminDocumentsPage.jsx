@@ -71,27 +71,27 @@ export default function AdminDocumentsPage() {
 
     if (loading) {
         return (
-            <div aria-label='loading' className="min-h-screen bg-gray-50">
+            <section aria-label='loading' className="min-h-screen bg-gray-50">
                 <header>
                     <MainNav setMobileMenuOpen={setMobileMenuOpen} mobileMenuOpen={mobileMenuOpen} />
                 </header>
-                <div className="flex justify-center items-center h-64">
+                <section className="flex justify-center items-center h-64">
                     <ClipLoader color="#3B82F6" />
-                </div>
-            </div>
+                </section>
+            </section>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
+        <section className="min-h-screen bg-gray-50">
             <header>
                 <MainNav setMobileMenuOpen={setMobileMenuOpen} mobileMenuOpen={mobileMenuOpen} />
             </header>
 
             <main className="p-4 md:p-8 pb-16 md:pb-8">
-                <div className="max-w-7xl mx-auto">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-                        <div className="flex items-center">
+                <section className="max-w-7xl mx-auto">
+                    <section className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+                        <section className="flex items-center">
                             <button
                                 onClick={() => navigate('/admin')}
                                 className="mr-4 p-2 text-gray-600 hover:text-gray-800 transition-colors"
@@ -100,9 +100,9 @@ export default function AdminDocumentsPage() {
                                 <FaArrowLeft className="h-5 w-5" />
                             </button>
                             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Documents Management</h1>
-                        </div>
+                        </section>
                         
-                        <div className="flex items-center">
+                        <section className="flex items-center">
                             <label htmlFor="creator-filter" className="mr-2 text-sm text-gray-600 whitespace-nowrap">
                                 Filter by Creator:
                             </label>
@@ -119,20 +119,20 @@ export default function AdminDocumentsPage() {
                                     </option>
                                 ))}
                             </select>
-                        </div>
-                    </div>
+                        </section>
+                    </section>
 
-                    <div className="bg-white shadow rounded-lg overflow-hidden">
+                    <section className="bg-white shadow rounded-lg overflow-hidden">
                         {error ? (
-                            <div className="p-4 text-red-500">
+                            <section className="p-4 text-red-500">
                                 {error}
-                            </div>
+                            </section>
                         ) : (
-                            <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                                <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                                    <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                                        <div className="overflow-x-auto">
-                                            <table className="min-w-full divide-y divide-gray-200">
+                            <section className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                                <section className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                                    <section className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                                        <section className="overflow-x-auto">
+                                            <table className="min-w-full sectionide-y sectionide-gray-200">
                                                 <thead className="bg-gray-50">
                                                     <tr>
                                                         <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -155,7 +155,7 @@ export default function AdminDocumentsPage() {
                                                         </th>
                                                     </tr>
                                                 </thead>
-                                                <tbody className="bg-white divide-y divide-gray-200">
+                                                <tbody className="bg-white sectionide-y sectionide-gray-200">
                                                     {loading ? (
                                                         <tr>
                                                             <td colSpan="6" className="px-4 sm:px-6 py-4 text-center">
@@ -170,17 +170,17 @@ export default function AdminDocumentsPage() {
                                                             transition={{ duration: 0.3 }}
                                                         >
                                                             <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                                                <div className="text-sm font-medium text-gray-900">{document.fileName}</div>
-                                                                <div className="text-sm text-gray-500 hidden sm:block">{document.description}</div>
+                                                                <section className="text-sm font-medium text-gray-900">{document.fileName}</section>
+                                                                <section className="text-sm text-gray-500 hidden sm:block">{document.description}</section>
                                                             </td>
                                                             <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                                                <div className="text-sm text-gray-900">{document.projectName}</div>
+                                                                <section className="text-sm text-gray-900">{document.projectName}</section>
                                                             </td>
                                                             <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                                                <div className="text-sm text-gray-900">{document.creatorName}</div>
+                                                                <section className="text-sm text-gray-900">{document.creatorName}</section>
                                                             </td>
                                                             <td className="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap">
-                                                                <div className="text-sm text-gray-900">{document.type}</div>
+                                                                <section className="text-sm text-gray-900">{document.type}</section>
                                                             </td>
                                                             <td className="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                                                                 {(document.size / 1024 / 1024).toFixed(2)} MB
@@ -197,18 +197,18 @@ export default function AdminDocumentsPage() {
                                                     ))}
                                                 </tbody>
                                             </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                                        </section>
+                                    </section>
+                                </section>
+                            </section>
                         )}
-                    </div>
-                </div>
+                    </section>
+                </section>
             </main>
 
             <footer>
                 <MobileBottomNav />
             </footer>
-        </div>
+        </section>
     );
 }

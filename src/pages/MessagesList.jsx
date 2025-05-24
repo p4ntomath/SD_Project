@@ -230,11 +230,11 @@ export default function MessagesList() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <section className="min-h-screen bg-gray-50">
       {/* Top Navigation */}
       <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <section className="flex h-16 items-center justify-between">
             <button 
               onClick={() => navigate('/home')}
               className="text-gray-600 hover:text-gray-800 font-medium flex items-center"
@@ -242,7 +242,7 @@ export default function MessagesList() {
               <FiArrowLeft className="h-5 w-5 mr-1" />
               Dashboard
             </button>
-            <div className="flex space-x-2">
+            <section className="flex space-x-2">
               <button
                 onClick={() => {
                   setShowNewChatModal(true);
@@ -269,17 +269,17 @@ export default function MessagesList() {
                 <FiUsers className="h-4 w-4 mr-1.5" />
                 
               </button>
-            </div>
-          </div>
-        </div>
+            </section>
+          </section>
+        </section>
       </header>
 
       <main className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div className="bg-white shadow sm:rounded-lg mt-4 overflow-hidden">
+        <section className="bg-white shadow sm:rounded-lg mt-4 overflow-hidden">
           {/* Search and Filters */}
-          <div className="p-4 border-b border-gray-200">
+          <section className="p-4 border-b border-gray-200">
             {showNewChatModal && showGroupChatModal ? (
-              <div className="space-y-4">
+              <section className="space-y-4">
                 <input
                   type="text"
                   placeholder="Group name..."
@@ -287,7 +287,7 @@ export default function MessagesList() {
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
                 />
-                <div className="relative">
+                <section className="relative">
                   <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
@@ -299,9 +299,9 @@ export default function MessagesList() {
                       searchUsers(e.target.value);
                     }}
                   />
-                </div>
+                </section>
                 {selectedUsers.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
+                  <section className="flex flex-wrap gap-2">
                     {selectedUsers.map(user => (
                       <span
                         key={user.id}
@@ -317,7 +317,7 @@ export default function MessagesList() {
                         </button>
                       </span>
                     ))}
-                  </div>
+                  </section>
                 )}
                 {selectedUsers.length >= 2 && groupName && (
                   <button
@@ -327,10 +327,10 @@ export default function MessagesList() {
                     Create Group Chat
                   </button>
                 )}
-              </div>
+              </section>
             ) : (
               <>
-                <div className="relative">
+                <section className="relative">
                   <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
@@ -344,10 +344,10 @@ export default function MessagesList() {
                       }
                     }}
                   />
-                </div>
+                </section>
 
                 {!showNewChatModal && (
-                  <div className="flex space-x-2 mt-4">
+                  <section className="flex space-x-2 mt-4">
                     <button
                       onClick={() => setActiveFilter('all')}
                       className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -388,27 +388,27 @@ export default function MessagesList() {
                     >
                       Unread
                     </button>
-                  </div>
+                  </section>
                 )}
               </>
             )}
-          </div>
+          </section>
 
           {/* Chat Lists or Search Results */}
-          <div className="divide-y divide-gray-200 max-h-[calc(100vh-12rem)] overflow-y-auto"> {/* Added max height and scroll */}
+          <section className="sectionide-y sectionide-gray-200 max-h-[calc(100vh-12rem)] overflow-y-auto"> {/* Added max height and scroll */}
             {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-gray-500">Loading...</div>
-              </div>
+              <section className="flex items-center justify-center py-12">
+                <section className="text-gray-500">Loading...</section>
+              </section>
             ) : showNewChatModal ? (
               searching ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-gray-500">Searching users...</div>
-                </div>
+                <section className="flex items-center justify-center py-12">
+                  <section className="text-gray-500">Searching users...</section>
+                </section>
               ) : error ? (
-                <div className="flex flex-col items-center justify-center py-12">
+                <section className="flex flex-col items-center justify-center py-12">
                   <p className="text-sm text-red-500">{error}</p>
-                </div>
+                </section>
               ) : userSearchResults.length > 0 ? (
                 userSearchResults.map(user => (
                   <button 
@@ -427,21 +427,21 @@ export default function MessagesList() {
                     }}
                     className="w-full text-left hover:bg-gray-50 p-4 transition-colors"
                   >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                          <div className="w-12 h-12 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
+                    <section className="flex items-center justify-between">
+                      <section className="flex items-center">
+                        <section className="flex-shrink-0">
+                          <section className="w-12 h-12 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
                             {getAvatarInitials(user.fullName)}
-                          </div>
-                        </div>
-                        <div className="ml-4">
+                          </section>
+                        </section>
+                        <section className="ml-4">
                           <p className="font-medium text-gray-900">{user.fullName}</p>
                           <p className="text-sm text-gray-500">{user.email}</p>
-                        </div>
-                      </div>
+                        </section>
+                      </section>
                       {showGroupChatModal && (
-                        <div className="flex-shrink-0">
-                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                        <section className="flex-shrink-0">
+                          <section className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
                             selectedUsers.some(u => u.id === user.id)
                               ? 'bg-blue-600 border-blue-600 text-white'
                               : 'border-gray-300'
@@ -451,20 +451,20 @@ export default function MessagesList() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                               </svg>
                             )}
-                          </div>
-                        </div>
+                          </section>
+                        </section>
                       )}
-                    </div>
+                    </section>
                   </button>
                 ))
               ) : searchQuery ? (
-                <div className="flex flex-col items-center justify-center py-12">
+                <section className="flex flex-col items-center justify-center py-12">
                   <p className="text-sm text-gray-500">No users found</p>
-                </div>
+                </section>
               ) : (
-                <div className="flex flex-col items-center justify-center py-12">
+                <section className="flex flex-col items-center justify-center py-12">
                   <p className="text-sm text-gray-500">Start typing to search for users</p>
-                </div>
+                </section>
               )
             ) : filteredChats().length > 0 ? (
               filteredChats().map(chat => (
@@ -473,10 +473,11 @@ export default function MessagesList() {
                   onClick={() => navigate(`/messages/${chat.id}`)}
                   className={`w-full text-left hover:bg-gray-50 p-4 transition-colors`}
                 >
-                  <div className="flex items-center">
-                    <div className="flex items-center flex-1 min-w-0">
-                      <div className="relative flex-shrink-0">
+                  <section className="flex items-center">
+                    <section className="flex items-center flex-1 min-w-0">
+                      <section className="relative flex-shrink-0">
                         {chat.type === 'group' ? (
+
                           chat.groupAvatar ? (
                             <img
                               src={chat.groupAvatar}
@@ -496,13 +497,13 @@ export default function MessagesList() {
                               className="w-12 h-12 rounded-full object-cover"
                             />
                           ) : (
-                            <div className="w-12 h-12 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
+                            <section className="w-12 h-12 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
                               {getAvatarInitials(getChatDisplayName(chat))}
-                            </div>
+                            </section>
                           )
                         )}
-                      </div>
-                      <div className="ml-4 flex-1 min-w-0">
+                      </section>
+                      <section className="ml-4 flex-1 min-w-0">
                         <p className={`${
                           chat.unreadCount > 0 ? 'text-gray-900 font-bold' : 'text-gray-700 font-medium'
                         } truncate`}>
@@ -513,10 +514,10 @@ export default function MessagesList() {
                         }`}>
                           {getMessagePreview(chat.lastMessage)}
                         </p>
-                      </div>
-                    </div>
-                    <div className="ml-4 flex flex-col items-end justify-between flex-shrink-0">
-                      <div className="flex items-center gap-1">
+                      </section>
+                    </section>
+                    <section className="ml-4 flex flex-col items-end justify-between flex-shrink-0">
+                      <section className="flex items-center gap-1">
                         <span className={`text-xs ${
                           chat.unreadCount > 0 ? 'text-gray-900 font-medium' : 'text-gray-400'
                         }`}>
@@ -527,24 +528,24 @@ export default function MessagesList() {
                             {chat.lastMessage.readBy?.length > 1 ? '✓✓' : '✓'}
                           </span>
                         )}
-                      </div>
+                      </section>
                       {chat.unreadCount > 0 && (
-                        <div className="mt-1 bg-blue-600 text-white text-xs font-medium rounded-full h-5 min-w-[20px] px-1.5 flex items-center justify-center">
+                        <section className="mt-1 bg-blue-600 text-white text-xs font-medium rounded-full h-5 min-w-[20px] px-1.5 flex items-center justify-center">
                           {chat.unreadCount}
-                        </div>
+                        </section>
                       )}
-                    </div>
-                  </div>
+                    </section>
+                  </section>
                 </button>
               ))
             ) : (
-              <div className="flex flex-col items-center justify-center py-12">
+              <section className="flex flex-col items-center justify-center py-12">
                 <p className="text-sm text-gray-500">No chats found</p>
-              </div>
+              </section>
             )}
-          </div>
-        </div>
+          </section>
+        </section>
       </main>
-    </div>
+    </section>
   );
 }

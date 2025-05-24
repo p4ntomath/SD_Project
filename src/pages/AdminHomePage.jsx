@@ -135,7 +135,7 @@ export default function AdminHomePage() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <section className="min-h-screen bg-gray-50">
       <header>
         <MainNav 
           setMobileMenuOpen={setMobileMenuOpen} 
@@ -145,10 +145,10 @@ export default function AdminHomePage() {
       </header>
 
       <main className="p-4 md:p-8 pb-16 md:pb-8" data-testid="admin-dashboard">
-        <div className="max-w-7xl mx-auto space-y-6 md:space-y-8">
-          <div className="flex justify-between items-center">
+        <section className="max-w-7xl mx-auto space-y-6 md:space-y-8">
+          <section className="flex justify-between items-center">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Admin Dashboard</h1>
-          </div>
+          </section>
 
           {/* Stats Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -156,7 +156,7 @@ export default function AdminHomePage() {
               // Loading skeletons for stats
               <>
                 {[...Array(4)].map((_, index) => (
-                  <motion.div 
+                  <motion.section 
                     key={index}
                     data-testid="loading-skeleton"
                     initial={{ opacity: 0 }}
@@ -164,14 +164,14 @@ export default function AdminHomePage() {
                     transition={{ delay: index * 0.1 }}
                     className="bg-white rounded-lg shadow p-6"
                   >
-                    <div className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2" />
-                    <div className="h-8 w-16 bg-gray-300 rounded animate-pulse" />
-                  </motion.div>
+                    <section className="h-4 w-24 bg-gray-200 rounded animate-pulse mb-2" />
+                    <section className="h-8 w-16 bg-gray-300 rounded animate-pulse" />
+                  </motion.section>
                 ))}
               </>
             ) : (
               <>
-                <motion.div 
+                <motion.section 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   className="bg-white rounded-lg shadow p-6 cursor-pointer hover:shadow-md transition-all"
@@ -180,9 +180,9 @@ export default function AdminHomePage() {
                 >
                   <h3 className="text-gray-500 text-sm">Total Users</h3>
                   <p className="text-2xl font-bold text-gray-900">{stats.totalUsers}</p>
-                </motion.div>
+                </motion.section>
 
-                <motion.div 
+                <motion.section 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.1 }}
@@ -192,9 +192,9 @@ export default function AdminHomePage() {
                 >
                   <h3 className="text-gray-500 text-sm">Projects Active</h3>
                   <p className="text-2xl font-bold text-gray-900">{stats.activeProjects}</p>
-                </motion.div>
+                </motion.section>
 
-                <motion.div 
+                <motion.section 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.2 }}
@@ -206,9 +206,9 @@ export default function AdminHomePage() {
                 >
                   <h3 className="text-gray-500 text-sm">Funding Opportunities</h3>
                   <p className="text-2xl font-bold text-gray-900">{stats.fundingOpportunities}</p>
-                </motion.div>
+                </motion.section>
 
-                <motion.div 
+                <motion.section 
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3 }}
@@ -218,26 +218,27 @@ export default function AdminHomePage() {
                 >
                   <h3 className="text-gray-500 text-sm">Total Documents</h3>
                   <p className="text-2xl font-bold text-gray-900">{stats.totalDocuments}</p>
-                </motion.div>
+                </motion.section>
               </>
             )}
-          </div>
+          </section>
 
           {/* Project Oversight */}
-          <motion.div 
+          <motion.section 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.4 }}
             className="bg-white rounded-lg shadow overflow-hidden"
           >
-            <div className="px-4 sm:px-6 py-4 border-b border-gray-200">
+            <section className="px-4 sm:px-6 py-4 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-800">Project Oversight</h2>
+
             </div>
             <div className="overflow-x-auto">
               {loadingProjects ? (
                 <div className="min-h-[200px] flex items-center justify-center">
                   <ClipLoader color="#3B82F6" />
-                </div>
+                </section>
               ) : (
                 <>
                   <table className="min-w-full divide-y divide-gray-200">
@@ -330,31 +331,31 @@ export default function AdminHomePage() {
                   )}
                 </>
               )}
-            </div>
-          </motion.div>
+            </section>
+          </motion.section>
 
           {/* Announcements Section */}
-          <motion.div 
+          <motion.section 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}
             className="bg-white rounded-lg shadow p-6"
           >
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Announcements</h2>
-            <div className="bg-gray-50 rounded-lg p-4 text-gray-600">
+            <section className="bg-gray-50 rounded-lg p-4 text-gray-600">
               <p>Create and manage announcements here. Feature coming soon.</p>
-            </div>
-          </motion.div>
+            </section>
+          </motion.section>
 
           {/* Add Funding Modal */}
           {showAddFunding && (
-            <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-              <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></div>
+            <section className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+              <section className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                <section className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"></section>
                 <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
-                <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
+                <section className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full">
                   <form onSubmit={handleAddFunding} className="px-4 pt-5 pb-4 sm:p-6">
-                    <div className="mb-4">
+                    <section className="mb-4">
                       <label htmlFor="name" className="block text-gray-700 text-sm font-bold mb-2">
                         Funding Name
                       </label>
@@ -366,8 +367,8 @@ export default function AdminHomePage() {
                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required
                       />
-                    </div>
-                    <div className="mb-4">
+                    </section>
+                    <section className="mb-4">
                       <label htmlFor="expectedFunds" className="block text-gray-700 text-sm font-bold mb-2">
                         Expected Funds (R)
                       </label>
@@ -379,8 +380,8 @@ export default function AdminHomePage() {
                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required
                       />
-                    </div>
-                    <div className="mb-4">
+                    </section>
+                    <section className="mb-4">
                       <label htmlFor="externalLink" className="block text-gray-700 text-sm font-bold mb-2">
                         External Link
                       </label>
@@ -392,8 +393,8 @@ export default function AdminHomePage() {
                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required
                       />
-                    </div>
-                    <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
+                    </section>
+                    <section className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse gap-2">
                       <button
                         type="submit"
                         className="w-full sm:w-auto inline-flex justify-center rounded-lg border border-transparent px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:text-sm"
@@ -407,19 +408,19 @@ export default function AdminHomePage() {
                       >
                         Cancel
                       </button>
-                    </div>
+                    </section>
                   </form>
-                </div>
-              </div>
-            </div>
+                </section>
+              </section>
+            </section>
           )}
 
           {/* Logout Confirmation Modal */}
           <AnimatePresence>
             {showLogoutModal && (
-              <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-                <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-                  <div className="fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity" aria-hidden="true"></div>
+              <section className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+                <section className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+                  <section className="fixed inset-0 bg-black/30 backdrop-blur-sm transition-opacity" aria-hidden="true"></section>
                   <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
                   <motion.article
@@ -429,21 +430,21 @@ export default function AdminHomePage() {
                     exit={{ scale: 0.9, opacity: 0 }}
                     transition={{ type: "spring", bounce: 0.3 }}
                   >
-                    <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                      <div className="sm:flex sm:items-start">
-                        <div className="mt-3 text-center sm:mt-0 sm:text-left">
+                    <section className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                      <section className="sm:flex sm:items-start">
+                        <section className="mt-3 text-center sm:mt-0 sm:text-left">
                           <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
                             Confirm Logout
                           </h3>
-                          <div className="mt-2">
+                          <section className="mt-2">
                             <p className="text-sm text-gray-500">
                               Are you sure you want to log out? You'll need to sign in again to access your account.
                             </p>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                    <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                          </section>
+                        </section>
+                      </section>
+                    </section>
+                    <section className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
                       <button
                         type="button"
                         data-testid="confirm-logout"
@@ -459,18 +460,18 @@ export default function AdminHomePage() {
                       >
                         Cancel
                       </button>
-                    </div>
+                    </section>
                   </motion.article>
-                </div>
-              </div>
+                </section>
+              </section>
             )}
           </AnimatePresence>
-        </div>
+        </section>
       </main>
 
       <footer>
         <MobileBottomNav />
       </footer>
-    </div>
+    </section>
   );
 }

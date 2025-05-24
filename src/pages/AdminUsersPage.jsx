@@ -50,15 +50,15 @@ export default function AdminUsersPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <section className="min-h-screen bg-gray-50">
       <header>
         <MainNav setMobileMenuOpen={setMobileMenuOpen} mobileMenuOpen={mobileMenuOpen} />
       </header>
 
       <main className="p-4 md:p-8 pb-16 md:pb-8">
-        <div className="max-w-7xl mx-auto">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-            <div className="flex items-center">
+        <section className="max-w-7xl mx-auto">
+          <section className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+            <section className="flex items-center">
               <button
                 onClick={() => navigate('/admin')}
                 className="mr-4 p-2 text-gray-600 hover:text-gray-800 transition-colors"
@@ -67,10 +67,10 @@ export default function AdminUsersPage() {
                 <FaArrowLeft className="h-5 w-5" />
               </button>
               <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Manage Users</h1>
-            </div>
+            </section>
 
-            <div className="flex items-center w-full sm:w-auto gap-4">
-              <div>
+            <section className="flex items-center w-full sm:w-auto gap-4">
+              <section>
                 <label htmlFor="role-filter" className="mr-2 text-sm text-gray-600 whitespace-nowrap">
                   Filter by Role:
                 </label>
@@ -85,8 +85,8 @@ export default function AdminUsersPage() {
                     <option key={role} value={role}>{role}</option>
                   ))}
                 </select>
-              </div>
-              <div>
+              </section>
+              <section>
                 <label htmlFor="status-filter" className="mr-2 text-sm text-gray-600 whitespace-nowrap">
                   Filter by Status:
                 </label>
@@ -101,22 +101,22 @@ export default function AdminUsersPage() {
                     <option key={status} value={status}>{status}</option>
                   ))}
                 </select>
-              </div>
-            </div>
-          </div>
+              </section>
+            </section>
+          </section>
 
-          <motion.div
+          <motion.section
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="bg-white rounded-lg shadow overflow-hidden"
           >
             {loading ? (
-              <div className="min-h-[200px] flex items-center justify-center">
+              <section className="min-h-[200px] flex items-center justify-center">
                 <ClipLoader color="#3B82F6" />
-              </div>
+              </section>
             ) : (
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
+              <section className="overflow-x-auto">
+                <table className="min-w-full sectionide-y sectionide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
@@ -126,28 +126,28 @@ export default function AdminUsersPage() {
                       <th key="actions" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
                     </tr>
                   </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
+                  <tbody className="bg-white sectionide-y sectionide-gray-200">
                     {filteredUsers.map((user) => (
                       <tr key={user.id} className="hover:bg-gray-50">
                         <td className="px-4 sm:px-6 py-4">
-                          <div className="text-sm font-medium text-gray-900">{user.fullName}</div>
-                          <div className="text-sm text-gray-500 sm:hidden mt-1">{user.email}</div>
+                          <section className="text-sm font-medium text-gray-900">{user.fullName}</section>
+                          <section className="text-sm text-gray-500 sm:hidden mt-1">{user.email}</section>
                         </td>
                         <td className="px-4 sm:px-6 py-4 hidden sm:table-cell">
-                          <div className="text-sm text-gray-900">{user.email}</div>
+                          <section className="text-sm text-gray-900">{user.email}</section>
                         </td>
                         <td className="px-4 sm:px-6 py-4">
-                          <div className="text-sm text-gray-900 capitalize">{user.role}</div>
+                          <section className="text-sm text-gray-900 capitalize">{user.role}</section>
                         </td>
                         <td className="px-4 sm:px-6 py-4 hidden sm:table-cell">
-                          <div className="text-sm text-gray-900" data-testid={`user-status-desktop-${user.id}`}>
+                          <section className="text-sm text-gray-900" data-testid={`user-status-desktop-${user.id}`}>
                             {user.status}
-                          </div>
+                          </section>
                         </td>
                         <td className="sm:hidden">
-                          <div className="text-sm text-gray-500 mt-1" data-testid={`user-status-mobile-${user.id}`}>
+                          <section className="text-sm text-gray-500 mt-1" data-testid={`user-status-mobile-${user.id}`}>
                             {user.status}
-                          </div>
+                          </section>
                         </td>
                         <td className="px-4 sm:px-6 py-4">
                           <button
@@ -163,19 +163,19 @@ export default function AdminUsersPage() {
                   </tbody>
                 </table>
                 {filteredUsers.length === 0 && (
-                  <div className="text-center py-8">
+                  <section className="text-center py-8">
                     <p className="text-gray-500">No users found</p>
-                  </div>
+                  </section>
                 )}
-              </div>
+              </section>
             )}
-          </motion.div>
-        </div>
+          </motion.section>
+        </section>
       </main>
 
       <footer>
         <MobileBottomNav />
       </footer>
-    </div>
+    </section>
   );
 }

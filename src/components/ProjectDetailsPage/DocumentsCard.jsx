@@ -250,22 +250,24 @@ export default function DocumentsCard({
   return (
     <section className="bg-white rounded-xl shadow-lg p-6">
       <header className="flex justify-between items-center mb-6">
-        <div className="flex items-center gap-4">
-          <div className="p-3 bg-blue-50 rounded-lg">
+        <section className="flex items-center gap-4">
+          <section className="p-3 bg-blue-50 rounded-lg">
+            {/* Folder Icon */}
             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
             </svg>
-          </div>
-          <div>
+          </section>
+          <section>
             <h2 className="text-xl font-semibold text-gray-900">Project Documents</h2>
             <p className="text-sm text-gray-500">{folders.length} folders • {folders.reduce((acc, folder) => acc + folder.files.length, 0)} files</p>
-          </div>
-        </div>
+          </section>
+        </section>
         {checkPermission(project, 'canUploadFiles') && (
           <button
             onClick={() => setShowFolderModal(true)}
             className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
           >
+            {/* Plus Icon */}
             <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
             </svg>
@@ -275,27 +277,26 @@ export default function DocumentsCard({
       </header>
 
       {foldersLoading ? (
-        <div className="flex flex-col items-center justify-center py-12 bg-gray-50/50 rounded-lg">
+        <section className="flex flex-col items-center justify-center py-12 bg-gray-50/50 rounded-lg">
           <ClipLoader color="#3B82F6" />
           <p className="mt-4 text-sm text-gray-500">Loading Folders...</p>
-        </div>
+        </section>
       ) : (
-        <div className="overflow-hidden">
-          <div className="overflow-y-auto max-h-[300px] pr-2 -mr-2 no-scrollbar">
-            <div className="grid grid-cols-1 gap-6">
+        <section className="overflow-hidden">
+          <section className="overflow-y-auto max-h-[300px] pr-2 -mr-2 no-scrollbar">
+            <ul className="grid grid-cols-1 gap-6">
               {folders.map((folder) => (
-                <div key={folder.id} 
-                  className="group relative bg-white border border-gray-200 rounded-xl p-6 hover:border-blue-300 hover:shadow-lg transition-all duration-300"
-                >
-                  <div className="flex items-center gap-4 mb-4">
-                    <div className="p-3 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
+                <li key={folder.id} className="group relative bg-white border border-gray-200 rounded-xl p-6 hover:border-blue-300 hover:shadow-lg transition-all duration-300">
+                  <header className="flex items-center gap-4 mb-4">
+                    <section className="p-3 bg-blue-50 rounded-lg group-hover:bg-blue-100 transition-colors">
+                      {/* Folder Icon */}
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                       </svg>
-                    </div>
-                    <div>
+                    </section>
+                    <section>
                       {isRenamingFolder === folder.id ? (
-                        <div className="flex items-center gap-2">
+                        <section className="flex items-center gap-2">
                           <input
                             type="text"
                             value={newFolderName}
@@ -333,7 +334,7 @@ export default function DocumentsCard({
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
                             </svg>
                           </button>
-                        </div>
+                        </section>
                       ) : (
                         <h3 className="text-lg font-medium text-gray-900 flex items-center gap-2">
                           {folder.name}
@@ -354,85 +355,85 @@ export default function DocumentsCard({
                         </h3>
                       )}
                       <p className="text-sm text-gray-500">{folder.files.length} files</p>
-                    </div>
-                  </div>
+                    </section>
+                  </header>
 
-                  <div className="space-y-2">
-                    <div className="text-xs text-gray-500">
+                  <section className="space-y-2">
+                    <section className="text-xs text-gray-500">
                       <p>Size: {formatFileSize(folder.size || 0)}</p>
                       <p>Remaining: {formatFileSize(folder.remainingSpace || 100 * 1024 * 1024)}</p>
-                      <div className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mt-1">
-                        <div 
+                      <section className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden mt-1">
+                        <section 
                           className="h-full bg-blue-600 rounded-full transition-all"
                           style={{ 
                               width: `${((folder.size || 0) / (100 * 1024 * 1024)) * 100}%`,
                               backgroundColor: ((folder.size || 0) / (100 * 1024 * 1024)) > 0.9 ? '#ef4444' : '#2563eb'
                           }}
                         />
-                      </div>
-                    </div>
+                      </section>
+                    </section>
 
-                    <div className="space-y-2 max-h-64 overflow-y-auto no-scrollbar">
+                    <section className="space-y-2 max-h-64 overflow-y-auto no-scrollbar">
                       {folder.files && folder.files.length > 0 ? (
-                        folder.files.map((file) => (
-                          <div key={file.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 transition-colors">
-                            <div className="flex items-center gap-2 flex-1 min-w-0">
-                              <svg className="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                              </svg>
-
-                              {/* File name with truncation */}
-                              <div className="flex-1 min-w-0">
-                                <span className="text-sm text-gray-700 truncate block">{file.name}</span>
-                                <span className="text-xs text-gray-500">{file.size}</span>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <button
-                                onClick={() => handleDownloadFileWrapper(file)}
-                                className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
-                                disabled={downloadingFile === file.id}
-                              >
-                                {downloadingFile === file.id ? (
-                                  <ClipLoader size={16} color="currentColor" />
-                                ) : (
-                                  <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4V4" />
-                                  </svg>
-                                )}
-                              </button>
-                              {checkPermission(project, 'canUploadFiles') && (
+                        <ul>
+                          {folder.files.map((file) => (
+                            <li key={file.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-100 transition-colors">
+                              <section className="flex items-center gap-2 flex-1 min-w-0">
+                                <svg className="h-4 w-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                {/* File name with truncation */}
+                                <section className="flex-1 min-w-0">
+                                  <p className="text-sm text-gray-700 truncate">{file.name}</p>
+                                  <p className="text-xs text-gray-500">{file.size}</p>
+                                </section>
+                              </section>
+                              <section className="flex items-center gap-2">
                                 <button
-                                  onClick={() => handleDeleteFileWrapper(file, folder)}
-                                  className="p-1 text-red-600 hover:text-red-800 transition-colors"
-                                  disabled={deletingFile === file.id}
+                                  onClick={() => handleDownloadFileWrapper(file)}
+                                  className="p-1 text-blue-600 hover:text-blue-800 transition-colors"
+                                  disabled={downloadingFile === file.id}
                                 >
-                                  {deletingFile === file.id ? (
+                                  {downloadingFile === file.id ? (
                                     <ClipLoader size={16} color="currentColor" />
                                   ) : (
                                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0l-4 4m4-4V4" />
                                     </svg>
                                   )}
                                 </button>
-                              )}
-                            </div>
-                          </div>
-
-                        ))
+                                {checkPermission(project, 'canUploadFiles') && (
+                                  <button
+                                    onClick={() => handleDeleteFileWrapper(file, folder)}
+                                    className="p-1 text-red-600 hover:text-red-800 transition-colors"
+                                    disabled={deletingFile === file.id}
+                                  >
+                                    {deletingFile === file.id ? (
+                                      <ClipLoader size={16} color="currentColor" />
+                                    ) : (
+                                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                      </svg>
+                                    )}
+                                  </button>
+                                )}
+                              </section>
+                            </li>
+                          ))}
+                        </ul>
                       ) : (
-                        <div className="flex flex-col items-center justify-center py-6 text-center">
+                        <section className="flex flex-col items-center justify-center py-6 text-center">
                           <svg className="h-12 w-12 text-gray-400 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
                           </svg>
                           <p className="text-sm text-gray-500">This folder is empty</p>
-                        </div>
+                        </section>
                       )}
-                    </div>
-                  </div>
+                    </section>
+                  </section>
 
                   {checkPermission(project, 'canUploadFiles') && (
-                    <div className="mt-4 flex items-center justify-between pt-4 border-t border-gray-100">
+                    <section className="mt-4 flex items-center justify-between pt-4 border-t border-gray-100">
                       <button
                         onClick={() => {
                           setSelectedFolder(folder);
@@ -446,7 +447,7 @@ export default function DocumentsCard({
                         Upload a file
                       </button>
                       {checkPermission(project, 'canUploadFiles') && (
-                        <div className="flex items-center gap-3">
+                        <section className="flex items-center gap-3">
                           <button
                             onClick={() => handleDeleteFolderWrapper(folder.id)}
                             className="text-sm text-gray-600 hover:text-red-600 transition-colors flex items-center gap-1"
@@ -456,26 +457,26 @@ export default function DocumentsCard({
                             </svg>
                             Delete
                           </button>
-                        </div>
+                        </section>
                       )}
-                    </div>
+                    </section>
                   )}
-                </div>
+                </li>
               ))}
               {folders.length === 0 && (
-                <div className="text-center py-12">
-                  <div className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+                <section className="text-center py-12">
+                  <section className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
                     <svg className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                     </svg>
-                  </div>
+                  </section>
                   <h3 className="text-lg font-medium text-gray-900 mb-1">No folders yet</h3>
                   <p className="text-sm text-gray-500 mb-4">Create folders and start organizing your project documents</p>
-                </div>
+                </section>
               )}
-            </div>
-          </div>
-        </div>
+            </ul>
+          </section>
+        </section>
       )}
 
       <input
@@ -489,13 +490,13 @@ export default function DocumentsCard({
       {/* Create Folder Modal */}
       <AnimatePresence>
         {showFolderModal && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex min-h-screen items-center justify-center p-4">
-              <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowFolderModal(false)} />
-              <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+          <section className="fixed inset-0 z-50 overflow-y-auto">
+            <section className="flex min-h-screen items-center justify-center p-4">
+              <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowFolderModal(false)} />
+              <section className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
                 <h2 className="text-xl font-semibold mb-4 text-gray-900">Create New Folder</h2>
-                <div className="space-y-4">
-                  <div>
+                <section className="space-y-4">
+                  <section>
                     <label className="block text-sm font-medium text-gray-700">Folder Name</label>
                     <input
                       type="text"
@@ -505,8 +506,8 @@ export default function DocumentsCard({
                       placeholder="Enter folder name"
                       required
                     />
-                  </div>
-                  <div className="flex justify-end gap-3">
+                  </section>
+                  <section className="flex justify-end gap-3">
                     <button
                       type="button"
                       onClick={() => setShowFolderModal(false)}
@@ -528,28 +529,28 @@ export default function DocumentsCard({
                         'Create Folder'
                       )}
                     </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+                  </section>
+                </section>
+              </section>
+            </section>
+          </section>
         )}
       </AnimatePresence>
 
       {/* Upload File Modal */}
       <AnimatePresence>
         {showUploadModal && (
-          <div className="fixed inset-0 z-50 overflow-y-auto">
-            <div className="flex min-h-screen items-center justify-center p-4">
-              <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => !uploadLoading && setShowUploadModal(false)} />
-              <div className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
+          <section className="fixed inset-0 z-50 overflow-y-auto">
+            <section className="flex min-h-screen items-center justify-center p-4">
+              <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => !uploadLoading && setShowUploadModal(false)} />
+              <section className="relative bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
                 <h2 className="text-xl font-semibold mb-4 text-gray-900">Upload File</h2>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex items-center justify-between">
+                <section className="space-y-4">
+                  <section>
+                    <section className="flex items-center justify-between">
                       <label className="block text-sm font-medium text-gray-700">File Name</label>
                       <span className="text-xs text-gray-500">Original: {selectedFile?.name}</span>
-                    </div>
+                    </section>
                     <input
                       type="text"
                       value={customName}
@@ -559,8 +560,8 @@ export default function DocumentsCard({
                       required
                     />
                     <p className="mt-1 text-xs text-gray-500">The file extension will be added automatically</p>
-                  </div>
-                  <div>
+                  </section>
+                  <section>
                     <label className="block text-sm font-medium text-gray-700">Description (optional)</label>
                     <textarea
                       value={customDescription}
@@ -569,8 +570,8 @@ export default function DocumentsCard({
                       rows={3}
                       placeholder="Add a description for this file"
                     />
-                  </div>
-                  <div className="flex justify-end gap-3">
+                  </section>
+                  <section className="flex justify-end gap-3">
                     <button
                       type="button"
                       onClick={() => setShowUploadModal(false)}
@@ -593,19 +594,19 @@ export default function DocumentsCard({
                         'Upload File'
                       )}
                     </button>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
+                  </section>
+                </section>
+              </section>
+            </section>
+          </section>
         )}
       </AnimatePresence>
 
       {/* Delete Folder Confirmation Modal */}
       <AnimatePresence>
         {showDeleteFolderConfirm && (
-          <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
-            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteFolderConfirm(false)} />
+          <section className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
+            <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteFolderConfirm(false)} />
             <motion.article
               className="relative bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200"
               initial={{ scale: 0.8, opacity: 0 }}
@@ -639,15 +640,15 @@ export default function DocumentsCard({
                 </button>
               </footer>
             </motion.article>
-          </div>
+          </section>
         )}
       </AnimatePresence>
 
       {/* Delete File Confirmation Modal */}
       <AnimatePresence>
         {showDeleteFileConfirm && fileToDelete && (
-            <div className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
-                <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteFileConfirm(false)} />
+            <section className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
+                <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteFileConfirm(false)} />
                 <motion.article
                     className="relative bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200"
                     initial={{ scale: 0.8, opacity: 0 }}
@@ -686,7 +687,7 @@ export default function DocumentsCard({
                         </button>
                     </footer>
                 </motion.article>
-            </div>
+            </section>
         )}
       </AnimatePresence>
     </section>

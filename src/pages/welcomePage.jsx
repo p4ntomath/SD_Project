@@ -77,7 +77,7 @@ export default function WelcomePage() {
   };
 
   return (
-    <div ref={vantaRef} className="min-h-screen">
+    <section ref={vantaRef} className="min-h-screen">
       <section className="min-h-screen flex flex-col relative">
         <NavBar />
         
@@ -131,6 +131,7 @@ export default function WelcomePage() {
         </section>
 
         {/* Features Section */}
+
         <section id="features" className="py-16">
           <motion.div
             className="container mx-auto px-4"
@@ -145,47 +146,50 @@ export default function WelcomePage() {
             >
               Complete Research Management Solution
             </motion.h2>
-            <motion.div
+            <motion.section
               className="grid md:grid-cols-3 gap-8"
               variants={staggerContainer}
             >
               {/* Feature 1 */}
-              <motion.div
+              <motion.section
                 className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20"
                 variants={fadeInUp}
                 whileHover={{ y: -5, transition: { duration: 0.2 } }}
               >
-                <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mb-4">
+                <section className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center mb-4">
                   <svg className="w-6 h-6 text-blue-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
+
                 </div>
                 <h3 className="text-xl font-semibold mb-2 text-white">Expert Review System</h3>
                 <p className="text-gray-300">Get valuable feedback from expert reviewers. Track review requests and manage project evaluations efficiently.</p>
               </motion.div>
 
+
               {/* Feature 2 */}
-              <motion.div
+              <motion.section
                 className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20"
                 variants={fadeInUp}
                 whileHover={{ y: -5, transition: { duration: 0.2 } }}
               >
-                <div className="w-12 h-12 bg-pink-500/20 rounded-lg flex items-center justify-center mb-4">
+                <section className="w-12 h-12 bg-pink-500/20 rounded-lg flex items-center justify-center mb-4">
                   <svg className="w-6 h-6 text-pink-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
                   </svg>
+
                 </div>
                 <h3 className="text-xl font-semibold mb-2 text-white">Document Sharing</h3>
                 <p className="text-gray-300">Share research materials, collaborate on documents, and manage versions with team members and reviewers.</p>
               </motion.div>
 
               {/* Feature 3 */}
-              <motion.div
+              <motion.section
                 className="bg-white/10 backdrop-blur-md p-6 rounded-xl border border-white/20"
                 variants={fadeInUp}
                 whileHover={{ y: -5, transition: { duration: 0.2 } }}
               >
-                <div className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4">
+                <section className="w-12 h-12 bg-purple-500/20 rounded-lg flex items-center justify-center mb-4">
                   <svg className="w-6 h-6 text-purple-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                   </svg>
@@ -319,7 +323,7 @@ export default function WelcomePage() {
           viewport={{ once: true }}
           variants={fadeInUp}
         >
-          <div className="container mx-auto px-4 text-center">
+          <section className="container mx-auto px-4 text-center">
             <motion.h2
               className="text-3xl md:text-4xl font-bold text-white mb-6"
               variants={fadeInUp}
@@ -340,9 +344,9 @@ export default function WelcomePage() {
             >
               Sign Up Now
             </motion.button>
-          </div>
+          </section>
         </motion.section>
       </section>
-    </div>
+    </section>
   );
 }
