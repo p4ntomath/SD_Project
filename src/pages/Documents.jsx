@@ -4,7 +4,8 @@ import MainNav from '../components/ResearcherComponents/Navigation/MainNav';
 import MobileBottomNav from '../components/ResearcherComponents/Navigation/MobileBottomNav';
 import { ClipLoader } from 'react-spinners';
 import { auth } from '../backend/firebase/firebaseConfig';
-import { uploadDocument, fetchDocumentsByFolder } from '../backend/firebase/documentsDB';
+import { createFolder, getFolders, deleteFolder, updateFolderName } from '../backend/firebase/folderDB';
+import { uploadDocument, fetchDocumentsByFolder, deleteDocument } from '../backend/firebase/documentsDB';
 import { formatFirebaseDate } from '../utils/dateUtils';
 import { fetchProjects } from '../backend/firebase/projectDB';
 import { AnimatePresence, motion } from 'framer-motion';
@@ -248,13 +249,13 @@ export default function DocumentsPage() {
                         <p className="mt-2 text-sm text-gray-600">Manage and organize your research documents</p>
                     </header>
 
-                    <div className="flex items-center justify-center min-h-[400px]">
-                        <div className="flex items-center space-x-2">
-                            <div className="w-3 h-3 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.3s]"></div>
-                            <div className="w-3 h-3 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.15s]"></div>
-                            <div className="w-3 h-3 bg-blue-600 rounded-full animate-bounce"></div>
-                        </div>
-                    </div>
+                    <section className="flex items-center justify-center min-h-[400px]">
+                        <section className="flex items-center space-x-2">
+                            <section className="w-3 h-3 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.3s]"></section>
+                            <section className="w-3 h-3 bg-blue-600 rounded-full animate-bounce [animation-delay:-0.15s]"></section>
+                            <section className="w-3 h-3 bg-blue-600 rounded-full animate-bounce"></section>
+                        </section>
+                    </section>
                 </section>
 
                 <MobileBottomNav />
@@ -296,12 +297,12 @@ export default function DocumentsPage() {
                 </section>
 
                 {folders.length === 0 ? (
-                    <div className="text-center py-12 px-4 rounded-lg bg-white shadow-sm border border-gray-200">
-                        <div className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+                    <section className="text-center py-12 px-4 rounded-lg bg-white shadow-sm border border-gray-200">
+                        <section className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
                             <svg className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                             </svg>
-                        </div>
+                        </section>
                         <h3 className="text-lg font-medium text-gray-900 mb-1">No documents yet</h3>
                         <p className="text-sm text-gray-500 mb-4">Get started by creating a new folder to organize your research documents</p>
                         <button
@@ -383,37 +384,26 @@ export default function DocumentsPage() {
                                                     </button>
                                                 </h3>
                                             )}
-                                            <dl className="mt-1 space-y-1">
-                                                <div>
-                                                    <dt className="sr-only">Number of files</dt>
-                                                    <dd className="text-sm text-gray-500">{folder.files?.length || 0} files</dd>
-                                                </div>
-                                                <div>
-                                                    <dt className="sr-only">Project name</dt>
-                                                    <dd className="text-xs text-blue-600">Project: {folder.projectName}</dd>
-                                                </div>
-                                                <div>
-                                                    <dt className="sr-only">Storage usage</dt>
-                                                    <dd>
-                                                        <p className="text-xs text-gray-500">Size: {formatFileSize(folder.size || 0)}</p>
-                                                        <p className="text-xs text-gray-500">Remaining: {formatFileSize(folder.remainingSpace || 100 * 1024 * 1024)}</p>
-                                                        <meter
-                                                            className="w-full h-1.5"
-                                                            value={(folder.size || 0)}
-                                                            max={100 * 1024 * 1024}
-                                                            title="Storage usage"
-                                                        >
-                                                            {((folder.size || 0) / (100 * 1024 * 1024)) * 100}%
-                                                        </meter>
-                                                    </dd>
-                                                </div>
-                                            </dl>
-                                        </div>
-                                    </div>
+                                            <p className="text-sm text-gray-500">{folder.files?.length || 0} files</p>
+                                            <p className="text-xs text-blue-600 mt-1">Project: {folder.projectName}</p>
+                                            <section className="mt-2 space-y-1">
+                                                <p className="text-xs text-gray-500">Size: {formatFileSize(folder.size || 0)}</p>
+                                                <p className="text-xs text-gray-500">Remaining: {formatFileSize(folder.remainingSpace || 100 * 1024 * 1024)}</p>
+                                                <section className="w-full h-1.5 bg-gray-100 rounded-full overflow-hidden">
+                                                    <section 
+                                                        className="h-full bg-blue-600 rounded-full transition-all"
+                                                        style={{ 
+                                                            width: `${((folder.size || 0) / (100 * 1024 * 1024)) * 100}%`,
+                                                            backgroundColor: ((folder.size || 0) / (100 * 1024 * 1024)) > 0.9 ? '#ef4444' : '#2563eb'
+                                                        }}
+                                                    />
+                                                </section>
+                                            </section>
+                                        </section>
+                                    </section>
                                     <button
                                         onClick={() => handleDeleteFolderWrapper(folder)}
                                         className="text-red-600 hover:text-red-800 transition-colors"
-                                        aria-label={`Delete folder ${folder.name}`}
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -421,18 +411,17 @@ export default function DocumentsPage() {
                                     </button>
                                 </header>
 
-                                <section className="space-y-2" aria-label="Files">
+                                <section className="space-y-2">
                                     {folder.files?.map((file) => (
-                                        <article key={file.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-sm">
-                                            <div className="flex items-center space-x-2 min-w-0">
+                                        <section key={file.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-sm">
+                                            <section className="flex items-center space-x-2 min-w-0">
                                                 <DocumentIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
                                                 <span className="truncate">{file.name}</span>
-                                            </div>
-                                            <nav className="flex items-center space-x-2" aria-label="File actions">
+                                            </section>
+                                            <section className="flex items-center space-x-2">
                                                 <button
                                                     onClick={() => handleDownloadWrapper(file.downloadURL)}
                                                     className="text-blue-600 hover:text-blue-800"
-                                                    aria-label={`Download ${file.name}`}
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
@@ -441,14 +430,13 @@ export default function DocumentsPage() {
                                                 <button
                                                     onClick={() => handleDeleteFileWrapper(folder.id, file.id, folder, file)}
                                                     className="text-red-600 hover:text-red-800"
-                                                    aria-label={`Delete ${file.name}`}
                                                 >
                                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m4-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                     </svg>
                                                 </button>
-                                            </nav>
-                                        </article>
+                                            </section>
+                                        </section>
                                     ))}
 
                                     <button
@@ -465,24 +453,22 @@ export default function DocumentsPage() {
                                     </button>
                                 </section>
 
-                                <footer className="mt-4 pt-4 border-t border-gray-100">
-                                    <time className="text-xs text-gray-500" dateTime={folder.createdAt?.toDate?.().toISOString()}>
-                                        Created {formatFirebaseDate(folder.createdAt)}
-                                    </time>
-                                </footer>
+                                <section className="mt-4 pt-4 border-t border-gray-100">
+                                    <p className="text-xs text-gray-500">Created {formatFirebaseDate(folder.createdAt)}</p>
+                                </section>
                             </article>
                         ))}
-                    </div>
+                    </section>
                 )}
 
                 {/* Create Folder Modal */}
                 {showFolderModal && (
-                    <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
-                        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowFolderModal(false)} />
-                        <div className="relative bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200">
+                    <section className="fixed inset-0 flex items-center justify-center p-4 z-50">
+                        <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowFolderModal(false)} />
+                        <section className="relative bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200">
                             <h2 className="text-xl font-semibold mb-4">Create New Folder</h2>
-                            <div className="space-y-4">
-                                <div>
+                            <section className="space-y-4">
+                                <section>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Select Project*
                                     </label>
@@ -499,8 +485,8 @@ export default function DocumentsPage() {
                                             </option>
                                         ))}
                                     </select>
-                                </div>
-                                <div>
+                                </section>
+                                <section>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Folder Name*
                                     </label>
@@ -511,9 +497,9 @@ export default function DocumentsPage() {
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                         placeholder="Enter folder name"
                                     />
-                                </div>
-                            </div>
-                            <div className="mt-6 flex justify-end space-x-3">
+                                </section>
+                            </section>
+                            <section className="mt-6 flex justify-end space-x-3">
                                 <button
                                     onClick={() => {
                                         setShowFolderModal(false);
@@ -536,20 +522,20 @@ export default function DocumentsPage() {
                                         'Create Folder'
                                     )}
                                 </button>
-                            </div>
-                        </div>
-                    </div>
+                            </section>
+                        </section>
+                    </section>
                 )}
 
                 {/* Upload File Modal */}
                 {showUploadModal && (
-                    <div className="fixed inset-0 flex items-center justify-center p-4 z-50">
-                        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowUploadModal(false)} />
-                        <div className="relative bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200">
+                    <section className="fixed inset-0 flex items-center justify-center p-4 z-50">
+                        <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowUploadModal(false)} />
+                        <section className="relative bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200">
                             <h2 className="text-xl font-semibold mb-4">Upload File to {selectedFolder?.name}</h2>
                             
-                            <div className="space-y-4">
-                                <div>
+                            <section className="space-y-4">
+                                <section>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
                                         Choose File
                                     </label>
@@ -564,7 +550,7 @@ export default function DocumentsPage() {
                                         }}
                                         className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                                     />
-                                </div>
+                                </section>
 
                                 <section>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -616,16 +602,16 @@ export default function DocumentsPage() {
                                         'Upload'
                                     )}
                                 </button>
-                            </div>
-                        </div>
-                    </div>
+                            </section>
+                        </section>
+                    </section>
                 )}
 
                 {/* Delete Folder Confirmation Modal */}
                 <AnimatePresence>
                     {showDeleteFolderModal && (
-                        <dialog className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center" open={showDeleteFolderModal}>
-                            <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteFolderModal(false)} />
+                        <section className="fixed inset-0 z-50 overflow-y-auto flex items-center justify-center">
+                            <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowDeleteFolderModal(false)} />
                             <motion.article
                                 className="relative bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200"
                                 initial={{ scale: 0.8, opacity: 0 }}
