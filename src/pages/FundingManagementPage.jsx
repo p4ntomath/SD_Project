@@ -346,7 +346,7 @@ export default function FundingManagementPage() {
                       </select>
                     </div>
                   </div>
-                  <div className="mt-6 flex justify-end gap-3">
+                  <section className="mt-6 flex justify-end gap-3">
                     <button
                       type="button"
                       onClick={() => {

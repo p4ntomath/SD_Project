@@ -221,7 +221,7 @@ export default function AdminHomePage() {
                 </motion.section>
               </>
             )}
-          </section>
+          </div>
 
           {/* Project Oversight */}
           <motion.section 
@@ -233,12 +233,12 @@ export default function AdminHomePage() {
             <section className="px-4 sm:px-6 py-4 border-b border-gray-200">
               <h2 className="text-xl font-semibold text-gray-800">Project Oversight</h2>
 
-            </div>
+            </section>
             <div className="overflow-x-auto">
               {loadingProjects ? (
                 <div className="min-h-[200px] flex items-center justify-center">
                   <ClipLoader color="#3B82F6" />
-                </section>
+                </div>
               ) : (
                 <>
                   <table className="min-w-full divide-y divide-gray-200">
@@ -331,7 +331,7 @@ export default function AdminHomePage() {
                   )}
                 </>
               )}
-            </section>
+            </div>
           </motion.section>
 
           {/* Announcements Section */}

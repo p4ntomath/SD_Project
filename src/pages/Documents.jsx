@@ -313,7 +313,7 @@ export default function DocumentsPage() {
                         <h3 className="text-lg font-medium text-gray-900 mb-1">No documents yet</h3>
                         <p className="text-sm text-gray-500 mb-4">Get started by creating a new folder to organize your research documents</p>
 
-                    </div>
+                    </section>
                 ) : (
                     <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                         {sortFolders(folders).map((folder) => (

@@ -239,8 +239,8 @@ export default function FundingCard({
               View History
             </button>
           )}
-        </div>
-      </section>
+        </nav>
+      </article>
 
       {/* Add Funds Modal */}
       <AnimatePresence>
