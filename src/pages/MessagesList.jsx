@@ -43,13 +43,9 @@ export default function MessagesList() {
 
   // Function to search for users
   const searchUsers = async (query) => {
-    if (!query.trim()) {
-      setUserSearchResults([]);
-      return;
-    }
     setSearching(true);
     try {
-      const results = await ChatService.searchUsers(query, auth.currentUser.uid);
+      const results = await ChatService.searchUsers(query || '', auth.currentUser.uid);
       setUserSearchResults(results);
     } catch (error) {
       console.error('Error searching users:', error);
@@ -57,6 +53,13 @@ export default function MessagesList() {
       setSearching(false);
     }
   };
+
+  // Load all users when new chat modal opens
+  useEffect(() => {
+    if (showNewChatModal) {
+      searchUsers('');
+    }
+  }, [showNewChatModal]);
 
   // Function to start a chat with a user
   const startChat = async (userId) => {
@@ -229,19 +232,39 @@ export default function MessagesList() {
     return lastMessage.text || 'No messages yet';
   };
 
+  // Add helper function to reset search state
+  const resetSearchState = () => {
+    setShowNewChatModal(false);
+    setShowGroupChatModal(false);
+    setSearchQuery('');
+    setSelectedUsers([]);
+    setGroupName('');
+    setUserSearchResults([]);
+  };
+
   return (
     <section className="min-h-screen bg-gray-50">
       {/* Top Navigation */}
       <header className="bg-white border-b border-gray-200">
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <section className="flex h-16 items-center justify-between">
-            <button 
-              onClick={() => navigate('/home')}
-              className="text-gray-600 hover:text-gray-800 font-medium flex items-center"
-            >
-              <FiArrowLeft className="h-5 w-5 mr-1" />
-              Dashboard
-            </button>
+            {showNewChatModal ? (
+              <button 
+                onClick={resetSearchState}
+                className="text-gray-600 hover:text-gray-800 font-medium flex items-center"
+              >
+                <FiArrowLeft className="h-5 w-5 mr-1" />
+                Back
+              </button>
+            ) : (
+              <button 
+                onClick={() => navigate('/home')}
+                className="text-gray-600 hover:text-gray-800 font-medium flex items-center"
+              >
+                <FiArrowLeft className="h-5 w-5 mr-1" />
+                Dashboard
+              </button>
+            )}
             <section className="flex space-x-2">
               <button
                 onClick={() => {
@@ -410,60 +433,58 @@ export default function MessagesList() {
                   <p className="text-sm text-red-500">{error}</p>
                 </section>
               ) : userSearchResults.length > 0 ? (
-                userSearchResults.map(user => (
-                  <button 
-                    key={user.id}
-                    onClick={() => {
-                      if (showGroupChatModal) {
-                        // Add/remove user from selected users
-                        if (selectedUsers.some(u => u.id === user.id)) {
-                          setSelectedUsers(users => users.filter(u => u.id !== user.id));
+                <section className="divide-y divide-gray-100">
+                  {userSearchResults.map(user => (
+                    <button
+                      key={user.id}
+                      onClick={() => {
+                        if (showGroupChatModal) {
+                          // Add/remove user from selected users
+                          if (selectedUsers.some(u => u.id === user.id)) {
+                            setSelectedUsers(users => users.filter(u => u.id !== user.id));
+                          } else {
+                            setSelectedUsers(users => [...users, user]);
+                          }
                         } else {
-                          setSelectedUsers(users => [...users, user]);
+                          startChat(user.id);
                         }
-                      } else {
-                        startChat(user.id);
-                      }
-                    }}
-                    className="w-full text-left hover:bg-gray-50 p-4 transition-colors"
-                  >
-                    <section className="flex items-center justify-between">
-                      <section className="flex items-center">
-                        <section className="flex-shrink-0">
-                          <section className="w-12 h-12 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
-                            {getAvatarInitials(user.fullName)}
+                      }}
+                      className="w-full text-left hover:bg-gray-50 p-4 transition-colors"
+                    >
+                      <section className="flex items-center justify-between">
+                        <section className="flex items-center">
+                          <section className="flex-shrink-0">
+                            <section className="w-12 h-12 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
+                              {getAvatarInitials(user.fullName)}
+                            </section>
+                          </section>
+                          <section className="ml-4">
+                            <p className="font-medium text-gray-900">{user.fullName}</p>
+                            <p className="text-sm text-gray-500">{user.email}</p>
                           </section>
                         </section>
-                        <section className="ml-4">
-                          <p className="font-medium text-gray-900">{user.fullName}</p>
-                          <p className="text-sm text-gray-500">{user.email}</p>
-                        </section>
+                        {showGroupChatModal && (
+                          <section className="flex-shrink-0">
+                            <section className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                              selectedUsers.some(u => u.id === user.id)
+                                ? 'bg-blue-600 border-blue-600 text-white'
+                                : 'border-gray-300'
+                            }`}>
+                              {selectedUsers.some(u => u.id === user.id) && (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </section>
+                          </section>
+                        )}
                       </section>
-                      {showGroupChatModal && (
-                        <section className="flex-shrink-0">
-                          <section className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                            selectedUsers.some(u => u.id === user.id)
-                              ? 'bg-blue-600 border-blue-600 text-white'
-                              : 'border-gray-300'
-                          }`}>
-                            {selectedUsers.some(u => u.id === user.id) && (
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
-                          </section>
-                        </section>
-                      )}
-                    </section>
-                  </button>
-                ))
-              ) : searchQuery ? (
-                <section className="flex flex-col items-center justify-center py-12">
-                  <p className="text-sm text-gray-500">No users found</p>
+                    </button>
+                  ))}
                 </section>
               ) : (
-                <section className="flex flex-col items-center justify-center py-12">
-                  <p className="text-sm text-gray-500">Start typing to search for users</p>
+                <section className="flex items-center justify-center py-8">
+                  <section className="text-gray-500">No users found</section>
                 </section>
               )
             ) : filteredChats().length > 0 ? (

@@ -69,13 +69,28 @@ export const getReviewerRequests = async (reviewerId) => {
         updatedAt: docSnapshot.data().updatedAt?.toDate() || null
       };
       
-      // Fetch project details
+      // Fetch project details and check if reviewer is active
       const projectDoc = await getDoc(doc(db, "projects", request.projectId));
       if (projectDoc.exists()) {
+        const projectData = projectDoc.data();
         request.project = {
           id: projectDoc.id,
-          ...projectDoc.data()
+          ...projectData
         };
+        
+        // Check if reviewer is active for this project
+        const isActiveReviewer = projectData.reviewers?.some(r => r.id === reviewerId);
+        request.isActiveReviewer = isActiveReviewer;
+
+        // If active reviewer, automatically mark as accepted
+        if (isActiveReviewer && request.status === 'pending') {
+          // Update the request status to accepted
+          await updateDoc(docSnapshot.ref, {
+            status: 'accepted',
+            updatedAt: serverTimestamp()
+          });
+          request.status = 'accepted';
+        }
       }
       
       requests.push(request);

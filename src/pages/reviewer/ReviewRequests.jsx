@@ -32,20 +32,20 @@ export default function ReviewRequests() {
         // Get review requests
         const reviewRequests = await getReviewerRequests(userId);
         
-        // Only process pending requests
-        const pendingRequests = reviewRequests.filter(req => req.status === 'pending');
+        // Automatically handle active reviewer requests and filter them out from display
+        const displayRequests = reviewRequests.filter(req => 
+          req.status === 'pending' && !req.isActiveReviewer
+        );
         
         // Fetch full project details for each request
         const requestsWithProjects = await Promise.all(
-          pendingRequests.map(async (request) => {
+          displayRequests.map(async (request) => {
             try {
               let projectData;
-              // If project data is already present (for testing), use it
               if (request.project) {
                 projectData = request.project;
               } else {
                 projectData = await fetchProject(request.projectId);
-                console.log('Fetched project data:', projectData);
               }
               return {
                 ...request,
@@ -134,6 +134,8 @@ export default function ReviewRequests() {
         senderUserId: auth.currentUser?.uid,
       });
 
+      // Remove request from list and navigate
+      setRequests(requests.filter(r => r.id !== requestId));
       navigate(`/reviewer/review/${projectId}`);
     } catch (err) {
       setError('Failed to accept review request: ' + err.message);
@@ -145,14 +147,14 @@ export default function ReviewRequests() {
   const handleReject = async (requestId) => {
     try {
       setProcessingId(requestId);
-      await updateReviewRequestStatus(requestId, 'rejected');
-      setStatusMessage('Review request rejected');
-      setRequests(requests.filter(request => request.id !== requestId));
-
+      
       const request = requests.find(req => req.id === requestId);
       const project = await fetchProject(request.projectId);
       const researcherId = project.userId;
 
+      // Update status first
+      await updateReviewRequestStatus(requestId, 'rejected');
+      
       // Fetch reviewer name using reviewerId from the request
       let reviewerName = 'Reviewer';
       if (request.reviewerId) {
@@ -182,6 +184,8 @@ export default function ReviewRequests() {
         senderUserId: auth.currentUser?.uid,
       });
 
+      setStatusMessage('Review request rejected');
+      setRequests(requests.filter(r => r.id !== requestId));
     } catch (err) {
       setError('Failed to reject review request: ' + err.message);
     } finally {

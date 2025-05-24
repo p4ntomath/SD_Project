@@ -9,6 +9,9 @@ import {
     updateDoc,
     arrayUnion,
     arrayRemove,
+    limit,
+    startAfter,
+    orderBy
 } from "firebase/firestore";
 
 /**
@@ -552,5 +555,73 @@ export const getReceivedInvitations = async (researcherId) => {
     } catch (error) {
         console.error("Error fetching received invitations:", error);
         throw new Error("Failed to fetch received invitations");
+    }
+};
+
+/**
+ * Get all researchers from the database, with pagination support
+ * @param {string} currentUserId - The ID of the current user to exclude
+ * @param {Object} project - The current project object to check existing collaborators
+ * @param {number} pageSize - Number of researchers to fetch per page
+ * @param {Object} lastDoc - The last document from the previous page
+ * @returns {Promise<{researchers: Array, lastDoc: Object, hasMore: boolean}>} Paginated researchers data
+ */
+export const getAllResearchers = async (currentUserId, project, pageSize = 10, lastDoc = null) => {
+    try {
+        // Base query filtering only researchers
+        let baseQuery = query(
+            collection(db, "users"),
+            where("role", "==", "researcher"),
+            orderBy("fullName"),
+            limit(pageSize)
+        );
+
+        // If we have a last document, start after it
+        if (lastDoc) {
+            baseQuery = query(baseQuery, startAfter(lastDoc));
+        }
+
+        const usersSnap = await getDocs(baseQuery);
+        
+        // Get array of existing collaborator IDs
+        const existingCollaboratorIds = project?.collaborators?.map(c => c.id) || [];
+        
+        // Get IDs of users with pending invitations
+        const pendingInvitationsQuery = query(
+            collection(db, "invitations"),
+            where("projectId", "==", project.id),
+            where("type", "==", "researcher"),
+            where("status", "==", "pending")
+        );
+        const pendingInvitationsSnap = await getDocs(pendingInvitationsQuery);
+        const pendingResearcherIds = pendingInvitationsSnap.docs.map(doc => doc.data().researcherId);
+
+        // Combine all IDs to exclude
+        const excludeIds = [...existingCollaboratorIds, ...pendingResearcherIds, currentUserId];
+
+        // Filter and format researchers
+        const researchers = usersSnap.docs
+            .map(doc => ({
+                id: doc.id,
+                fullName: doc.data().fullName,
+                institution: doc.data().institution,
+                fieldOfResearch: doc.data().fieldOfResearch
+            }))
+            .filter(researcher => !excludeIds.includes(researcher.id));
+
+        // Check if there are more researchers to load
+        const hasMore = !usersSnap.empty && researchers.length === pageSize;
+        
+        // Get the last visible document for next pagination
+        const lastVisible = usersSnap.docs[usersSnap.docs.length - 1];
+
+        return {
+            researchers,
+            lastDoc: lastVisible,
+            hasMore
+        };
+    } catch (error) {
+        console.error("Error getting researchers:", error);
+        throw error;
     }
 };

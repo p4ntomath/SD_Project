@@ -10,6 +10,7 @@ import Cropper from 'react-easy-crop';
 import imageCompression from 'browser-image-compression';
 import getCroppedImg from '../components/CropImage';
 import MainNav from '../components/ResearcherComponents/Navigation/MainNav';
+import StatusModal from '../components/StatusModal';
 
 // Message component
 const Message = ({ message, isCurrentUser, userDetails, onDelete }) => {
@@ -204,6 +205,9 @@ export default function ChatView() {
   const emojiPickerRef = useRef(null);
   const fileInputRef = useRef(null);
   const avatarInputRef = useRef(null);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [isError, setIsError] = useState(false);
 
   // Track if chat is visible and focused
   const [isVisible, setIsVisible] = useState(document.visibilityState === 'visible');
@@ -414,7 +418,7 @@ export default function ChatView() {
     }
   };
 
-  // Modify addUserToGroup to handle multiple users
+  // Function to add users to group
   const addUsersToGroup = async () => {
     if (selectedUsers.size === 0) return;
     
@@ -425,12 +429,19 @@ export default function ChatView() {
           ChatService.addUserToGroupChat(chatId, userId)
         )
       );
+      setShowAddMemberModal(false);
       setSearchQuery('');
       setUserSearchResults([]);
       setSelectedUsers(new Set());
-      setShowAddMemberModal(false);
+      setStatusMessage('Members added successfully');
+      setIsError(false);
+      setShowStatusModal(true);
     } catch (error) {
-      console.error('Error adding users to group:', error);
+      setStatusMessage(
+        'This project group chat is only available to project collaborators. Please add the selected users as project collaborators first before adding them to this chat.'
+      );
+      setIsError(true);
+      setShowStatusModal(true);
     } finally {
       setAddingMembers(false);
     }
@@ -709,8 +720,8 @@ export default function ChatView() {
   const renderMessage = (message, isCurrentUser, showSender, senderName) => {
     return (
       <article className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} group`}>
-        {/* Add a fixed-width space for avatar to maintain alignment */}
-        {!isCurrentUser && (
+        {/* Only show avatar in group chats or for non-current user */}
+        {!isCurrentUser && chat?.type === 'group' && (
           <figure className="w-8 mr-2 flex-shrink-0">
             {showSender && (
               <Link to={`/profile/${message.senderId}`}>
@@ -732,13 +743,8 @@ export default function ChatView() {
         <section className={`rounded-lg px-4 py-2 max-w-[70%] space-y-2 ${
           isCurrentUser 
             ? 'bg-blue-600 text-white' 
-            : 'bg-gray-100 text-gray-900'
+            : 'bg-gray-200 text-gray-900'
         }`}>
-          {!isCurrentUser && (
-            <header className="text-sm font-medium text-gray-900">
-              {senderName}
-            </header>
-          )}
           {message.text && <p className="whitespace-pre-wrap">{message.text}</p>}
           {message.attachments?.map((attachment, index) => (
             <MediaPreview 
@@ -865,6 +871,8 @@ export default function ChatView() {
                   <FiX className="h-5 w-5" />
                 </button>
               </section>
+
+              {/* Search input */}
               <section className="mt-4">
                 <section className="relative">
                   <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
@@ -881,13 +889,15 @@ export default function ChatView() {
                 </section>
               </section>
             </section>
+
+            {/* Search results */}
             <section className="max-h-96 overflow-y-auto">
               {searching ? (
                 <section className="flex items-center justify-center py-8">
-                  <section className="text-gray-500">Searching users...</section>
+                  <p className="text-gray-500">Searching users...</p>
                 </section>
               ) : userSearchResults.length > 0 ? (
-                <section className="sectionide-y sectionide-gray-100">
+                <section className="divide-y divide-gray-100">
                   {userSearchResults.map(user => (
                     <section
                       key={user.id}
@@ -923,14 +933,15 @@ export default function ChatView() {
                 </section>
               ) : searchQuery ? (
                 <section className="flex items-center justify-center py-8">
-                  <section className="text-gray-500">No users found</section>
+                  <p className="text-gray-500">No users found</p>
                 </section>
               ) : (
                 <section className="flex items-center justify-center py-8">
-                  <section className="text-gray-500">Type to search for users</section>
+                  <p className="text-gray-500">Type to search for users</p>
                 </section>
               )}
             </section>
+
             {selectedUsers.size > 0 && (
               <section className="p-4 border-t border-gray-100">
                 <button
@@ -939,12 +950,12 @@ export default function ChatView() {
                   className="w-full py-2 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {addingMembers ? (
-                    <>
-                      <section className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></section>
-                      Adding members...
-                    </>
+                    <div className="flex items-center">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      <span>Adding members...</span>
+                    </div>
                   ) : (
-                    `Add ${selectedUsers.size} member${selectedUsers.size > 1 ? 's' : ''}`
+                    <span>Add {selectedUsers.size} member{selectedUsers.size > 1 ? 's' : ''}</span>
                   )}
                 </button>
               </section>
@@ -952,6 +963,19 @@ export default function ChatView() {
           </section>
         </section>
       )}
+
+      {/* Status Modal */}
+      <StatusModal
+        isOpen={showStatusModal}
+        onClose={() => {
+          setShowStatusModal(false);
+          if (!isError) {
+            setShowAddMemberModal(false);
+          }
+        }}
+        success={!isError}
+        message={statusMessage}
+      />
 
       {/* Group Info Modal */}
       {showGroupInfoModal && (
@@ -987,24 +1011,20 @@ export default function ChatView() {
                       <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
                         <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin" />
                       </div>
+                    ) : chat?.groupAvatar ? (
+                      <img 
+                        src={chat.groupAvatar}
+                        alt="Group Avatar"
+                        className="w-20 h-20 rounded-xl object-cover"
+                      />
                     ) : (
-                      <>
-                        {chat?.groupAvatar ? (
-                          <img 
-                            src={chat.groupAvatar}
-                            alt="Group Avatar"
-                            className="w-20 h-20 rounded-xl object-cover"
-                          />
-                        ) : (
-                          <div className="w-20 h-20 flex items-center justify-center">
-                            👥
-                          </div>
-                        )}
-                        <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
-                          <FiEdit2 className="h-6 w-6 text-white" />
-                        </div>
-                      </>
+                      <div className="w-20 h-20 flex items-center justify-center">
+                        👥
+                      </div>
                     )}
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                      <FiEdit2 className="h-6 w-6 text-white" />
+                    </div>
                   </div>
                 </div>
                 <div className="flex-1 mb-2">

@@ -32,14 +32,20 @@ export default function ReviewerHomePage() {
         const requests = await getReviewerRequests(currentUser.uid);
         setReviewRequests(requests);
         
-        // Calculate stats
-        const pendingRequests = requests.filter(r => r.status === 'pending').length;
-        const acceptedRequests = requests.filter(r => r.status === 'accepted').length;
+        // Calculate stats:
+        // - Show automatically accepted requests (for active reviewers) as pending reviews
+        // - Show manually accepted requests as pending reviews
+        // - Show completed reviews as completed
+        const pendingRequests = requests.filter(r => r.status === 'pending' && !r.isActiveReviewer).length;
+        const activeAndAcceptedRequests = requests.filter(r => 
+          (r.status === 'accepted') || // Manually accepted requests
+          (r.status === 'pending' && r.isActiveReviewer) // Auto-accepted requests for active reviewers
+        ).length;
         const completed = requests.filter(r => r.status === 'completed').length;
 
         setStats({
-          requests: pendingRequests,
-          pending: acceptedRequests,  // Show accepted requests as pending reviews
+          requests: pendingRequests, // Only show non-active reviewer pending requests in count
+          pending: activeAndAcceptedRequests,
           completed,
           totalReviews: requests.length
         });

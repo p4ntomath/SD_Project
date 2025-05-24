@@ -33,6 +33,7 @@ const RoleSelectionForm = ({ onSubmit }) => {
   const [customTag, setCustomTag] = useState('');
   const [customFaculty, setCustomFaculty] = useState('');
   const [showCustomTag, setShowCustomTag] = useState(false);
+  const [selectedInstitution, setSelectedInstitution] = useState(null);
   const faculties = ['all', ...getFaculties()];
 
   const roles = [
@@ -71,6 +72,7 @@ const RoleSelectionForm = ({ onSubmit }) => {
 
   const handleInstitutionChange = (selectedOption) => {
     setErrors(prev => ({ ...prev, institution: '' }));
+    setSelectedInstitution(selectedOption);
     setFormData(prev => ({
       ...prev,
       institution: selectedOption ? selectedOption.value : ''
@@ -80,10 +82,26 @@ const RoleSelectionForm = ({ onSubmit }) => {
 
   const handleCustomUniversity = () => {
     if (customUniversity.trim()) {
+      const newInstitution = {
+        value: customUniversity.trim(),
+        label: customUniversity.trim()
+      };
+      
+      // Update universities list
+      setUniversities(prev => [...prev, newInstitution]);
+      
+      // Update selected institution in the Select component
+      setSelectedInstitution(newInstitution);
+      
+      // Update form data
       setFormData(prev => ({
         ...prev,
-        institution: customUniversity.trim()
+        institution: newInstitution.value
       }));
+      
+      // Clear the custom input and hide it
+      setCustomUniversity('');
+      setShowCustomUniversity(false);
       setErrors(prev => ({ ...prev, institution: '' }));
     }
   };
@@ -116,6 +134,13 @@ const RoleSelectionForm = ({ onSubmit }) => {
     if (e.key === 'Enter') {
       e.preventDefault(); // Prevent form submission
       handleCustomTag();
+    }
+  };
+
+  const handleCustomUniversityKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault(); // Prevent form submission
+      handleCustomUniversity();
     }
   };
 
@@ -305,6 +330,7 @@ const RoleSelectionForm = ({ onSubmit }) => {
                     type="text"
                     value={customUniversity}
                     onChange={(e) => setCustomUniversity(e.target.value)}
+                    onKeyDown={handleCustomUniversityKeyDown}
                     placeholder="Enter your institution name"
                     className="w-full px-3 py-2 border rounded-md border-gray-300"
                   />
