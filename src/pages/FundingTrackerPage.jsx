@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { FaPiggyBank, FaArrowLeft, FaSearch, FaBell, FaUserCircle, FaPlus } from 'react-icons/fa';
-import { FiBell, FiUser } from 'react-icons/fi';
+import { FaPiggyBank, FaArrowLeft, FaSearch } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { fetchProjects } from '../backend/firebase/projectDB';
 import { fetchFunding } from '../backend/firebase/fundingDB';
 import { auth } from '../backend/firebase/firebaseConfig';
+import MainNav from "../components/ResearcherComponents/Navigation/MainNav";
+import MobileBottomNav from '../components/ResearcherComponents/Navigation/MobileBottomNav';
 
 export default function FundingTrackerPage() {
   const [projects, setProjects] = useState([]);
@@ -13,6 +14,7 @@ export default function FundingTrackerPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [fundingOpportunities, setFundingOpportunities] = useState([]);
   const [fundingLoading, setFundingLoading] = useState(true);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -64,7 +66,7 @@ export default function FundingTrackerPage() {
   const totalOriginalFunds = projects.reduce((sum, project) => {
     const available = project.availableFunds || 0;
     const used = project.usedFunds || 0;
-    return sum + available + used;  // Sum of all funds (both available and used)
+    return sum + available + used;
   }, 0);
   
   const totalUsedFunds = projects.reduce((sum, project) => 
@@ -73,6 +75,14 @@ export default function FundingTrackerPage() {
   
   const totalAvailableFunds = totalOriginalFunds - totalUsedFunds;
   const utilizationRate = totalOriginalFunds > 0 ? Math.min((totalUsedFunds / totalOriginalFunds) * 100, 100) : 0;
+
+  // Helper function to format currency
+  const formatCurrency = (amount) => {
+    return `R ${amount.toLocaleString('en-ZA', {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    })}`;
+  };
   
   if (loading) {
     return (
@@ -167,172 +177,48 @@ export default function FundingTrackerPage() {
   }
 
   return (
-    <>
+    <div className="min-h-screen bg-gray-50">
       {/* AppBar */}
-      <header className="bg-white shadow-sm sticky top-0 z-50 border-b border-gray-100">
-        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <section className="flex justify-between items-center h-16">
-            {/* Left side - Logo with back button */}
-            <section className="flex items-center space-x-4">
-              <button 
-                data-testid="back-button"
-                onClick={() => navigate(-1)}
-                className="flex items-center text-gray-600 hover:text-blue-600 transition-colors"
-              >
-                <FaArrowLeft className="mr-2" />
-              </button>
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent">
-                Track Funding
-              </h1>
-            </section>
-
-            {/* Center - Search */}
-            <section className="flex-1 max-w-xl mx-4 hidden md:block">
-              <section className="relative">
-                <section className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FaSearch className="text-gray-400" />
-                </section>
-                <input
-                  className="block w-full pl-10 pr-3 py-2 border border-gray-200 rounded-lg leading-5 bg-gray-50 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                  placeholder="Search projects..."
-                  type="search"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  disabled={loading}
-                />
-              </section>
-            </section>
-
-            {/* Right side - Actions */}
-            <section className="flex items-center space-x-3">
-              <button className="p-2 rounded-full text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200">
-                <FiBell className="h-6 w-6 group-hover:text-blue-600" />
-              </button>
-              
-              <button className="p-2 rounded-full text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200">
-                <FiUser className="h-6 w-6 group-hover:text-blue-600" /> 
-              </button>
-              <p className="text-md text-gray-500">My Profile</p>
-            </section>
-          </section>
-        </section>
+      <header>
+        <MainNav setMobileMenuOpen={setMobileMenuOpen} mobileMenuOpen={mobileMenuOpen} />
       </header>
 
-      <main className="min-h-screen bg-gray-50 pt-15 px-4 md:px-8 pb-8">
+      <main className="p-4 md:p-8 pb-16 md:pb-8">
         <section className="max-w-7xl mx-auto">
 
-          {/* Stats Overview Banner - Hidden on mobile */}
-          <section className="mb-8 hidden md:grid grid-cols-1 md:grid-cols-3 gap-4">
-            <section className="bg-white p-5 rounded-xl shadow-sm border border-gray-100">
+          {/* Stats Overview Banner - Now visible on all screens */}
+          <section className="mb-8 grid grid-cols-2 md:grid-cols-4 gap-4">
+            <section className="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100">
               <p className="text-sm text-gray-500">Total Projects</p>
-              <p className="text-2xl font-bold">{filteredProjects.length}</p>
+              <p className="text-xl md:text-2xl font-bold">{filteredProjects.length}</p>
             </section>
-            <section className="bg-white p-5 rounded-xl shadow-sm border border-gray-100" data-testid="total-available-stats">
+            <section className="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100" data-testid="total-available-stats">
               <p className="text-sm text-gray-500">Total Available Funds</p>
-              <p className="text-2xl font-bold text-green-600" data-testid="total-available-funds-value">R {totalAvailableFunds.toLocaleString()}</p>
+              <p className="text-xl md:text-2xl font-bold text-green-600" data-testid="total-available-funds-value">
+                {formatCurrency(totalAvailableFunds)}
+              </p>
             </section>
-            <section className="bg-white p-5 rounded-xl shadow-sm border border-gray-100" data-testid="utilization-rate">
+            <section className="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100">
+              <p className="text-sm text-gray-500">Total Used Funds</p>
+              <p className="text-xl md:text-2xl font-bold text-red-600" data-testid="total-used-funds-value">
+                {formatCurrency(totalUsedFunds)}
+              </p>
+            </section>
+            <section className="bg-white p-4 md:p-5 rounded-xl shadow-sm border border-gray-100" data-testid="utilization-rate">
               <p className="text-sm text-gray-500">Utilization Rate</p>
-              <p className="text-2xl font-bold text-blue-600" data-testid="utilization-rate-value">
+              <p className="text-xl md:text-2xl font-bold text-blue-600" data-testid="utilization-rate-value">
                 {utilizationRate.toFixed(1)}%
               </p>
             </section>
           </section>
 
           {/* Main Content Grid */}
-          <section className="grid grid-cols-1 lg:grid-cols-4 gap-6 min-h-screen">
-            {/* Left Column - Funding Cards */}
-            <section className="lg:col-span-1 space-y-6">
-              {/* Funding Overview Card */}
-              <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <section className="flex items-center mb-4">
-                  <FaPiggyBank className="mr-2 text-pink-500" size={24} />
-                  <h2 className="text-lg font-semibold">Funding Overview</h2>
-                </section>
-
-                <section className="space-y-4" data-testid="funding-overview">
-                  <section className="bg-green-50 p-4 rounded-lg">
-                    <p className="text-gray-600">Total Available Funds</p>
-                    <p className="text-xl font-bold">R {totalAvailableFunds.toLocaleString()}</p>
-                  </section>
-                  
-                  <section className="bg-red-50 p-4 rounded-lg">
-                    <p className="text-gray-600">Total Used Funds</p>
-                    <p className="text-xl font-bold" data-testid="total-used-funds-value">R {totalUsedFunds.toLocaleString()}</p>
-                  </section>
-                </section>
-              </section>
-              
-              {/* Funding Opportunities Card */}
-              <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
-                <h2 className="text-lg font-semibold mb-4 flex items-center">
-                  <FaPiggyBank className="text-pink-500 mr-2" size={24} />
-                  Need Funding?
-                </h2>
-
-                <section className="space-y-4 max-h-[300px] overflow-y-auto pr-2">
-                  {fundingLoading ? (
-                    // Loading state
-                    [...Array(2)].map((_, i) => (
-                      <section key={i} className="p-4 border border-gray-100 rounded-lg">
-                        <section className="h-5 w-3/4 bg-gray-200 rounded animate-pulse mb-2" />
-                        <section className="h-4 w-1/2 bg-gray-200 rounded animate-pulse" />
-                        <section className="h-4 w-20 bg-gray-200 rounded animate-pulse mt-2" />
-                      </section>
-                    ))
-                  ) : fundingOpportunities.length > 0 ? (
-                    // Display actual funding opportunities
-                    fundingOpportunities.map((opportunity) => (
-                      <section 
-                        key={opportunity.id}
-                        className="p-4 border border-gray-100 rounded-lg hover:bg-blue-50 transition-colors"
-                      >
-                        <h3 className="font-medium">{opportunity.funding_name || 'Funding Opportunity'}</h3>
-                        <p className="text-sm text-gray-500 mt-1">
-                          {opportunity.expected_funds ? `Up to R${opportunity.expected_funds} available` : 'Funding available'}
-                        </p>
-                        
-                           {opportunity.external_link && (
-                          <button 
-                            className="mt-2 text-sm text-blue-600 hover:underline flex items-center"
-                            onClick={() => {
-                              window.open(opportunity.external_link, '_blank', 'noopener,noreferrer');
-                            }}
-                          >
-                            Apply Here
-                            <svg 
-                              xmlns="http://www.w3.org/2000/svg" 
-                              className="h-4 w-4 ml-1" 
-                              fill="none" 
-                              viewBox="0 0 24 24" 
-                              stroke="currentColor"
-                            >
-                              <path 
-                                strokeLinecap="round" 
-                                strokeLinejoin="round" 
-                                strokeWidth={2} 
-                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" 
-                              />
-                            </svg>
-                          </button>
-                        )}
-                      </section>
-                    ))
-                  ) : (
-                    // No opportunities available
-                    <p className="text-gray-500 text-sm">
-                      No funding opportunities available at the moment.
-                    </p>
-                  )}
-                </section>
-              </section>
-            </section>
-
-            {/* Right Column - Projects List */}
-            <section className="lg:col-span-3">
+          <section className="grid grid-cols-1 lg:grid-cols-3 gap-6 min-h-screen">
+            {/* Right Column - Projects List (moved first for mobile) */}
+            <section className="lg:col-span-2 order-1 lg:order-2">
               <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
                 <h2 className="text-lg font-semibold mb-4">Your Projects</h2>
-                <section className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-2">
+                <section className="space-y-4 max-h-[calc(100vh-300px)] overflow-y-auto pr-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                   {filteredProjects.map((project) => {
                     const availableFunds = (project.availableFunds || 0);
                     const usedFunds = (project.usedFunds || 0);
@@ -356,12 +242,12 @@ export default function FundingTrackerPage() {
                           <section className="space-y-2">
                             <section className="flex items-center gap-2">
                               <p className="text-sm text-gray-600">Available:</p>
-                              <p className="font-medium">R {availableFunds.toLocaleString()}</p>
+                              <p className="font-medium">{formatCurrency(availableFunds)}</p>
                             </section>
                             
                             <section className="flex items-center gap-2">
                               <p className="text-sm text-gray-600">Used:</p>
-                              <p className="font-medium">R {(project.usedFunds || 0).toLocaleString()}</p>
+                              <p className="font-medium">{formatCurrency(project.usedFunds || 0)}</p>
                             </section>
                           </section>
 
@@ -383,9 +269,133 @@ export default function FundingTrackerPage() {
                 </section>
               </section>
             </section>
+
+            {/* Left Column - Funding Cards */}
+            <section className="lg:col-span-1 space-y-6 order-2 lg:order-1">
+              {/* Funding Opportunities Card */}
+              <section className="bg-white p-6 rounded-xl shadow-sm border border-gray-100">
+                <h2 className="text-lg font-semibold mb-4 flex items-center">
+                  <FaPiggyBank className="text-pink-500 mr-2" size={24} />
+                  Available Funding Opportunities
+                </h2>
+
+                <section className="space-y-4 max-h-[600px] overflow-y-auto pr-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+                  {fundingLoading ? (
+                    // Loading state
+                    [...Array(2)].map((_, i) => (
+                      <section key={i} className="p-4 border border-gray-100 rounded-lg">
+                        <section className="h-5 w-3/4 bg-gray-200 rounded animate-pulse mb-2" />
+                        <section className="h-4 w-1/2 bg-gray-200 rounded animate-pulse" />
+                        <section className="h-4 w-20 bg-gray-200 rounded animate-pulse mt-2" />
+                      </section>
+                    ))
+                  ) : fundingOpportunities.length > 0 ? (
+                    // Display actual funding opportunities
+                    fundingOpportunities.map((opportunity) => (
+                      <section 
+                        key={opportunity.id}
+                        className={`p-6 border rounded-lg transition-colors ${
+                          opportunity.status === 'active' ? 'bg-white hover:bg-blue-50 border-gray-200' :
+                          opportunity.status === 'closed' ? 'bg-gray-50 border-gray-200' :
+                          'bg-yellow-50 border-yellow-200'
+                        }`}
+                      >
+                        <div className="flex justify-between items-start mb-2">
+                          <h3 className="font-medium text-lg">{opportunity.funding_name || 'Funding Opportunity'}</h3>
+                          <span className={`px-3 py-1 rounded-full text-xs font-medium ${
+                            opportunity.status === 'active' ? 'bg-green-100 text-green-800' :
+                            opportunity.status === 'closed' ? 'bg-gray-100 text-gray-800' :
+                            'bg-yellow-100 text-yellow-800'
+                          }`}>
+                            {opportunity.status === 'active' ? 'Active' :
+                             opportunity.status === 'closed' ? 'Closed' :
+                             'Coming Soon'}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-4 mb-4">
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Amount Available</p>
+                            <p className="text-lg font-semibold text-gray-900">
+                              R {opportunity.expected_funds?.toLocaleString() || 'TBD'}
+                            </p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-medium text-gray-500">Category</p>
+                            <p className="text-gray-900 capitalize">
+                              {opportunity.category?.replace('_', ' ') || 'General'}
+                            </p>
+                          </div>
+                        </div>
+
+                        {opportunity.description && (
+                          <div className="mb-4">
+                            <p className="text-sm font-medium text-gray-500 mb-1">Description</p>
+                            <p className="text-gray-700 text-sm">{opportunity.description}</p>
+                          </div>
+                        )}
+
+                        {opportunity.eligibility && (
+                          <div className="mb-4">
+                            <p className="text-sm font-medium text-gray-500 mb-1">Eligibility</p>
+                            <p className="text-gray-700 text-sm">{opportunity.eligibility}</p>
+                          </div>
+                        )}
+
+                        {opportunity.deadline && (
+                          <div className="mb-4">
+                            <p className="text-sm font-medium text-gray-500 mb-1">Application Deadline</p>
+                            <p className="text-gray-700">
+                              {new Date(opportunity.deadline).toLocaleDateString('en-ZA', {
+                                day: 'numeric',
+                                month: 'long',
+                                year: 'numeric'
+                              })}
+                            </p>
+                          </div>
+                        )}
+
+                        {opportunity.external_link && opportunity.status === 'active' && (
+                          <button 
+                            className="w-full mt-4 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center justify-center gap-2"
+                            onClick={() => {
+                              window.open(opportunity.external_link, '_blank', 'noopener,noreferrer');
+                            }}
+                          >
+                            Apply Now
+                            <svg 
+                              xmlns="http://www.w3.org/2000/svg" 
+                              className="h-4 w-4" 
+                              fill="none" 
+                              viewBox="0 0 24 24" 
+                              stroke="currentColor"
+                            >
+                              <path 
+                                strokeLinecap="round" 
+                                strokeLinejoin="round" 
+                                strokeWidth={2} 
+                                d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" 
+                              />
+                            </svg>
+                          </button>
+                        )}
+                      </section>
+                    ))
+                  ) : (
+                    <p className="text-gray-500 text-sm p-4 text-center">
+                      No funding opportunities available at the moment.
+                    </p>
+                  )}
+                </section>
+              </section>
+            </section>
           </section>
         </section>
       </main>
-    </>
+
+      <footer>
+        <MobileBottomNav />
+      </footer>
+    </div>
   );
 }

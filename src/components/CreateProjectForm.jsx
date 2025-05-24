@@ -23,7 +23,8 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
     availableFunds: 0,
     usedFunds: 0,
     status: 'In Progress',
-    createdAt: new Date()
+    createdAt: new Date(),
+    visibility: 'public' // default to public
   });
   
   // Pre-fill form data if projectToUpdate is provided
@@ -277,6 +278,29 @@ export default function CreateProjectForm({ loading, onUpdate, onCreate, onCance
 
           {errors.goals && (
             <p id="goals-error" className="mt-1 text-sm text-red-600" role="alert">{errors.goals}</p>
+          )}
+        </div>
+
+        {/* Visibility Field - New Section */}
+        <div role="group" aria-labelledby="visibility-label">
+          <label htmlFor="visibility" className="block text-sm font-medium mb-1">Visibility*</label>
+          <select
+            id="visibility"
+            name="visibility"
+            value={formData.visibility}
+            onChange={handleChange}
+            className={`w-full p-2 border rounded-md ${
+              errors.visibility ? 'border-red-500' : 'border-gray-300'
+            }`}
+            aria-required="true"
+            aria-invalid={!!errors.visibility}
+            aria-describedby={errors.visibility ? "visibility-error" : undefined}
+          >
+            <option value="public">Public</option>
+            <option value="private">Private</option>
+          </select>
+          {errors.visibility && (
+            <p id="visibility-error" className="mt-1 text-sm text-red-600" role="alert">{errors.visibility}</p>
           )}
         </div>
 

@@ -89,6 +89,11 @@ export const fetchDocumentsByFolder = async (projectId) => {
     const user = auth.currentUser;
     if (!user) throw new Error("User not authenticated");
 
+    // Get user's role from firestore first
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+    const userRole = userSnap.exists() ? userSnap.data().role : null;
+
     // First check if user has access to this project
     const projectRef = doc(db, "projects", projectId);
     const projectSnap = await getDoc(projectRef);
@@ -96,12 +101,24 @@ export const fetchDocumentsByFolder = async (projectId) => {
 
     const projectData = projectSnap.data();
     
-    // Check if user is owner, reviewer, or collaborator
+    // Check if user has access through various roles
+    const isAdmin = userRole === 'admin';
     const isOwner = projectData.userId === user.uid;
     const isInReviewersArray = projectData.reviewers?.some(rev => rev.id === user.uid);
     const isCollaborator = projectData.collaborators?.some(collab => collab.id === user.uid);
 
-    if (!isOwner && !isInReviewersArray && !isCollaborator) {
+    // Check reviewRequests collection for an accepted request
+    const requestQuery = query(
+      collection(db, "reviewRequests"),
+      where("projectId", "==", projectId),
+      where("reviewerId", "==", user.uid),
+      where("status", "==", "accepted")
+    );
+    const requestSnap = await getDocs(requestQuery);
+    const isAcceptedReviewer = !requestSnap.empty;
+
+    // Allow access if user is admin, owner, reviewer or has an accepted review request
+    if (!isAdmin && !isOwner && !isInReviewersArray && !isAcceptedReviewer && !isCollaborator) {
       throw new Error("You don't have permission to access this project's documents");
     }
 

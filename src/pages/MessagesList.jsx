@@ -210,6 +210,25 @@ export default function MessagesList() {
     }
   }, [chats]);
 
+  const getMessagePreview = (lastMessage) => {
+    if (!lastMessage) return 'No messages yet';
+    
+    if (lastMessage.attachments?.length > 0) {
+      const attachment = lastMessage.attachments[0];
+      if (attachment.type.startsWith('image/')) {
+        return '📷 Photo' + (lastMessage.attachments.length > 1 ? ` (+${lastMessage.attachments.length - 1})` : '');
+      } else if (attachment.type.startsWith('video/')) {
+        return '🎥 Video' + (lastMessage.attachments.length > 1 ? ` (+${lastMessage.attachments.length - 1})` : '');
+      } else if (attachment.type.startsWith('audio/')) {
+        return '🎵 Audio' + (lastMessage.attachments.length > 1 ? ` (+${lastMessage.attachments.length - 1})` : '');
+      } else {
+        return '📎 File' + (lastMessage.attachments.length > 1 ? ` (+${lastMessage.attachments.length - 1})` : '');
+      }
+    }
+    
+    return lastMessage.text || 'No messages yet';
+  };
+
   return (
     <section className="min-h-screen bg-gray-50">
       {/* Top Navigation */}
@@ -458,9 +477,18 @@ export default function MessagesList() {
                     <section className="flex items-center flex-1 min-w-0">
                       <section className="relative flex-shrink-0">
                         {chat.type === 'group' ? (
-                          <section className="w-12 h-12 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-medium text-lg">
-                            {chat.groupAvatar || '👥'}
-                          </section>
+
+                          chat.groupAvatar ? (
+                            <img
+                              src={chat.groupAvatar}
+                              alt={getChatDisplayName(chat)}
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-medium text-lg">
+                              👥
+                            </div>
+                          )
                         ) : (
                           participantPhotos[chat.participants.find(id => id !== auth.currentUser.uid)] ? (
                             <img
@@ -484,7 +512,7 @@ export default function MessagesList() {
                         <p className={`text-sm truncate ${
                           chat.unreadCount > 0 ? 'text-gray-800 font-medium' : 'text-gray-500'
                         }`}>
-                          {chat.lastMessage?.text || 'No messages yet'}
+                          {getMessagePreview(chat.lastMessage)}
                         </p>
                       </section>
                     </section>

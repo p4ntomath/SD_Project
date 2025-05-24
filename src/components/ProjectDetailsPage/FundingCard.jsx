@@ -5,6 +5,7 @@ import { updateProjectFunds, updateProjectExpense, getFundingHistory } from '../
 import { formatFirebaseDate } from '../../utils/dateUtils';
 import { notify } from '../../backend/firebase/notificationsUtil';
 import { checkPermission } from '../../utils/permissions';
+import { useAuth } from '../../context/AuthContext';
 
 /**
  * FundingCard Component - Manages project funding operations including:
@@ -31,6 +32,7 @@ export default function FundingCard({
   const [fundingSource, setFundingSource] = useState('');
   const [addFundsLoading, setAddFundsLoading] = useState(false);
   const [addExpenseLoading, setAddExpenseLoading] = useState(false);
+  const { role } = useAuth();
 
   /**
    * Loads funding history from Firebase and sorts by date
@@ -228,15 +230,17 @@ export default function FundingCard({
               </button>
             </>
           )}
-          <button
-            onClick={() => setShowFundingHistory(true)}
-            className="bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors text-sm sm:text-base"
-            aria-label="View funding history"
-          >
-            View History
-          </button>
-        </nav>
-      </article>
+
+          {role !== 'admin' && (
+            <button
+              onClick={() => setShowFundingHistory(true)}
+              className="bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors text-sm sm:text-base"
+            >
+              View History
+            </button>
+          )}
+        </div>
+      </section>
 
       {/* Add Funds Modal */}
       <AnimatePresence>
