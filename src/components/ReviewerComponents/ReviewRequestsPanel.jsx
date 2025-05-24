@@ -89,52 +89,52 @@ export default function ReviewRequestsPanel() {
 
     if (loading) {
         return (
-            <div className="flex justify-center items-center py-8">
-                <div 
+            <section className="flex justify-center items-center py-8">
+                <section 
                     className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"
                     role="status"
                     aria-label="Loading review requests"
                 />
-            </div>
+            </section>
         );
     }
 
     if (error) {
         return (
-            <div className="text-red-600 text-center py-4">
+            <section className="text-red-600 text-center py-4">
                 Error loading requests: {error}
-            </div>
+            </section>
         );
     }
 
     if (requests.length === 0) {
         return (
-            <div className="text-center py-6">
+            <section className="text-center py-6">
                 <p className="text-gray-500">No pending review requests</p>
-            </div>
+            </section>
         );
     }
 
     return (
-        <div className="space-y-4">
+        <section className="space-y-4">
             {requests.map((request) => (
-                <div key={request.id} className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
-                    <div className="mb-4">
+                <section key={request.id} className="bg-white rounded-lg shadow-md p-6 border border-gray-200">
+                    <section className="mb-4">
                         <h3 className="text-lg font-semibold text-gray-900">
                             {request.project?.title || 'Untitled Project'}
                         </h3>
                         <p className="text-sm text-gray-500 mt-1">
                             Requested on {formatDate(request.createdAt)}
                         </p>
-                    </div>
+                    </section>
 
-                    <div className="mb-4">
+                    <section className="mb-4">
                         <p className="text-gray-600">
                             {request.project?.description || 'No description available'}
                         </p>
-                    </div>
+                    </section>
 
-                    <div className="flex flex-col sm:flex-row gap-3">
+                    <section className="flex flex-col sm:flex-row gap-3">
                         <button
                             onClick={() => handleAccept(request.id, request.projectId)}
                             className="flex-1 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors"
@@ -147,9 +147,9 @@ export default function ReviewRequestsPanel() {
                         >
                             Decline
                         </button>
-                    </div>
-                </div>
+                    </section>
+                </section>
             ))}
-        </div>
+        </section>
     );
 }

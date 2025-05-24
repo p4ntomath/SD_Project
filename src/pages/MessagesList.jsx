@@ -2,7 +2,8 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FiSearch, FiMessageSquare, FiArrowLeft, FiUserPlus, FiUsers, FiX } from 'react-icons/fi';
 import { ChatService, ChatRealTimeService } from '../backend/firebase/chatDB';
-import { auth } from '../backend/firebase/firebaseConfig';
+import { auth, db } from '../backend/firebase/firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
 
 export default function MessagesList() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -16,6 +17,7 @@ export default function MessagesList() {
   const [userSearchResults, setUserSearchResults] = useState([]);
   const [searching, setSearching] = useState(false);
   const [error, setError] = useState(null);
+  const [participantPhotos, setParticipantPhotos] = useState({});
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -41,13 +43,9 @@ export default function MessagesList() {
 
   // Function to search for users
   const searchUsers = async (query) => {
-    if (!query.trim()) {
-      setUserSearchResults([]);
-      return;
-    }
     setSearching(true);
     try {
-      const results = await ChatService.searchUsers(query, auth.currentUser.uid);
+      const results = await ChatService.searchUsers(query || '', auth.currentUser.uid);
       setUserSearchResults(results);
     } catch (error) {
       console.error('Error searching users:', error);
@@ -55,6 +53,13 @@ export default function MessagesList() {
       setSearching(false);
     }
   };
+
+  // Load all users when new chat modal opens
+  useEffect(() => {
+    if (showNewChatModal) {
+      searchUsers('');
+    }
+  }, [showNewChatModal]);
 
   // Function to start a chat with a user
   const startChat = async (userId) => {
@@ -171,20 +176,96 @@ export default function MessagesList() {
     return date.toLocaleDateString();
   };
 
+  // Add effect to fetch profile pictures for chat participants
+  useEffect(() => {
+    const fetchProfilePictures = async () => {
+      const photos = {};
+      const uniqueUserIds = new Set();
+
+      // Collect all unique user IDs from chats
+      chats.forEach(chat => {
+        if (chat.type === 'direct') {
+          // For direct chats, get the other participant
+          const otherUserId = chat.participants.find(id => id !== auth.currentUser.uid);
+          if (otherUserId) uniqueUserIds.add(otherUserId);
+        }
+      });
+
+      // Fetch profile pictures for all unique users
+      await Promise.all(
+        Array.from(uniqueUserIds).map(async (userId) => {
+          try {
+            const userDoc = await getDoc(doc(db, 'users', userId));
+            if (userDoc.exists()) {
+              photos[userId] = userDoc.data().profilePicture || null;
+            }
+          } catch (error) {
+            console.error(`Error fetching profile picture for ${userId}:`, error);
+          }
+        })
+      );
+
+      setParticipantPhotos(photos);
+    };
+
+    if (chats.length > 0) {
+      fetchProfilePictures();
+    }
+  }, [chats]);
+
+  const getMessagePreview = (lastMessage) => {
+    if (!lastMessage) return 'No messages yet';
+    
+    if (lastMessage.attachments?.length > 0) {
+      const attachment = lastMessage.attachments[0];
+      if (attachment.type.startsWith('image/')) {
+        return '📷 Photo' + (lastMessage.attachments.length > 1 ? ` (+${lastMessage.attachments.length - 1})` : '');
+      } else if (attachment.type.startsWith('video/')) {
+        return '🎥 Video' + (lastMessage.attachments.length > 1 ? ` (+${lastMessage.attachments.length - 1})` : '');
+      } else if (attachment.type.startsWith('audio/')) {
+        return '🎵 Audio' + (lastMessage.attachments.length > 1 ? ` (+${lastMessage.attachments.length - 1})` : '');
+      } else {
+        return '📎 File' + (lastMessage.attachments.length > 1 ? ` (+${lastMessage.attachments.length - 1})` : '');
+      }
+    }
+    
+    return lastMessage.text || 'No messages yet';
+  };
+
+  // Add helper function to reset search state
+  const resetSearchState = () => {
+    setShowNewChatModal(false);
+    setShowGroupChatModal(false);
+    setSearchQuery('');
+    setSelectedUsers([]);
+    setGroupName('');
+    setUserSearchResults([]);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <section className="min-h-screen bg-gray-50">
       {/* Top Navigation */}
       <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex h-16 items-center justify-between">
-            <button 
-              onClick={() => navigate('/home')}
-              className="text-gray-600 hover:text-gray-800 font-medium flex items-center"
-            >
-              <FiArrowLeft className="h-5 w-5 mr-1" />
-              Dashboard
-            </button>
-            <div className="flex space-x-2">
+        <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <section className="flex h-16 items-center justify-between">
+            {showNewChatModal ? (
+              <button 
+                onClick={resetSearchState}
+                className="text-gray-600 hover:text-gray-800 font-medium flex items-center"
+              >
+                <FiArrowLeft className="h-5 w-5 mr-1" />
+                Back
+              </button>
+            ) : (
+              <button 
+                onClick={() => navigate('/home')}
+                className="text-gray-600 hover:text-gray-800 font-medium flex items-center"
+              >
+                <FiArrowLeft className="h-5 w-5 mr-1" />
+                Dashboard
+              </button>
+            )}
+            <section className="flex space-x-2">
               <button
                 onClick={() => {
                   setShowNewChatModal(true);
@@ -211,17 +292,17 @@ export default function MessagesList() {
                 <FiUsers className="h-4 w-4 mr-1.5" />
                 
               </button>
-            </div>
-          </div>
-        </div>
+            </section>
+          </section>
+        </section>
       </header>
 
       <main className="max-w-7xl mx-auto sm:px-6 lg:px-8">
-        <div className="bg-white shadow sm:rounded-lg mt-4 overflow-hidden">
+        <section className="bg-white shadow sm:rounded-lg mt-4 overflow-hidden">
           {/* Search and Filters */}
-          <div className="p-4 border-b border-gray-200">
+          <section className="p-4 border-b border-gray-200">
             {showNewChatModal && showGroupChatModal ? (
-              <div className="space-y-4">
+              <section className="space-y-4">
                 <input
                   type="text"
                   placeholder="Group name..."
@@ -229,7 +310,7 @@ export default function MessagesList() {
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
                 />
-                <div className="relative">
+                <section className="relative">
                   <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
@@ -241,9 +322,9 @@ export default function MessagesList() {
                       searchUsers(e.target.value);
                     }}
                   />
-                </div>
+                </section>
                 {selectedUsers.length > 0 && (
-                  <div className="flex flex-wrap gap-2">
+                  <section className="flex flex-wrap gap-2">
                     {selectedUsers.map(user => (
                       <span
                         key={user.id}
@@ -259,7 +340,7 @@ export default function MessagesList() {
                         </button>
                       </span>
                     ))}
-                  </div>
+                  </section>
                 )}
                 {selectedUsers.length >= 2 && groupName && (
                   <button
@@ -269,10 +350,10 @@ export default function MessagesList() {
                     Create Group Chat
                   </button>
                 )}
-              </div>
+              </section>
             ) : (
               <>
-                <div className="relative">
+                <section className="relative">
                   <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
@@ -286,10 +367,10 @@ export default function MessagesList() {
                       }
                     }}
                   />
-                </div>
+                </section>
 
                 {!showNewChatModal && (
-                  <div className="flex space-x-2 mt-4">
+                  <section className="flex space-x-2 mt-4">
                     <button
                       onClick={() => setActiveFilter('all')}
                       className={`flex-1 py-2 text-sm font-medium rounded-lg transition-colors ${
@@ -330,105 +411,120 @@ export default function MessagesList() {
                     >
                       Unread
                     </button>
-                  </div>
+                  </section>
                 )}
               </>
             )}
-          </div>
+          </section>
 
           {/* Chat Lists or Search Results */}
-          <div className="divide-y divide-gray-200 max-h-[calc(100vh-12rem)] overflow-y-auto"> {/* Added max height and scroll */}
+          <section className="sectionide-y sectionide-gray-200 max-h-[calc(100vh-12rem)] overflow-y-auto"> {/* Added max height and scroll */}
             {loading ? (
-              <div className="flex items-center justify-center py-12">
-                <div className="text-gray-500">Loading...</div>
-              </div>
+              <section className="flex items-center justify-center py-12">
+                <section className="text-gray-500">Loading...</section>
+              </section>
             ) : showNewChatModal ? (
               searching ? (
-                <div className="flex items-center justify-center py-12">
-                  <div className="text-gray-500">Searching users...</div>
-                </div>
+                <section className="flex items-center justify-center py-12">
+                  <section className="text-gray-500">Searching users...</section>
+                </section>
               ) : error ? (
-                <div className="flex flex-col items-center justify-center py-12">
+                <section className="flex flex-col items-center justify-center py-12">
                   <p className="text-sm text-red-500">{error}</p>
-                </div>
+                </section>
               ) : userSearchResults.length > 0 ? (
-                userSearchResults.map(user => (
-                  <button 
-                    key={user.id}
-                    onClick={() => {
-                      if (showGroupChatModal) {
-                        // Add/remove user from selected users
-                        if (selectedUsers.some(u => u.id === user.id)) {
-                          setSelectedUsers(users => users.filter(u => u.id !== user.id));
+                <section className="divide-y divide-gray-100">
+                  {userSearchResults.map(user => (
+                    <button
+                      key={user.id}
+                      onClick={() => {
+                        if (showGroupChatModal) {
+                          // Add/remove user from selected users
+                          if (selectedUsers.some(u => u.id === user.id)) {
+                            setSelectedUsers(users => users.filter(u => u.id !== user.id));
+                          } else {
+                            setSelectedUsers(users => [...users, user]);
+                          }
                         } else {
-                          setSelectedUsers(users => [...users, user]);
+                          startChat(user.id);
                         }
-                      } else {
-                        startChat(user.id);
-                      }
-                    }}
-                    className="w-full text-left hover:bg-gray-50 p-4 transition-colors"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                          <div className="w-12 h-12 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
-                            {getAvatarInitials(user.fullName)}
-                          </div>
-                        </div>
-                        <div className="ml-4">
-                          <p className="font-medium text-gray-900">{user.fullName}</p>
-                          <p className="text-sm text-gray-500">{user.email}</p>
-                        </div>
-                      </div>
-                      {showGroupChatModal && (
-                        <div className="flex-shrink-0">
-                          <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
-                            selectedUsers.some(u => u.id === user.id)
-                              ? 'bg-blue-600 border-blue-600 text-white'
-                              : 'border-gray-300'
-                          }`}>
-                            {selectedUsers.some(u => u.id === user.id) && (
-                              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                              </svg>
-                            )}
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </button>
-                ))
-              ) : searchQuery ? (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <p className="text-sm text-gray-500">No users found</p>
-                </div>
+                      }}
+                      className="w-full text-left hover:bg-gray-50 p-4 transition-colors"
+                    >
+                      <section className="flex items-center justify-between">
+                        <section className="flex items-center">
+                          <section className="flex-shrink-0">
+                            <section className="w-12 h-12 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
+                              {getAvatarInitials(user.fullName)}
+                            </section>
+                          </section>
+                          <section className="ml-4">
+                            <p className="font-medium text-gray-900">{user.fullName}</p>
+                            <p className="text-sm text-gray-500">{user.email}</p>
+                          </section>
+                        </section>
+                        {showGroupChatModal && (
+                          <section className="flex-shrink-0">
+                            <section className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${
+                              selectedUsers.some(u => u.id === user.id)
+                                ? 'bg-blue-600 border-blue-600 text-white'
+                                : 'border-gray-300'
+                            }`}>
+                              {selectedUsers.some(u => u.id === user.id) && (
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </section>
+                          </section>
+                        )}
+                      </section>
+                    </button>
+                  ))}
+                </section>
               ) : (
-                <div className="flex flex-col items-center justify-center py-12">
-                  <p className="text-sm text-gray-500">Start typing to search for users</p>
-                </div>
+                <section className="flex items-center justify-center py-8">
+                  <section className="text-gray-500">No users found</section>
+                </section>
               )
             ) : filteredChats().length > 0 ? (
               filteredChats().map(chat => (
                 <button 
                   key={chat.id}
                   onClick={() => navigate(`/messages/${chat.id}`)}
-                  className={`w-full text-left p-4 transition-colors hover:bg-gray-50`}
+                  className={`w-full text-left hover:bg-gray-50 p-4 transition-colors`}
                 >
-                  <div className="flex items-center">
-                    <div className="flex items-center flex-1 min-w-0">
-                      <div className="relative flex-shrink-0">
+                  <section className="flex items-center">
+                    <section className="flex items-center flex-1 min-w-0">
+                      <section className="relative flex-shrink-0">
                         {chat.type === 'group' ? (
-                          <div className="w-12 h-12 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-medium text-lg">
-                            {chat.groupAvatar || '👥'}
-                          </div>
+
+                          chat.groupAvatar ? (
+                            <img
+                              src={chat.groupAvatar}
+                              alt={getChatDisplayName(chat)}
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-blue-100 text-blue-700 rounded-full flex items-center justify-center font-medium text-lg">
+                              👥
+                            </div>
+                          )
                         ) : (
-                          <div className="w-12 h-12 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
-                            {getAvatarInitials(getChatDisplayName(chat))}
-                          </div>
+                          participantPhotos[chat.participants.find(id => id !== auth.currentUser.uid)] ? (
+                            <img
+                              src={participantPhotos[chat.participants.find(id => id !== auth.currentUser.uid)]}
+                              alt={getChatDisplayName(chat)}
+                              className="w-12 h-12 rounded-full object-cover"
+                            />
+                          ) : (
+                            <section className="w-12 h-12 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
+                              {getAvatarInitials(getChatDisplayName(chat))}
+                            </section>
+                          )
                         )}
-                      </div>
-                      <div className="ml-4 flex-1 min-w-0">
+                      </section>
+                      <section className="ml-4 flex-1 min-w-0">
                         <p className={`${
                           chat.unreadCount > 0 ? 'text-gray-900 font-bold' : 'text-gray-700 font-medium'
                         } truncate`}>
@@ -437,12 +533,12 @@ export default function MessagesList() {
                         <p className={`text-sm truncate ${
                           chat.unreadCount > 0 ? 'text-gray-800 font-medium' : 'text-gray-500'
                         }`}>
-                          {chat.lastMessage?.text || 'No messages yet'}
+                          {getMessagePreview(chat.lastMessage)}
                         </p>
-                      </div>
-                    </div>
-                    <div className="ml-4 flex flex-col items-end justify-between flex-shrink-0">
-                      <div className="flex items-center gap-1">
+                      </section>
+                    </section>
+                    <section className="ml-4 flex flex-col items-end justify-between flex-shrink-0">
+                      <section className="flex items-center gap-1">
                         <span className={`text-xs ${
                           chat.unreadCount > 0 ? 'text-gray-900 font-medium' : 'text-gray-400'
                         }`}>
@@ -453,24 +549,24 @@ export default function MessagesList() {
                             {chat.lastMessage.readBy?.length > 1 ? '✓✓' : '✓'}
                           </span>
                         )}
-                      </div>
+                      </section>
                       {chat.unreadCount > 0 && (
-                        <div className="mt-1 bg-blue-600 text-white text-xs font-medium rounded-full h-5 min-w-[20px] px-1.5 flex items-center justify-center">
+                        <section className="mt-1 bg-blue-600 text-white text-xs font-medium rounded-full h-5 min-w-[20px] px-1.5 flex items-center justify-center">
                           {chat.unreadCount}
-                        </div>
+                        </section>
                       )}
-                    </div>
-                  </div>
+                    </section>
+                  </section>
                 </button>
               ))
             ) : (
-              <div className="flex flex-col items-center justify-center py-12">
+              <section className="flex flex-col items-center justify-center py-12">
                 <p className="text-sm text-gray-500">No chats found</p>
-              </div>
+              </section>
             )}
-          </div>
-        </div>
+          </section>
+        </section>
       </main>
-    </div>
+    </section>
   );
 }

@@ -66,19 +66,19 @@ export default function ResearcherHome() {
   };
 
   const SkeletonCard = () => (
-    <div data-testid="skeleton-card" className="bg-white p-6 rounded-lg shadow-md border border-gray-100 animate-pulse">
-      <div className="flex items-center mb-4">
-        <div className="w-8 h-8 bg-gray-200 rounded-full mr-2"></div>
-        <div className="h-6 w-32 bg-gray-200 rounded"></div>
-      </div>
-      <div className="space-y-3">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="h-20 bg-gray-100 rounded-lg"></div>
-          <div className="h-20 bg-gray-100 rounded-lg"></div>
-        </div>
-        <div className="h-10 bg-gray-100 rounded-lg"></div>
-      </div>
-    </div>
+    <section data-testid="skeleton-card" className="bg-white p-6 rounded-lg shadow-md border border-gray-100 animate-pulse">
+      <section className="flex items-center mb-4">
+        <section className="w-8 h-8 bg-gray-200 rounded-full mr-2"></section>
+        <section className="h-6 w-32 bg-gray-200 rounded"></section>
+      </section>
+      <section className="space-y-3">
+        <section className="grid grid-cols-2 gap-4">
+          <section className="h-20 bg-gray-100 rounded-lg"></section>
+          <section className="h-20 bg-gray-100 rounded-lg"></section>
+        </section>
+        <section className="h-10 bg-gray-100 rounded-lg"></section>
+      </section>
+    </section>
   );
 
   return (
@@ -92,9 +92,9 @@ export default function ResearcherHome() {
 
       <main className="flex-1 p-4 md:p-8 pb-16 md:pb-8">
         <section className="max-w-6xl mx-auto">
-          <div className="flex items-center justify-between mb-8">
+          <section className="flex items-center justify-between mb-8">
             <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Dashboard</h1>
-            <div className="relative">
+            <section className="relative">
               <button
                 onClick={() => setShowExportMenu(!showExportMenu)}
                 disabled={exportLoading}
@@ -108,14 +108,14 @@ export default function ResearcherHome() {
                 ) : (
                   <>
                     <FaDownload className="mr-2" />
-                    Export Dashboard
+                    Export Reports
                   </>
                 )}
               </button>
               
               {showExportMenu && !exportLoading && (
-                <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
-                  <div className="py-1" role="menu" aria-orientation="vertical">
+                <section className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-10">
+                  <section className="py-1" role="menu" aria-orientation="vertical">
                     <button
                       onClick={() => {
                         setSelectedFormat('csv');
@@ -138,11 +138,11 @@ export default function ResearcherHome() {
                     >
                       Export as PDF
                     </button>
-                  </div>
-                </div>
+                  </section>
+                </section>
               )}
-            </div>
-          </div>
+            </section>
+          </section>
           
           {loading ? (
             <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -155,10 +155,10 @@ export default function ResearcherHome() {
               {/* Projects Overview Card */}
               <article className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
                 <section className="flex items-center mb-4">
-                  <div className="flex items-center">
+                  <section className="flex items-center">
                     <FaFolder className="mr-2 text-blue-500 text-2xl" />
                     <h2 className="text-xl font-bold text-gray-800">Projects Overview</h2>
-                  </div>
+                  </section>
                 </section>
                 <section className="space-y-4">
                   <section className="grid grid-cols-2 gap-4">
@@ -186,10 +186,10 @@ export default function ResearcherHome() {
               {/* Funding Summary Card */}
               <article className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
                 <section className="flex items-center mb-4">
-                  <div className="flex items-center">
+                  <section className="flex items-center">
                     <FaPiggyBank className="mr-2 text-pink-500 text-2xl" />
                     <h2 className="text-xl font-bold text-gray-800">Funding Summary</h2>
-                  </div>
+                  </section>
                 </section>
                 
                 {projects.length > 0 ? (
@@ -223,10 +223,10 @@ export default function ResearcherHome() {
               {/* Progress Summary Card */}
               <article className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
                 <section className="flex items-center mb-4">
-                  <div className="flex items-center">
+                  <section className="flex items-center">
                     <FaClipboardCheck className="mr-2 text-green-500 text-2xl" />
                     <h2 className="text-xl font-bold text-gray-800">Progress Overview</h2>
-                  </div>
+                  </section>
                 </section>
                 
                 {projects.length > 0 ? (
@@ -259,8 +259,8 @@ export default function ResearcherHome() {
                   <FaClock className="mr-2 text-orange-500 text-2xl" />
                   <h2 className="text-xl font-bold text-gray-800">Recent Activity</h2>
                 </section>
-                <div className="overflow-hidden">
-                  <div className="overflow-y-auto max-h-[230px] pr-2 -mr-2 no-scrollbar">
+                <section className="overflow-hidden">
+                  <section className="overflow-y-auto max-h-[230px] pr-2 -mr-2 no-scrollbar">
                     {projects.length > 0 ? (
                       <section className="space-y-3">
                         {projects.slice(0, 3).map(project => (
@@ -277,8 +277,8 @@ export default function ResearcherHome() {
                     ) : (
                       <p className="text-gray-500 text-center py-4">No recent activity</p>
                     )}
-                  </div>
-                </div>
+                  </section>
+                </section>
               </article>
 
               {/* Collaboration Requests Card */}
@@ -295,10 +295,10 @@ export default function ResearcherHome() {
               {/* Team Overview Card */}
               <article className="bg-white p-6 rounded-lg shadow-md border border-gray-100">
                 <section className="flex items-center justify-between mb-4">
-                  <div className="flex items-center">
+                  <section className="flex items-center">
                     <FaUsers className="mr-2 text-indigo-500 text-2xl" />
                     <h2 className="text-xl font-bold text-gray-800">Team Overview</h2>
-                  </div>
+                  </section>
                 </section>
                 {projects.length > 0 ? (
                   <section className="space-y-4">
@@ -318,14 +318,14 @@ export default function ResearcherHome() {
               {/* Collaborations Section */}
               <section className="bg-white rounded-lg shadow p-4 sm:p-6">
                 <h2 className="text-lg sm:text-xl font-semibold mb-4">My Collaborations</h2>
-                <div className="overflow-hidden">
-                  <div className="overflow-y-auto max-h-[230px] pr-2 -mr-2 no-scrollbar">
+                <section className="overflow-hidden">
+                  <section className="overflow-y-auto max-h-[230px] pr-2 -mr-2 no-scrollbar">
                     {projects.some(p => p.collaborators?.some(c => c.id === auth.currentUser?.uid)) ? (
-                      <div className="space-y-4">
+                      <section className="space-y-4">
                         {projects.filter(p => p.collaborators?.some(c => c.id === auth.currentUser?.uid))
                           .map(project => (
-                            <div key={project.id} className="p-4 bg-gray-50 rounded-lg">
-                              <div className="flex justify-between items-start mb-2">
+                            <section key={project.id} className="p-4 bg-gray-50 rounded-lg">
+                              <section className="flex justify-between items-start mb-2">
                                 <h3 className="font-medium text-gray-900">{project.title}</h3>
                                 <span className={`px-2 py-1 text-xs rounded-full ${
                                   project.collaborators.find(c => c.id === auth.currentUser?.uid)?.accessLevel === 'Editor' 
@@ -336,9 +336,9 @@ export default function ResearcherHome() {
                                 }`}>
                                   {project.collaborators.find(c => c.id === auth.currentUser?.uid)?.accessLevel || 'Collaborator'}
                                 </span>
-                              </div>
+                              </section>
                               <p className="text-sm text-gray-600 mb-3">{project.description}</p>
-                              <div className="text-xs text-gray-500">
+                              <section className="text-xs text-gray-500">
                                 <h4 className="font-medium mb-1">Your Permissions:</h4>
                                 <ul className="grid grid-cols-2 gap-1">
                                   {Object.entries(project.collaborators.find(c => c.id === auth.currentUser?.uid)?.permissions || {})
@@ -357,15 +357,15 @@ export default function ResearcherHome() {
                                       </li>
                                   ))}
                                 </ul>
-                              </div>
-                            </div>
+                              </section>
+                            </section>
                         ))}
-                      </div>
+                      </section>
                     ) : (
                       <p className="text-gray-500 text-center py-4">You're not collaborating on any projects yet</p>
                     )}
-                  </div>
-                </div>
+                  </section>
+                </section>
               </section>
             </section>
           )}

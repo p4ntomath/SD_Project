@@ -32,14 +32,20 @@ export default function ReviewerHomePage() {
         const requests = await getReviewerRequests(currentUser.uid);
         setReviewRequests(requests);
         
-        // Calculate stats
-        const pendingRequests = requests.filter(r => r.status === 'pending').length;
-        const acceptedRequests = requests.filter(r => r.status === 'accepted').length;
+        // Calculate stats:
+        // - Show automatically accepted requests (for active reviewers) as pending reviews
+        // - Show manually accepted requests as pending reviews
+        // - Show completed reviews as completed
+        const pendingRequests = requests.filter(r => r.status === 'pending' && !r.isActiveReviewer).length;
+        const activeAndAcceptedRequests = requests.filter(r => 
+          (r.status === 'accepted') || // Manually accepted requests
+          (r.status === 'pending' && r.isActiveReviewer) // Auto-accepted requests for active reviewers
+        ).length;
         const completed = requests.filter(r => r.status === 'completed').length;
 
         setStats({
-          requests: pendingRequests,
-          pending: acceptedRequests,  // Show accepted requests as pending reviews
+          requests: pendingRequests, // Only show non-active reviewer pending requests in count
+          pending: activeAndAcceptedRequests,
           completed,
           totalReviews: requests.length
         });
@@ -78,88 +84,88 @@ export default function ReviewerHomePage() {
       </header>
 
       <main className="flex-1 p-4 md:p-8 pb-16 md:pb-8">
-        <div className="max-w-7xl mx-auto space-y-6">
+        <section className="max-w-7xl mx-auto space-y-6">
           {/* Stats Overview */}
           <section className="grid grid-cols-1 md:grid-cols-4 gap-6">
             <article 
               onClick={handleViewPendingReviews}
               className="bg-gradient-to-br from-purple-500 to-purple-600 p-6 rounded-xl shadow-md text-white cursor-pointer hover:shadow-lg transition-shadow"
             >
-              <div className="flex items-center justify-between">
-                <div>
+              <section className="flex items-center justify-between">
+                <section>
                   <p className="text-purple-100">Review Requests</p>
                   {loading ? (
-                    <div className="h-9 flex items-center" data-testid="loading-spinner">
+                    <section className="h-9 flex items-center" data-testid="loading-spinner">
                       <ClipLoader  color="#ffffff" size={24} />
-                    </div>
+                    </section>
                   ) : (
                     <h3 className="text-3xl font-bold"
                     data-testid="review-requests-count"
                     >{stats.requests}</h3>
                   )}
-                </div>
+                </section>
                 <ClipboardDocumentListIcon className="h-12 w-12 opacity-20" />
-              </div>
+              </section>
             </article>
 
             <article 
               onClick={() => navigate('/reviewer/assigned')}
               className="bg-gradient-to-br from-blue-500 to-blue-600 p-6 rounded-xl shadow-md text-white cursor-pointer hover:shadow-lg transition-shadow"
             >
-              <div className="flex items-center justify-between">
-                <div>
+              <section className="flex items-center justify-between">
+                <section>
                   <p className="text-blue-100">Pending Reviews</p>
                   {loading ? (
-                    <div className="h-9 flex items-center">
+                    <section className="h-9 flex items-center">
                       <ClipLoader color="#ffffff" size={24} />
-                    </div>
+                    </section>
                   ) : (
                     <h3 className="text-3xl font-bold" 
                     data-testid="pending-reviews-count"
                     >{stats.pending}</h3>
                   )}
-                </div>
+                </section>
                 <ClipboardDocumentListIcon className="h-12 w-12 opacity-20" />
-              </div>
+              </section>
             </article>
 
             <article 
               onClick={handleViewCompletedReviews}
               className="bg-gradient-to-br from-green-500 to-green-600 p-6 rounded-xl shadow-md text-white cursor-pointer hover:shadow-lg transition-shadow"
             >
-              <div className="flex items-center justify-between">
-                <div>
+              <section className="flex items-center justify-between">
+                <section>
                   <p className="text-green-100">Completed Reviews</p>
                   {loading ? (
-                    <div className="h-9 flex items-center">
+                    <section className="h-9 flex items-center">
                       <ClipLoader color="#ffffff" size={24} />
-                    </div>
+                    </section>
                   ) : (
                     <h3 className="text-3xl font-bold"
                     data-testid="completed-reviews-count"
                     >{stats.completed}</h3>
                   )}
-                </div>
+                </section>
                 <DocumentTextIcon className="h-12 w-12 opacity-20" />
-              </div>
+              </section>
             </article>
 
             <article className="bg-gradient-to-br from-indigo-500 to-indigo-600 p-6 rounded-xl shadow-md text-white">
-              <div className="flex items-center justify-between">
-                <div>
+              <section className="flex items-center justify-between">
+                <section>
                   <p className="text-indigo-100">Total Reviews</p>
                   {loading ? (
-                    <div className="h-9 flex items-center">
+                    <section className="h-9 flex items-center">
                       <ClipLoader color="#ffffff" size={24} />
-                    </div>
+                    </section>
                   ) : (
                     <h3 className="text-3xl font-bold"
                     data-testid="total-reviews-count"
                     >{stats.totalReviews}</h3>
                   )}
-                </div>
+                </section>
                 <ChartBarIcon className="h-12 w-12 opacity-20" />
-              </div>
+              </section>
             </article>
           </section>
 
@@ -190,7 +196,7 @@ export default function ReviewerHomePage() {
               <span className="text-gray-700">View Analytics</span>
             </button>
           </section>
-        </div>
+        </section>
       </main>
 
       <footer>

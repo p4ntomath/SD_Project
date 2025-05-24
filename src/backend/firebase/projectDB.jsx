@@ -138,6 +138,11 @@ export const fetchProject = async (projectId) => {
     const user = auth.currentUser;
     if (!user) throw new Error('User not authenticated');
 
+    // Get user's role from firestore first
+    const userRef = doc(db, "users", user.uid);
+    const userSnap = await getDoc(userRef);
+    const userRole = userSnap.exists() ? userSnap.data().role : null;
+
     const projectRef = doc(db, "projects", projectId);
     const projectSnap = await getDoc(projectRef);
 
@@ -147,7 +152,8 @@ export const fetchProject = async (projectId) => {
 
     const projectData = projectSnap.data();
     
-    // Check if user has access (is owner, reviewer, or collaborator)
+    // Check if user has access through various roles
+    const isAdmin = userRole === 'admin';
     const isOwner = projectData.userId === user.uid;
     const isInReviewersArray = projectData.reviewers?.some(rev => rev.id === user.uid);
     const isCollaborator = projectData.collaborators?.some(collab => collab.id === user.uid);
@@ -162,11 +168,12 @@ export const fetchProject = async (projectId) => {
     const requestSnap = await getDocs(requestQuery);
     const isAcceptedReviewer = !requestSnap.empty;
 
-    if (!isOwner && !isInReviewersArray && !isAcceptedReviewer && !isCollaborator) {
+    // Allow access if user is admin, owner, reviewer or has an accepted review request
+    if (!isAdmin && !isOwner && !isInReviewersArray && !isAcceptedReviewer && !isCollaborator) {
       throw new Error('You do not have permission to access this project');
     }
 
-    // Handle timestamp conversions
+    // Handle timestamp conversions if needed
     if (typeof projectData.createdAt === 'string') {
       projectData.createdAt = {
         seconds: Math.floor(new Date(projectData.createdAt).getTime() / 1000),
@@ -188,7 +195,7 @@ export const fetchProject = async (projectId) => {
       };
     }
 
-    // Add the review request to the project data if it exists
+    // Add review request info if applicable
     if (!isOwner && (isInReviewersArray || isAcceptedReviewer)) {
       if (!requestSnap.empty) {
         projectData.reviewRequest = {
@@ -200,7 +207,8 @@ export const fetchProject = async (projectId) => {
 
     return {
       id: projectSnap.id,
-      ...projectData
+      ...projectData,
+      userRole // Include user's role in the response
     };
   } catch (error) {
     console.error("Error fetching project:", error);

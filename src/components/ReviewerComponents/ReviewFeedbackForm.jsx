@@ -5,29 +5,30 @@ export default function ReviewFeedbackForm({ projectId, reviewerId, onSubmitComp
     const [feedback, setFeedback] = useState({
         comment: '',
         rating: 3,
-        status: 'approved'  // Changed default from 'in_progress' to 'approved'
+        status: 'approved'
     });
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
 
     const handleSubmit = async (e) => {
         e.preventDefault();
+        if (loading) return; // Prevent double submission
         setLoading(true);
         setError(null);
 
         try {
             await submitReviewFeedback(projectId, reviewerId, feedback);
+            // Immediately call onSubmitComplete to trigger navigation
             onSubmitComplete?.();
         } catch (err) {
             setError(err.message);
-        } finally {
-            setLoading(false);
+            setLoading(false); // Only reset loading on error
         }
     };
 
     return (
         <form onSubmit={handleSubmit} className="space-y-6">
-            <div>
+            <section>
                 <label htmlFor="status" className="block text-sm font-medium text-gray-700">
                     Review Decision
                 </label>
@@ -37,6 +38,7 @@ export default function ReviewFeedbackForm({ projectId, reviewerId, onSubmitComp
                     onChange={(e) => setFeedback({ ...feedback, status: e.target.value })}
                     className="mt-1 block w-full px-4 py-2.5 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     required
+                    disabled={loading}
                 >
                     <option value="approved">Approve Project</option>
                     <option value="rejected">Reject Project</option>
@@ -45,28 +47,22 @@ export default function ReviewFeedbackForm({ projectId, reviewerId, onSubmitComp
                 <p className="mt-1 text-sm text-gray-500">
                     Choose your final review decision for this project
                 </p>
-            </div>
+            </section>
 
-            <div>
-                <label htmlFor="rating" className="block text-sm font-medium text-gray-700">
-                    Rating (1-5)
+            <section>
+                <label className="block text-sm font-medium text-gray-700">
+                    Project Rating
                 </label>
-                <input 
-                    type="hidden"
-                    id="rating"
-                    value={feedback.rating}
-                    aria-label="Current rating value"
-                />
-                <div className="flex items-center space-x-2 mt-1" role="radiogroup" aria-label="Star rating buttons">
+                <section className="flex items-center space-x-2 mt-1" role="radiogroup" aria-label="Star rating buttons">
                     {[1, 2, 3, 4, 5].map((star) => (
                         <button
                             key={star}
                             type="button"
-                            onClick={() => setFeedback({ ...feedback, rating: star })}
-                            className={`p-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full`}
+                            onClick={() => !loading && setFeedback({ ...feedback, rating: star })}
+                            className="p-1 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 rounded-full"
                             aria-label={`Rate ${star} stars`}
                             aria-pressed={star <= feedback.rating}
-                            aria-controls="rating"
+                            disabled={loading}
                         >
                             <svg
                                 className={`h-8 w-8 ${
@@ -79,10 +75,10 @@ export default function ReviewFeedbackForm({ projectId, reviewerId, onSubmitComp
                             </svg>
                         </button>
                     ))}
-                </div>
-            </div>
+                </section>
+            </section>
 
-            <div>
+            <section>
                 <label htmlFor="comment" className="block text-sm font-medium text-gray-700">
                     Feedback Comments
                 </label>
@@ -94,13 +90,14 @@ export default function ReviewFeedbackForm({ projectId, reviewerId, onSubmitComp
                     className="mt-1 block w-full px-4 py-2.5 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
                     placeholder="Provide detailed feedback about the project..."
                     required
+                    disabled={loading}
                 />
-            </div>
+            </section>
 
             {error && (
-                <div className="text-red-600 text-sm">
+                <section className="text-red-600 text-sm">
                     {error}
-                </div>
+                </section>
             )}
 
             <button

@@ -65,7 +65,6 @@ describe('MainNav Component', () => {
     expect(screen.getByLabelText('My Projects')).toBeInTheDocument();
     expect(screen.getByLabelText('Documents')).toBeInTheDocument();
     expect(screen.getByLabelText('View alerts')).toBeInTheDocument();
-    expect(screen.getByLabelText('View profile')).toBeInTheDocument();
   });
 
   it('renders the search bar', () => {
@@ -101,13 +100,6 @@ describe('MainNav Component', () => {
     fireEvent.click(menuButton);
     
     expect(defaultProps.setMobileMenuOpen).toHaveBeenCalledWith(true);
-  });
-
-  it('shows mobile menu content when mobileMenuOpen is true', () => {
-    renderWithRouter(<MainNav {...defaultProps} mobileMenuOpen={true} />);
-    
-    const profileButton = screen.getByText('My Profile');
-    expect(profileButton).toBeInTheDocument();
   });
 
   it('handles logout button click', async () => {

@@ -67,9 +67,14 @@ export default function MyProjects() {
 
     // Apply project type filter
     if (projectTypeFilter !== 'all') {
-      filtered = filtered.filter(project => 
-        projectTypeFilter === 'owned' ? project.isOwner : !project.isOwner
-      );
+      filtered = filtered.filter(project => {
+        if (projectTypeFilter === 'owned') {
+          return project.userId === auth.currentUser?.uid;
+        } else if (projectTypeFilter === 'collaborative') {
+          return project.collaborators?.some(collab => collab.id === auth.currentUser?.uid);
+        }
+        return true;
+      });
     }
 
     // Apply status filter
@@ -79,14 +84,18 @@ export default function MyProjects() {
 
     // Apply search query
     if (searchQuery.trim() !== '') {
+      const query = searchQuery.toLowerCase();
       filtered = filtered.filter(project =>
-        project.title.toLowerCase().includes(searchQuery.toLowerCase())
+        project.title.toLowerCase().includes(query) ||
+        project.description?.toLowerCase().includes(query) ||
+        project.researchField?.toLowerCase().includes(query)
       );
     }
 
     setFilteredProjects(filtered);
   };
 
+  // Update filtered projects whenever filters or projects change
   useEffect(() => {
     filterProjects();
   }, [searchQuery, projectTypeFilter, statusFilter, projects]);
@@ -169,8 +178,7 @@ export default function MyProjects() {
               >
                 <option value="all">All Status</option>
                 <option value="In Progress">In Progress</option>
-                <option value="Completed">Completed</option>
-                <option value="On Hold">On Hold</option>
+                <option value="Complete">Complete</option>
               </select>
               <button
                 onClick={() => setShowForm(true)
@@ -216,7 +224,7 @@ export default function MyProjects() {
                           <section>
                             <h2 className="text-xl font-semibold text-gray-800">{project.title}</h2>
                             <p className="mt-2 text-gray-600 break">{project.description}</p>
-                            <div className="flex items-center gap-2 mt-2">
+                            <section className="flex items-center gap-2 mt-2">
                               {project.collaborators?.length > 0 && (
                                 <span className="text-sm text-gray-500 flex items-center gap-1">
                                   <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -233,9 +241,9 @@ export default function MyProjects() {
                                   {project.pendingInvitations.length} Pending
                                 </span>
                               )}
-                            </div>
+                            </section>
                           </section>
-                          <div 
+                          <section 
                             className={`h-4 w-4 rounded-full border-2 ${
                               project.isOwner 
                                 ? 'bg-blue-500 border-blue-600' 
@@ -261,7 +269,11 @@ export default function MyProjects() {
                             </section>
                             <section className="w-full bg-gray-200 rounded-full h-2">
                               <section 
-                                className="bg-blue-600 h-2 rounded-full transition-all duration-300" 
+                                className={`${
+                                  project.status === 'Complete' 
+                                    ? 'bg-green-600' 
+                                    : 'bg-blue-600'
+                                } h-2 rounded-full transition-all duration-300`}
                                 style={{ 
                                   width: `${(project.goals.filter(goal => goal.completed).length / project.goals.length) * 100}%` 
                                 }}

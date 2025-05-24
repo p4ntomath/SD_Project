@@ -1,13 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
-import { FaArrowLeft } from 'react-icons/fa';
+import { FaArrowLeft, FaSearch, FaDownload, FaCheck, FaTimes } from 'react-icons/fa';
 import { fetchAllDocuments } from '../backend/firebase/documentsDB';
 import { getDoc, doc } from 'firebase/firestore';
 import { db } from '../backend/firebase/firebaseConfig';
 import { ClipLoader } from 'react-spinners';
 import MainNav from '../components/AdminComponents/Navigation/AdminMainNav';
 import MobileBottomNav from '../components/AdminComponents/Navigation/AdminMobileBottomNav';
+import StatusModal from '../components/StatusModal';
 
 export default function AdminDocumentsPage() {
     const [documents, setDocuments] = useState([]);
@@ -15,6 +16,13 @@ export default function AdminDocumentsPage() {
     const [error, setError] = useState(null);
     const [selectedCreator, setSelectedCreator] = useState('all');
     const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+    const [searchTerm, setSearchTerm] = useState('');
+    const [currentFilter, setCurrentFilter] = useState('all');
+    const [currentPage, setCurrentPage] = useState(1);
+    const [totalPages, setTotalPages] = useState(1);
+    const [modalOpen, setModalOpen] = useState(false);
+    const [statusMessage, setStatusMessage] = useState('');
+    const [errorMessage, setErrorMessage] = useState('');
     const navigate = useNavigate();
 
     // Get unique creators for filter dropdown
@@ -25,6 +33,14 @@ export default function AdminDocumentsPage() {
         ? documents 
         : documents.filter(doc => doc.creatorName === selectedCreator);
 
+    // Search documents based on search term
+    const searchedDocuments = filteredDocuments.filter(doc => 
+        doc.fileName.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    // Pagination
+    const documentsPerPage = 10;
+    const paginatedDocuments = searchedDocuments.slice((currentPage - 1) * documentsPerPage, currentPage * documentsPerPage);
     useEffect(() => {
         const loadDocuments = async () => {
             try {
@@ -69,146 +85,221 @@ export default function AdminDocumentsPage() {
         loadDocuments();
     }, []);
 
+    useEffect(() => {
+        setTotalPages(Math.ceil(searchedDocuments.length / documentsPerPage));
+    }, [searchedDocuments]);
+
+    const handleSearch = (e) => {
+        setSearchTerm(e.target.value);
+        setCurrentPage(1);
+    };
+
+    const handleDownload = (document) => {
+        // Implement download functionality
+    };
+
+    const handleApprove = (document) => {
+        // Implement approve functionality
+    };
+
+    const handleReject = (document) => {
+        // Implement reject functionality
+    };
+
+    const formatDate = (timestamp) => {
+        if (!timestamp) return '';
+        const date = new Date(timestamp.seconds * 1000);
+        return date.toLocaleDateString('en-US', {
+            year: 'numeric',
+            month: 'short',
+            day: 'numeric'
+        });
+    };
+
+    const statusStyles = {
+        pending: 'bg-yellow-100 text-yellow-800',
+        approved: 'bg-green-100 text-green-800',
+        rejected: 'bg-red-100 text-red-800',
+    };
+
     if (loading) {
         return (
-            <div aria-label='loading' className="min-h-screen bg-gray-50">
-                <header>
-                    <MainNav setMobileMenuOpen={setMobileMenuOpen} mobileMenuOpen={mobileMenuOpen} />
-                </header>
-                <div className="flex justify-center items-center h-64">
+            <main aria-label='loading' className="min-h-screen bg-gray-50 p-4">
+                <section className="flex justify-center items-center h-64">
                     <ClipLoader color="#3B82F6" />
-                </div>
-            </div>
+                </section>
+            </main>
         );
     }
 
     return (
-        <div className="min-h-screen bg-gray-50">
-            <header>
-                <MainNav setMobileMenuOpen={setMobileMenuOpen} mobileMenuOpen={mobileMenuOpen} />
-            </header>
-
-            <main className="p-4 md:p-8 pb-16 md:pb-8">
-                <div className="max-w-7xl mx-auto">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
-                        <div className="flex items-center">
-                            <button
-                                onClick={() => navigate('/admin')}
-                                className="mr-4 p-2 text-gray-600 hover:text-gray-800 transition-colors"
-                                aria-label="Back to dashboard"
-                            >
-                                <FaArrowLeft className="h-5 w-5" />
-                            </button>
-                            <h1 className="text-2xl md:text-3xl font-bold text-gray-800">Documents Management</h1>
-                        </div>
+        <main className="min-h-screen bg-gray-50 p-4 md:p-8">
+            <article className="max-w-7xl mx-auto">
+                <header className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
+                    <nav className="flex items-center">
+                        <button
+                            onClick={() => navigate('/admin')}
+                            className="mr-4 p-2 text-gray-600 hover:text-gray-800 transition-colors"
+                            aria-label="Back to dashboard"
+                        >
+                            <FaArrowLeft className="h-5 w-5" />
+                        </button>
+                        <h1 className="text-2xl font-bold text-gray-900">Project Documents</h1>
+                    </nav>
+                    <section className="flex items-center gap-4">
+                        <section className="relative">
+                            <input
+                                type="text"
+                                value={searchTerm}
+                                onChange={handleSearch}
+                                placeholder="Search documents..."
+                                className="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                            />
+                            <FaSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
+                        </section>
                         
-                        <div className="flex items-center">
-                            <label htmlFor="creator-filter" className="mr-2 text-sm text-gray-600 whitespace-nowrap">
-                                Filter by Creator:
-                            </label>
-                            <select
-                                id="creator-filter"
-                                value={selectedCreator}
-                                onChange={(e) => setSelectedCreator(e.target.value)}
-                                className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-                            >
-                                <option value="all">All Creators</option>
-                                {uniqueCreators.map(creator => (
-                                    <option key={creator} value={creator}>
-                                        {creator}
-                                    </option>
-                                ))}
-                            </select>
-                        </div>
-                    </div>
+                        <select
+                            value={currentFilter}
+                            onChange={(e) => setCurrentFilter(e.target.value)}
+                            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        >
+                            <option value="all">All Documents</option>
+                            <option value="pending">Pending</option>
+                            <option value="approved">Approved</option>
+                            <option value="rejected">Rejected</option>
+                        </select>
+                    </section>
+                </header>
 
-                    <div className="bg-white shadow rounded-lg overflow-hidden">
-                        {error ? (
-                            <div className="p-4 text-red-500">
-                                {error}
-                            </div>
-                        ) : (
-                            <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                                <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                                    <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                                        <div className="overflow-x-auto">
-                                            <table className="min-w-full divide-y divide-gray-200">
-                                                <thead className="bg-gray-50">
-                                                    <tr>
-                                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            Document Name
-                                                        </th>
-                                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            Project Name
-                                                        </th>
-                                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            Creator
-                                                        </th>
-                                                        <th scope="col" className="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            Type
-                                                        </th>
-                                                        <th scope="col" className="hidden sm:table-cell px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            Size
-                                                        </th>
-                                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                                            Actions
-                                                        </th>
-                                                    </tr>
-                                                </thead>
-                                                <tbody className="bg-white divide-y divide-gray-200">
-                                                    {loading ? (
-                                                        <tr>
-                                                            <td colSpan="6" className="px-4 sm:px-6 py-4 text-center">
-                                                                <ClipLoader color="#3B82F6" />
-                                                            </td>
-                                                        </tr>
-                                                    ) : filteredDocuments.map((document) => (
-                                                        <motion.tr 
-                                                            key={document.id}
-                                                            initial={{ opacity: 0 }}
-                                                            animate={{ opacity: 1 }}
-                                                            transition={{ duration: 0.3 }}
-                                                        >
-                                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                                                <div className="text-sm font-medium text-gray-900">{document.fileName}</div>
-                                                                <div className="text-sm text-gray-500 hidden sm:block">{document.description}</div>
-                                                            </td>
-                                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                                                <div className="text-sm text-gray-900">{document.projectName}</div>
-                                                            </td>
-                                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                                                                <div className="text-sm text-gray-900">{document.creatorName}</div>
-                                                            </td>
-                                                            <td className="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap">
-                                                                <div className="text-sm text-gray-900">{document.type}</div>
-                                                            </td>
-                                                            <td className="hidden sm:table-cell px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                                                {(document.size / 1024 / 1024).toFixed(2)} MB
-                                                            </td>
-                                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                                                <button
-                                                                    onClick={() => window.open(document.downloadURL, '_blank')}
-                                                                    className="text-blue-600 hover:text-blue-900 mr-4"
-                                                                >
-                                                                    View
-                                                                </button>
-                                                            </td>
-                                                        </motion.tr>
-                                                    ))}
-                                                </tbody>
-                                            </table>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </div>
-            </main>
+                {error && (
+                    <aside className="bg-red-50 border-l-4 border-red-400 p-4 mb-6">
+                        <p className="text-red-700">{error}</p>
+                    </aside>
+                )}
 
-            <footer>
-                <MobileBottomNav />
-            </footer>
-        </div>
+                <section className="bg-white rounded-lg shadow">
+                    <section className="p-4 sm:p-6">
+                        <section className="overflow-hidden">
+                            <table className="min-w-full divide-y divide-gray-200">
+                                <thead className="bg-gray-50">
+                                    <tr>
+                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Document
+                                        </th>
+                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Project
+                                        </th>
+                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Uploaded By
+                                        </th>
+                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Status
+                                        </th>
+                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Date
+                                        </th>
+                                        <th scope="col" className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                            Actions
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody className="bg-white divide-y divide-gray-200">
+                                    {loading ? (
+                                        <tr>
+                                            <td colSpan="6" className="px-4 sm:px-6 py-4 text-center">
+                                                <ClipLoader color="#3B82F6" />
+                                            </td>
+                                        </tr>
+                                    ) : paginatedDocuments.map((document) => (
+                                        <motion.tr 
+                                            key={document.id}
+                                            initial={{ opacity: 0 }}
+                                            animate={{ opacity: 1 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                                <article className="text-sm">
+                                                    <h3 className="font-medium text-gray-900">{document.fileName}</h3>
+                                                    <p className="text-gray-500 hidden sm:block">{document.description}</p>
+                                                </article>
+                                            </td>
+                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                                <p className="text-sm text-gray-900">{document.projectName}</p>
+                                            </td>
+                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                                <article className="text-sm">
+                                                    <p className="text-gray-900">{document.uploaderName}</p>
+                                                    <p className="text-gray-500">{document.uploaderEmail}</p>
+                                                </article>
+                                            </td>
+                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+                                                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${statusStyles[document.status]}`}>
+                                                    {document.status}
+                                                </span>
+                                            </td>
+                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                                <time dateTime={document.uploadedAt?.toDate?.().toISOString()}>
+                                                    {formatDate(document.uploadedAt)}
+                                                </time>
+                                            </td>
+                                            <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-sm">
+                                                <nav className="flex items-center gap-2">
+                                                    <button
+                                                        onClick={() => handleDownload(document)}
+                                                        className="text-blue-600 hover:text-blue-800 transition-colors"
+                                                    >
+                                                        <FaDownload />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleApprove(document)}
+                                                        className="text-green-600 hover:text-green-800 transition-colors"
+                                                        disabled={document.status === 'approved'}
+                                                    >
+                                                        <FaCheck />
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleReject(document)}
+                                                        className="text-red-600 hover:text-red-800 transition-colors"
+                                                        disabled={document.status === 'rejected'}
+                                                    >
+                                                        <FaTimes />
+                                                    </button>
+                                                </nav>
+                                            </td>
+                                        </motion.tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        </section>
+                    </section>
+                </section>
+            </article>
+
+            <nav className="mt-4 flex items-center justify-between">
+                <section className="flex-1 flex justify-between sm:hidden">
+                    <button
+                        onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                        disabled={currentPage === 1}
+                        className="relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    >
+                        Previous
+                    </button>
+                    <button
+                        onClick={() => setCurrentPage(prev => prev + 1)}
+                        disabled={currentPage === totalPages}
+                        className="ml-3 relative inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+                    >
+                        Next
+                    </button>
+                </section>
+            </nav>
+
+            <StatusModal
+                isOpen={modalOpen}
+                onClose={() => setModalOpen(false)}
+                success={!error}
+                message={statusMessage}
+            />
+        </main>
     );
 }

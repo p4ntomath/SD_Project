@@ -132,30 +132,30 @@ export default function FundingCard({
 
   return (
     <>
-      <section className="bg-white rounded-lg shadow p-4 sm:p-6">
+      <article className="bg-white rounded-lg shadow p-4 sm:p-6">
         <header className="flex justify-between items-center mb-4">
           <h2 className="text-lg sm:text-xl font-semibold">Project Funding</h2>
-          <div className="text-right">
+          <aside className="text-right">
             <p className="text-sm text-gray-500">Total Funds</p>
             <p className="text-lg font-semibold">
               R {((project.availableFunds || 0) + (project.usedFunds || 0)).toLocaleString()}
             </p>
-          </div>
+          </aside>
         </header>
 
         <section className="grid grid-cols-2 gap-4 mb-6">
-          <div className="bg-green-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Available</p>
+          <article className="bg-green-50 p-4 rounded-lg">
+            <h3 className="text-sm text-gray-600 mb-1">Available</h3>
             <p className="text-xl font-semibold text-green-600">
               R {(project.availableFunds || 0).toLocaleString()}
             </p>
-          </div>
-          <div className="bg-blue-50 p-4 rounded-lg">
-            <p className="text-sm text-gray-600 mb-1">Used</p>
+          </article>
+          <article className="bg-blue-50 p-4 rounded-lg">
+            <h3 className="text-sm text-gray-600 mb-1">Used</h3>
             <p className="text-xl font-semibold text-blue-600">
               R {(project.usedFunds || 0).toLocaleString()}
             </p>
-          </div>
+          </article>
         </section>
 
         <section className="mb-6">
@@ -165,6 +165,11 @@ export default function FundingCard({
               style={{ 
                 width: `${(((project.usedFunds || 0) / ((project.availableFunds || 0) + (project.usedFunds || 0)) * 100) || 0)}%` 
               }}
+              role="progressbar"
+              aria-valuenow={(((project.usedFunds || 0) / ((project.availableFunds || 0) + (project.usedFunds || 0)) * 100) || 0)}
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-label="Funding utilization progress"
             />
           </div>
           <p className="text-sm text-gray-500 mt-2">
@@ -172,17 +177,18 @@ export default function FundingCard({
           </p>
         </section>
 
-        <div className="grid grid-cols-3 gap-3">
+        <nav className="grid grid-cols-3 gap-3">
           {checkPermission(project, 'canAddFunds') && (
             <>
               <button
-                aria-label="Add Funds Btn"
+                aria-label="Add Funds"
                 onClick={() => setShowAddFundsModal(true)}
                 className="bg-blue-600 text-white py-2 px-4 rounded-lg hover:bg-blue-700 transition-colors text-sm sm:text-base"
               >
                 Add Funds
               </button>
               <button
+                aria-label="Add Expense"
                 onClick={() => setShowAddExpenseModal(true)}
                 className="bg-red-600 text-white py-2 px-4 rounded-lg hover:bg-red-700 transition-colors text-sm sm:text-base"
               >
@@ -191,13 +197,14 @@ export default function FundingCard({
             </>
           )}
           <button
+            aria-label="View Funding History"
             onClick={() => setShowFundingHistory(true)}
             className="bg-gray-600 text-white py-2 px-4 rounded-lg hover:bg-gray-700 transition-colors text-sm sm:text-base"
           >
             View History
           </button>
-        </div>
-      </section>
+        </nav>
+      </article>
 
       {/* Add Funds Modal */}
       <AnimatePresence>

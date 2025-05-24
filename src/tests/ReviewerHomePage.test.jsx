@@ -170,7 +170,7 @@ describe('ReviewerHomePage', () => {
     });
 
     await waitFor(() => {
-      const searchInput = screen.getByPlaceholderText(/Search reviews/i);
+      const searchInput = screen.getByPlaceholderText(/Search people.../i);
       fireEvent.change(searchInput, { target: { value: 'Test Project 1' } });
     });
 

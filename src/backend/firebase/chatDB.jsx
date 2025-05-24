@@ -21,8 +21,9 @@ import {
   CACHE_SIZE_UNLIMITED,
   deleteField
 } from 'firebase/firestore';
-import { getStorage, ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { getStorage, ref, uploadBytes, uploadBytesResumable, getDownloadURL } from 'firebase/storage';
 import { db, storage } from './firebaseConfig';
+import { generateThumbnail } from '../../utils/imageUtils';
 
 // Helper function to ensure userChats document exists
 const ensureUserChatsExists = async (userId) => {
@@ -213,6 +214,23 @@ const ChatService = {
         throw new Error('User is already a member of this chat');
       }
 
+      // If this is a project group chat, verify the user is a project collaborator
+      if (chatData.projectId) {
+        const projectRef = doc(db, "projects", chatData.projectId);
+        const projectSnap = await getDoc(projectRef);
+        
+        if (!projectSnap.exists()) {
+          throw new Error('Project not found');
+        }
+
+        const projectData = projectSnap.data();
+        const isCollaborator = projectData.collaborators?.some(collab => collab.id === userId);
+        
+        if (!isCollaborator) {
+          throw new Error('User must be a project collaborator to join this chat');
+        }
+      }
+
       // Verify the user exists
       const userRef = doc(db, 'users', userId);
       const userSnap = await getDoc(userRef);
@@ -244,7 +262,7 @@ const ChatService = {
       
       await batch.commit();
     } catch (error) {
-      console.error('Error in addUserToGroupChat:', error);
+      throw new Error(error)
       handleFirebaseError(error);
     }
   },
@@ -329,7 +347,11 @@ const ChatService = {
       const querySnapshot = await getDocs(usersRef);
       
       const searchResults = querySnapshot.docs
-        .map(doc => ({ id: doc.id, ...doc.data() }))
+        .map(doc => ({ 
+          id: doc.id, 
+          ...doc.data(),
+          photoURL: doc.data().profilePicture || null // Include profile picture
+        }))
         .filter(user => 
           user.id !== currentUserId && // Exclude current user
           (user.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -341,10 +363,119 @@ const ChatService = {
       handleFirebaseError(error);
     }
   },
+
+  updateGroupAvatar: async (chatId, file) => {
+    try {
+      const chatRef = doc(db, 'chats', chatId);
+      const chatSnap = await getDoc(chatRef);
+      
+      if (!chatSnap.exists()) {
+        throw new Error('Chat not found');
+      }
+      
+      if (chatSnap.data().type !== 'group') {
+        throw new Error('This is not a group chat');
+      }
+
+      // Upload the new avatar
+      const storageRef = ref(storage, `chats/${chatId}/avatar/group-avatar.jpg`);
+      await uploadBytes(storageRef, file);
+      const downloadURL = await getDownloadURL(storageRef);
+
+      // Update the chat document with the new avatar URL
+      await updateDoc(chatRef, {
+        groupAvatar: downloadURL,
+        updatedAt: serverTimestamp()
+      });
+
+      return downloadURL;
+    } catch (error) {
+      handleFirebaseError(error);
+    }
+  },
+
+  // ... rest of ChatService
 };
 
 // Enhanced MessageService with error handling
 const MessageService = {
+  uploadAttachment: async (file, chatId, onProgress) => {
+    try {
+      const maxSize = 50 * 1024 * 1024; // 50MB limit
+      if (file.size > maxSize) {
+        throw new Error('File size exceeds 50MB limit');
+      }
+
+      const safeFileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9.-]/g, '_')}`;
+      const storageRef = ref(storage, `chats/${chatId}/attachments/${safeFileName}`);
+      
+      // If it's an image, generate a thumbnail
+      let thumbnailUrl = null;
+      if (file.type.startsWith('image/')) {
+        const thumbnailBlob = await generateThumbnail(file);
+        if (thumbnailBlob) {
+          const thumbnailRef = ref(storage, `chats/${chatId}/thumbnails/${safeFileName}`);
+          await uploadBytes(thumbnailRef, thumbnailBlob);
+          thumbnailUrl = await getDownloadURL(thumbnailRef);
+        }
+      }
+      
+      // Create upload task for main file
+      const uploadTask = uploadBytesResumable(storageRef, file);
+
+      // Set up progress monitoring
+      await new Promise((resolve, reject) => {
+        uploadTask.on('state_changed',
+          (snapshot) => {
+            const progress = (snapshot.bytesTransferred / snapshot.totalBytes) * 100;
+            if (onProgress) {
+              onProgress(file.name, progress);
+            }
+          },
+          (error) => reject(error),
+          () => resolve()
+        );
+      });
+
+      const downloadURL = await getDownloadURL(uploadTask.snapshot.ref);
+
+      return {
+        url: downloadURL,
+        thumbnailUrl,
+        name: file.name,
+        type: file.type,
+        size: file.size,
+        dimensions: file.type.startsWith('image/') ? await MessageService.getImageDimensions(file) : null
+      };
+    } catch (error) {
+      handleFirebaseError(error);
+    }
+  },
+
+  // Helper function to get image dimensions
+  getImageDimensions: (file) => {
+    return new Promise((resolve) => {
+      if (!file.type.startsWith('image/')) {
+        resolve(null);
+        return;
+      }
+
+      const img = new Image();
+      const reader = new FileReader();
+
+      reader.onload = (e) => {
+        img.onload = () => {
+          resolve({
+            width: img.width,
+            height: img.height
+          });
+        };
+        img.src = e.target.result;
+      };
+      reader.readAsDataURL(file);
+    });
+  },
+
   sendMessage: async (chatId, senderId, message) => {
     try {
       const messageId = doc(collection(db, 'messages')).id;
@@ -353,19 +484,31 @@ const MessageService = {
       const batch = writeBatch(db);
       
       const timestamp = serverTimestamp();
-      const clientTimestamp = new Date(); // Add client-side timestamp
+      const clientTimestamp = new Date();
+      
+      // Upload any attachments first
+      let attachments = [];
+      if (message.attachments?.length > 0) {
+        attachments = await Promise.all(
+          message.attachments.map(file => MessageService.uploadAttachment(file, chatId, message.onProgress))
+        );
+      }
       
       const newMessage = {
         chatId,
         senderId,
         text: message.text,
         timestamp,
-        clientTimestamp, // Add client timestamp for immediate sorting
+        clientTimestamp,
         readBy: [senderId],
         readTimestamps: {
           [senderId]: timestamp
         },
-        attachments: message.attachments || []
+        attachments,
+        type: attachments.length > 0 ? 
+          (attachments[0].type.startsWith('image/') ? 'image' :
+           attachments[0].type.startsWith('video/') ? 'video' :
+           attachments[0].type.startsWith('audio/') ? 'audio' : 'file') : 'text'
       };
 
       batch.set(messageRef, newMessage);
@@ -378,15 +521,21 @@ const MessageService = {
       // Update chat with both server and client timestamps
       batch.update(chatRef, {
         lastMessage: {
-          text: message.text,
+          text: message.text || '',
           timestamp,
           clientTimestamp,
-          senderId
+          senderId,
+          ...(attachments.length > 0 ? {
+            attachments: attachments.map(att => ({
+              type: att.type,
+              name: att.name
+            }))
+          } : {})
         },
         updatedAt: timestamp,
-        clientUpdatedAt: clientTimestamp // Add client timestamp for immediate sorting
+        clientUpdatedAt: clientTimestamp
       });
-      
+
       const participants = chatSnap.data().participants || [];
       participants.forEach((userId) => {
         if (userId !== senderId) {
