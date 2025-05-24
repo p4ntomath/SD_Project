@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { ClipLoader } from 'react-spinners';
 import { searchUsers } from '../backend/firebase/viewprofile';
 import { useAuth } from '../context/AuthContext';
 import MainNav from '../components/ResearcherComponents/Navigation/MainNav';
 import MobileBottomNav from '../components/ResearcherComponents/Navigation/MobileBottomNav';
+import { ChatService } from '../backend/firebase/chatDB';
+import { auth } from '../backend/firebase/firebaseConfig';
 
 export default function UserSearchPage() {
   const [searchQuery, setSearchQuery] = useState('');
@@ -13,6 +15,7 @@ export default function UserSearchPage() {
   const [error, setError] = useState(null);
   const [page, setPage] = useState(1);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const searchTimeoutRef = useRef(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { user } = useAuth();
@@ -21,21 +24,30 @@ export default function UserSearchPage() {
     const queryParam = searchParams.get('q');
     if (queryParam) {
       setSearchQuery(queryParam);
-      handleSearch(null, queryParam);
+      performSearch(queryParam);
     }
   }, [searchParams]);
 
-  const handleSearch = async (e, directQuery = null) => {
-    if (e) e.preventDefault();
-    const query = directQuery || searchQuery;
-    if (!query.trim()) return;
+  const performSearch = async (query, isLoadingMore = false) => {
+    if (!query.trim()) {
+      setUsers([]);
+      return;
+    }
 
-    setLoading(true);
+    if (!isLoadingMore) {
+      setLoading(true);
+    }
     setError(null);
+
     try {
-      const results = await searchUsers(query.trim(), 1, 10);
-      setUsers(results);
-      setPage(1);
+      const results = await searchUsers(query.trim(), isLoadingMore ? page + 1 : 1, 10);
+      if (isLoadingMore) {
+        setUsers(prev => [...prev, ...results]);
+        setPage(p => p + 1);
+      } else {
+        setUsers(results);
+        setPage(1);
+      }
     } catch (error) {
       console.error('Error searching users:', error);
       setError('Failed to search users. Please try again.');
@@ -44,23 +56,29 @@ export default function UserSearchPage() {
     }
   };
 
-  const loadMoreUsers = async () => {
-    if (loading || !searchQuery.trim()) return;
+  const handleSearchInput = (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
 
-    setLoading(true);
-    try {
-      const nextPage = page + 1;
-      const moreUsers = await searchUsers(searchQuery.trim(), nextPage, 10);
-      if (moreUsers.length > 0) {
-        setUsers(prevUsers => [...prevUsers, ...moreUsers]);
-        setPage(nextPage);
-      }
-    } catch (error) {
-      console.error('Error loading more users:', error);
-      setError('Failed to load more users. Please try again.');
-    } finally {
-      setLoading(false);
+    // Clear any existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
     }
+
+    // Set a new timeout
+    searchTimeoutRef.current = setTimeout(() => {
+      performSearch(query);
+    }, 300);
+  };
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    performSearch(searchQuery);
+  };
+
+  const loadMoreUsers = () => {
+    if (loading || !searchQuery.trim()) return;
+    performSearch(searchQuery, true);
   };
 
   const getAvatarInitials = (name) => {
@@ -69,6 +87,15 @@ export default function UserSearchPage() {
     if (parts.length === 0) return '?';
     return parts.map(part => part[0]).join('').toUpperCase();
   };
+
+  // Clear timeout on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) {
+        clearTimeout(searchTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">
@@ -86,7 +113,7 @@ export default function UserSearchPage() {
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={handleSearchInput}
                 placeholder="Search researchers and reviewers..."
                 className="w-full px-4 py-3 bg-white border border-gray-300 rounded-md shadow-sm text-base placeholder-gray-500 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
@@ -159,9 +186,15 @@ export default function UserSearchPage() {
                             )}
                           </div>
                           <button
-                            onClick={(e) => {
+                            onClick={async (e) => {
                               e.stopPropagation();
-                              navigate(`/messages/${user.id}`);
+                              try {
+                                const chatId = await ChatService.createDirectChat(auth.currentUser.uid, user.id);
+                                navigate(`/messages/${chatId}`);
+                              } catch (error) {
+                                console.error('Error creating chat:', error);
+                                // You might want to show an error notification here
+                              }
                             }}
                             className="ml-4 px-4 py-1 text-[#0a66c2] text-sm font-medium border border-[#0a66c2] rounded-full hover:bg-[#0073b1]/10 transition-colors"
                           >
