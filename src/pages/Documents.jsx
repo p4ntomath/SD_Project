@@ -28,7 +28,7 @@ function formatFileSize(bytes) {
     return `${(bytes / Math.pow(k, i)).toFixed(2)} ${sizes[i]}`;
 }
 
-export default function Documents() {
+export default function DocumentsPage() {
     const [folders, setFolders] = useState([]);
     const [loading, setLoading] = useState(true);
     const [showFolderModal, setShowFolderModal] = useState(false);
@@ -241,10 +241,8 @@ export default function Documents() {
     if (loading) {
         return (
             <main className="min-h-screen bg-gray-50">
-                {/* Main navigation bar */}
                 <MainNav mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} />
                 
-                {/* Loading state with animated dots */}
                 <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
                     <header className="mb-8">
                         <h1 className="text-3xl font-bold text-gray-900">My Documents</h1>
@@ -260,22 +258,21 @@ export default function Documents() {
                     </section>
                 </section>
 
-                {/* Mobile bottom navigation */}
                 <MobileBottomNav />
             </main>
         );
     }
 
     return (
-        <main className="min-h-screen bg-gray-50/90 backdrop-blur-xl">
+        <main className="min-h-screen bg-gray-50">
+            <MainNav mobileMenuOpen={mobileMenuOpen} setMobileMenuOpen={setMobileMenuOpen} />
+
             <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-                {/* Page header */}
                 <header className="mb-8">
                     <h1 className="text-3xl font-bold text-gray-900">My Documents</h1>
                     <p className="mt-2 text-sm text-gray-600">Manage and organize your research documents</p>
                 </header>
 
-                {/* Folder actions: create and sort */}
                 <section className="mb-6 flex flex-wrap gap-4">
                     <button
                         onClick={() => setShowFolderModal(true)}
@@ -287,7 +284,6 @@ export default function Documents() {
                         New Folder
                     </button>
 
-                    {/* Sort folders dropdown, only if folders exist */}
                     {folders.length > 0 && (
                         <select
                             value={sortOption}
@@ -301,16 +297,23 @@ export default function Documents() {
                 </section>
 
                 {folders.length === 0 ? (
-                    <section className="flex flex-col items-center justify-center min-h-[400px] text-center">
-                        <figure className="mb-4">
-                            <svg className="mx-auto h-12 w-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <section className="text-center py-12 px-4 rounded-lg bg-white shadow-sm border border-gray-200">
+                        <section className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-4">
+                            <svg className="h-8 w-8 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
                             </svg>
-                            <figcaption>
-                                <h3 className="text-lg font-medium text-gray-900 mb-1">No documents yet</h3>
-                                <p className="text-sm text-gray-500">Upload your first document to get started</p>
-                            </figcaption>
-                        </figure>
+                        </section>
+                        <h3 className="text-lg font-medium text-gray-900 mb-1">No documents yet</h3>
+                        <p className="text-sm text-gray-500 mb-4">Get started by creating a new folder to organize your research documents</p>
+                        <button
+                            onClick={() => setShowFolderModal(true)}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all"
+                        >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Create First Folder
+                        </button>
                     </section>
                 ) : (
                     <section className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -413,7 +416,7 @@ export default function Documents() {
                                         <section key={file.id} className="flex items-center justify-between p-2 bg-gray-50 rounded-lg text-sm">
                                             <section className="flex items-center space-x-2 min-w-0">
                                                 <DocumentIcon className="h-5 w-5 text-gray-400 flex-shrink-0" />
-                                                <p className="truncate">{file.name}</p>
+                                                <span className="truncate">{file.name}</span>
                                             </section>
                                             <section className="flex items-center space-x-2">
                                                 <button
@@ -460,12 +463,10 @@ export default function Documents() {
 
                 {/* Create Folder Modal */}
                 {showFolderModal && (
-                    <dialog className="fixed inset-0 flex items-center justify-center p-4 z-50" open>
-                        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowFolderModal(false)} />
-                        <article className="relative bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200">
-                            <header>
-                                <h2 className="text-xl font-semibold mb-4">Create New Folder</h2>
-                            </header>
+                    <section className="fixed inset-0 flex items-center justify-center p-4 z-50">
+                        <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowFolderModal(false)} />
+                        <section className="relative bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200">
+                            <h2 className="text-xl font-semibold mb-4">Create New Folder</h2>
                             <section className="space-y-4">
                                 <section>
                                     <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -498,7 +499,7 @@ export default function Documents() {
                                     />
                                 </section>
                             </section>
-                            <footer className="mt-6 flex justify-end gap-3">
+                            <section className="mt-6 flex justify-end space-x-3">
                                 <button
                                     onClick={() => {
                                         setShowFolderModal(false);
@@ -521,19 +522,17 @@ export default function Documents() {
                                         'Create Folder'
                                     )}
                                 </button>
-                            </footer>
-                        </article>
-                    </dialog>
+                            </section>
+                        </section>
+                    </section>
                 )}
 
                 {/* Upload File Modal */}
                 {showUploadModal && (
-                    <dialog className="fixed inset-0 flex items-center justify-center p-4 z-50" open>
-                        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowUploadModal(false)} />
-                        <article className="relative bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200">
-                            <header className="mb-4">
-                                <h2 className="text-xl font-semibold">Upload Document</h2>
-                            </header>
+                    <section className="fixed inset-0 flex items-center justify-center p-4 z-50">
+                        <section className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowUploadModal(false)} />
+                        <section className="relative bg-white/90 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200">
+                            <h2 className="text-xl font-semibold mb-4">Upload File to {selectedFolder?.name}</h2>
                             
                             <section className="space-y-4">
                                 <section>
@@ -580,7 +579,7 @@ export default function Documents() {
                                 </section>
                             </section>
 
-                            <footer className="mt-6 flex justify-end gap-3">
+                            <section className="mt-6 flex justify-end space-x-3">
                                 <button
                                     onClick={() => {
                                         setShowUploadModal(false);
@@ -603,9 +602,9 @@ export default function Documents() {
                                         'Upload'
                                     )}
                                 </button>
-                            </footer>
-                        </article>
-                    </dialog>
+                            </section>
+                        </section>
+                    </section>
                 )}
 
                 {/* Delete Folder Confirmation Modal */}
@@ -712,9 +711,7 @@ export default function Documents() {
 
             </section>
 
-            <footer>
-                <MobileBottomNav />
-            </footer>
+            <MobileBottomNav />
         </main>
     );
 }
