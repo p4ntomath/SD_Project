@@ -117,7 +117,7 @@ export default function AdminHomePage() {
         senderUserId: adminId
       });
     }
-    Console.log('Notifications sent to researchers and admin');
+    console.log('Notifications sent to researchers and admin');
     // Refresh stats to show new funding count
     const fundingOpps = await getAllFunding();
     setStats(prev => ({
