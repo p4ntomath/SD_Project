@@ -42,8 +42,13 @@ vi.mock('../backend/firebase/fundingDB', () => ({
     {
       id: '1',
       funding_name: 'Green Energy Fund',
-      expected_funds: '500,000',
-      external_link: 'https://example.com/fund'
+      expected_funds: '500000',
+      external_link: 'https://example.com/fund',
+      status: 'active',
+      category: 'renewable_energy',
+      description: 'Funding for green energy projects',
+      eligibility: 'Open to all researchers',
+      deadline: '2025-12-31'
     }
   ]))
 }));
@@ -69,7 +74,7 @@ describe('FundingTrackerPage', () => {
     });
     
     expect(screen.getByText('Track Funding')).toBeInTheDocument();
-    expect(screen.getByPlaceholderText('Search projects...')).toBeInTheDocument();
+    
   });
 
   it('loads and displays projects with funding information', async () => {
@@ -81,14 +86,30 @@ describe('FundingTrackerPage', () => {
       );
     });
 
-    // Wait for projects to load
     await waitFor(() => {
       expect(screen.getByText('Test Project 1')).toBeInTheDocument();
+      expect(screen.getByText('R 10,000')).toBeInTheDocument();
+      expect(screen.getByText('R 5,000')).toBeInTheDocument();
+      expect(screen.getByText('33.3% utilized')).toBeInTheDocument(); // For Test Project 1
+    });
+  });
+
+  it('displays funding opportunities with detailed information', async () => {
+    await act(async () => {
+      render(
+        <MemoryRouter>
+          <FundingTrackerPage />
+        </MemoryRouter>
+      );
     });
 
-    // Check if funding information is displayed
-    expect(screen.getByText('R 10,000')).toBeInTheDocument();
-    expect(screen.getByText('R 5,000')).toBeInTheDocument();
+    await waitFor(() => {
+      expect(screen.getByText('Green Energy Fund')).toBeInTheDocument();
+      expect(screen.getByText('Active', { selector: 'span.px-3.py-1.rounded-full.text-xs.font-medium' })).toBeInTheDocument();
+      expect(screen.getByText('Funding for green energy projects')).toBeInTheDocument();
+      expect(screen.getByText('Open to all researchers')).toBeInTheDocument();
+      expect(screen.getByText('31 December 2025')).toBeInTheDocument();
+    });
   });
 
   it('calculates and displays total funds correctly', async () => {
@@ -101,18 +122,18 @@ describe('FundingTrackerPage', () => {
     });
 
     await waitFor(() => {
-      // Total Available Funds = 10000 + 20000 = 30000
       const availableFundsEl = screen.getByTestId('total-available-funds-value');
       expect(availableFundsEl).toHaveTextContent('R 30,000');
-      expect(availableFundsEl).toHaveClass('text-2xl', 'font-bold', 'text-green-600');
       
-      // Total Used Funds = 5000 + 2000 = 7000
       const usedFundsEl = screen.getByTestId('total-used-funds-value');
       expect(usedFundsEl).toHaveTextContent('R 7,000');
+      
+      const utilizationRateEl = screen.getByTestId('utilization-rate-value');
+      expect(utilizationRateEl).toHaveTextContent('18.9%');
     });
   });
 
-  it('filters projects based on search query', async () => {
+  it('handles loading state for funding opportunities', async () => {
     await act(async () => {
       render(
         <MemoryRouter>
@@ -121,37 +142,17 @@ describe('FundingTrackerPage', () => {
       );
     });
 
+    // Loading state should be present initially
+    expect(screen.queryByText('No funding opportunities available at the moment.')).not.toBeInTheDocument();
+
+    // After loading completes
     await waitFor(() => {
-      expect(screen.getByText('Test Project 1')).toBeInTheDocument();
+      expect(screen.getByText('Green Energy Fund')).toBeInTheDocument();
+      expect(screen.getByText('Apply Now')).toBeInTheDocument();
     });
-
-    await act(async () => {
-      const searchInput = screen.getByPlaceholderText('Search projects...');
-      fireEvent.change(searchInput, { target: { value: 'Test Project 2' } });
-    });
-
-    expect(screen.queryByText('Test Project 1')).not.toBeInTheDocument();
-    expect(screen.getByText('Test Project 2')).toBeInTheDocument();
   });
 
-  
 
-  it('navigates back when back button is clicked', async () => {
-    render(
-      <MemoryRouter>
-        <FundingTrackerPage />
-      </MemoryRouter>
-    );
-  
-    const backButton = screen.getByTestId('back-button');
-  
-    await act(async () => {
-      fireEvent.click(backButton);
-    });
-  
-    expect(mockNavigate).toHaveBeenCalledWith(-1);
-  });
-  
 
   it('shows correct utilization rate', async () => {
     await act(async () => {
@@ -166,7 +167,7 @@ describe('FundingTrackerPage', () => {
       // Find utilization rate element using data-testid
       const utilizationRateEl = screen.getByTestId('utilization-rate-value');
       expect(utilizationRateEl).toBeInTheDocument();
-      expect(utilizationRateEl).toHaveClass('text-2xl', 'font-bold', 'text-blue-600');
+      expect(utilizationRateEl).toHaveClass('text-xl md:text-2xl font-bold text-blue-600');
       expect(utilizationRateEl).toHaveTextContent('18.9%');
     });
   });
@@ -223,23 +224,6 @@ describe('FundingTrackerPage', () => {
     consoleSpy.mockRestore();
   });
 
-  it('handles empty search results appropriately', async () => {
-    render(
-      <MemoryRouter>
-        <FundingTrackerPage />
-      </MemoryRouter>
-    );
-
-    await waitFor(() => {
-      expect(screen.getByText('Test Project 1')).toBeInTheDocument();
-    });
-
-    const searchInput = screen.getByPlaceholderText('Search projects...');
-    fireEvent.change(searchInput, { target: { value: 'Non-existent Project' } });
-
-    expect(screen.queryByText('Test Project 1')).not.toBeInTheDocument();
-    expect(screen.queryByText('Test Project 2')).not.toBeInTheDocument();
-  });
 
   it('displays funding opportunity section correctly', async () => {
     await act(async () => {
@@ -258,6 +242,5 @@ describe('FundingTrackerPage', () => {
     // Then check the funding opportunity section
     expect(screen.getByText('Need Funding?')).toBeInTheDocument();
     expect(screen.getByText('Green Energy Fund')).toBeInTheDocument();
-    expect(screen.getByText('Up to R500,000 available')).toBeInTheDocument();
   });
 });

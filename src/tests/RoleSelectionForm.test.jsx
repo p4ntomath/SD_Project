@@ -5,6 +5,9 @@ import RoleSelectionForm from '../components/RoleSelctionForm';
 import { BrowserRouter } from 'react-router-dom';
 import { fetchUniversities } from '../utils/universityOptions';
 
+// Mock window.scrollTo
+window.scrollTo = vi.fn();
+
 // Mock the modules
 vi.mock('../utils/tagSuggestions', () => ({
   getAllTags: vi.fn(() => [

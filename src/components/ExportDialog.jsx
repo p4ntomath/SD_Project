@@ -50,29 +50,33 @@ export default function ExportDialog({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto">
+    <dialog open={isOpen} className="fixed inset-0 z-50 overflow-y-auto bg-transparent" aria-labelledby="dialog-title">
       <div className="flex min-h-screen items-center justify-center p-4">
-        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} />
-        <motion.div
+        <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
+        <motion.article
+          aria-modal="true"
           className="relative bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200"
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           exit={{ scale: 0.8, opacity: 0 }}
           transition={{ type: 'spring', stiffness: 300, damping: 20 }}
         >
-          <h2 className="text-xl font-semibold mb-4 text-gray-900">
-            Export {type.charAt(0).toUpperCase() + type.slice(1)} Report
-          </h2>
+          <header>
+            <h2 id="dialog-title" className="text-xl font-semibold mb-4 text-gray-900">
+              Export {type.charAt(0).toUpperCase() + type.slice(1)} Report
+            </h2>
+          </header>
 
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+          <form onSubmit={(e) => e.preventDefault()} className="space-y-4">
+            <fieldset>
+              <legend className="block text-sm font-medium text-gray-700 mb-1">
                 Date Range (Optional)
-              </label>
+              </legend>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs text-gray-500">Start Date</label>
+                  <label className="block text-xs text-gray-500" htmlFor="start-date">Start Date</label>
                   <input
+                    id="start-date"
                     type="date"
                     value={startDate}
                     onChange={(e) => setStartDate(e.target.value)}
@@ -80,8 +84,9 @@ export default function ExportDialog({
                   />
                 </div>
                 <div>
-                  <label className="block text-xs text-gray-500">End Date</label>
+                  <label className="block text-xs text-gray-500" htmlFor="end-date">End Date</label>
                   <input
+                    id="end-date"
                     type="date"
                     value={endDate}
                     onChange={(e) => setEndDate(e.target.value)}
@@ -89,17 +94,17 @@ export default function ExportDialog({
                   />
                 </div>
               </div>
-            </div>
+            </fieldset>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
+            <fieldset>
+              <legend className="block text-sm font-medium text-gray-700 mb-1">
                 Filter by Projects (Optional)
-              </label>
+              </legend>
               <div className="mt-2 max-h-40 overflow-y-auto border rounded-md p-2">
                 {loadingProjects ? (
-                  <div className="text-center py-2 text-gray-500">Loading projects...</div>
+                  <p className="text-center py-2 text-gray-500">Loading projects...</p>
                 ) : projects.length === 0 ? (
-                  <div className="text-center py-2 text-gray-500">No projects found</div>
+                  <p className="text-center py-2 text-gray-500">No projects found</p>
                 ) : (
                   projects.map(project => (
                     <label key={project.id} className="flex items-center space-x-2 py-1">
@@ -120,10 +125,11 @@ export default function ExportDialog({
                   ))
                 )}
               </div>
-            </div>
+            </fieldset>
 
-            <div className="flex justify-end gap-3">
+            <footer className="flex justify-end gap-3">
               <button
+                type="button"
                 onClick={onClose}
                 className="px-4 py-2 rounded-xl border border-gray-300 hover:bg-gray-50/80 transition-colors"
                 disabled={loading}
@@ -131,6 +137,7 @@ export default function ExportDialog({
                 Cancel
               </button>
               <button
+                type="submit"
                 onClick={handleExport}
                 disabled={loading}
                 className="bg-blue-600/90 backdrop-blur-sm text-white px-4 py-2 rounded-xl hover:bg-blue-700/90 transition-colors flex items-center gap-2 disabled:opacity-50"
@@ -144,10 +151,10 @@ export default function ExportDialog({
                   'Export'
                 )}
               </button>
-            </div>
-          </div>
-        </motion.div>
+            </footer>
+          </form>
+        </motion.article>
       </div>
-    </div>
+    </dialog>
   );
 }

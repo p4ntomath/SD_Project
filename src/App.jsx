@@ -26,10 +26,13 @@ import ReviewerHistory from './pages/ReviewerPages/ReviewerHistory.jsx';
 import ReviewProjectPage from './pages/ReviewerPages/ReviewProjectPage.jsx';
 import NotificationsPage from './pages/NotificationsPage.jsx';
 import ReviewerNotificationsPage from './pages/reviewer/ReviewerNotificationsPage.jsx';
-import MessagesPage from './pages/Messages.jsx';
+import MyProfilePage from './pages/MyProfilePage.jsx';
 import MessagesList from './pages/MessagesList.jsx';
 import ChatView from './pages/ChatView.jsx';
 import MessagesLayout from './pages/MessagesLayout.jsx';
+import UserDetailsPage from './pages/UserDetailsPage.jsx';
+import UserSearchPage from './pages/UserSearchPage.jsx';
+import PublicProfilePage from './pages/PublicProfilePage.jsx';
 
 function App() {
   return (
@@ -82,6 +85,11 @@ function App() {
               <AdminUsersPage />
             </ProtectedRoute>
           } />
+          <Route path="/admin/users/:userId" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <UserDetailsPage />
+            </ProtectedRoute>
+          } />
           <Route path="/admin/projects" element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminProjectsPage />
@@ -119,10 +127,10 @@ function App() {
           } />
 
           <Route path="/reviewer/notifications" element={
-                      <ProtectedRoute allowedRoles={['reviewer']}>
-                        <ReviewerNotificationsPage />
-                      </ProtectedRoute>
-                    } />
+            <ProtectedRoute allowedRoles={['reviewer']}>
+              <ReviewerNotificationsPage />
+            </ProtectedRoute>
+          } />
           <Route path="/reviewer/review/:projectId" element={
             <ProtectedRoute allowedRoles={['reviewer']}>
               <ReviewProjectPage />
@@ -158,6 +166,11 @@ function App() {
               <ReviewerHomePage />
             </ProtectedRoute>
           } />
+          <Route path="/reviewer/account" element={
+            <ProtectedRoute allowedRoles={['reviewer']}>
+              <MyProfilePage />
+            </ProtectedRoute>
+          } />
           <Route path="/reviewer/messages" element={
             <ProtectedRoute allowedRoles={['reviewer']}>
               <MessagesLayout />
@@ -166,6 +179,12 @@ function App() {
             <Route index element={<MessagesList />} />
             <Route path=":chatId" element={<ChatView />} />
           </Route>
+          <Route path="/account" element={
+            <ProtectedRoute allowedRoles={['researcher', 'reviewer']}>
+              <MyProfilePage />
+            </ProtectedRoute>
+          } />
+
           <Route path="/messages" element={
             <ProtectedRoute allowedRoles={['researcher', 'reviewer', 'admin']}>
               <MessagesLayout />
@@ -174,6 +193,16 @@ function App() {
             <Route index element={<MessagesList />} />
             <Route path=":chatId" element={<ChatView />} />
           </Route>
+          <Route path="/search" element={
+            <ProtectedRoute allowedRoles={['researcher', 'reviewer', 'admin']}>
+              <UserSearchPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/profile/:userId" element={
+            <ProtectedRoute allowedRoles={['researcher', 'reviewer', 'admin']}>
+              <PublicProfilePage />
+            </ProtectedRoute>
+          } />
         </Routes>
       </AuthProvider>
     </Router>

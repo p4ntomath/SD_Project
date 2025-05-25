@@ -160,6 +160,9 @@ const notificationTemplates = {
   "Reviewer Request Received": ({ researcherName, projectTitle }) =>
     `You have received a review request on a project, go to your requests to check it out!!.`,
 
+  "New Review Requested": ({ projectTitle }) =>
+    `You have received another review request for the project "${projectTitle}". As an active reviewer, you can proceed to review the project.`,
+
   "Reviewer Accepted": ({ researcherName, projectTitle }) =>
     `You have accepted the review request for the project "${projectTitle}" by ${researcherName}.`,
 

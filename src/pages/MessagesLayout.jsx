@@ -23,7 +23,7 @@ export default function MessagesLayout() {
         }
         setInitialLoadComplete(true);
       } catch (error) {
-        console.error('Error loading initial chat:', error);
+        
         setInitialLoadComplete(true);
       }
     };
@@ -41,32 +41,38 @@ export default function MessagesLayout() {
   }, [location.pathname, navigate, initialLoadComplete]);
 
   const WelcomeView = () => (
-    <div className="h-full flex items-center justify-center bg-gray-50">
-      <div className="text-center max-w-md mx-auto px-4">
+    <section className="h-full flex items-center justify-center bg-gray-50">
+      <section className="text-center max-w-md mx-auto px-4">
         <FiMessageSquare className="mx-auto h-12 w-12 text-purple-600" />
         <h3 className="mt-4 text-lg font-medium text-gray-900">Welcome to Messages</h3>
         <p className="mt-2 text-sm text-gray-500">
           Select a chat from the sidebar to start messaging, or create a new chat to get started.
         </p>
-      </div>
-    </div>
+      </section>
+    </section>
   );
 
   return (
-    <div className="h-screen bg-gray-50">
-      <div className="h-full md:grid md:grid-cols-[380px_1fr]">
+    <section className="h-screen bg-gray-50">
+      <section className="h-full md:grid md:grid-cols-[380px_1fr]">
         {/* Messages list - always visible on desktop */}
-        <div className={`${location.pathname === '/messages' ? 'block' : 'hidden md:block'} h-full bg-white border-r border-gray-200 overflow-hidden`}>
-          <div className="h-full flex flex-col">
+        <section 
+          data-testid="messages-list"
+          className={`${location.pathname === '/messages' ? 'block' : 'hidden md:block'} h-full bg-white border-r border-gray-200 overflow-hidden`}
+        >
+          <section className="h-full flex flex-col">
             <MessagesList />
-          </div>
-        </div>
+          </section>
+        </section>
 
         {/* Chat view - visible when a chat is selected */}
-        <div className={`${location.pathname === '/messages' ? 'hidden md:block' : 'block'} h-full`}>
+        <section 
+          data-testid="chat-view"
+          className={`${location.pathname === '/messages' ? 'hidden md:block' : 'block'} h-full`}
+        >
           {location.pathname === '/messages' ? <WelcomeView /> : <Outlet />}
-        </div>
-      </div>
-    </div>
+        </section>
+      </section>
+    </section>
   );
 }

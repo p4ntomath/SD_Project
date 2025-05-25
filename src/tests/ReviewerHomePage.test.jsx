@@ -7,19 +7,46 @@ import ReviewerHomePage from '../pages/ReviewerHomePage';
 import { auth } from '../backend/firebase/firebaseConfig';
 import { getReviewerRequests, updateReviewRequestStatus } from '../backend/firebase/reviewerDB';
 
-// Suppress act() warnings for this test file
+// Save original console methods
 const originalError = console.error;
+const originalWarn = console.warn;
+
 beforeAll(() => {
   console.error = (...args) => {
-    if (args[0]?.includes('inside a test was not wrapped in act')) {
+    const skipMessages = [
+      'An update to ReviewerHomePage inside a test was not wrapped in act',
+      'When testing, code that causes React state updates should be wrapped into act',
+      'ensures that you\'re testing the behavior the user would see in the browser'
+    ];
+
+    if (skipMessages.some(msg => args.some(arg => 
+      (typeof arg === 'string' && arg.includes(msg)) ||
+      (arg?.message && arg.message.includes(msg))
+    ))) {
       return;
     }
     originalError.call(console, ...args);
+  };
+
+  console.warn = (...args) => {
+    const skipMessages = [
+      'An update to ReviewerHomePage inside a test was not wrapped in act',
+      'When testing, code that causes React state updates should be wrapped into act'
+    ];
+
+    if (skipMessages.some(msg => args.some(arg => 
+      (typeof arg === 'string' && arg.includes(msg)) ||
+      (arg?.message && arg.message.includes(msg))
+    ))) {
+      return;
+    }
+    originalWarn.call(console, ...args);
   };
 });
 
 afterAll(() => {
   console.error = originalError;
+  console.warn = originalWarn;
 });
 
 // Mock navigation
@@ -170,7 +197,7 @@ describe('ReviewerHomePage', () => {
     });
 
     await waitFor(() => {
-      const searchInput = screen.getByPlaceholderText(/Search reviews/i);
+      const searchInput = screen.getByPlaceholderText(/Search people.../i);
       fireEvent.change(searchInput, { target: { value: 'Test Project 1' } });
     });
 

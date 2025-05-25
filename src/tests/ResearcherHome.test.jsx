@@ -296,8 +296,8 @@ describe('CreateProjectForm', () => {
         target: { value: '2025-12-31' }
       });
   
-      const goalInput = screen.getByLabelText(/Goals\* \(Press Enter or comma to add\)/i);
-  
+      const goalInput = screen.getByLabelText(/^Goals/);
+
       fireEvent.change(goalInput, { target: { value: 'Goal 1' } });
       fireEvent.keyDown(goalInput, { key: 'Enter', code: 'Enter' });
   

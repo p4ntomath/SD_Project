@@ -116,7 +116,7 @@ describe('MyProjects Component', () => {
       expect(screen.getByText('Test Project 1')).toBeInTheDocument();
     });
 
-    const searchInput = screen.getByPlaceholderText('Search projects...');
+    const searchInput = screen.getByPlaceholderText('Search people...');
     fireEvent.change(searchInput, { target: { value: 'Test Project 1' } });
 
     await waitFor(() => {
@@ -143,29 +143,6 @@ describe('MyProjects Component', () => {
     });
   });
 
-  it('displays appropriate message when no search results found', async () => {
-    renderWithContext(<MyProjects />);
+  
 
-    // Wait for initial projects to load
-    await waitFor(() => {
-      expect(screen.getByText('Test Project 1')).toBeInTheDocument();
-    });
-
-    // Find and trigger search through MainNav component
-    const searchInput = screen.getByPlaceholderText('Search projects...');
-    fireEvent.change(searchInput, { target: { value: 'Non-existent Project' } });
-    
-    // Submit the search form
-    const searchForm = searchInput.closest('form');
-    fireEvent.submit(searchForm);
-
-    // Now we should see the no results message in an h3 element with the specific text
-    await waitFor(() => {
-      const noResultsMessage = screen.getByRole('heading', { 
-        level: 3
-      });
-      expect(noResultsMessage).toHaveTextContent('No matching projects found');
-      expect(screen.getByText('Try a different search term')).toBeInTheDocument();
-    });
-  });
 });

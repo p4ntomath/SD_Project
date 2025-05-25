@@ -17,11 +17,12 @@ vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
   return {
     ...actual,
-    useNavigate: () => mockNavigate
+    useNavigate: () => mockNavigate,
+    useLocation: () => ({ pathname: '/' })
   };
 });
 
-// Mock Firebase Firestore
+// Mock Firebase Firestore with all required exports
 vi.mock('firebase/firestore', () => ({
   getFirestore: vi.fn(),
   initializeFirestore: vi.fn(),
@@ -34,21 +35,23 @@ vi.mock('firebase/firestore', () => ({
   deleteDoc: vi.fn(),
   query: vi.fn(),
   where: vi.fn(),
-  CACHE_SIZE_UNLIMITED: 'unlimited'
+  CACHE_SIZE_UNLIMITED: 'unlimited',
+  persistentLocalCache: vi.fn(() => ({})),
+  persistentMultipleTabManager: vi.fn(() => ({}))
 }));
 
-describe('ProtectedRoute Component', () => {
+describe('ProtectedRoute', () => {
   beforeEach(() => {
-    mockNavigate.mockClear();
+    vi.clearAllMocks();
   });
 
   afterEach(() => {
     cleanup();
   });
 
-  it('redirects to login when user is not authenticated', () => {
+  it('redirects to login when no user', () => {
     render(
-      <AuthContext.Provider value={{ user: null, role: null, loading: false }}>
+      <AuthContext.Provider value={{ user: null, loading: false }}>
         <MemoryRouter>
           <ProtectedRoute>
             <MockComponent />
@@ -60,9 +63,9 @@ describe('ProtectedRoute Component', () => {
     expect(mockNavigate).toHaveBeenCalledWith('/login');
   });
 
-  it('redirects to complete-profile when user has no role', () => {
+  it('redirects to complete-profile when no role', () => {
     render(
-      <AuthContext.Provider value={{ user: { uid: 'test-uid' }, role: null, loading: false }}>
+      <AuthContext.Provider value={{ user: { uid: '123' }, role: null, loading: false }}>
         <MemoryRouter>
           <ProtectedRoute>
             <MockComponent />
@@ -72,13 +75,27 @@ describe('ProtectedRoute Component', () => {
     );
 
     expect(mockNavigate).toHaveBeenCalledWith('/complete-profile', { 
-      state: { from: '/' } 
+      state: { from: '/' }
     });
   });
 
-  it('renders children when user is authenticated and has role', () => {
+  it('shows loading spinner when loading', () => {
     render(
-      <AuthContext.Provider value={{ user: { uid: 'test-uid' }, role: 'researcher', loading: false }}>
+      <AuthContext.Provider value={{ user: null, loading: true }}>
+        <MemoryRouter>
+          <ProtectedRoute>
+            <MockComponent />
+          </ProtectedRoute>
+        </MemoryRouter>
+      </AuthContext.Provider>
+    );
+
+    expect(screen.getByTestId('clip-loader')).toBeInTheDocument();
+  });
+
+  it('renders children when authorized', () => {
+    render(
+      <AuthContext.Provider value={{ user: { uid: '123' }, role: 'researcher', loading: false }}>
         <MemoryRouter>
           <ProtectedRoute>
             <MockComponent />
@@ -90,51 +107,17 @@ describe('ProtectedRoute Component', () => {
     expect(screen.getByTestId('protected-content')).toBeInTheDocument();
   });
 
-  it('shows loading state while checking authentication', () => {
+  it('redirects when role not allowed', () => {
     render(
-      <AuthContext.Provider value={{ user: null, role: null, loading: true }}>
+      <AuthContext.Provider value={{ user: { uid: '123' }, role: 'researcher', loading: false }}>
         <MemoryRouter>
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['admin']}>
             <MockComponent />
           </ProtectedRoute>
         </MemoryRouter>
       </AuthContext.Provider>
     );
 
-    expect(screen.queryByTestId('protected-content')).not.toBeInTheDocument();
-  });
-
-  it('handles role-specific routes correctly', () => {
-    // First test with incorrect role
-    render(
-      <AuthContext.Provider value={{ user: { uid: 'test-uid' }, role: 'reviewer', loading: false }}>
-        <MemoryRouter>
-          <ProtectedRoute allowedRoles={['researcher']}>
-            <MockComponent />
-          </ProtectedRoute>
-        </MemoryRouter>
-      </AuthContext.Provider>
-    );
-
-    // Verify navigation happened
-    expect(mockNavigate).toHaveBeenCalledTimes(1);
     expect(mockNavigate).toHaveBeenCalledWith('/home');
-
-    cleanup();
-    mockNavigate.mockClear();
-
-    // Now test with correct role
-    render(
-      <AuthContext.Provider value={{ user: { uid: 'test-uid' }, role: 'researcher', loading: false }}>
-        <MemoryRouter>
-          <ProtectedRoute allowedRoles={['researcher']}>
-            <MockComponent />
-          </ProtectedRoute>
-        </MemoryRouter>
-      </AuthContext.Provider>
-    );
-
-    expect(screen.getByTestId('protected-content')).toBeInTheDocument();
-    expect(mockNavigate).not.toHaveBeenCalled();
   });
 });

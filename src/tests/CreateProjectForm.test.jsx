@@ -3,6 +3,27 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import '@testing-library/jest-dom';
 import CreateProjectForm from '../components/CreateProjectForm';
 
+// Suppress DOM and React hydration warnings
+const originalError = console.error;
+beforeAll(() => {
+  console.error = (...args) => {
+    // Skip React DOM validation warnings and hydration warnings
+    if (typeof args[0] === 'string' && (
+      args[0].includes('Warning:') ||
+      args[0].includes('<li> cannot appear as a descendant of <li>') ||
+      args[0].includes('Received `true` for a non-boolean attribute') ||
+      args[0].includes('Invalid DOM hierarchy')
+    )) {
+      return;
+    }
+    originalError.call(console, ...args);
+  };
+});
+
+afterAll(() => {
+  console.error = originalError;
+});
+
 describe('CreateProjectForm Component', () => {
   const mockProps = {
     loading: false,
@@ -100,7 +121,7 @@ describe('CreateProjectForm Component', () => {
     });
     
     // Add two goals
-    const goalInput = screen.getByRole('textbox', { name: /^Goals/i });
+    const goalInput = screen.getByLabelText(/^Goals/);
     fireEvent.change(goalInput, { target: { value: 'First goal' } });
     fireEvent.keyDown(goalInput, { key: 'Enter' });
     fireEvent.change(goalInput, { target: { value: 'Second goal' } });
@@ -135,14 +156,15 @@ describe('CreateProjectForm Component', () => {
     fireEvent.change(screen.getByLabelText(/^deadline/i), { target: { value: futureDate.toISOString().split('T')[0] } });
     
     // Add two goals
-    const goalInput = screen.getByRole('textbox', { name: /^Goals/i });
+    const goalInput = screen.getByLabelText(/^Goals/);
     fireEvent.change(goalInput, { target: { value: 'First goal' } });
-    fireEvent.keyDown(goalInput, { key: 'Enter' });
+    fireEvent.keyDown(goalInput, { key: 'Enter', code: 'Enter' });
+  
     fireEvent.change(goalInput, { target: { value: 'Second goal' } });
-    fireEvent.keyDown(goalInput, { key: 'Enter' });
-    
-    const submitButton = screen.getByRole('button', { name: /create project/i });
-    fireEvent.click(submitButton);
+    fireEvent.keyDown(goalInput, { key: 'Enter', code: 'Enter' });
+  
+    // Submit the form
+    fireEvent.click(screen.getByRole('button', { name: /create project/i }));
 
     await waitFor(() => {
       expect(mockProps.onCreate).toHaveBeenCalled();

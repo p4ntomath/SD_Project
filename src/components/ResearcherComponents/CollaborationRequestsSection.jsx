@@ -3,10 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { getSentInvitations, getReceivedInvitations, respondToResearcherInvitation } from '../../backend/firebase/collaborationDB';
 import { auth } from '../../backend/firebase/firebaseConfig';
 import { ChevronDownIcon, ChevronUpIcon } from '@heroicons/react/24/outline';
-import { notify } from '../../backend/firebase/notificationsUtil'; // Make sure this import is present
-import {getUserById} from '../../backend/firebase/notificationsUtil'; // Adjust the import based on your file structure
+import { notify } from '../../backend/firebase/notificationsUtil';
+import { getUserById } from '../../backend/firebase/notificationsUtil';
 
-
+// Section for displaying and managing collaboration requests
 export default function CollaborationRequestsSection() {
   const navigate = useNavigate();
   const [sentInvitations, setSentInvitations] = useState([]);
@@ -19,6 +19,7 @@ export default function CollaborationRequestsSection() {
   const [showSent, setShowSent] = useState(false);
   const itemsPerPage = 3;
 
+  // Load invitations on mount
   useEffect(() => {
     const loadInvitations = async () => {
       try {
@@ -51,75 +52,82 @@ export default function CollaborationRequestsSection() {
     loadInvitations();
   }, []);
 
- const handleResponse = async (invitationId, accepted) => {
-  try {
-    setRespondingTo(invitationId);
-    await respondToResearcherInvitation(invitationId, accepted);
+  // Handle accept/decline response to an invitation
+  const handleResponse = async (invitationId, accepted) => {
+    try {
+      setRespondingTo(invitationId);
+      await respondToResearcherInvitation(invitationId, accepted);
 
-    // Always get the current user's name (the one accepting/declining)
-    const currentUser = auth.currentUser;
-    let researcherName = "A researcher";
-    if (currentUser) {
-      const userProfile = await getUserById(currentUser.uid);
-      researcherName = userProfile?.fullName || "A researcher";
+      // Get current user's name for notification
+      const currentUser = auth.currentUser;
+      let researcherName = "A researcher";
+      if (currentUser) {
+        const userProfile = await getUserById(currentUser.uid);
+        researcherName = userProfile?.fullName || "A researcher";
+      }
+
+      // Find the invitation to notify the sender
+      const invitation = receivedInvitations.find(inv => inv.invitationId === invitationId);
+
+      if (invitation) {
+        // Notify the requester (sender)
+        await notify({
+          type: 'Collaboration Request ' + (accepted ? 'Accepted' : 'Declined'),
+          targetUserId: invitation.senderId,
+          projectId: invitation.projectId,
+          projectTitle: invitation.projectTitle,
+          researcherName,
+          message: `Your collaboration request for project "${invitation.projectTitle}" was ${accepted ? 'accepted' : 'declined'} by ${researcherName}.`
+        });
+      }
+
+      // If accepted, navigate to the project page
+      if (accepted && invitation) {
+        navigate(`/projects/${invitation.projectId}`);
+        return;
+      }
+
+      // Remove the invitation from the list after response
+      setReceivedInvitations(receivedInvitations.filter(inv => inv.invitationId !== invitationId));
+    } catch (err) {
+      console.error('Error responding to invitation:', err);
+      setError('Failed to respond to invitation');
+    } finally {
+      setRespondingTo(null);
     }
+  };
 
-    // Find the invitation that was accepted/declined to get the requester info
-    const invitation = receivedInvitations.find(inv => inv.invitationId === invitationId);
-
-    if (invitation) {
-      // Notify the requester (sender)
-      await notify({
-        type: 'Collaboration Request ' + (accepted ? 'Accepted' : 'Declined'),
-        targetUserId: invitation.senderId, // requester userId
-        projectId: invitation.projectId,
-        projectTitle: invitation.projectTitle,
-        researcherName,
-        message: `Your collaboration request for project "${invitation.projectTitle}" was ${accepted ? 'accepted' : 'declined'} by ${researcherName}.`
-      });
-    }
-
-    if (accepted && invitation) {
-      navigate(`/projects/${invitation.projectId}`);
-      return;
-    }
-
-    setReceivedInvitations(receivedInvitations.filter(inv => inv.invitationId !== invitationId));
-  } catch (err) {
-    console.error('Error responding to invitation:', err);
-    setError('Failed to respond to invitation');
-  } finally {
-    setRespondingTo(null);
-  }
-};
-
+  // Toggle expand/collapse for invitation details
   const toggleExpand = (invitationId) => {
     setExpandedInvitation(expandedInvitation === invitationId ? null : invitationId);
   };
 
+  // Get items for the current page (pagination)
   const getCurrentPageItems = (items) => {
     const start = (page - 1) * itemsPerPage;
     return items.slice(start, start + itemsPerPage);
   };
 
+  // Loading state
   if (loading) {
     return (
-      <div className="animate-pulse space-y-3">
-        <div className="h-12 bg-gray-100 rounded mb-3"></div>
-        <div className="h-12 bg-gray-100 rounded"></div>
-      </div>
+      <section className="animate-pulse space-y-3">
+        <section className="h-12 bg-gray-100 rounded mb-3"></section>
+        <section className="h-12 bg-gray-100 rounded"></section>
+      </section>
     );
   }
 
+  // Error state
   if (error) {
     return (
-      <div className="text-red-500 text-sm">
+      <section className="text-red-500 text-sm">
         {error}
-      </div>
+      </section>
     );
   }
 
-  // Handle both undefined and empty arrays
+  // No invitations state
   if (!sentInvitations?.length && !receivedInvitations?.length) {
     return (
       <p className="text-gray-500 text-center py-4">No pending invitations</p>
@@ -131,8 +139,10 @@ export default function CollaborationRequestsSection() {
   );
 
   return (
-    <div className="bg-white rounded-lg shadow p-4">
-      <div className="flex gap-4 mb-4">
+    // Main container for collaboration requests
+    <section className="bg-white rounded-lg shadow p-4">
+      {/* Toggle between received and sent invitations */}
+      <nav className="flex gap-4 mb-4" aria-label="Collaboration request navigation">
         <button
           onClick={() => {
             setShowSent(false);
@@ -144,6 +154,7 @@ export default function CollaborationRequestsSection() {
               ? 'bg-blue-600 text-white' 
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
+          aria-current={!showSent ? "page" : undefined}
         >
           Received Invitations ({receivedInvitations.length})
         </button>
@@ -158,48 +169,60 @@ export default function CollaborationRequestsSection() {
               ? 'bg-blue-600 text-white' 
               : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
           }`}
+          aria-current={showSent ? "page" : undefined}
         >
           Sent Invitations ({sentInvitations.length})
         </button>
-      </div>
+      </nav>
 
-      <div className="overflow-hidden">
-        <div className="overflow-y-auto max-h-[230px] pr-2 -mr-2 no-scrollbar">
-          <div className="space-y-3">
+      {/* List of invitations with pagination */}
+      <section className="overflow-hidden">
+        <section className="overflow-y-auto max-h-[230px] pr-2 -mr-2 no-scrollbar">
+          <ul className="space-y-3" aria-label={showSent ? "Sent invitations" : "Received invitations"}>
             {getCurrentPageItems(showSent ? sentInvitations : receivedInvitations).map((invitation) => (
-              <div 
+              // Each invitation is a list item for semantic structure
+              <li 
                 key={invitation.invitationId}
                 className="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden"
               >
-                <div 
+                {/* Invitation summary row */}
+                <button
+                  type="button"
                   onClick={() => toggleExpand(invitation.invitationId)}
-                  className="p-3 cursor-pointer hover:bg-gray-50 flex justify-between items-center"
+                  className="w-full text-left p-3 cursor-pointer hover:bg-gray-50 flex justify-between items-center"
+                  aria-expanded={expandedInvitation === invitation.invitationId}
+                  aria-controls={`invitation-details-${invitation.invitationId}`}
                 >
-                  <div>
+                  <section>
                     <p className="font-medium text-gray-800">
                       {invitation.projectTitle}
                     </p>
                     <p className="text-sm text-gray-600">
                       {showSent ? `To: ${invitation.researcherName}` : `From: ${invitation.senderName}`}
                     </p>
-                  </div>
+                  </section>
                   {expandedInvitation === invitation.invitationId ? (
                     <ChevronUpIcon className="h-5 w-5 text-gray-400" />
                   ) : (
                     <ChevronDownIcon className="h-5 w-5 text-gray-400" />
                   )}
-                </div>
+                </button>
 
+                {/* Expanded invitation details */}
                 {expandedInvitation === invitation.invitationId && (
-                  <div className="p-3 border-t border-gray-100 bg-gray-50">
+                  <section
+                    id={`invitation-details-${invitation.invitationId}`}
+                    className="p-3 border-t border-gray-100 bg-gray-50"
+                  >
+                    {/* Received invitation details and actions */}
                     {!showSent && (
                       <>
-                        <div className="mb-3">
+                        <section className="mb-3">
                           <p className="text-sm font-medium text-gray-700">Description:</p>
                           <p className="text-sm text-gray-600 mt-1">{invitation.projectDescription}</p>
-                        </div>
+                        </section>
                         {invitation.projectMilestones?.length > 0 && (
-                          <div className="mb-3">
+                          <section className="mb-3">
                             <p className="text-sm font-medium text-gray-700">Milestones:</p>
                             <ul className="mt-1 space-y-1">
                               {invitation.projectMilestones.slice(0, 3).map((milestone, index) => (
@@ -214,9 +237,10 @@ export default function CollaborationRequestsSection() {
                                 </li>
                               )}
                             </ul>
-                          </div>
+                          </section>
                         )}
-                        <div className="flex justify-end space-x-2">
+                        {/* Accept/Decline buttons */}
+                        <section className="flex justify-end space-x-2">
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -237,30 +261,33 @@ export default function CollaborationRequestsSection() {
                           >
                             Decline
                           </button>
-                        </div>
+                        </section>
                       </>
                     )}
+                    {/* Sent invitation details */}
                     {showSent && (
-                      <div className="text-sm text-gray-600">
+                      <section className="text-sm text-gray-600">
                         <p>Sent to: {invitation.researcherName}</p>
                         <p>Institution: {invitation.researcherInstitution}</p>
                         <p className="mt-2">Status: <span className="text-yellow-600 font-medium">Pending Response</span></p>
-                      </div>
+                      </section>
                     )}
-                  </div>
+                  </section>
                 )}
-              </div>
+              </li>
             ))}
-          </div>
-        </div>
-      </div>
+          </ul>
+        </section>
+      </section>
 
+      {/* Pagination controls */}
       {totalPages > 1 && (
-        <div className="flex justify-center space-x-2 mt-4 pt-4 border-t border-gray-100">
+        <nav className="flex justify-center space-x-2 mt-4 pt-4 border-t border-gray-100" aria-label="Pagination">
           <button
             onClick={() => setPage(Math.max(1, page - 1))}
             disabled={page === 1}
             className="px-3 py-1 text-sm text-gray-600 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50"
+            aria-label="Previous page"
           >
             Previous
           </button>
@@ -271,11 +298,12 @@ export default function CollaborationRequestsSection() {
             onClick={() => setPage(Math.min(totalPages, page + 1))}
             disabled={page === totalPages}
             className="px-3 py-1 text-sm text-gray-600 bg-gray-100 rounded hover:bg-gray-200 disabled:opacity-50"
+            aria-label="Next page"
           >
             Next
           </button>
-        </div>
+        </nav>
       )}
-    </div>
+    </section>
   );
 }

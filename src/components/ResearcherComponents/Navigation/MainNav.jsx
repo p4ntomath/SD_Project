@@ -1,24 +1,90 @@
 import { FiHome, FiFolder, FiList, FiUser, FiMenu, FiX, FiSearch, FiBell, FiMessageSquare } from 'react-icons/fi';
-import { useState } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { DocumentIcon } from "@heroicons/react/24/outline";
 import { logOut } from '../../../backend/firebase/authFirebase';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useUnreadNotificationsCount, useUnreadMessagesCount } from '../../../backend/firebase/notificationsUtil';
+import { searchUsers } from '../../../backend/firebase/viewprofile';
+import { ClipLoader } from 'react-spinners';
 
-export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobileMenuOpen, onSearch }) {
+
+export default function MainNav({ setMobileMenuOpen, mobileMenuOpen }) {
   const [searchQuery, setSearchQuery] = useState('');
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [searchResults, setSearchResults] = useState([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
+  const searchTimeoutRef = useRef(null);
+  const searchContainerRef = useRef(null);
   const navigate = useNavigate();
   const location = useLocation();
+
+  // Custom hooks to get unread notifications/messages count
   const unreadCount = useUnreadNotificationsCount();
   const unreadMessages = useUnreadMessagesCount();
-  
-  const handleSearch = (e) => {
-    e.preventDefault();
-    onSearch(searchQuery);
+
+
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (searchContainerRef.current && !searchContainerRef.current.contains(event.target)) {
+        setShowSuggestions(false);
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const handleSearchInput = async (e) => {
+    const query = e.target.value;
+    setSearchQuery(query);
+
+    // Clear any existing timeout
+    if (searchTimeoutRef.current) {
+      clearTimeout(searchTimeoutRef.current);
+    }
+
+    if (query.trim()) {
+      setIsSearching(true);
+      setShowSuggestions(true);
+
+      // Debounce search by 300ms
+      searchTimeoutRef.current = setTimeout(async () => {
+        try {
+          const results = await searchUsers(query, 1, 5);
+          setSearchResults(results);
+        } catch (error) {
+          console.error('Error searching users:', error);
+          setSearchResults([]);
+        } finally {
+          setIsSearching(false);
+        }
+      }, 300);
+    } else {
+      setShowSuggestions(false);
+      setSearchResults([]);
+      setIsSearching(false);
+    }
   };
 
+
+  const handleSearch = (e) => {
+    e.preventDefault();
+    if (searchQuery.trim()) {
+      navigate(`/search?q=${encodeURIComponent(searchQuery)}`);
+      setShowSuggestions(false);
+    }
+  };
+
+  const getAvatarInitials = (name) => {
+    if (!name) return '?';
+    const parts = name.trim().split(' ');
+    if (parts.length === 0) return '?';
+    return parts.map(part => part[0]).join('').toUpperCase();
+  };
+
+  // Handles user logout and redirects to login page
   const handleLogout = async () => {
     try {
       await logOut();
@@ -31,11 +97,14 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
 
   return (
     <>
+      {/* Main navigation bar */}
       <nav className="bg-white shadow-sm">
         <section className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <section className="flex justify-between h-16 items-center">
+            {/* Desktop navigation links */}
             <section className="hidden md:flex items-center space-x-2">
-              <button 
+              {/* Home button */}
+              <button
                 onClick={() => navigate('/home')}
                 className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/home' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                 aria-label="Home"
@@ -43,8 +112,9 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
                 <FiHome className="h-6 w-6 group-hover:text-blue-600" />
                 <p className="text-xs mt-1 group-hover:text-blue-600">Home</p>
               </button>
-            
-              <button 
+
+              {/* Projects button */}
+              <button
                 onClick={() => navigate('/projects')}
                 className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/projects' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                 aria-label="My Projects"
@@ -53,7 +123,8 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
                 <p className="text-xs mt-1 group-hover:text-blue-600">Projects</p>
               </button>
 
-              <button 
+              {/* Documents button */}
+              <button
                 onClick={() => navigate('/documents')}
                 className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/documents' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                 aria-label="Documents"
@@ -62,14 +133,15 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
                 <p className="text-xs mt-1 group-hover:text-blue-600">Documents</p>
               </button>
 
-         
-              <button 
+              {/* Messages button with unread badge */}
+              <button
                 onClick={() => navigate('/messages')}
                 className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/messages' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                 aria-label="View messages"
               >
                 <span className="relative">
                   <FiMessageSquare className="h-6 w-6 group-hover:text-blue-600" />
+                  {/* Show unread messages badge if any */}
                   {unreadMessages > 0 && (
                     <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 font-bold z-10">
                       {unreadMessages}
@@ -79,7 +151,8 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
                 <p className="text-xs mt-1 group-hover:text-blue-600">Messages</p>
               </button>
 
-              <button 
+              {/* Account/Profile button */}
+              <button
                 onClick={() => navigate('/account')}
                 className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/account' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
                 aria-label="View profile"
@@ -88,43 +161,98 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
                 <p className="text-xs mt-1 group-hover:text-blue-600">Account</p>
               </button>
             </section>
-            
-            <section className="flex-1 max-w-md mx-4">
+            <section className="flex-1 max-w-md mx-4" ref={searchContainerRef}>
               <form onSubmit={handleSearch} className="relative">
                 <section className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                   <FiSearch className="h-5 w-5 text-gray-400" />
                 </section>
                 <input
                   type="text"
-                  placeholder="Search projects..."
+                  placeholder="Search people..."
                   className="block w-full pl-10 pr-3 py-2 border border-gray-300 rounded-md leading-5 bg-white placeholder-gray-500 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onChange={handleSearchInput}
+                  onFocus={() => {
+                    if (searchQuery.trim()) {
+                      setShowSuggestions(true);
+                    }
+                  }}
                 />
+
+                {/* Search Suggestions Dropdown */}
+                {showSuggestions && (
+                  <div className="absolute mt-1 w-full bg-white rounded-md shadow-lg border border-gray-200 z-50">
+                    {isSearching ? (
+                      <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                        <ClipLoader color="#3B82F6" size={16} className="mr-2" />
+                        Searching...
+                      </div>
+                    ) : searchResults.length > 0 ? (
+                      <div className="max-h-60 overflow-y-auto">
+                        {searchResults.map(user => (
+                          <button
+                            key={user.id}
+                            onClick={() => navigate(`/profile/${user.id}`)}
+                            className="w-full text-left hover:bg-gray-50 p-3 flex items-center space-x-3"
+                          >
+                            <div className="flex-shrink-0">
+                              {user.profilePicture ? (
+                                <img
+                                  src={user.profilePicture}
+                                  alt={user.fullName}
+                                  className="h-10 w-10 rounded-full object-cover"
+                                />
+                              ) : (
+                                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-sm font-medium">
+                                  {getAvatarInitials(user.fullName)}
+                                </div>
+                              )}
+                            </div>
+                            <div className="min-w-0 flex-1">
+                              <p className="text-sm font-medium text-gray-900 truncate">{user.fullName}</p>
+                              <p className="text-xs text-gray-500 truncate">
+                                {[
+                                  user.role && (user.role.charAt(0).toUpperCase() + user.role.slice(1)),
+                                  user.institution,
+                                  user.department
+                                ].filter(Boolean).join(' • ')}
+                              </p>
+                            </div>
+                          </button>
+                        ))}
+                      </div>
+                    ) : searchQuery.trim() && (
+                      <div className="px-4 py-3 text-sm text-gray-500 text-center">
+                        No results found
+                      </div>
+                    )}
+                  </div>
+                )}
               </form>
             </section>
-                 <button 
-                onClick={() => navigate('/notifications')}
-                className={`group flex flex-col items-center justify-center p-3 relative ${location.pathname === '/notifications' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
-                aria-label="View alerts"
-              >
-                <span className="relative">
-                  <FiBell className="h-6 w-6 group-hover:text-blue-600" />
-                  {unreadCount > 0 && (
-                    <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 font-bold z-10">
-                      {unreadCount}
-                    </span>
-                  )}
-                </span>
-               
-              </button>
 
+            {/* Notifications button with unread badge */}
+            <button
+              onClick={() => navigate('/notifications')}
+              className={`group flex flex-col items-center justify-center p-3 relative ${location.pathname === '/notifications' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
+              aria-label="View alerts"
+            >
+              <span className="relative">
+                <FiBell className="h-6 w-6 group-hover:text-blue-600" />
+                {/* Show unread notifications badge if any */}
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 font-bold z-10">
+                    {unreadCount}
+                  </span>
+                )}
+              </span>
+            </button>
 
+            {/* Branding and Logout (desktop only) */}
             <section className='hidden md:flex items-center space-x-6'>
               <section className="hidden md:flex items-center">
                 <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent">Research Portal</h1>
               </section>
-
               <section className="hidden md:flex items-center">
                 <button
                   className="bg-gray-500 hover:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors flex items-center"
@@ -136,7 +264,7 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
               </section>
             </section>
 
-            {/*Mobile*/}
+            {/* Mobile menu toggle button */}
             <section className="md:hidden flex items-center">
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
@@ -154,16 +282,10 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
           </section>
         </section>
 
+        {/* Mobile menu (shows only when open) */}
         {mobileMenuOpen && (
           <section className="md:hidden bg-white shadow-md">
             <section className="px-2 pt-2 pb-3 space-y-1 sm:px-3">
-              <button
-                onClick={() => navigate('/account')}
-                className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
-                aria-label="View profile"
-              >
-                My Profile
-              </button>
               <button
                 onClick={() => setShowLogoutModal(true)}
                 className="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50"
@@ -178,42 +300,46 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
       {/* Logout Confirmation Modal */}
       <AnimatePresence>
         {showLogoutModal && (
-          <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
-            <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
-              <motion.div 
+          <section className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+            <section className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+              {/* Modal background overlay */}
+              <motion.section
                 className="fixed inset-0 bg-black/30 backdrop-blur-sm"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.15 }}
               />
+              {/* Centering trick for modal */}
               <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
 
+              {/* Modal content */}
               <motion.article
                 className="relative inline-block align-bottom bg-white/90 backdrop-blur-md rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full border border-gray-200"
                 initial={{ scale: 0.95, opacity: 0, y: 10 }}
                 animate={{ scale: 1, opacity: 1, y: 0 }}
                 exit={{ scale: 0.95, opacity: 0, y: 10 }}
-                transition={{ 
+                transition={{
                   duration: 0.15,
                   ease: "easeOut"
                 }}
               >
-                <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
-                  <div className="sm:flex sm:items-start">
-                    <div className="mt-3 text-center sm:mt-0 sm:text-left">
+                <section className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+                  <section className="sm:flex sm:items-start">
+                    <section className="mt-3 text-center sm:mt-0 sm:text-left">
                       <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
                         Confirm Logout
                       </h3>
-                      <div className="mt-2">
+                      <section className="mt-2">
                         <p className="text-sm text-gray-500">
                           Are you sure you want to log out? You'll need to sign in again to access your account.
                         </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                <div className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                      </section>
+                    </section>
+                  </section>
+                </section>
+                <section className="bg-gray-50 px-4 py-3 sm:px-6 sm:flex sm:flex-row-reverse">
+                  {/* Confirm logout button */}
                   <button
                     type="button"
                     className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-red-600 text-base font-medium text-white hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:ml-3 sm:w-auto sm:text-sm"
@@ -221,6 +347,7 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
                   >
                     Logout
                   </button>
+                  {/* Cancel button */}
                   <button
                     type="button"
                     className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
@@ -228,10 +355,10 @@ export default function MainNav({ showForm, setShowForm, setMobileMenuOpen, mobi
                   >
                     Cancel
                   </button>
-                </div>
+                </section>
               </motion.article>
-            </div>
-          </div>
+            </section>
+          </section>
         )}
       </AnimatePresence>
     </>

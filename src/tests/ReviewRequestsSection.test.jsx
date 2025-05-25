@@ -46,7 +46,7 @@ describe('ReviewRequestsSection', () => {
     fetchReviewRequests.mockImplementationOnce(() => new Promise(() => {}));
     render(<ReviewRequestsSection />);
     
-    expect(screen.getByLabelText("loading-effect")).toBeInTheDocument();
+    expect(screen.getByLabelText("Loading review requests")).toBeInTheDocument();
   });
 
   it('displays review requests when loaded', async () => {

@@ -1,4 +1,4 @@
-import { FiHome, FiUsers, FiFolder, FiDollarSign } from 'react-icons/fi';
+import { FiHome, FiFolder, FiDollarSign } from 'react-icons/fi';
 import { useLocation, useNavigate } from 'react-router-dom';
 
 export default function AdminMobileBottomNav() {
@@ -15,15 +15,6 @@ export default function AdminMobileBottomNav() {
         >
           <FiHome className="h-6 w-6 group-hover:text-blue-600" />
           <p className="text-xs mt-1 group-hover:text-blue-600">Home</p>
-        </button>
-
-        <button 
-          onClick={() => navigate('/admin/users')}
-          className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/admin/users' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
-          aria-label="Users"
-        >
-          <FiUsers className="h-6 w-6 group-hover:text-blue-600" />
-          <p className="text-xs mt-1 group-hover:text-blue-600">Users</p>
         </button>
 
         <button 

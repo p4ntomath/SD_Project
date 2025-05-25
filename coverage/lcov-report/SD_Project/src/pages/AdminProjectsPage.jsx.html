@@ -25,7 +25,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>116/116</span>
+                <span class='fraction'>127/127</span>
             </div>
         
             
@@ -46,7 +46,7 @@
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>116/116</span>
+                <span class='fraction'>127/127</span>
             </div>
         
             
@@ -197,13 +197,29 @@
 <a name='L132'></a><a href='#L132'>132</a>
 <a name='L133'></a><a href='#L133'>133</a>
 <a name='L134'></a><a href='#L134'>134</a>
-<a name='L135'></a><a href='#L135'>135</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<a name='L135'></a><a href='#L135'>135</a>
+<a name='L136'></a><a href='#L136'>136</a>
+<a name='L137'></a><a href='#L137'>137</a>
+<a name='L138'></a><a href='#L138'>138</a>
+<a name='L139'></a><a href='#L139'>139</a>
+<a name='L140'></a><a href='#L140'>140</a>
+<a name='L141'></a><a href='#L141'>141</a>
+<a name='L142'></a><a href='#L142'>142</a>
+<a name='L143'></a><a href='#L143'>143</a>
+<a name='L144'></a><a href='#L144'>144</a>
+<a name='L145'></a><a href='#L145'>145</a>
+<a name='L146'></a><a href='#L146'>146</a>
+<a name='L147'></a><a href='#L147'>147</a>
+<a name='L148'></a><a href='#L148'>148</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16x</span>
 <span class="cline-any cline-yes">16x</span>
 <span class="cline-any cline-yes">16x</span>
 <span class="cline-any cline-yes">16x</span>
@@ -237,6 +253,11 @@
 <span class="cline-any cline-yes">16x</span>
 <span class="cline-any cline-yes">16x</span>
 <span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-yes">16x</span>
 <span class="cline-any cline-yes">16x</span>
 <span class="cline-any cline-yes">16x</span>
 <span class="cline-any cline-yes">16x</span>
@@ -327,6 +348,11 @@
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">8x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-yes">16x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">16x</span>
 <span class="cline-any cline-yes">16x</span>
 <span class="cline-any cline-yes">16x</span>
 <span class="cline-any cline-yes">16x</span>
@@ -337,11 +363,14 @@ import { useNavigate } from 'react-router-dom';
 import { FaArrowLeft } from 'react-icons/fa';
 import { fetchProjectsWithUsers } from '../backend/firebase/adminAccess.jsx';
 import { ClipLoader } from 'react-spinners';
+import MainNav from '../components/AdminComponents/Navigation/AdminMainNav';
+import MobileBottomNav from '../components/AdminComponents/Navigation/AdminMobileBottomNav';
 &nbsp;
 export default function AdminProjectsPage() {
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedCreator, setSelectedCreator] = useState('all');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const navigate = useNavigate();
 &nbsp;
   // Get unique creators for filter dropdown
@@ -367,103 +396,113 @@ export default function AdminProjectsPage() {
   }, []);
 &nbsp;
   return (
-    &lt;div className="min-h-screen bg-gray-50 p-4 md:p-8"&gt;
-      &lt;div className="max-w-7xl mx-auto"&gt;
-        &lt;div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4"&gt;
-          &lt;div className="flex items-center"&gt;
-            &lt;button
-              onClick={() =&gt; navigate('/admin')}
-              className="mr-4 p-2 text-gray-600 hover:text-gray-800 transition-colors"
-              aria-label="Back to dashboard"
-            &gt;
-              &lt;FaArrowLeft className="h-5 w-5" /&gt;
-            &lt;/button&gt;
-            &lt;h1 className="text-2xl md:text-3xl font-bold text-gray-800"&gt;Project Management&lt;/h1&gt;
-          &lt;/div&gt;
+    &lt;section className="min-h-screen bg-gray-50"&gt;
+      &lt;header&gt;
+        &lt;MainNav setMobileMenuOpen={setMobileMenuOpen} mobileMenuOpen={mobileMenuOpen} /&gt;
+      &lt;/header&gt;
 &nbsp;
-          &lt;div className="flex items-center w-full sm:w-auto"&gt;
-            &lt;label htmlFor="creator-filter" className="mr-2 text-sm text-gray-600 whitespace-nowrap"&gt;
-              Filter by Creator:
-            &lt;/label&gt;
-            &lt;select
-              id="creator-filter"
-              value={selectedCreator}
-              onChange={(e) =&gt; setSelectedCreator(e.target.value)}
-              className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
-            &gt;
-              &lt;option value="all"&gt;All Creators&lt;/option&gt;
-              {uniqueCreators.map(creator =&gt; (
-                &lt;option key={creator} value={creator}&gt;
-                  {creator}
-                &lt;/option&gt;
-              ))}
-            &lt;/select&gt;
-          &lt;/div&gt;
-        &lt;/div&gt;
+      &lt;main className="p-4 md:p-8 pb-16 md:pb-8"&gt;
+        &lt;section className="max-w-7xl mx-auto"&gt;
+          &lt;section className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4"&gt;
+            &lt;section className="flex items-center"&gt;
+              &lt;button
+                onClick={() =&gt; navigate('/admin')}
+                className="mr-4 p-2 text-gray-600 hover:text-gray-800 transition-colors"
+                aria-label="Back to dashboard"
+              &gt;
+                &lt;FaArrowLeft className="h-5 w-5" /&gt;
+              &lt;/button&gt;
+              &lt;h1 className="text-2xl md:text-3xl font-bold text-gray-800"&gt;Project Management&lt;/h1&gt;
+            &lt;/section&gt;
 &nbsp;
-        &lt;motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-lg shadow overflow-hidden"
-        &gt;
-          {loading ? (
-            &lt;div className="min-h-[200px] flex items-center justify-center"&gt;
-              &lt;ClipLoader color="#3B82F6" aria-label="loading" /&gt;
-            &lt;/div&gt;
-          ) : (
-            &lt;div className="overflow-x-auto"&gt;
-              &lt;table className="min-w-full divide-y divide-gray-200"&gt;
-                &lt;thead className="bg-gray-50"&gt;
-                  &lt;tr&gt;
-                    &lt;th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"&gt;Project&lt;/th&gt;
-                    &lt;th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"&gt;Creator&lt;/th&gt;
-                    &lt;th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell"&gt;Status&lt;/th&gt;
-                    &lt;th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell"&gt;Research Field&lt;/th&gt;
-                    &lt;th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"&gt;Actions&lt;/th&gt;
-                  &lt;/tr&gt;
-                &lt;/thead&gt;
-                &lt;tbody className="bg-white divide-y divide-gray-200"&gt;
-                  {filteredProjects.map((project) =&gt; (
-                    &lt;tr key={project.id} className="hover:bg-gray-50"&gt;
-                      &lt;td className="px-4 sm:px-6 py-4"&gt;
-                        &lt;div className="text-sm font-medium text-gray-900 break-words"&gt;{project.title}&lt;/div&gt;
-                        &lt;div className="text-sm text-gray-500 sm:hidden mt-1"&gt;
-                          Status: {project.<span class="branch-0 cbranch-no" title="branch not covered" >status || 'In Progress'}</span>
-                        &lt;/div&gt;
-                      &lt;/td&gt;
-                      &lt;td className="px-4 sm:px-6 py-4"&gt;
-                        &lt;div className="text-sm text-gray-900"&gt;{project.userFullName}&lt;/div&gt;
-                      &lt;/td&gt;
-                      &lt;td className="px-4 sm:px-6 py-4 hidden sm:table-cell"&gt;
-                        &lt;span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"&gt;
-                          {project.<span class="branch-0 cbranch-no" title="branch not covered" >status || 'In Progress'}</span>
-                        &lt;/span&gt;
-                      &lt;/td&gt;
-                      &lt;td className="px-4 sm:px-6 py-4 hidden md:table-cell"&gt;
-                        &lt;div className="text-sm text-gray-900"&gt;{project.<span class="branch-0 cbranch-no" title="branch not covered" >researchField || 'Not specified'}&lt;</span>/div&gt;
-                      &lt;/td&gt;
-                      &lt;td className="px-4 sm:px-6 py-4 text-sm font-medium"&gt;
-                        &lt;button
-                          onClick={() =&gt; navigate(`/admin/projects/${project.id}`)}
-                          className="text-blue-600 hover:text-blue-900 inline-flex items-center gap-1"
-                        &gt;
-                          View Details
-                        &lt;/button&gt;
-                      &lt;/td&gt;
+            &lt;section className="flex items-center w-full sm:w-auto"&gt;
+              &lt;label htmlFor="creator-filter" className="mr-2 text-sm text-gray-600 whitespace-nowrap"&gt;
+                Filter by Creator:
+              &lt;/label&gt;
+              &lt;select
+                id="creator-filter"
+                value={selectedCreator}
+                onChange={(e) =&gt; setSelectedCreator(e.target.value)}
+                className="w-full sm:w-auto px-3 py-2 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+              &gt;
+                &lt;option value="all"&gt;All Creators&lt;/option&gt;
+                {uniqueCreators.map(creator =&gt; (
+                  &lt;option key={creator} value={creator}&gt;
+                    {creator}
+                  &lt;/option&gt;
+                ))}
+              &lt;/select&gt;
+            &lt;/section&gt;
+          &lt;/section&gt;
+&nbsp;
+          &lt;motion.section
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="bg-white rounded-lg shadow overflow-hidden"
+          &gt;
+            {loading ? (
+              &lt;section className="min-h-[200px] flex items-center justify-center"&gt;
+                &lt;ClipLoader color="#3B82F6" aria-label="loading" /&gt;
+              &lt;/section&gt;
+            ) : (
+              &lt;section className="overflow-x-auto"&gt;
+                &lt;table className="min-w-full sectionide-y sectionide-gray-200"&gt;
+                  &lt;thead className="bg-gray-50"&gt;
+                    &lt;tr&gt;
+                      &lt;th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"&gt;Project&lt;/th&gt;
+                      &lt;th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"&gt;Creator&lt;/th&gt;
+                      &lt;th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden sm:table-cell"&gt;Status&lt;/th&gt;
+                      &lt;th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider hidden md:table-cell"&gt;Research Field&lt;/th&gt;
+                      &lt;th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider"&gt;Actions&lt;/th&gt;
                     &lt;/tr&gt;
-                  ))}
-                &lt;/tbody&gt;
-              &lt;/table&gt;
-              {filteredProjects.length === 0 &amp;&amp; (
-                &lt;div className="text-center py-8"&gt;
-                  &lt;p className="text-gray-500"&gt;No projects found&lt;/p&gt;
-                &lt;/div&gt;
-              )}
-            &lt;/div&gt;
-          )}
-        &lt;/motion.div&gt;
-      &lt;/div&gt;
-    &lt;/div&gt;
+                  &lt;/thead&gt;
+                  &lt;tbody className="bg-white sectionide-y sectionide-gray-200"&gt;
+                    {filteredProjects.map((project) =&gt; (
+                      &lt;tr key={project.id} className="hover:bg-gray-50"&gt;
+                        &lt;td className="px-4 sm:px-6 py-4"&gt;
+                          &lt;section className="text-sm font-medium text-gray-900 break-words"&gt;{project.title}&lt;/section&gt;
+                          &lt;section className="text-sm text-gray-500 sm:hidden mt-1"&gt;
+                            Status: {project.<span class="branch-0 cbranch-no" title="branch not covered" >status || 'In Progress'}</span>
+                          &lt;/section&gt;
+                        &lt;/td&gt;
+                        &lt;td className="px-4 sm:px-6 py-4"&gt;
+                          &lt;section className="text-sm text-gray-900"&gt;{project.userFullName}&lt;/section&gt;
+                        &lt;/td&gt;
+                        &lt;td className="px-4 sm:px-6 py-4 hidden sm:table-cell"&gt;
+                          &lt;span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800"&gt;
+                            {project.<span class="branch-0 cbranch-no" title="branch not covered" >status || 'In Progress'}</span>
+                          &lt;/span&gt;
+                        &lt;/td&gt;
+                        &lt;td className="px-4 sm:px-6 py-4 hidden md:table-cell"&gt;
+                          &lt;section className="text-sm text-gray-900"&gt;{project.<span class="branch-0 cbranch-no" title="branch not covered" >researchField || 'Not specified'}&lt;</span>/section&gt;
+                        &lt;/td&gt;
+                        &lt;td className="px-4 sm:px-6 py-4 text-sm font-medium"&gt;
+                          &lt;button
+                            onClick={() =&gt; navigate(`/admin/projects/${project.id}`)}
+                            className="text-blue-600 hover:text-blue-900 inline-flex items-center gap-1"
+                          &gt;
+                            View Details
+                          &lt;/button&gt;
+                        &lt;/td&gt;
+                      &lt;/tr&gt;
+                    ))}
+                  &lt;/tbody&gt;
+                &lt;/table&gt;
+                {filteredProjects.length === 0 &amp;&amp; (
+                  &lt;section className="text-center py-8"&gt;
+                    &lt;p className="text-gray-500"&gt;No projects found&lt;/p&gt;
+                  &lt;/section&gt;
+                )}
+              &lt;/section&gt;
+            )}
+          &lt;/motion.section&gt;
+        &lt;/section&gt;
+      &lt;/main&gt;
+&nbsp;
+      &lt;footer&gt;
+        &lt;MobileBottomNav /&gt;
+      &lt;/footer&gt;
+    &lt;/section&gt;
   );
 }</pre></td></tr></table></pre>
 
@@ -472,7 +511,7 @@ export default function AdminProjectsPage() {
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-04T03:47:14.904Z
+                at 2025-05-25T01:36:54.149Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

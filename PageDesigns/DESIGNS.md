@@ -42,19 +42,27 @@
 - ![Track Project Funding (Mobile View)](./images/trackProjectFundingPageSmallScreen.png)  
   Mobile view for funding tracking
 
-## User Account
-- ![MyProfile](./images/MyProfile.png)  
-  User profile account
-- ![MyProfile(Mobile View)](./images/MyProfile-smallScreen.png)  
-  Responsive layout for smaller screens
+## User Profile
+- ![MyProfile](./images/myProfile.png)  
+  User profile interface with personal information and settings
+- ![MyProfile (Mobile View)](./images/myProfileSmallScreen.png)  
+  Mobile-optimized profile view
+- ![MyProfile Updated](./images/MyProfile.png)  
+  Enhanced profile interface with additional features
+- ![MyProfile Updated (Mobile View)](./images/MyProfile-smallScreen.png)  
+  Responsive layout for the enhanced profile view
 
-  ## Notifications
-- ![Notifications](./images/Notifications2.png) 
-- ![Notifications(Mobile View)](./images/Notifications-smallScreen.png)  
-  Responsive layout for smaller screens
+## Notifications
+- ![Notifications](./images/Notifications2.png)  
+  Main notifications center showing all user alerts and updates
+- ![Notifications (Mobile View)](./images/Notifications-smallScreen.png)  
+  Mobile-responsive notifications interface
 
-  ## Messages
-- ![messages](./images/Messages.png) 
-- ![messagesPage(Mobile View)](./images/messagesPage-smallScreen.png)  
-- ![messageType(Mobile View)](./images/messageType-smallScreen.png) 
+## Messages
+- ![Messages Dashboard](./images/messages.png)  
+  Main messaging interface for communication between users
+- ![Messages Page (Mobile View)](./images/messagesPage-smallScreen.png)  
+  Mobile-optimized messaging interface
+- ![Message Type Selection (Mobile View)](./images/messageType-smallScreen.png)  
+  Mobile interface for selecting message types and categories
 

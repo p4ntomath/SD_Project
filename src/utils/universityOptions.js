@@ -10,7 +10,7 @@ export const fetchUniversities = async () => {
       label: uni.name
     }));
   } catch (error) {
-    console.error('Error fetching universities:', error);
+    
     return [];
   }
 };

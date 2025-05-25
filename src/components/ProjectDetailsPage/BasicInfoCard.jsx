@@ -7,52 +7,61 @@ export default function BasicInfoCard({ project, calculateProgress }) {
   
   return (
     <article className="bg-white rounded-lg shadow p-4 sm:p-6">
-      <div className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:items-center sm:justify-between mb-4">
+      <header className="flex flex-col sm:flex-row gap-2 sm:gap-0 sm:items-center sm:justify-between mb-4">
         <h2 className="text-lg sm:text-xl font-semibold">Project Details</h2>
         <span className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs sm:text-sm max-w-fit ${
           project.status === 'Complete' ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800'
         }`}>
           {project.status}
         </span>
-      </div>
+      </header>
 
-      <div className="space-y-4">
+      <main className="space-y-4">
         {/* Progress Bar */}
-        <div>
-          <div className="flex justify-between items-center mb-2">
+        <section>
+          <header className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium text-gray-700">Project Progress</span>
-            <span className="text-sm font-medium text-gray-700">{progress}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2.5">
+            <span className="text-sm font-medium text-gray-700" aria-live="polite">{progress}%</span>
+          </header>
+          <div className="relative w-full h-2.5 bg-gray-200 rounded-full overflow-hidden">
             <div 
-              className="bg-blue-600 h-2.5 rounded-full transition-all duration-500" 
-              style={{ width: `${progress}%` }}
+              role="progressbar"
+              aria-valuenow={progress}
+              aria-valuemin="0"
+              aria-valuemax="100"
+              aria-label="Project completion progress"
+              className="absolute top-0 left-0 h-full rounded-full transition-all duration-500 ease-out"
+              style={{ 
+                width: `${progress}%`,
+                backgroundColor: progress === 100 ? '#16a34a' : '#2563eb',
+                boxShadow: `0 0 8px ${progress === 100 ? '#16a34a80' : '#2563eb80'}`
+              }}
             />
           </div>
-        </div>
+        </section>
 
         {/* Project Description */}
-        <div>
+        <section>
           <h3 className="text-sm font-medium text-gray-700 mb-2">Description</h3>
           <p className="text-gray-600 text-sm">{project.description || 'No description provided.'}</p>
-        </div>
+        </section>
 
         {/* Project Duration */}
         {project.duration && (
-          <div>
+          <section>
             <h3 className="text-sm font-medium text-gray-700 mb-2">Duration</h3>
             <p className="text-gray-600 text-sm">{project.duration}</p>
-          </div>
+          </section>
         )}
 
         {/* Project Owner */}
         {project.researcherName && (
-          <div>
+          <section>
             <h3 className="text-sm font-medium text-gray-700 mb-2">Project Owner</h3>
             <p className="text-gray-600 text-sm">{project.researcherName}</p>
-          </div>
+          </section>
         )}
-      </div>
+      </main>
     </article>
   );
 }

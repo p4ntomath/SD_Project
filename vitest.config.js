@@ -1,3 +1,4 @@
+/// <reference types="vitest" />
 import { defineConfig } from "vitest/config";
 import react from '@vitejs/plugin-react';
 import path from 'path';
@@ -8,10 +9,9 @@ export default defineConfig({
     globals: true,
     environment: "jsdom",
     setupFiles: ['./src/tests/setup.js'],
-    mockReset: true,
     coverage: {
       provider: 'v8',
-      reporter: ['text', 'html', 'json', 'lcov'],
+      reporter: ['text', 'lcov'],
       exclude: [
         'node_modules/',
         'src/tests/setup.js',

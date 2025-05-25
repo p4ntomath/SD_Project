@@ -1,9 +1,171 @@
 import { useState, useEffect, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { FiVideo, FiPhone, FiSettings, FiUserPlus, FiMoreVertical, FiPaperclip, FiSmile, FiSend, FiArrowLeft, FiSearch, FiX } from 'react-icons/fi';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { FiVideo, FiPhone, FiSettings, FiUserPlus, FiPaperclip, FiSmile, FiSend, FiArrowLeft, FiSearch, FiX, FiCheck, FiEdit2 } from 'react-icons/fi';
 import { ChatService, MessageService, ChatRealTimeService } from '../backend/firebase/chatDB';
-import { auth } from '../backend/firebase/firebaseConfig';
+import { auth, db } from '../backend/firebase/firebaseConfig';
+import { doc, getDoc } from 'firebase/firestore';
 import EmojiPicker from 'emoji-picker-react';
+import MediaPreview from '../components/MediaPreview';
+import Cropper from 'react-easy-crop';
+import imageCompression from 'browser-image-compression';
+import getCroppedImg from '../components/CropImage';
+import MainNav from '../components/ResearcherComponents/Navigation/MainNav';
+import StatusModal from '../components/StatusModal';
+
+// Message component
+const Message = ({ message, isCurrentUser, userDetails, onDelete }) => {
+  return (
+    <article className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} group`}>
+      {!isCurrentUser && (
+        <figure className="w-8 mr-2 flex-shrink-0">
+          {userDetails?.photoURL ? (
+            <img
+              src={userDetails.photoURL}
+              alt={`${userDetails.displayName || 'User'}'s profile`}
+              className="w-8 h-8 rounded-full"
+            />
+          ) : (
+            <button 
+              onClick={() => {/* Handle click */}}
+              className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm font-medium hover:bg-gray-600 transition-colors"
+            >
+              {userDetails?.displayName?.[0] || 'U'}
+            </button>
+          )}
+        </figure>
+      )}
+      
+      <section className={`rounded-lg px-4 py-2 max-w-[70%] space-y-2 ${
+        isCurrentUser 
+          ? 'bg-blue-600 text-white' 
+          : 'bg-gray-100 text-gray-900'
+      }`}>
+        {!isCurrentUser && (
+          <header className="text-sm font-medium text-gray-900">
+            {userDetails?.displayName || 'Unknown User'}
+          </header>
+        )}
+        <p>{message.text}</p>
+        {message.fileUrl && (
+          <MediaPreview attachment={message.fileUrl} />
+        )}
+        <time 
+          className={`text-xs mt-1 ${isCurrentUser ? 'text-blue-200' : 'text-gray-500'}`}
+          dateTime={message.timestamp?.toDate?.().toISOString()}
+        >
+          {new Date(message.timestamp?.seconds * 1000).toLocaleTimeString()}
+        </time>
+      </section>
+    </article>
+  );
+};
+
+// Chat header
+const ChatHeader = ({ chatData, participants, isGroupChat }) => {
+  return (
+    <header className="flex items-center h-16">
+      <section className="flex-1 flex items-center min-w-0">
+        <nav className="flex items-center space-x-4 min-w-0">
+          {isGroupChat ? (
+            <button 
+              className="w-10 h-10 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-medium text-lg hover:bg-purple-200 transition-colors"
+              aria-label="Group chat"
+            >
+              G
+            </button>
+          ) : (
+            <button 
+              className="w-10 h-10 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium hover:bg-gray-600 transition-colors"
+              aria-label="Direct message"
+            >
+              {participants[0]?.displayName?.[0] || 'U'}
+            </button>
+          )}
+          <h1 className="text-lg font-medium truncate">
+            {isGroupChat ? chatData.name : participants[0]?.displayName || 'Chat'}
+          </h1>
+        </nav>
+      </section>
+    </header>
+  );
+};
+
+// Create Group Chat Modal
+const CreateGroupChatModal = ({ isOpen, onClose, onCreate, loading }) => {
+  const [groupImage, setGroupImage] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState(false);
+
+  const handleImageClick = () => {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = (e) => {
+      const file = e.target.files[0];
+      if (file) {
+        setGroupImage(file);
+      }
+    };
+    input.click();
+  };
+
+  return isOpen ? (
+    <dialog 
+      open
+      className="fixed inset-0 bg-gray-900/75 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+      onClick={onClose}
+    >
+      <article 
+        className="bg-white w-full max-w-md rounded-2xl shadow-2xl transform transition-all my-4 flex flex-col min-h-0 max-h-[calc(100vh-2rem)]"
+        onClick={e => e.stopPropagation()}
+      >
+        <header className="bg-gradient-to-r from-purple-600 to-blue-600 p-6">
+          <section className="flex items-center justify-between">
+            <h2 className="text-2xl font-bold text-white">Create Group Chat</h2>
+            <button
+              onClick={onClose}
+              className="text-white/80 hover:text-white transition-colors"
+              aria-label="Close modal"
+            >
+              <FiX className="w-6 h-6" />
+            </button>
+          </section>
+
+          <section className="mt-4 flex items-end space-x-4">
+            <figure className="relative group">
+              <button
+                onClick={handleImageClick}
+                className="w-20 h-20 rounded-xl bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors relative overflow-hidden"
+              >
+                {groupImage ? (
+                  <img
+                    src={URL.createObjectURL(groupImage)}
+                    alt="Group chat preview"
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <FiUserPlus className="w-8 h-8" />
+                )}
+                {isUploading && (
+                  <figure className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                    <span className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                  </figure>
+                )}
+                {uploadError && (
+                  <figure className="absolute inset-0 bg-red-500/80 flex items-center justify-center text-white">
+                    <span className="w-20 h-20 flex items-center justify-center">
+                      <FiX className="w-8 h-8" />
+                    </span>
+                  </figure>
+                )}
+              </button>
+            </figure>
+          </section>
+        </header>
+      </article>
+    </dialog>
+  ) : null;
+};
 
 export default function ChatView() {
   const { chatId } = useParams();
@@ -22,14 +184,37 @@ export default function ChatView() {
   const [addingMember, setAddingMember] = useState(false);
   const [selectedUsers, setSelectedUsers] = useState(new Set());
   const [addingMembers, setAddingMembers] = useState(false);
+  const [participantPhotos, setParticipantPhotos] = useState({});
+  const [attachments, setAttachments] = useState([]);
+  const [uploadProgress, setUploadProgress] = useState({});
+  const [overallProgress, setOverallProgress] = useState(0);
+  const [showGroupInfoModal, setShowGroupInfoModal] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [newGroupName, setNewGroupName] = useState('');
+  const [renamingGroup, setRenamingGroup] = useState(false);
+  const [removingMember, setRemovingMember] = useState('');
+  const [isChangingAvatar, setIsChangingAvatar] = useState(false);
+  const [crop, setCrop] = useState({ x: 0, y: 0 });
+  const [zoom, setZoom] = useState(1);
+  const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [showCropModal, setShowCropModal] = useState(false);
   const messagesEndRef = useRef(null);
   const chatViewRef = useRef(null);
   const emojiButtonRef = useRef(null);
   const emojiPickerRef = useRef(null);
+  const fileInputRef = useRef(null);
+  const avatarInputRef = useRef(null);
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [statusMessage, setStatusMessage] = useState('');
+  const [isError, setIsError] = useState(false);
 
   // Track if chat is visible and focused
   const [isVisible, setIsVisible] = useState(document.visibilityState === 'visible');
   const [isFocused, setIsFocused] = useState(true);
+
+  // Skip smooth scrolling for bulk message loads
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
   // Handle tab visibility changes
   useEffect(() => {
@@ -69,14 +254,27 @@ export default function ChatView() {
     }
   }, [chatId, isVisible, isFocused, messages]);
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  // Helper function for scrolling
+  const scrollToBottom = (behavior = 'auto') => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior });
+    }
   };
 
-  // Scroll to bottom when new messages arrive
+  // Initial load: use instant scroll
   useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
+    if (messages.length > 0 && isInitialLoad) {
+      scrollToBottom('auto');
+      setIsInitialLoad(false);
+    }
+  }, [messages, isInitialLoad]);
+
+  // New messages: use smooth scroll only if it's not the initial load
+  useEffect(() => {
+    if (messages.length > 0 && !isInitialLoad) {
+      scrollToBottom('smooth');
+    }
+  }, [messages, isInitialLoad]);
 
   useEffect(() => {
     let unsubscribeChat;
@@ -143,15 +341,57 @@ export default function ChatView() {
     };
   }, [chatId, navigate]);
 
+  const handleFileSelect = async (e) => {
+    const files = Array.from(e.target.files);
+    setAttachments(files);
+    // Initialize progress for each file
+    const initialProgress = {};
+    files.forEach(file => {
+      initialProgress[file.name] = 0;
+    });
+    setUploadProgress(initialProgress);
+  };
+
   const handleSendMessage = async () => {
-    if (!messageInput.trim() || sendingMessage) return;
+    if ((!messageInput.trim() && attachments.length === 0) || sendingMessage) return;
 
     try {
       setSendingMessage(true);
-      await MessageService.sendMessage(chatId, auth.currentUser.uid, {
-        text: messageInput
-      });
+      setOverallProgress(0);
+
+      // If there are attachments, we'll track their upload progress
+      if (attachments.length > 0) {
+        const totalFiles = attachments.length;
+        let completed = 0;
+
+        await MessageService.sendMessage(chatId, auth.currentUser.uid, {
+          text: messageInput,
+          attachments,
+          onProgress: (fileName, progress) => {
+            setUploadProgress(prev => ({
+              ...prev,
+              [fileName]: progress
+            }));
+            if (progress === 100) {
+              completed++;
+              setOverallProgress((completed / totalFiles) * 100);
+            }
+          }
+        });
+      } else {
+        // Just send the text message
+        await MessageService.sendMessage(chatId, auth.currentUser.uid, {
+          text: messageInput
+        });
+      }
+
       setMessageInput('');
+      setAttachments([]);
+      setUploadProgress({});
+      setOverallProgress(0);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } catch (error) {
       console.error('Error sending message:', error);
     } finally {
@@ -178,7 +418,7 @@ export default function ChatView() {
     }
   };
 
-  // Modify addUserToGroup to handle multiple users
+  // Function to add users to group
   const addUsersToGroup = async () => {
     if (selectedUsers.size === 0) return;
     
@@ -189,12 +429,19 @@ export default function ChatView() {
           ChatService.addUserToGroupChat(chatId, userId)
         )
       );
+      setShowAddMemberModal(false);
       setSearchQuery('');
       setUserSearchResults([]);
       setSelectedUsers(new Set());
-      setShowAddMemberModal(false);
+      setStatusMessage('Members added successfully');
+      setIsError(false);
+      setShowStatusModal(true);
     } catch (error) {
-      console.error('Error adding users to group:', error);
+      setStatusMessage(
+        'This project group chat is only available to project collaborators. Please add the selected users as project collaborators first before adding them to this chat.'
+      );
+      setIsError(true);
+      setShowStatusModal(true);
     } finally {
       setAddingMembers(false);
     }
@@ -234,28 +481,131 @@ export default function ChatView() {
     setShowEmojiPicker(!showEmojiPicker);
   };
 
+  // Add this new effect to fetch participant profile pictures
+  useEffect(() => {
+    if (!chat?.participants) return;
+
+    const fetchParticipantPhotos = async () => {
+      const photos = {};
+      await Promise.all(
+        chat.participants.map(async (userId) => {
+          try {
+            const userDoc = await getDoc(doc(db, 'users', userId));
+            if (userDoc.exists()) {
+              photos[userId] = userDoc.data().profilePicture || null;
+            }
+          } catch (error) {
+            
+          }
+        })
+      );
+      setParticipantPhotos(photos);
+    };
+
+    fetchParticipantPhotos();
+  }, [chat?.participants]);
+
+  // Function to handle group rename
+  const handleRenameGroup = async () => {
+    if (!newGroupName.trim() || renamingGroup) return;
+    
+    try {
+      setRenamingGroup(true);
+      await ChatService.updateGroupChatDetails(chatId, { groupName: newGroupName.trim() });
+      setIsEditingName(false);
+      setNewGroupName('');
+    } catch (error) {
+      console.error('Error renaming group:', error);
+    } finally {
+      setRenamingGroup(false);
+    }
+  };
+
+  // Function to remove member from group
+  const handleRemoveMember = async (memberId) => {
+    if (removingMember || memberId === auth.currentUser.uid) return;
+    
+    try {
+      setRemovingMember(memberId);
+      await ChatService.removeUserFromGroupChat(chatId, memberId);
+    } catch (error) {
+      console.error('Error removing member:', error);
+    } finally {
+      setRemovingMember('');
+    }
+  };
+
+  // Add this function to handle avatar change
+  const handleAvatarChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setSelectedImage(reader.result);
+      setShowCropModal(true);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  const handleCropComplete = (croppedArea, croppedAreaPixels) => {
+    setCroppedAreaPixels(croppedAreaPixels);
+  };
+
+  const handleCropSave = async () => {
+    try {
+      setIsChangingAvatar(true);
+      const croppedImage = await getCroppedImg(selectedImage, croppedAreaPixels);
+      
+      // Convert base64 to blob
+      const response = await fetch(croppedImage);
+      const blob = await response.blob();
+      
+      // Create a File object
+      const file = new File([blob], 'profile.jpg', { type: 'image/jpeg' });
+
+      // Compress the image
+      const compressedFile = await imageCompression(file, {
+        maxSizeMB: 0.5,
+        maxWidthOrHeight: 512,
+        useWebWorker: true,
+      });
+
+      await ChatService.updateGroupAvatar(chatId, compressedFile);
+      setShowCropModal(false);
+      setSelectedImage(null);
+    } catch (error) {
+      console.error('Error updating group avatar:', error);
+    } finally {
+      setIsChangingAvatar(false);
+      if (avatarInputRef.current) {
+        avatarInputRef.current.value = '';
+      }
+    }
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-gray-500">Loading chat...</div>
-      </div>
+      <section className="flex items-center justify-center h-screen bg-gray-50">
+        <section className="text-gray-500">Loading chat...</section>
+      </section>
     );
   }
 
   if (error) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-gray-500">{error}</div>
-      </div>
+      <section className="flex items-center justify-center h-screen bg-gray-50">
+        <section className="text-gray-500">{error}</section>
+      </section>
     );
   }
 
   // Add check for chat existence
   if (!chat) {
     return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-gray-500">Chat not found</div>
-      </div>
+      <section className="flex items-center justify-center h-screen bg-gray-50">
+        <section className="text-gray-500">Chat not found</section>
+      </section>
     );
   }
 
@@ -367,18 +717,63 @@ export default function ChatView() {
     return true;
   };
 
+  const renderMessage = (message, isCurrentUser, showSender, senderName) => {
+    return (
+      <article className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'} group`}>
+        {/* Only show avatar in group chats or for non-current user */}
+        {!isCurrentUser && chat?.type === 'group' && (
+          <figure className="w-8 mr-2 flex-shrink-0">
+            {showSender && (
+              <Link to={`/profile/${message.senderId}`}>
+                {participantPhotos[message.senderId] ? (
+                  <img
+                    src={participantPhotos[message.senderId]}
+                    alt={senderName}
+                    className="w-8 h-8 rounded-full object-cover hover:opacity-80 transition-opacity"
+                  />
+                ) : (
+                  <div className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm font-medium hover:bg-gray-600 transition-colors">
+                    {getAvatarInitials(senderName)}
+                  </div>
+                )}
+              </Link>
+            )}
+          </figure>
+        )}
+        <section className={`rounded-lg px-4 py-2 max-w-[70%] space-y-2 ${
+          isCurrentUser 
+            ? 'bg-blue-600 text-white' 
+            : 'bg-gray-200 text-gray-900'
+        }`}>
+          {message.text && <p className="whitespace-pre-wrap">{message.text}</p>}
+          {message.attachments?.map((attachment, index) => (
+            <MediaPreview 
+              key={index} 
+              attachment={attachment}
+              className={index > 0 ? 'mt-2' : ''}
+            />
+          ))}
+          <time 
+            className={`text-xs mt-1 ${isCurrentUser ? 'text-blue-200' : 'text-gray-500'}`}
+            dateTime={message.timestamp?.toDate?.().toISOString()}
+          >
+            {formatMessageTime(message.timestamp || message.clientTimestamp)}
+          </time>
+        </section>
+      </article>
+    );
+  };
+
   return (
-    <div className="flex flex-col h-screen">
+    <main className="flex flex-col h-screen">
       {/* Chat Header - Fixed height */}
       <header className="flex-none bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4">
+        <nav className="max-w-7xl mx-auto px-4">
           <div className="flex items-center h-16">
             <div className="flex-1 flex items-center min-w-0">
               <button 
                 onClick={() => {
-                  // First mark all messages as read before navigating back
                   MessageService.markMessagesAsRead(chatId, auth.currentUser.uid);
-                  // Navigate without replace to ensure MessagesList remounts
                   navigate('/messages');
                 }}
                 className="md:hidden text-gray-600 hover:text-gray-800 font-medium flex items-center mr-4 flex-shrink-0"
@@ -387,19 +782,45 @@ export default function ChatView() {
                 Back
               </button>
               <div className="flex items-center space-x-4 min-w-0">
-                <div className="relative flex-shrink-0">
+                <figure 
+                  className={`relative flex-shrink-0 ${chat?.type === 'group' ? 'cursor-pointer' : ''}`}
+                  onClick={() => chat?.type === 'group' && setShowGroupInfoModal(true)}
+                >
                   {chat?.type === 'group' ? (
-                    <div className="w-10 h-10 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-medium text-lg">
-                      {chat.groupAvatar || '👥'}
-                    </div>
+                    chat.groupAvatar ? (
+                      <img 
+                        src={chat.groupAvatar}
+                        alt="Group Avatar"
+                        className="w-10 h-10 rounded-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-medium text-lg hover:bg-purple-200 transition-colors">
+                        👥
+                      </div>
+                    )
                   ) : (
-                    <div className="w-10 h-10 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium">
-                      {getAvatarInitials(chat?.name)}
-                    </div>
+                    <Link to={`/profile/${chat?.participants?.find(id => id !== auth.currentUser.uid)}`}>
+                      {participantPhotos[chat?.participants?.find(id => id !== auth.currentUser.uid)] ? (
+                        <img
+                          src={participantPhotos[chat?.participants?.find(id => id !== auth.currentUser.uid)]}
+                          alt="Profile"
+                          className="w-10 h-10 rounded-full object-cover hover:opacity-80 transition-opacity"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-gray-700 text-white rounded-full flex items-center justify-center font-medium hover:bg-gray-600 transition-colors">
+                          {getAvatarInitials(chat?.name)}
+                        </div>
+                      )}
+                    </Link>
                   )}
-                </div>
-                <div className="min-w-0 flex-1">
-                  <h2 className="font-semibold text-gray-900 truncate">{chat?.groupName || chat?.name}</h2>
+                </figure>
+                <article 
+                  className={`min-w-0 flex-1 ${chat?.type === 'group' ? 'cursor-pointer' : ''}`}
+                  onClick={() => chat?.type === 'group' && setShowGroupInfoModal(true)}
+                >
+                  <h2 className="font-semibold text-gray-900 truncate hover:text-gray-700 transition-colors">
+                    {chat?.groupName || chat?.name}
+                  </h2>
                   {chat?.type === 'group' && (
                     <p className="text-sm text-gray-500 truncate">
                       {chat.participantNames ?
@@ -411,33 +832,32 @@ export default function ChatView() {
                         : `${chat.participants?.length || 0} members`}
                     </p>
                   )}
-                </div>
+                </article>
               </div>
             </div>
 
-            <div className="flex items-center space-x-2 flex-shrink-0">
+            <nav className="flex items-center space-x-2 flex-shrink-0">
               {chat?.type === 'group' && (
                 <button 
                   onClick={() => setShowAddMemberModal(true)}
                   className="p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg"
+                  title="Add members"
                 >
                   <FiUserPlus className="h-5 w-5" />
                 </button>
               )}
-              <button className="hidden md:block p-2 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg">
-                <FiMoreVertical className="h-5 w-5" />
-              </button>
-            </div>
+
+            </nav>
           </div>
-        </div>
+        </nav>
       </header>
 
       {/* Add Member Modal */}
       {showAddMemberModal && (
-        <div className="fixed inset-0 bg-gray-500/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-white w-full max-w-md rounded-xl shadow-2xl transform transition-all">
-            <div className="p-6 border-b border-gray-100">
-              <div className="flex items-center justify-between">
+        <section className="fixed inset-0 bg-gray-500/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <section className="bg-white w-full max-w-md rounded-xl shadow-2xl transform transition-all">
+            <section className="p-6 border-b border-gray-100">
+              <section className="flex items-center justify-between">
                 <h3 className="text-lg font-semibold text-gray-900">Add Members</h3>
                 <button 
                   onClick={() => {
@@ -450,9 +870,11 @@ export default function ChatView() {
                 >
                   <FiX className="h-5 w-5" />
                 </button>
-              </div>
-              <div className="mt-4">
-                <div className="relative">
+              </section>
+
+              {/* Search input */}
+              <section className="mt-4">
+                <section className="relative">
                   <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
@@ -464,34 +886,36 @@ export default function ChatView() {
                       searchUsers(e.target.value);
                     }}
                   />
-                </div>
-              </div>
-            </div>
-            <div className="max-h-96 overflow-y-auto">
+                </section>
+              </section>
+            </section>
+
+            {/* Search results */}
+            <section className="max-h-96 overflow-y-auto">
               {searching ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-gray-500">Searching users...</div>
-                </div>
+                <section className="flex items-center justify-center py-8">
+                  <p className="text-gray-500">Searching users...</p>
+                </section>
               ) : userSearchResults.length > 0 ? (
-                <div className="divide-y divide-gray-100">
+                <section className="divide-y divide-gray-100">
                   {userSearchResults.map(user => (
-                    <div
+                    <section
                       key={user.id}
                       onClick={() => toggleUserSelection(user.id)}
                       className="w-full text-left hover:bg-gray-50 p-4 transition-colors cursor-pointer"
                     >
-                      <div className="flex items-center">
-                        <div className="flex-shrink-0">
-                          <div className="w-10 h-10 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-medium">
+                      <section className="flex items-center">
+                        <section className="flex-shrink-0">
+                          <section className="w-10 h-10 bg-purple-100 text-purple-700 rounded-full flex items-center justify-center font-medium">
                             {getAvatarInitials(user.fullName)}
-                          </div>
-                        </div>
-                        <div className="ml-4 flex-1">
+                          </section>
+                        </section>
+                        <section className="ml-4 flex-1">
                           <p className="font-medium text-gray-900">{user.fullName}</p>
                           <p className="text-sm text-gray-500">{user.email}</p>
-                        </div>
-                        <div className="flex-shrink-0">
-                          <div className={`w-5 h-5 border-2 rounded ${
+                        </section>
+                        <section className="flex-shrink-0">
+                          <section className={`w-5 h-5 border-2 rounded ${
                             selectedUsers.has(user.id)
                               ? 'bg-purple-600 border-purple-600'
                               : 'border-gray-300'
@@ -501,55 +925,247 @@ export default function ChatView() {
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                               </svg>
                             )}
-                          </div>
-                        </div>
-                      </div>
-                    </div>
+                          </section>
+                        </section>
+                      </section>
+                    </section>
                   ))}
-                </div>
+                </section>
               ) : searchQuery ? (
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-gray-500">No users found</div>
-                </div>
+                <section className="flex items-center justify-center py-8">
+                  <p className="text-gray-500">No users found</p>
+                </section>
               ) : (
-                <div className="flex items-center justify-center py-8">
-                  <div className="text-gray-500">Type to search for users</div>
-                </div>
+                <section className="flex items-center justify-center py-8">
+                  <p className="text-gray-500">Type to search for users</p>
+                </section>
               )}
-            </div>
+            </section>
+
             {selectedUsers.size > 0 && (
-              <div className="p-4 border-t border-gray-100">
+              <section className="p-4 border-t border-gray-100">
                 <button
                   onClick={addUsersToGroup}
                   disabled={addingMembers}
                   className="w-full py-2 px-4 bg-purple-600 text-white rounded-lg hover:bg-purple-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                 >
                   {addingMembers ? (
-                    <>
-                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2"></div>
-                      Adding members...
-                    </>
+                    <div className="flex items-center">
+                      <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                      <span>Adding members...</span>
+                    </div>
                   ) : (
-                    `Add ${selectedUsers.size} member${selectedUsers.size > 1 ? 's' : ''}`
+                    <span>Add {selectedUsers.size} member{selectedUsers.size > 1 ? 's' : ''}</span>
                   )}
                 </button>
-              </div>
+              </section>
             )}
+          </section>
+        </section>
+      )}
+
+      {/* Status Modal */}
+      <StatusModal
+        isOpen={showStatusModal}
+        onClose={() => {
+          setShowStatusModal(false);
+          if (!isError) {
+            setShowAddMemberModal(false);
+          }
+        }}
+        success={!isError}
+        message={statusMessage}
+      />
+
+      {/* Group Info Modal */}
+      {showGroupInfoModal && (
+        <div className="fixed inset-0 bg-gray-900/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-md rounded-2xl shadow-2xl transform transition-all my-4 flex flex-col min-h-0 max-h-[calc(100vh-2rem)]">
+            {/* Header with gradient background */}
+            <div className="bg-gradient-to-r from-purple-600 to-blue-600 p-6">
+              {/* Header Content */}
+              <div className="flex items-center justify-between">
+                <h3 className="text-xl font-semibold text-white">Group Information</h3>
+                <button 
+                  onClick={() => setShowGroupInfoModal(false)}
+                  className="text-white/80 hover:text-white p-1.5 hover:bg-white/10 rounded-full transition-all"
+                >
+                  <FiX className="h-5 w-5" />
+                </button>
+              </div>
+              {/* Group Avatar and Stats */}
+              <div className="mt-4 flex items-end space-x-4">
+                <div className="relative group">
+                  <input
+                    type="file"
+                    ref={avatarInputRef}
+                    onChange={handleAvatarChange}
+                    className="hidden"
+                    accept="image/*"
+                  />
+                  <div 
+                    onClick={() => !isChangingAvatar && avatarInputRef.current?.click()}
+                    className="w-20 h-20 rounded-xl bg-white/10 text-white flex items-center justify-center hover:bg-white/20 transition-colors relative overflow-hidden"
+                  >
+                    {isChangingAvatar ? (
+                      <div className="absolute inset-0 bg-black/30 flex items-center justify-center">
+                        <div className="w-8 h-8 border-3 border-white border-t-transparent rounded-full animate-spin" />
+                      </div>
+                    ) : chat?.groupAvatar ? (
+                      <img 
+                        src={chat.groupAvatar}
+                        alt="Group Avatar"
+                        className="w-20 h-20 rounded-xl object-cover"
+                      />
+                    ) : (
+                      <div className="w-20 h-20 flex items-center justify-center">
+                        👥
+                      </div>
+                    )}
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+                      <FiEdit2 className="h-6 w-6 text-white" />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex-1 mb-2">
+                  <div className="flex items-center space-x-2">
+                    {isEditingName ? (
+                      <input
+                        type="text"
+                        placeholder="Enter new group name"
+                        className="w-full px-4 py-2 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/60 outline-none focus:ring-2 focus:ring-white/30 backdrop-blur-sm transition-all"
+                        value={newGroupName}
+                        onChange={(e) => setNewGroupName(e.target.value)}
+                      />
+                    ) : (
+                      <h4 className="text-lg text-white font-medium truncate">{chat?.groupName || chat?.name}</h4>
+                    )}
+                    <button
+                      onClick={() => {
+                        if (isEditingName) {
+                          handleRenameGroup();
+                        } else {
+                          setIsEditingName(true);
+                          setNewGroupName(chat?.groupName || chat?.name);
+                        }
+                      }}
+                      className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-full transition-all"
+                    >
+                      {isEditingName ? (
+                        <FiCheck className="h-5 w-5" />
+                      ) : (
+                        <FiEdit2 className="h-5 w-5" />
+                      )}
+                    </button>
+                  </div>
+                  <p className="text-white/80 text-sm mt-1">
+                    {chat?.participants?.length || 0} participants
+                  </p>
+                </div>
+              </div>
+            </div>
+            
+            {/* Scrollable content with sticky subheader */}
+            <div className="flex flex-col min-h-0 flex-1">
+              <div className="sticky top-0 z-10 bg-white border-b border-gray-200">
+                <div className="px-6 py-4 flex items-center justify-between">
+                  <h4 className="text-gray-900 font-medium">Participants</h4>
+                  <button
+                    onClick={() => {
+                      setShowGroupInfoModal(false);
+                      setShowAddMemberModal(true);
+                    }}
+                    className="flex items-center space-x-1 text-sm text-purple-600 hover:text-purple-700 font-medium"
+                  >
+                    <FiUserPlus className="h-4 w-4" />
+                    <span>Add People</span>
+                  </button>
+                </div>
+              </div>
+              
+              {/* Scrollable participants list */}
+              <div className="overflow-y-auto flex-1">
+                <div className="p-6 space-y-2 relative">
+                  {chat?.participants?.map((userId) => {
+                    const isCurrentUser = userId === auth.currentUser.uid;
+                    const userName = chat.participantNames?.[userId] || 'Unknown User';
+                    const userPhoto = participantPhotos[userId];
+
+                    return (
+                      <div 
+                        key={userId} 
+                        className="group flex items-center justify-between p-3 rounded-xl transition-all hover:bg-gray-50 bg-white border border-gray-100"
+                      >
+                        <Link to={`/profile/${userId}`} className="flex items-center space-x-3">
+                          {userPhoto ? (
+                            <img
+                              src={userPhoto}
+                              alt={userName}
+                              className="w-12 h-12 rounded-full object-cover ring-2 ring-white shadow-md hover:opacity-80 transition-opacity"
+                            />
+                          ) : (
+                            <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-blue-500 text-white rounded-full flex items-center justify-center font-medium ring-2 ring-white shadow-md hover:bg-gradient-to-br hover:from-purple-600 hover:to-blue-600 transition-colors">
+                              {getAvatarInitials(userName)}
+                            </div>
+                          )}
+                          <div>
+                            <p className="text-gray-900 font-medium group-hover:text-blue-600 transition-colors">
+                              {userName}
+                              {isCurrentUser && (
+                                <span className="ml-2 text-xs font-normal text-purple-600 bg-purple-50 px-2 py-0.5 rounded-full">
+                                  You
+                                </span>
+                              )}
+                            </p>
+                            <p className="text-sm text-gray-500">
+                              {isCurrentUser ? 'Group Admin' : 'Member'}
+                            </p>
+                          </div>
+                        </Link>
+                        {!isCurrentUser && chat.type === 'group' && (
+                          <button
+                            onClick={() => handleRemoveMember(userId)}
+                            disabled={removingMember === userId}
+                            className="opacity-0 group-hover:opacity-100 p-2 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                          >
+                            {removingMember === userId ? (
+                              <div className="w-5 h-5 border-2 border-red-500 border-t-transparent rounded-full animate-spin" />
+                            ) : (
+                              <FiX className="h-5 w-5" />
+                            )}
+                          </button>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* Footer */}
+            <div className="flex-none p-4 bg-gray-50 border-t border-gray-100">
+              <button
+                onClick={() => setShowGroupInfoModal(false)}
+                className="w-full py-2.5 px-4 bg-gray-900 text-white rounded-xl hover:bg-gray-800 transition-colors font-medium"
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}
 
       {/* Messages Area - Flexible height with scroll */}
-      <div className="flex-1 overflow-y-auto" ref={chatViewRef}>
-        <div className="p-4 space-y-4">
+      <section className="flex-1 overflow-y-auto" ref={chatViewRef}>
+        <section className="p-4 space-y-4">
           {Object.entries(messagesByDate).map(([date, dateMessages]) => (
-            <div key={date}>
-              <div className="flex items-center justify-center mb-4">
-                <div className="bg-gray-200 rounded-full px-3 py-1">
+            <section key={date}>
+              <section className="flex items-center justify-center mb-4">
+                <time className="bg-gray-200 rounded-full px-3 py-1">
                   <span className="text-xs font-medium text-gray-600">{date}</span>
-                </div>
-              </div>
-              <div className="space-y-4">
+                </time>
+              </section>
+              <section className="space-y-4">
                 {dateMessages.map((message, index) => {
                   const isCurrentUser = message.senderId === auth.currentUser.uid;
                   const showSender = !isCurrentUser && chat.type === 'group' && (
@@ -559,41 +1175,34 @@ export default function ChatView() {
                   const senderName = chat.participantNames?.[message.senderId] || 'Unknown User';
 
                   return (
-                    <div key={message.id}>
+                    <article key={message.id}>
                       {showSender && (
                         <p className="text-sm text-gray-500 mb-1">
                           {senderName}
                         </p>
                       )}
-                      <div className={`flex ${isCurrentUser ? 'justify-end' : 'justify-start'}`}>
-                        {showSender && (
-                          <div className="w-8 h-8 rounded-full bg-gray-700 text-white flex items-center justify-center text-sm font-medium mr-2">
-                            {getAvatarInitials(senderName)}
-                          </div>
-                        )}
-                        <div className={`rounded-lg px-4 py-2 max-w-[70%] break-words ${
-                          isCurrentUser 
-                            ? 'bg-blue-600 text-white' 
-                            : 'bg-gray-100 text-gray-900'
-                        }`}>
-                          {message.text}
-                        </div>
-                      </div>
-                    </div>
+                      {renderMessage(message, isCurrentUser, showSender, senderName)}
+                    </article>
                   );
                 })}
-              </div>
-            </div>
+              </section>
+            </section>
           ))}
           <div ref={messagesEndRef} />
-        </div>
-      </div>
+        </section>
+      </section>
 
       {/* Message Input - Fixed height at bottom */}
-      <div className="flex-none bg-white border-t border-gray-200">
-        <div className="p-4">
-          <div className="flex items-end space-x-2">
-            <div className="flex-1 bg-gray-100 rounded-lg">
+      <footer className="flex-none bg-white border-t border-gray-200">
+        <form 
+          className="p-4"
+          onSubmit={(e) => {
+            e.preventDefault();
+            handleSendMessage();
+          }}
+        >
+          <section className="flex items-end space-x-2">
+            <section className="flex-1 bg-gray-100 rounded-lg">
               <textarea
                 rows="1"
                 placeholder="Type your message..."
@@ -611,35 +1220,106 @@ export default function ChatView() {
                   }
                 }}
               />
-            </div>
+              {/* File attachments preview */}
+              {attachments.length > 0 && (
+                <section className="px-4 pb-3 space-y-2">
+                  {attachments.map((file, index) => (
+                    <article key={index} className="flex items-center space-x-2 text-sm text-gray-600">
+                      <FiPaperclip className="h-4 w-4" />
+                      <span className="truncate flex-1">{file.name}</span>
+                      {uploadProgress[file.name] > 0 && uploadProgress[file.name] < 100 && (
+                        <span className="text-xs text-blue-600">{Math.round(uploadProgress[file.name])}%</span>
+                      )}
+                      {uploadProgress[file.name] === 100 && (
+                        <FiCheck className="h-4 w-4 text-green-500" />
+                      )}
+                      {!sendingMessage && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setAttachments(files => files.filter((_, i) => i !== index));
+                            setUploadProgress(prev => {
+                              const newProgress = { ...prev };
+                              delete newProgress[file.name];
+                              return newProgress;
+                            });
+                          }}
+                          className="text-red-500 hover:text-red-600"
+                        >
+                          <FiX className="h-4 w-4" />
+                        </button>
+                      )}
+                    </article>
+                  ))}
+                  {sendingMessage && attachments.length > 0 && (
+                    <section className="mt-2">
+                      <progress 
+                        value={overallProgress} 
+                        max="100"
+                        className="w-full h-1 bg-gray-200 rounded-full overflow-hidden"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Uploading {attachments.length} file{attachments.length > 1 ? 's' : ''}...
+                      </p>
+                    </section>
+                  )}
+                </section>
+              )}
+            </section>
             <div className="flex items-center space-x-2">
-              <button className="p-3 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors">
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileSelect}
+                className="hidden"
+                multiple
+                accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
+                disabled={sendingMessage}
+                data-testid="file-input"
+              />
+              <button 
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={sendingMessage}
+                className="p-3 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
                 <FiPaperclip className="h-5 w-5" />
               </button>
               <button 
+                type="button"
                 ref={emojiButtonRef}
                 onClick={toggleEmojiPicker}
-                className="p-3 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors relative"
+                disabled={sendingMessage}
+                className="p-3 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors relative disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="emoji"
+                aria-expanded={showEmojiPicker}
               >
                 <FiSmile className="h-5 w-5" />
               </button>
               <button 
-                onClick={handleSendMessage}
-                disabled={!messageInput.trim() || sendingMessage}
-                className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                type="submit"
+                disabled={(!messageInput.trim() && attachments.length === 0) || sendingMessage}
+                className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                aria-label="send"
+                aria-disabled={(!messageInput.trim() && attachments.length === 0) || sendingMessage}
               >
-                <FiSend className="h-5 w-5" />
+                {sendingMessage ? (
+                  <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <FiSend className="h-5 w-5" />
+                )}
               </button>
             </div>
-          </div>
-        </div>
-      </div>
+          </section>
+        </form>
+      </footer>
 
       {/* Emoji Picker - Absolute positioned */}
       {showEmojiPicker && (
-        <div 
+        <aside 
           ref={emojiPickerRef}
           className="absolute bottom-20 right-16 z-50"
+          data-testid="emoji-picker"
         >
           <EmojiPicker
             onEmojiClick={(emojiData) => {
@@ -656,8 +1336,57 @@ export default function ChatView() {
             previewConfig={{ showPreview: false }}
             lazyLoadEmojis={true}
           />
-        </div>
+        </aside>
       )}
-    </div>
+
+      {/* Image Crop Modal */}
+      {showCropModal && (
+        <dialog className="fixed inset-0 bg-black/75 z-50 flex items-center justify-center p-4">
+          <article className="bg-white w-full max-w-lg rounded-2xl overflow-hidden">
+            <header className="p-4 border-b border-gray-200">
+              <h3 className="text-lg font-semibold text-gray-900">Crop Group Avatar</h3>
+            </header>
+            <section className="relative h-[400px] bg-gray-900">
+              <Cropper
+                image={selectedImage}
+                crop={crop}
+                zoom={zoom}
+                aspect={1}
+                onCropChange={setCrop}
+                onZoomChange={setZoom}
+                onCropComplete={handleCropComplete}
+              />
+            </section>
+            <footer className="p-4 bg-gray-50 flex justify-end space-x-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setShowCropModal(false);
+                  setSelectedImage(null);
+                }}
+                className="px-4 py-2 text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={handleCropSave}
+                disabled={isChangingAvatar}
+                className="px-4 py-2 text-white bg-blue-600 rounded-lg hover:bg-blue-700 disabled:opacity-50 flex items-center"
+              >
+                {isChangingAvatar ? (
+                  <>
+                    <span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2" />
+                    Saving...
+                  </>
+                ) : (
+                  'Save'
+                )}
+              </button>
+            </footer>
+          </article>
+        </dialog>
+      )}
+    </main>
   );
-}
+};

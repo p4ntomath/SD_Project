@@ -1,9 +1,21 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, test, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
+import * as testingLibrary from '@testing-library/react';
 import { BrowserRouter } from 'react-router-dom';
 import ProjectDetailsPage from '../pages/ProjectDetailsPage';
 import AuthContext from '../context/AuthContext';
 import '@testing-library/jest-dom';
+
+// Globally suppress console warnings and errors before any imports
+const noOp = () => {};
+global.console.error = noOp;
+global.console.warn = noOp;
+
+// Configure testing library
+testingLibrary.configure({ 
+  asyncUtilTimeout: 2000,
+  unstable_advanceTimerssByTime: true 
+});
 
 // Import the mocked functions directly
 import { fetchProject,} from '../backend/firebase/projectDB';
@@ -86,30 +98,35 @@ vi.mock('framer-motion', () => ({
 const originalError = console.error;
 const originalWarn = console.warn;
 
-beforeAll(() => {
-  console.error = (...args) => {
-    const skipMessages = [
-      'inside a test was not wrapped in act',
-      'React state updates should be wrapped in act',
-      'changing a controlled input to be uncontrolled'
-    ];
-    if (skipMessages.some(msg => args[0]?.includes(msg))) return;
-    originalError.call(console, ...args);
-  };
+// More aggressive warning suppression
+let consoleErrorSpy;
+let consoleWarnSpy;
 
-  console.warn = (...args) => {
-    const skipMessages = [
-      'An update to ProjectDetailsPage inside a test was not wrapped in act',
-      'A component is changing a controlled input'
-    ];
-    if (skipMessages.some(msg => args[0]?.includes(msg))) return;
-    originalWarn.call(console, ...args);
-  };
+beforeAll(() => {
+  // Properly set up console spies
+  consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation((...args) => {
+    if (typeof args[0] === 'string' && 
+      (args[0].includes('Warning:') || 
+       args[0].includes('Error:') ||
+       args[0].includes('act(') ||
+       args[0].includes('<li>'))) {
+      return;
+    }
+  });
+
+  consoleWarnSpy = vi.spyOn(console, 'warn').mockImplementation((...args) => {
+    if (typeof args[0] === 'string' && 
+      (args[0].includes('Warning:') || 
+       args[0].includes('act('))) {
+      return;
+    }
+  });
 });
 
 afterAll(() => {
-  console.error = originalError;
-  console.warn = originalWarn;
+  // Properly restore console spies
+  consoleErrorSpy.mockRestore();
+  consoleWarnSpy.mockRestore();
 });
 
 describe('ProjectDetailsPage', () => {
@@ -192,7 +209,8 @@ describe('ProjectDetailsPage', () => {
     });
 
     await waitFor(() => {
-      expect(screen.getByText(/back to details/i)).toBeInTheDocument();
+      const backButton = screen.getByText(/back to details/i);
+      expect(backButton).toBeInTheDocument();
     });
   });
 

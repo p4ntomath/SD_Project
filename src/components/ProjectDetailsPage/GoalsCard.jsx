@@ -154,8 +154,8 @@ export default function GoalsCard({
   };
 
   return (
-    <section className="bg-white rounded-lg shadow p-4 sm:p-6">
-      <div className="flex justify-between items-center mb-4">
+    <article className="bg-white rounded-lg shadow p-4 sm:p-6">
+      <header className="flex justify-between items-center mb-4">
         <h2 className="text-lg sm:text-xl font-semibold">Project Goals</h2>
         {isProjectOwner(project) && (
           <button
@@ -164,26 +164,29 @@ export default function GoalsCard({
             aria-label="Add goal"
           >
             <FaPlus className="h-5 w-5" />
-            
           </button>
         )}
-      </div>
+      </header>
       
       {(!project.goals || project.goals.length === 0) ? (
         <p className="text-gray-500 text-sm">No goals defined yet.</p>
       ) : (
-        <div className="max-h-[300px] overflow-y-auto pr-2">
-          <div className="space-y-3">
+        <section className="max-h-[300px] overflow-y-auto pr-2">
+          <ul className="space-y-3" role="list">
             {project.goals.map((goal, index) => (
-              <div key={index} className="flex items-start gap-3 p-2 bg-gray-50 rounded-lg group">
-                <input
-                  type="checkbox"
-                  checked={goal.completed}
-                  onChange={() => checkPermission(project, 'canCompleteGoals') && handleGoalStatusChange(index)}
-                  disabled={!checkPermission(project, 'canCompleteGoals')}
-                  className="mt-1"
-                />
-                <span className={goal.completed ? 'line-through text-gray-500 flex-1' : 'flex-1'}>{goal.text}</span>
+              <li key={index} className="flex items-start gap-3 p-2 bg-gray-50 rounded-lg group">
+                <label className="flex items-start gap-3 flex-1">
+                  <input
+                    type="checkbox"
+                    checked={goal.completed}
+                    onChange={() => checkPermission(project, 'canCompleteGoals') && handleGoalStatusChange(index)}
+                    disabled={!checkPermission(project, 'canCompleteGoals')}
+                    className="mt-1"
+                  />
+                  <span className={goal.completed ? 'line-through text-gray-500 flex-1' : 'flex-1'}>
+                    {goal.text}
+                  </span>
+                </label>
                 {isProjectOwner(project) && (
                   <button
                     onClick={() => handleDeleteGoal(index)}
@@ -195,10 +198,10 @@ export default function GoalsCard({
                     </svg>
                   </button>
                 )}
-              </div>
+              </li>
             ))}
-          </div>
-        </div>
+          </ul>
+        </section>
       )}
 
       {/* Add Goal Modal */}
@@ -207,23 +210,30 @@ export default function GoalsCard({
           <div className="fixed inset-0 z-50 overflow-y-auto">
             <div className="flex min-h-screen items-center justify-center p-4">
               <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={() => setShowAddGoalModal(false)} />
-              <motion.div
+              <motion.article
                 initial={{ scale: 0.95, opacity: 0 }}
                 animate={{ scale: 1, opacity: 1 }}
                 exit={{ scale: 0.95, opacity: 0 }}
                 className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6"
               >
-                <h2 className="text-xl font-semibold mb-4">Add New Goal</h2>
+                <header>
+                  <h3 className="text-xl font-semibold mb-4">Add New Goal</h3>
+                </header>
                 <form onSubmit={handleAddGoal}>
-                  <input
-                    type="text"
-                    value={newGoal}
-                    onChange={(e) => setNewGoal(e.target.value)}
-                    className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
-                    placeholder="Enter goal description"
-                    required
-                  />
-                  <div className="mt-6 flex justify-end gap-3">
+                  <fieldset>
+                    <legend className="sr-only">New goal details</legend>
+                    <label htmlFor="newGoal" className="sr-only">Goal description</label>
+                    <input
+                      id="newGoal"
+                      type="text"
+                      value={newGoal}
+                      onChange={(e) => setNewGoal(e.target.value)}
+                      className="w-full px-4 py-2 rounded-lg border border-gray-300 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="Enter goal description"
+                      required
+                    />
+                  </fieldset>
+                  <footer className="mt-6 flex justify-end gap-3">
                     <button
                       type="button"
                       onClick={() => setShowAddGoalModal(false)}
@@ -238,13 +248,13 @@ export default function GoalsCard({
                     >
                       {addingGoal ? 'Adding...' : 'Add Goal'}
                     </button>
-                  </div>
+                  </footer>
                 </form>
-              </motion.div>
+              </motion.article>
             </div>
           </div>
         )}
       </AnimatePresence>
-    </section>
+    </article>
   );
 }

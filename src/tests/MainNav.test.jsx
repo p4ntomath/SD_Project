@@ -1,16 +1,36 @@
 import React from 'react';
-import { render, screen, fireEvent, within,act, waitFor } from '@testing-library/react';
+import { render, screen, fireEvent, within, act, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom';
 import MainNav from '../components/ResearcherComponents/Navigation/MainNav';
 import { logOut } from '../backend/firebase/authFirebase';
 import { BrowserRouter } from 'react-router-dom';
+import { searchUsers } from '../backend/firebase/viewprofile';
+import { useUnreadNotificationsCount, useUnreadMessagesCount } from '../backend/firebase/notificationsUtil';
 
-
-// Mock the firebase auth module
+// Mock the firebase modules
 vi.mock('../backend/firebase/authFirebase', () => ({
   logOut: vi.fn(() => Promise.resolve())
 }));
+
+vi.mock('../backend/firebase/viewprofile', () => ({
+  searchUsers: vi.fn()
+}));
+
+vi.mock('../backend/firebase/notificationsUtil', () => ({
+  useUnreadNotificationsCount: vi.fn(() => 0),
+  useUnreadMessagesCount: vi.fn(() => 0)
+}));
+
+// Mock navigation
+const mockNavigate = vi.fn();
+vi.mock('react-router-dom', async () => {
+  const actual = await vi.importActual('react-router-dom');
+  return {
+    ...actual,
+    useNavigate: () => mockNavigate
+  };
+});
 
 // Mock window.location
 delete window.location;
@@ -31,6 +51,7 @@ window.matchMedia = vi.fn().mockImplementation(query => ({
 // Mock framer-motion
 vi.mock('framer-motion', () => ({
   motion: {
+    section: ({ children, ...props }) => <section {...props}>{children}</section>,
     article: ({ children, ...props }) => <article {...props}>{children}</article>,
     div: ({ children, ...props }) => <div {...props}>{children}</div>
   },
@@ -56,6 +77,7 @@ describe('MainNav Component', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
+    mockNavigate.mockClear();
   });
 
   it('renders all desktop navigation buttons', () => {
@@ -64,37 +86,49 @@ describe('MainNav Component', () => {
     expect(screen.getByLabelText('Home')).toBeInTheDocument();
     expect(screen.getByLabelText('My Projects')).toBeInTheDocument();
     expect(screen.getByLabelText('Documents')).toBeInTheDocument();
+    expect(screen.getByLabelText('View messages')).toBeInTheDocument();
     expect(screen.getByLabelText('View alerts')).toBeInTheDocument();
     expect(screen.getByLabelText('View profile')).toBeInTheDocument();
   });
 
-  it('renders the search bar', () => {
+  it('renders the search bar with new functionality', () => {
     renderWithRouter(<MainNav {...defaultProps} />);
     
-    const searchInput = screen.getByPlaceholderText('Search projects...');
+    const searchInput = screen.getByPlaceholderText('Search people...');
     expect(searchInput).toBeInTheDocument();
   });
 
-  it('handles search form submission', () => {
+  it('displays search suggestions when typing', async () => {
+    const mockResults = [
+      { id: '1', fullName: 'John Doe', role: 'Researcher', institution: 'Test Uni' },
+      { id: '2', fullName: 'Jane Smith', role: 'Reviewer', department: 'CS' }
+    ];
+    searchUsers.mockResolvedValue(mockResults);
+
     renderWithRouter(<MainNav {...defaultProps} />);
     
-    const searchInput = screen.getByPlaceholderText('Search projects...');
-    const searchForm = searchInput.closest('form');
+    const searchInput = screen.getByPlaceholderText('Search people...');
+    fireEvent.change(searchInput, { target: { value: 'test' } });
     
-    fireEvent.change(searchInput, { target: { value: 'test search' } });
-    fireEvent.submit(searchForm);
-    
-    expect(defaultProps.onSearch).toHaveBeenCalledWith('test search');
+    // Wait for search results
+    await waitFor(() => {
+      mockResults.forEach(user => {
+        expect(screen.getByText(user.fullName)).toBeInTheDocument();
+      });
+    });
   });
 
-  it('renders mobile menu toggle button on mobile view', () => {
+  it('shows unread notification badges when there are unread items', () => {
+    vi.mocked(useUnreadNotificationsCount).mockReturnValue(2);
+    vi.mocked(useUnreadMessagesCount).mockReturnValue(3);
+
     renderWithRouter(<MainNav {...defaultProps} />);
     
-    const menuButton = screen.getByLabelText('Toggle menu');
-    expect(menuButton).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument(); // Notifications badge
+    expect(screen.getByText('3')).toBeInTheDocument(); // Messages badge
   });
 
-  it('toggles mobile menu when menu button is clicked', () => {
+  it('handles mobile menu toggle correctly', () => {
     renderWithRouter(<MainNav {...defaultProps} />);
     
     const menuButton = screen.getByLabelText('Toggle menu');
@@ -103,46 +137,62 @@ describe('MainNav Component', () => {
     expect(defaultProps.setMobileMenuOpen).toHaveBeenCalledWith(true);
   });
 
-  it('shows mobile menu content when mobileMenuOpen is true', () => {
-    renderWithRouter(<MainNav {...defaultProps} mobileMenuOpen={true} />);
-    
-    const profileButton = screen.getByText('My Profile');
-    expect(profileButton).toBeInTheDocument();
-  });
-
-  it('handles logout button click', async () => {
+  it('handles logout process correctly', async () => {
     renderWithRouter(<MainNav {...defaultProps} />);
     
-    // Click the initial logout button in the nav bar
-    const navLogoutButton = screen.getAllByLabelText('Logout')[0];
-    fireEvent.click(navLogoutButton);
+    const logoutButton = screen.getByRole('button', { name: /logout/i });
+    fireEvent.click(logoutButton);
 
-    // Find the modal and look for the logout button within it
-    const modal = screen.getByRole('dialog');
-    const confirmLogoutButton = within(modal).getByRole('button', { name: 'Logout' });
-    await act(async () => {
-      fireEvent.click(confirmLogoutButton);
-    });
+    // Check if modal appears
+    expect(screen.getByText('Confirm Logout')).toBeInTheDocument();
+    expect(screen.getByText("Are you sure you want to log out? You'll need to sign in again to access your account.")).toBeInTheDocument();
+
+    // Confirm logout - use getAllByRole to handle multiple buttons
+    const confirmButtons = screen.getAllByRole('button', { name: /logout/i });
+    const modalLogoutButton = confirmButtons[1]; // The second logout button is in the modal
     
-    // Assert after state update
+    await act(async () => {
+      fireEvent.click(modalLogoutButton);
+    });
+
     expect(logOut).toHaveBeenCalled();
     await waitFor(() => {
       expect(window.location.href).toBe('/login');
     });
   });
 
-  it('displays the Research Portal heading', () => {
+  it('cancels logout when clicking cancel in modal', () => {
     renderWithRouter(<MainNav {...defaultProps} />);
     
-    expect(screen.getByText('Research Portal')).toBeInTheDocument();
+    const logoutButton = screen.getByRole('button', { name: /logout/i });
+    fireEvent.click(logoutButton);
+
+    const cancelButton = screen.getByRole('button', { name: 'Cancel' });
+    fireEvent.click(cancelButton);
+
+    expect(screen.queryByText('Confirm Logout')).not.toBeInTheDocument();
   });
 
-  it('applies correct classes to navigation buttons', () => {
+  it('navigates correctly when clicking menu items', async () => {
     renderWithRouter(<MainNav {...defaultProps} />);
     
-    const homeButton = screen.getByLabelText('Home');
-    expect(homeButton).toHaveClass('group');
-    expect(homeButton).toHaveClass('hover:bg-blue-50');
-    expect(homeButton).toHaveClass('text-gray-600');
+    // Test navigation for each button
+    fireEvent.click(screen.getByLabelText('Home'));
+    expect(mockNavigate).toHaveBeenCalledWith('/home');
+
+    fireEvent.click(screen.getByLabelText('My Projects'));
+    expect(mockNavigate).toHaveBeenCalledWith('/projects');
+
+    fireEvent.click(screen.getByLabelText('Documents'));
+    expect(mockNavigate).toHaveBeenCalledWith('/documents');
+
+    fireEvent.click(screen.getByLabelText('View messages'));
+    expect(mockNavigate).toHaveBeenCalledWith('/messages');
+
+    fireEvent.click(screen.getByLabelText('View alerts'));
+    expect(mockNavigate).toHaveBeenCalledWith('/notifications');
+
+    fireEvent.click(screen.getByLabelText('View profile'));
+    expect(mockNavigate).toHaveBeenCalledWith('/account');
   });
 });

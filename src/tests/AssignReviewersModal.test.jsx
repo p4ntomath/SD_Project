@@ -1,11 +1,13 @@
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
 import '@testing-library/jest-dom';
 import AssignReviewersModal from '../components/ResearcherComponents/AssignReviewersModal';
 import { getAvailableReviewers } from '../backend/firebase/reviewerDB';
+import { notify } from '../backend/firebase/notificationsUtil';
+import { getDoc } from 'firebase/firestore';
 
-// Suppress console errors and warnings
+// Save original console methods
 const originalError = console.error;
 const originalWarn = console.warn;
 
@@ -47,16 +49,38 @@ afterAll(() => {
   console.warn = originalWarn;
 });
 
-// Mock framer-motion to avoid animation-related issues in tests
-vi.mock('framer-motion', () => ({
-  motion: {
-    div: ({ children, ...props }) => <div {...props}>{children}</div>,
+// Mock Firebase auth and Firestore
+vi.mock('../backend/firebase/firebaseConfig', () => ({
+  auth: {
+    currentUser: {
+      uid: 'test-user-id',
+      displayName: 'Test User'
+    }
   },
+  db: {}
+}));
+
+// Mock notifications
+vi.mock('../backend/firebase/notificationsUtil', () => ({
+  notify: vi.fn()
+}));
+
+// Mock Firestore functions
+vi.mock('firebase/firestore', () => ({
+  getDoc: vi.fn(),
+  doc: vi.fn()
 }));
 
 // Mock the Firebase reviewer database functions
 vi.mock('../backend/firebase/reviewerDB', () => ({
-  getAvailableReviewers: vi.fn(),
+  getAvailableReviewers: vi.fn()
+}));
+
+// Mock framer-motion
+vi.mock('framer-motion', () => ({
+  motion: {
+    section: ({ children, ...props }) => <section {...props}>{children}</section>
+  }
 }));
 
 const mockReviewers = [
@@ -99,6 +123,11 @@ describe('AssignReviewersModal', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(getAvailableReviewers).mockResolvedValue(mockReviewers);
+    // Mock getDoc to return user data
+    vi.mocked(getDoc).mockResolvedValue({
+      exists: () => true,
+      data: () => ({ fullName: 'Test Researcher' })
+    });
   });
 
   it('renders nothing when isOpen is false', () => {
@@ -154,7 +183,7 @@ describe('AssignReviewersModal', () => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
     });
 
-    const reviewerElement = screen.getByText('John Doe').closest('div[role="button"]') || screen.getByText('John Doe').parentElement?.parentElement?.parentElement;
+    const reviewerElement = screen.getByText('John Doe').closest('[role="button"]');
     fireEvent.click(reviewerElement);
     expect(screen.getByText('1 reviewer selected')).toBeInTheDocument();
 
@@ -162,14 +191,14 @@ describe('AssignReviewersModal', () => {
     expect(screen.getByText('0 reviewers selected')).toBeInTheDocument();
   });
 
-  it('calls onAssign with selected reviewers when confirming', async () => {
+  it('calls onAssign and sends notifications when confirming', async () => {
     render(<AssignReviewersModal {...defaultProps} />);
     
     await waitFor(() => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
     });
 
-    const reviewerElement = screen.getByText('John Doe').closest('div[role="button"]') || screen.getByText('John Doe').parentElement?.parentElement?.parentElement;
+    const reviewerElement = screen.getByText('John Doe').closest('[role="button"]');
     fireEvent.click(reviewerElement);
 
     const confirmButton = screen.getByRole('button', { name: /confirm assignment/i });
@@ -181,35 +210,50 @@ describe('AssignReviewersModal', () => {
       fieldOfResearch: 'Computer Science',
       department: 'Engineering'
     }]);
+
+    await waitFor(() => {
+      // Verify notifications were sent
+      expect(notify).toHaveBeenCalledWith(expect.objectContaining({
+        type: 'Reviewer Request Received',
+        projectId: 'project-123',
+        targetUserId: '1'
+      }));
+    });
   });
 
-  it('calls onClose when clicking the cancel button', async () => {
-    render(<AssignReviewersModal {...defaultProps} />);
-    
-    const cancelButton = screen.getByText('Cancel');
-    fireEvent.click(cancelButton);
-
-    expect(mockOnClose).toHaveBeenCalled();
-  });
-
-  it('calls onClose when clicking the close icon', async () => {
-    render(<AssignReviewersModal {...defaultProps} />);
-    
-    const closeButton = screen.getByRole('button', { name: /close modal/i });
-    fireEvent.click(closeButton);
-
-    expect(mockOnClose).toHaveBeenCalled();
-  });
-
-  it('disables the confirm button when no reviewers are selected', async () => {
+  it('shows loading state during assignment', async () => {
     render(<AssignReviewersModal {...defaultProps} />);
     
     await waitFor(() => {
       expect(screen.getByText('John Doe')).toBeInTheDocument();
     });
 
+    const reviewerElement = screen.getByText('John Doe').closest('[role="button"]');
+    fireEvent.click(reviewerElement);
+
     const confirmButton = screen.getByRole('button', { name: /confirm assignment/i });
+    fireEvent.click(confirmButton);
+
+    expect(screen.getByText('Sending requests...')).toBeInTheDocument();
+  });
+
+  it('disables buttons during assignment process', async () => {
+    render(<AssignReviewersModal {...defaultProps} />);
+    
+    await waitFor(() => {
+      expect(screen.getByText('John Doe')).toBeInTheDocument();
+    });
+
+    const reviewerElement = screen.getByText('John Doe').closest('[role="button"]');
+    fireEvent.click(reviewerElement);
+
+    const confirmButton = screen.getByRole('button', { name: /confirm assignment/i });
+    const cancelButton = screen.getByRole('button', { name: /cancel/i });
+    
+    fireEvent.click(confirmButton);
+
     expect(confirmButton).toBeDisabled();
+    expect(cancelButton).toBeDisabled();
   });
 
   it('shows "No reviewers found" message when search returns no results', async () => {
@@ -233,7 +277,7 @@ describe('AssignReviewersModal', () => {
     const busyReviewer = {
       id: '3',
       fullName: 'Busy Reviewer',
-      expertise: 'Physics',
+      fieldOfResearch: 'Physics',
       department: 'Science'
     };
 

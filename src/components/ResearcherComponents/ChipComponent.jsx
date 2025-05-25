@@ -1,7 +1,7 @@
 export default function ChipComponent({ goal, onDelete }) {
   return (
     <li className="inline-flex items-center bg-blue-100 text-blue-800 rounded-full py-1 px-3 mr-2 mb-2 text-sm">
-      <p>{goal.text}</p>
+      {goal.text}
       <button 
         type="button"
         onClick={onDelete}

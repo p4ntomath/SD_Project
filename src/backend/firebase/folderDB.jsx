@@ -35,7 +35,7 @@ export const createFolder = async (projectId, folderName) => {
 
         return folderRef.id;
     } catch (error) {
-        console.error("Error creating folder:", error);
+       
         throw new Error("Failed to create folder: " + error.message);
     }
 };
