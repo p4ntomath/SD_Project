@@ -87,7 +87,7 @@ export default function MyProfilePage() {
             setSelectedInstitution({ value: userData.institution, label: userData.institution });
           }
         } catch (error) {
-          console.error("Error loading profile:", error);
+
         } finally {
           setIsLoading(false);
         }
@@ -210,7 +210,7 @@ export default function MyProfilePage() {
       setStatusMessage({ type: 'success', message: 'Profile updated successfully!' });
       setShowStatusModal(true);
     } catch (error) {
-      console.error("Error updating profile:", error);
+
       setStatusMessage({ type: 'error', message: 'Failed to update profile: ' + error.message });
       setShowStatusModal(true);
     } finally {
