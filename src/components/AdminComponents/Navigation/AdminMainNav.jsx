@@ -1,13 +1,16 @@
-import { FiHome, FiUsers, FiFolder, FiDollarSign, FiMenu, FiX } from 'react-icons/fi';
-import { useState } from 'react';
+import { FiHome, FiUsers, FiFolder, FiDollarSign, FiMenu, FiX, FiBell } from 'react-icons/fi';
+import { use, useState } from 'react';
 import { logOut } from '../../../backend/firebase/authFirebase';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
+import {  useUnreadMessagesCount } from '../../../backend/firebase/notificationsUtil'; // Custom hook to get unread notifications count
 
 export default function AdminMainNav({ setMobileMenuOpen, mobileMenuOpen }) {
   const [showLogoutModal, setShowLogoutModal] = useState(false);
+  const [notificationCount, setNotificationCount] = useState(3); // Example count
   const navigate = useNavigate();
   const location = useLocation();
+  const unreadCount = useUnreadMessagesCount// Custom hook to get unread notifications count
 
   const handleLogout = async () => {
     try {
@@ -71,6 +74,28 @@ export default function AdminMainNav({ setMobileMenuOpen, mobileMenuOpen }) {
                     <span className="text-xs mt-1 group-hover:text-blue-600">Funding</span>
                   </button>
                 </li>
+                
+                <li>
+                    <button
+                    onClick={() => navigate('/admin/notifications')}
+                    className={`group flex flex-col items-center justify-center p-3 ${location.pathname === '/admin/notifications' ? 'text-blue-600' : 'text-gray-600'} hover:bg-blue-50 rounded-lg transition-all duration-200`}
+                    aria-label="Notifications"
+                    role="menuitem"
+                  >
+                     <span className="relative">
+                <FiBell className="h-6 w-6 group-hover:text-blue-600" />
+                {/* Show unread notifications badge if any */}
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 bg-red-600 text-white text-xs rounded-full px-1.5 py-0.5 font-bold z-10">
+                    {unreadCount}
+                  </span>
+                )}
+              </span>
+                    <span className="text-xs mt-1 group-hover:text-blue-600">Notifications</span>
+                    
+                  
+                  </button>
+                </li>  
               </ul>
 
               {/* Portal Title and Logout (Desktop) */}
@@ -78,6 +103,7 @@ export default function AdminMainNav({ setMobileMenuOpen, mobileMenuOpen }) {
                 <header className="hidden md:flex items-center">
                   <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-pink-500 bg-clip-text text-transparent">Admin Portal</h1>
                 </header>
+              
                 <nav className="hidden md:flex items-center" aria-label="Logout">
                   <button
                     className="bg-gray-500 hover:bg-gray-400 text-white font-medium py-2 px-4 rounded-lg text-sm transition-colors flex items-center"

@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 import { createFunding, getAllFunding, fetchProjectsWithUsers, fetchAllUsers } from '../backend/firebase/adminAccess.jsx';
 import { fetchAllDocuments } from '../backend/firebase/documentsDB';
 import { ClipLoader } from 'react-spinners';
+import { getAuth } from 'firebase/auth'; // Add this import if using Firebase Auth
 import MainNav from '../components/AdminComponents/Navigation/AdminMainNav';
 import MobileBottomNav from '../components/AdminComponents/Navigation/AdminMobileBottomNav';
 
@@ -76,22 +77,59 @@ export default function AdminHomePage() {
   };
 
   const handleAddFunding = async (e) => {
-    e.preventDefault();
-    try {
-      await createFunding(newFunding);
-      setNewFunding({ name: '', expectedFunds: '', externalLink: '' });
-      setShowAddFunding(false);
-      
-      // Refresh stats to show new funding count
-      const fundingOpps = await getAllFunding();
-      setStats(prev => ({
-        ...prev,
-        fundingOpportunities: fundingOpps.length
-      }));
-    } catch (error) {
-      console.error('Error adding funding opportunity:', error);
+  e.preventDefault();
+  try {
+    await createFunding(newFunding);
+    setNewFunding({ name: '', expectedFunds: '', externalLink: '' });
+    setShowAddFunding(false);
+
+    // Get current admin user ID
+    const auth = getAuth();
+    const adminId = auth.currentUser?.uid;
+
+    // Fetch all users
+    const users = await fetchAllUsers();
+
+    // Get all researcher userIds
+    const researcherIds = users
+      .filter(user => user.role === 'researcher')
+      .map(user => user.id);
+
+    // Send notification to each researcher
+    await Promise.all(
+      researcherIds.map(userId =>
+        notify({
+          type: 'Funding Opportunity Added',
+          FundingName: newFunding.name,
+          targetUserId: userId,
+          senderUserId: adminId
+        })
+      )
+    );
+    
+
+    // Send notification to admin (self)
+    if (adminId) {
+      await notify({
+        type: 'Funding Opportunity Added',
+        FundingName: newFunding.name,
+        targetUserId: adminId,
+        senderUserId: adminId
+      });
     }
-  };
+    Console.log('Notifications sent to researchers and admin');
+    // Refresh stats to show new funding count
+    const fundingOpps = await getAllFunding();
+    setStats(prev => ({
+      ...prev,
+      fundingOpportunities: fundingOpps.length
+    }));
+  } catch (error) {
+      Console.log('Notifications not sent to researchers and admin');
+  
+  
+  }
+};
 
   return (
     <section className="min-h-screen bg-gray-50">
@@ -279,7 +317,7 @@ export default function AdminHomePage() {
                       <input
                         type="text"
                         id="name"
-                        value={newFunding.name}
+                        value={newFunding.funding_name}
                         onChange={(e) => setNewFunding(prev => ({ ...prev, name: e.target.value }))}
                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required
@@ -292,7 +330,7 @@ export default function AdminHomePage() {
                       <input
                         type="number"
                         id="expectedFunds"
-                        value={newFunding.expectedFunds}
+                        value={newFunding.expected_funds}
                         onChange={(e) => setNewFunding(prev => ({ ...prev, expectedFunds: e.target.value }))}
                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required
@@ -305,7 +343,7 @@ export default function AdminHomePage() {
                       <input
                         type="url"
                         id="externalLink"
-                        value={newFunding.externalLink}
+                        value={newFunding.external_link}
                         onChange={(e) => setNewFunding(prev => ({ ...prev, externalLink: e.target.value }))}
                         className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:ring-2 focus:ring-blue-500"
                         required
