@@ -78,8 +78,6 @@ export default function FundingTrackerPage() {
 
   // Helper function to format currency
   const formatCurrency = (amount) => {
-    // Use minimumFractionDigits and maximumFractionDigits to ensure no decimal places
-    // Use useGrouping: true to always use commas as thousand separators
     return `R ${amount.toLocaleString('en-US', {
       minimumFractionDigits: 0,
       maximumFractionDigits: 0,
