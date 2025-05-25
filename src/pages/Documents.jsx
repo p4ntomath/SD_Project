@@ -420,6 +420,7 @@ export default function DocumentsPage() {
                                             </section>
                                             <section className="flex items-center space-x-2">
                                                 <button
+                                                    data-testid={`download-file`}
                                                     onClick={() => handleDownloadWrapper(file.downloadURL)}
                                                     className="text-blue-600 hover:text-blue-800"
                                                 >

@@ -1,5 +1,14 @@
 export default function getCroppedImg(imageSrc, croppedAreaPixels) {
     return new Promise((resolve, reject) => {
+        if (!imageSrc) {
+            reject(new Error('Image source is required'));
+            return;
+        }
+        if (!croppedAreaPixels) {
+            reject(new Error('Crop area parameters are required'));
+            return;
+        }
+
         const image = new Image();
         image.crossOrigin = 'anonymous';
         image.src = imageSrc;

@@ -54,7 +54,6 @@ export default function ExportDialog({
       <div className="flex min-h-screen items-center justify-center p-4">
         <div className="fixed inset-0 bg-black/30 backdrop-blur-sm" onClick={onClose} aria-hidden="true" />
         <motion.article
-          role="dialog"
           aria-modal="true"
           className="relative bg-white/80 backdrop-blur-md p-6 rounded-2xl shadow-2xl w-full max-w-md mx-4 border border-gray-200"
           initial={{ scale: 0.8, opacity: 0 }}

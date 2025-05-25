@@ -122,55 +122,55 @@
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-yes">39x</span>
+<span class="cline-any cline-yes">86x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">39x</span>
-<span class="cline-any cline-yes">39x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
-<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">86x</span>
+<span class="cline-any cline-yes">86x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
+<span class="cline-any cline-yes">6x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">39x</span>
-<span class="cline-any cline-yes">39x</span>
-<span class="cline-any cline-yes">39x</span>
-<span class="cline-any cline-yes">39x</span>
-<span class="cline-any cline-yes">39x</span>
+<span class="cline-any cline-yes">86x</span>
+<span class="cline-any cline-yes">86x</span>
+<span class="cline-any cline-yes">86x</span>
+<span class="cline-any cline-yes">86x</span>
+<span class="cline-any cline-yes">86x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">39x</span>
-<span class="cline-any cline-yes">39x</span>
-<span class="cline-any cline-yes">39x</span>
+<span class="cline-any cline-yes">86x</span>
+<span class="cline-any cline-yes">86x</span>
+<span class="cline-any cline-yes">86x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">39x</span>
-<span class="cline-any cline-yes">39x</span>
-<span class="cline-any cline-yes">39x</span>
-<span class="cline-any cline-yes">39x</span>
-<span class="cline-any cline-yes">39x</span>
+<span class="cline-any cline-yes">86x</span>
+<span class="cline-any cline-yes">86x</span>
+<span class="cline-any cline-yes">86x</span>
+<span class="cline-any cline-yes">86x</span>
+<span class="cline-any cline-yes">86x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">39x</span>
-<span class="cline-any cline-yes">39x</span>
-<span class="cline-any cline-yes">39x</span>
-<span class="cline-any cline-yes">39x</span>
-<span class="cline-any cline-yes">39x</span>
-<span class="cline-any cline-yes">39x</span>
+<span class="cline-any cline-yes">86x</span>
+<span class="cline-any cline-yes">86x</span>
+<span class="cline-any cline-yes">86x</span>
+<span class="cline-any cline-yes">86x</span>
+<span class="cline-any cline-yes">86x</span>
+<span class="cline-any cline-yes">86x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
-<span class="cline-any cline-yes">39x</span>
+<span class="cline-any cline-yes">86x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">import React from 'react';
@@ -209,7 +209,7 @@ const StatusModal = ({ isOpen, onClose, success, message }) =&gt; {
             &lt;/header&gt;
             
             &lt;section className="mb-6"&gt;
-              &lt;p className="text-gray-700"&gt;{message}&lt;/p&gt;
+              &lt;p data-testid="error-message" className="text-gray-700"&gt;{message}&lt;/p&gt;
             &lt;/section&gt;
 &nbsp;
             &lt;footer className="flex justify-end"&gt;
@@ -235,7 +235,7 @@ export default StatusModal;
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-24T23:15:37.407Z
+                at 2025-05-25T01:36:54.149Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

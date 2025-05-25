@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FaArrowLeft, FaPlus, FaEdit, FaTrash } from 'react-icons/fa';
+import { FaArrowLeft, FaPlus, FaEdit, FaTrash, FaSearch } from 'react-icons/fa';
 import { useNavigate } from 'react-router-dom';
 import { getAllFunding, createFunding, deleteFunding, updateFunding } from '../backend/firebase/adminAccess.jsx';
 import StatusModal from '../components/StatusModal';
@@ -31,6 +31,18 @@ export default function FundingManagementPage() {
     description: '',
     status: 'active'
   });
+  const [searchQuery, setSearchQuery] = useState('');
+  const [statusFilter, setStatusFilter] = useState('');
+
+  const filteredFundings = fundings.filter(funding => {
+    const matchesSearch = !searchQuery || 
+      funding.funding_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      funding.description?.toLowerCase().includes(searchQuery.toLowerCase());
+    
+    const matchesStatus = !statusFilter || funding.status === statusFilter;
+    
+    return matchesSearch && matchesStatus;
+  });
 
   const navigate = useNavigate();
 
@@ -55,13 +67,22 @@ export default function FundingManagementPage() {
     e.preventDefault();
     setUpdateLoading(true);
     try {
+      const fundingData = {
+        funding_name: formData.name,
+        expected_funds: formData.expectedFunds,
+        external_link: formData.externalLink,
+        deadline: formData.deadline,
+        category: formData.category,
+        eligibility: formData.eligibility,
+        description: formData.description,
+        status: formData.status
+      };
+      
       if (showEditModal) {
-        // Update existing funding
-        await updateFunding(currentFunding.id, formData);
+        await updateFunding(currentFunding.id, fundingData);
         setSuccess("Funding opportunity updated successfully");
       } else {
-        // Create new funding
-        await createFunding(formData);
+        await createFunding(fundingData);
         setSuccess("Funding opportunity created successfully");
       }
       // Refresh funding list after update/create
@@ -129,6 +150,7 @@ export default function FundingManagementPage() {
               <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Manage Funding Opportunities</h1>
             </section>
             <button
+              data-testid="add-funding-button"
               onClick={() => {
                 setCurrentFunding(null);
                 setFormData({
@@ -150,14 +172,39 @@ export default function FundingManagementPage() {
             </button>
           </section>
 
+          <section className="flex items-center gap-4 mb-4">
+            <section className="relative flex-1">
+              <input
+                data-testid="search-input"
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search funding opportunities..."
+                className="w-full px-4 py-2 pl-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              />
+              <FaSearch className="absolute left-3 top-2.5 text-gray-400" />
+            </section>
+            <select
+              data-testid="status-filter"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            >
+              <option value="">All Status</option>
+              <option value="active">Active</option>
+              <option value="closed">Closed</option>
+              <option value="coming_soon">Coming Soon</option>
+            </select>
+          </section>
+
           {loading ? (
-            <section className="flex justify-center">
+            <section className="flex justify-center" data-testid="loading-spinner">
               <ClipLoader color="#3B82F6" />
             </section>
           ) : (
             <section className="bg-white rounded-lg shadow-sm overflow-hidden">
               <section className="overflow-x-auto">
-                <table className="min-w-full sectionide-y sectionide-gray-200">
+                <table className="min-w-full sectionide-y sectionide-gray-200" data-testid="funding-table">
                   <thead className="bg-gray-50">
                     <tr>
                       <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase">Name</th>
@@ -169,8 +216,8 @@ export default function FundingManagementPage() {
                     </tr>
                   </thead>
                   <tbody className="bg-white sectionide-y sectionide-gray-200">
-                    {fundings.map((funding) => (
-                      <tr key={funding.id} className="hover:bg-gray-50">
+                    {filteredFundings.map((funding) => (
+                      <tr key={funding.id} data-testid={`funding-row-${funding.id}`} className="hover:bg-gray-50">
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm font-medium text-gray-900">{funding.funding_name}</div>
                           {funding.description && (
@@ -185,7 +232,7 @@ export default function FundingManagementPage() {
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="text-sm text-gray-900">
+                          <div className="text-sm text-gray-900" data-testid="funding-amount">
                             R{Number(funding.expected_funds).toLocaleString()}
                           </div>
                         </td>
@@ -199,7 +246,7 @@ export default function FundingManagementPage() {
                             funding.status === 'active' ? 'bg-green-100 text-green-800' :
                             funding.status === 'closed' ? 'bg-gray-100 text-gray-800' :
                             'bg-yellow-100 text-yellow-800'
-                          }`}>
+                          }`} data-testid="funding-status">
                             {funding.status === 'active' ? 'Active' :
                              funding.status === 'closed' ? 'Closed' :
                              'Coming Soon'}
@@ -207,6 +254,7 @@ export default function FundingManagementPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <button
+                            data-testid={`edit-button-${funding.id}`}
                             onClick={() => {
                               handleEdit(funding);
                             }}
@@ -215,6 +263,7 @@ export default function FundingManagementPage() {
                             <FaEdit size={18} />
                           </button>
                           <button
+                            data-testid={`delete-button-${funding.id}`}
                             onClick={() => {
                               setFundingToDelete(funding);
                               setShowDeleteConfirm(true);
@@ -241,7 +290,7 @@ export default function FundingManagementPage() {
                 setShowAddModal(false);
                 setShowEditModal(false);
               }} />
-              <section className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6">
+              <section className="relative bg-white rounded-2xl shadow-xl w-full max-w-md p-6" data-testid="funding-modal">
                 <h2 className="text-xl font-semibold mb-4">
                   {showEditModal ? 'Edit Funding Opportunity' : 'Add New Funding Opportunity'}
                 </h2>
@@ -250,6 +299,7 @@ export default function FundingManagementPage() {
                     <div>
                       <label className="block text-sm font-medium text-gray-700">Funding Name</label>
                       <input
+                        data-testid="funding-name-input"
                         type="text"
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -262,6 +312,7 @@ export default function FundingManagementPage() {
                       <div>
                         <label className="block text-sm font-medium text-gray-700">Expected Funds (R)</label>
                         <input
+                          data-testid="funding-amount-input"
                           type="number"
                           value={formData.expectedFunds}
                           onChange={(e) => setFormData({ ...formData, expectedFunds: e.target.value })}
@@ -273,6 +324,7 @@ export default function FundingManagementPage() {
                       <div>
                         <label className="block text-sm font-medium text-gray-700">Application Deadline</label>
                         <input
+                          data-testid="funding-deadline-input"
                           type="date"
                           value={formData.deadline}
                           onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
@@ -360,6 +412,7 @@ export default function FundingManagementPage() {
                     </button>
                     <button
                       type="submit"
+                      data-testid="submit-button"
                       disabled={updateLoading}
                       className="px-4 py-2 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md flex items-center gap-2"
                     >
@@ -383,7 +436,7 @@ export default function FundingManagementPage() {
 
         {/* Delete Confirmation Modal */}
         {showDeleteConfirm && (
-          <section className="fixed inset-0 z-50 overflow-y-auto">
+          <section className="fixed inset-0 z-50 overflow-y-auto" data-testid="delete-modal">
             <section className="flex min-h-screen items-center justify-center p-4">
               <section className="fixed inset-0 bg-gray-500/50 backdrop-blur-sm transition-all" onClick={() => setShowDeleteConfirm(false)} />
               <section className="relative bg-white rounded-xl shadow-lg w-full max-w-md p-6">
@@ -399,6 +452,7 @@ export default function FundingManagementPage() {
                     Cancel
                   </button>
                   <button
+                    data-testid="confirm-delete-button"
                     onClick={handleDelete}
                     className="px-4 py-2 text-sm font-medium text-white bg-red-600 hover:bg-red-700 rounded-md"
                   >
@@ -414,8 +468,9 @@ export default function FundingManagementPage() {
         <StatusModal
           isOpen={showStatus}
           onClose={() => setShowStatus(false)}
-          success={!error}
+          success={!error} 
           message={error || success}
+          messageTestId="error-message"
         />
       </main>
 

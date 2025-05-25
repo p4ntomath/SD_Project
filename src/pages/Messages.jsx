@@ -21,16 +21,22 @@ export default function Messages() {
   }, [location.pathname, navigate]);
 
   return (
-    <section className="h-screen bg-gray-50">
+    <section data-testid="messages-container" className="h-screen bg-gray-50">
       <section className="h-full md:grid md:grid-cols-[380px_1fr]">
-        <section className={`${
-          location.pathname === '/messages' ? 'block' : 'hidden md:block'
-        } h-full bg-white border-r border-gray-200`}>
+        <section 
+          data-testid="messages-list"
+          className={`${
+            location.pathname === '/messages' ? 'block' : 'hidden md:block'
+          } h-full bg-white border-r border-gray-200`}
+        >
           <MessagesList />
         </section>
-        <section className={`${
-          location.pathname === '/messages' ? 'hidden md:block' : 'block'
-        } h-full bg-white`}>
+        <section 
+          data-testid="chat-view"
+          className={`${
+            location.pathname === '/messages' ? 'hidden md:block' : 'block'
+          } h-full`}
+        >
           <Outlet />
         </section>
       </section>

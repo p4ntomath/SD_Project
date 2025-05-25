@@ -30,7 +30,7 @@ export default function MessagesList() {
           setLoading(false);
         });
       } catch (error) {
-        console.error('Error initializing chats:', error);
+        
         setLoading(false);
       }
     };
@@ -200,7 +200,7 @@ export default function MessagesList() {
               photos[userId] = userDoc.data().profilePicture || null;
             }
           } catch (error) {
-            console.error(`Error fetching profile picture for ${userId}:`, error);
+            
           }
         })
       );
@@ -267,6 +267,7 @@ export default function MessagesList() {
             )}
             <section className="flex space-x-2">
               <button
+                data-testid="new-chat-button"
                 onClick={() => {
                   setShowNewChatModal(true);
                   setShowGroupChatModal(false);
@@ -280,6 +281,7 @@ export default function MessagesList() {
                 
               </button>
               <button
+                data-testid="group-chat-button"
                 onClick={() => {
                   setShowGroupChatModal(true);
                   setShowNewChatModal(true);

@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">2.17% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>1/46</span>
+                <span class='fraction'>46/46</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
                 <span class="strong">100% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>0/0</span>
+                <span class='fraction'>9/9</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">0% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>0/1</span>
+                <span class='fraction'>3/3</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">2.17% </span>
+                <span class="strong">100% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>1/46</span>
+                <span class='fraction'>46/46</span>
             </div>
         
             
@@ -61,7 +61,7 @@
             </div>
         </template>
     </div>
-    <div class='status-line low'></div>
+    <div class='status-line high'></div>
     <pre><table class="coverage">
 <tr><td class="line-count quiet"><a name='L1'></a><a href='#L1'>1</a>
 <a name='L2'></a><a href='#L2'>2</a>
@@ -109,103 +109,103 @@
 <a name='L44'></a><a href='#L44'>44</a>
 <a name='L45'></a><a href='#L45'>45</a>
 <a name='L46'></a><a href='#L46'>46</a></td><td class="line-coverage quiet"><span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span></td><td class="text"><pre class="prettyprint lang-js">export const generateThumbnail = <span class="fstat-no" title="function not covered" >async (file) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >  return new Promise((resolve) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >    if (!file.type.startsWith('image/')) {</span>
-<span class="cstat-no" title="statement not covered" >      resolve(null);</span>
-<span class="cstat-no" title="statement not covered" >      return;</span>
-<span class="cstat-no" title="statement not covered" >    }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    const img = new Image();</span>
-<span class="cstat-no" title="statement not covered" >    const canvas = document.createElement('canvas');</span>
-<span class="cstat-no" title="statement not covered" >    const ctx = canvas.getContext('2d');</span>
-<span class="cstat-no" title="statement not covered" >    const reader = new FileReader();</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >    reader.onload = (e) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >      img.onload = () =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >        // Calculate thumbnail dimensions (max 200px)</span>
-<span class="cstat-no" title="statement not covered" >        const maxDimension = 200;</span>
-<span class="cstat-no" title="statement not covered" >        let width = img.width;</span>
-<span class="cstat-no" title="statement not covered" >        let height = img.height;</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        if (width &gt; height) {</span>
-<span class="cstat-no" title="statement not covered" >          if (width &gt; maxDimension) {</span>
-<span class="cstat-no" title="statement not covered" >            height = Math.round((height * maxDimension) / width);</span>
-<span class="cstat-no" title="statement not covered" >            width = maxDimension;</span>
-<span class="cstat-no" title="statement not covered" >          }</span>
-<span class="cstat-no" title="statement not covered" >        } else {</span>
-<span class="cstat-no" title="statement not covered" >          if (height &gt; maxDimension) {</span>
-<span class="cstat-no" title="statement not covered" >            width = Math.round((width * maxDimension) / height);</span>
-<span class="cstat-no" title="statement not covered" >            height = maxDimension;</span>
-<span class="cstat-no" title="statement not covered" >          }</span>
-<span class="cstat-no" title="statement not covered" >        }</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        // Set canvas dimensions and draw image</span>
-<span class="cstat-no" title="statement not covered" >        canvas.width = width;</span>
-<span class="cstat-no" title="statement not covered" >        canvas.height = height;</span>
-<span class="cstat-no" title="statement not covered" >        ctx.drawImage(img, 0, 0, width, height);</span>
-<span class="cstat-no" title="statement not covered" ></span>
-<span class="cstat-no" title="statement not covered" >        // Convert to blob</span>
-<span class="cstat-no" title="statement not covered" >        canvas.toBlob((blob) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >          resolve(blob);</span>
-<span class="cstat-no" title="statement not covered" >        }, 'image/jpeg', 0.7); // Use JPEG with 70% quality for thumbnails</span>
-<span class="cstat-no" title="statement not covered" >      };</span>
-<span class="cstat-no" title="statement not covered" >      img.src = e.target.result;</span>
-<span class="cstat-no" title="statement not covered" >    };</span>
-<span class="cstat-no" title="statement not covered" >    reader.readAsDataURL(file);</span>
-<span class="cstat-no" title="statement not covered" >  });</span>
-<span class="cstat-no" title="statement not covered" >};</span></pre></td></tr></table></pre>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">2x</span>
+<span class="cline-any cline-yes">4x</span>
+<span class="cline-any cline-yes">4x</span></td><td class="text"><pre class="prettyprint lang-js">export const generateThumbnail = async (file) =&gt; {
+  return new Promise((resolve) =&gt; {
+    if (!file || !file.type || !file.type.startsWith('image/')) {
+      resolve(null);
+      return;
+    }
+&nbsp;
+    const img = new Image();
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    const reader = new FileReader();
+&nbsp;
+    reader.onload = (e) =&gt; {
+      img.onload = () =&gt; {
+        // Calculate thumbnail dimensions (max 200px)
+        const maxDimension = 200;
+        let width = img.width;
+        let height = img.height;
+&nbsp;
+        if (width &gt; height) {
+          if (width &gt; maxDimension) {
+            height = Math.round((height * maxDimension) / width);
+            width = maxDimension;
+          }
+        } else {
+          if (height &gt; maxDimension) {
+            width = Math.round((width * maxDimension) / height);
+            height = maxDimension;
+          }
+        }
+&nbsp;
+        // Set canvas dimensions and draw image
+        canvas.width = width;
+        canvas.height = height;
+        ctx.drawImage(img, 0, 0, width, height);
+&nbsp;
+        // Convert to blob
+        canvas.toBlob((blob) =&gt; {
+          resolve(blob);
+        }, 'image/jpeg', 0.7); // Use JPEG with 70% quality for thumbnails
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+};</pre></td></tr></table></pre>
 
                 <div class='push'></div><!-- for sticky footer -->
             </div><!-- /wrapper -->
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-24T23:15:37.407Z
+                at 2025-05-25T01:36:54.149Z
             </div>
         <script src="../../../prettify.js"></script>
         <script>

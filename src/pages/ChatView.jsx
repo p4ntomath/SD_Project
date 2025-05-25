@@ -495,7 +495,7 @@ export default function ChatView() {
               photos[userId] = userDoc.data().profilePicture || null;
             }
           } catch (error) {
-            console.error(`Error fetching profile picture for ${userId}:`, error);
+            
           }
         })
       );
@@ -1275,6 +1275,7 @@ export default function ChatView() {
                 multiple
                 accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.xls,.xlsx,.txt"
                 disabled={sendingMessage}
+                data-testid="file-input"
               />
               <button 
                 type="button"
@@ -1290,6 +1291,8 @@ export default function ChatView() {
                 onClick={toggleEmojiPicker}
                 disabled={sendingMessage}
                 className="p-3 text-gray-500 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors relative disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="emoji"
+                aria-expanded={showEmojiPicker}
               >
                 <FiSmile className="h-5 w-5" />
               </button>
@@ -1297,6 +1300,8 @@ export default function ChatView() {
                 type="submit"
                 disabled={(!messageInput.trim() && attachments.length === 0) || sendingMessage}
                 className="p-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+                aria-label="send"
+                aria-disabled={(!messageInput.trim() && attachments.length === 0) || sendingMessage}
               >
                 {sendingMessage ? (
                   <span className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
@@ -1314,6 +1319,7 @@ export default function ChatView() {
         <aside 
           ref={emojiPickerRef}
           className="absolute bottom-20 right-16 z-50"
+          data-testid="emoji-picker"
         >
           <EmojiPicker
             onEmojiClick={(emojiData) => {

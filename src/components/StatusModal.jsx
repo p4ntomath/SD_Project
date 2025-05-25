@@ -34,7 +34,7 @@ const StatusModal = ({ isOpen, onClose, success, message }) => {
             </header>
             
             <section className="mb-6">
-              <p className="text-gray-700">{message}</p>
+              <p data-testid="error-message" className="text-gray-700">{message}</p>
             </section>
 
             <footer className="flex justify-end">

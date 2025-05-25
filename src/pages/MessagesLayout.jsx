@@ -23,7 +23,7 @@ export default function MessagesLayout() {
         }
         setInitialLoadComplete(true);
       } catch (error) {
-        console.error('Error loading initial chat:', error);
+        
         setInitialLoadComplete(true);
       }
     };
@@ -56,14 +56,20 @@ export default function MessagesLayout() {
     <section className="h-screen bg-gray-50">
       <section className="h-full md:grid md:grid-cols-[380px_1fr]">
         {/* Messages list - always visible on desktop */}
-        <section className={`${location.pathname === '/messages' ? 'block' : 'hidden md:block'} h-full bg-white border-r border-gray-200 overflow-hidden`}>
+        <section 
+          data-testid="messages-list"
+          className={`${location.pathname === '/messages' ? 'block' : 'hidden md:block'} h-full bg-white border-r border-gray-200 overflow-hidden`}
+        >
           <section className="h-full flex flex-col">
             <MessagesList />
           </section>
         </section>
 
         {/* Chat view - visible when a chat is selected */}
-        <section className={`${location.pathname === '/messages' ? 'hidden md:block' : 'block'} h-full`}>
+        <section 
+          data-testid="chat-view"
+          className={`${location.pathname === '/messages' ? 'hidden md:block' : 'block'} h-full`}
+        >
           {location.pathname === '/messages' ? <WelcomeView /> : <Outlet />}
         </section>
       </section>

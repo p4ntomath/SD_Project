@@ -1,4 +1,8 @@
-const handleImageUpload = async (e) => {
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { doc, updateDoc } from 'firebase/firestore';
+import { auth, storage, db } from '../backend/firebase/firebaseConfig';
+
+const handleImageUpload = async (e, setFormData, setDraftData) => {
     const file = e.target.files[0];
     if (!file) return;
   
