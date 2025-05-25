@@ -10,7 +10,7 @@ export default function AdminMainNav({ setMobileMenuOpen, mobileMenuOpen }) {
   const [notificationCount, setNotificationCount] = useState(3); // Example count
   const navigate = useNavigate();
   const location = useLocation();
-  const unreadCount = useUnreadMessagesCount// Custom hook to get unread notifications count
+  const unreadCount = useUnreadMessagesCount(); // Custom hook to get unread notifications count
 
   const handleLogout = async () => {
     try {
