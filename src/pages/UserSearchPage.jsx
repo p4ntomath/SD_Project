@@ -49,7 +49,7 @@ export default function UserSearchPage() {
         setPage(1);
       }
     } catch (error) {
-      console.error('Error searching users:', error);
+      
       setError('Failed to search users. Please try again.');
     } finally {
       setLoading(false);

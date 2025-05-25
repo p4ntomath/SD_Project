@@ -55,7 +55,7 @@ export default function MainNav({ setMobileMenuOpen, mobileMenuOpen }) {
           const results = await searchUsers(query, 1, 5);
           setSearchResults(results);
         } catch (error) {
-          console.error('Error searching users:', error);
+          
           setSearchResults([]);
         } finally {
           setIsSearching(false);

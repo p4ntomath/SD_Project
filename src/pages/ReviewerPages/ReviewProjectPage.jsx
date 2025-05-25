@@ -134,7 +134,7 @@ export default function ReviewProjectPage() {
 
     if (loading) {
         return (
-            <section className="min-h-screen bg-gray-50 flex items-center justify-center">
+            <section data-testid="loading" className="min-h-screen bg-gray-50 flex items-center justify-center">
                 <ClipLoader color="#3B82F6" />
             </section>
         );

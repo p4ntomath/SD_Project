@@ -48,7 +48,7 @@ export default function MessagesList() {
       const results = await ChatService.searchUsers(query || '', auth.currentUser.uid);
       setUserSearchResults(results);
     } catch (error) {
-      console.error('Error searching users:', error);
+      
     } finally {
       setSearching(false);
     }

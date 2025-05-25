@@ -26,7 +26,7 @@ export default function ReviewerHistory() {
         const reviewerHistory = await getReviewerHistory(userId);
         setReviews(reviewerHistory);
       } catch (err) {
-        console.error('Error loading completed reviews:', err);
+        
         setError(err.message);
       } finally {
         setLoading(false);
