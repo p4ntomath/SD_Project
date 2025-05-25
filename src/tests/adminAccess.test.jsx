@@ -1,12 +1,5 @@
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll } from 'vitest';
-import { 
-  createFunding,
-  getAllFunding,
-  updateFunding,
-  deleteFunding,
-  getAllProjects
-} from '../backend/firebase/adminAccess';
-import { getDocs, deleteDoc, updateDoc, addDoc, doc, collection } from 'firebase/firestore';
+import { getDocs, deleteDoc, updateDoc, addDoc, doc, collection, getDoc } from 'firebase/firestore';
 
 // Suppress console errors
 const originalError = console.error;
@@ -39,6 +32,19 @@ afterAll(() => {
   console.error = originalError;
 });
 
+// Mock Firebase Auth
+vi.mock('firebase/auth', () => ({
+  getAuth: vi.fn(() => ({
+    currentUser: { uid: 'admin-user-123' }
+  }))
+}));
+
+// Mock notification utilities
+vi.mock('../backend/firebase/notificationsUtil', () => ({
+  notify: vi.fn(),
+  notifyAdminAction: vi.fn()
+}));
+
 // Mock Firebase Firestore
 vi.mock('../backend/firebase/firebaseConfig', () => ({
   db: {
@@ -63,17 +69,42 @@ vi.mock('firebase/firestore', () => ({
   }
 }));
 
+import { 
+  createFunding,
+  getAllFunding,
+  updateFunding,
+  deleteFunding,
+  getAllProjects
+} from '../backend/firebase/adminAccess';
+
 describe('Admin Access Operations', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    
+    // Mock getDocs for fetchAllUsers calls
+    vi.mocked(getDocs).mockImplementation((collectionRef) => {
+      // Mock response for users collection (used by fetchAllUsers)
+      return Promise.resolve({
+        docs: [
+          {
+            id: 'user1',
+            data: () => ({ fullName: 'John Researcher', role: 'researcher', email: 'john@test.com' })
+          },
+          {
+            id: 'user2', 
+            data: () => ({ fullName: 'Jane Researcher', role: 'researcher', email: 'jane@test.com' })
+          }
+        ]
+      });
+    });
   });
 
   describe('createFunding', () => {
     it('creates funding opportunity successfully', async () => {
       const mockFunding = {
-        name: 'Research Grant',
-        expectedFunds: 50000,
-        externalLink: 'https://example.com/grant'
+        funding_name: 'Research Grant',
+        expected_funds: 50000,
+        external_link: 'https://example.com/grant'
       };
 
       const mockDocRef = { id: 'funding1' };
@@ -86,6 +117,7 @@ describe('Admin Access Operations', () => {
         id: 'funding1',
         ...mockFunding
       });
+      expect(getDocs).toHaveBeenCalled(); // fetchAllUsers calls getDocs
     });
 
     it('handles creation errors', async () => {
@@ -112,9 +144,9 @@ describe('Admin Access Operations', () => {
     it('updates funding successfully', async () => {
       const fundingId = 'funding1';
       const updatedData = {
-        name: 'Updated Grant',
-        expectedFunds: 60000,
-        externalLink: 'https://example.com/updated'
+        funding_name: 'Updated Grant',
+        expected_funds: 60000,
+        external_link: 'https://example.com/updated'
       };
 
       const mockDocRef = {};
@@ -130,9 +162,9 @@ describe('Admin Access Operations', () => {
       expect(updateDoc).toHaveBeenCalledWith(
         mockDocRef,
         expect.objectContaining({
-          funding_name: updatedData.name,
-          expected_funds: updatedData.expectedFunds,
-          external_link: updatedData.externalLink
+          funding_name: updatedData.funding_name,
+          expected_funds: updatedData.expected_funds,
+          external_link: updatedData.external_link
         })
       );
     });
@@ -150,6 +182,11 @@ describe('Admin Access Operations', () => {
     it('deletes funding successfully', async () => {
       const fundingId = 'funding1';
 
+      // Mock getDoc to return funding data
+      vi.mocked(getDoc).mockResolvedValue({
+        exists: () => true,
+        data: () => ({ funding_name: 'Test Funding' })
+      });
       vi.mocked(deleteDoc).mockResolvedValue(undefined);
 
       const result = await deleteFunding(fundingId);
@@ -159,6 +196,11 @@ describe('Admin Access Operations', () => {
     });
 
     it('handles deletion errors', async () => {
+      // Mock getDoc to fail to simulate the error condition properly
+      vi.mocked(getDoc).mockResolvedValue({
+        exists: () => true,
+        data: () => ({ funding_name: 'Test Funding' })
+      });
       vi.mocked(deleteDoc).mockRejectedValue(new Error('Delete failed'));
 
       await expect(deleteFunding('funding1'))
