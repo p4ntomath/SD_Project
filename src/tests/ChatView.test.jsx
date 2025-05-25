@@ -7,6 +7,49 @@ import ChatView from '../pages/ChatView';
 import { ChatService, MessageService, ChatRealTimeService } from '../backend/firebase/chatDB';
 import { auth } from '../backend/firebase/firebaseConfig';
 
+const originalError = console.error;
+const originalWarn = console.warn;
+
+beforeAll(() => {
+  console.error = (...args) => {
+    const skipMessages = [
+      'An update to AssignReviewersModal inside a test was not wrapped in act',
+      'When testing, code that causes React state updates should be wrapped into act',
+      'ensures that you\'re testing the behavior the user would see in the browser'
+    ];
+
+    if (skipMessages.some(msg => args.some(arg => 
+      (typeof arg === 'string' && arg.includes(msg)) ||
+      (arg?.message && arg.message.includes(msg))
+    ))) {
+      return;
+    }
+    originalError.call(console, ...args);
+  };
+
+  console.warn = (...args) => {
+    const skipMessages = [
+      'An update to AssignReviewersModal inside a test was not wrapped in act',
+      'When testing, code that causes React state updates should be wrapped into act'
+    ];
+
+    if (skipMessages.some(msg => args.some(arg => 
+      (typeof arg === 'string' && arg.includes(msg)) ||
+      (arg?.message && arg.message.includes(msg))
+    ))) {
+      return;
+    }
+    originalWarn.call(console, ...args);
+  };
+});
+
+afterAll(() => {
+  console.error = originalError;
+  console.warn = originalWarn;
+});
+
+
+
 // Mock modules
 vi.mock('react-router-dom', async () => {
   const actual = await vi.importActual('react-router-dom');
