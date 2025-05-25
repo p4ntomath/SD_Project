@@ -1,7 +1,19 @@
+/**
+ * @fileoverview Mobile bottom navigation for researcher dashboard
+ * @description Responsive mobile navigation bar with notification badges and role-specific menu items
+ */
+
 import { FiHome, FiFolder, FiBell, FiUser, FiFileText, FiMessageSquare } from 'react-icons/fi';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useUnreadNotificationsCount, useUnreadMessagesCount } from '../../../backend/firebase/notificationsUtil';
 
+/**
+ * MobileBottomNav component for researcher mobile navigation
+ * @param {Object} props - Component props
+ * @param {boolean} props.showForm - Whether to show create project form
+ * @param {Function} props.setShowForm - Function to toggle create project form
+ * @returns {JSX.Element} Mobile bottom navigation with notification badges
+ */
 // Mobile bottom navigation bar for small screens
 export default function MobileBottomNav ({ showForm, setShowForm }) {
   // Get current route location and navigation function

@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Authentication context provider for the application
+ * @description Manages global authentication state and user role information
+ */
+
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { auth, db } from '../backend/firebase/firebaseConfig';
 import { onAuthStateChanged } from 'firebase/auth';
@@ -7,9 +12,15 @@ import { ClipLoader } from 'react-spinners';
 
 const AuthContext = createContext();
 
-// Cache for storing user roles
+// Cache for storing user roles to reduce Firestore queries
 const roleCache = new Map();
 
+/**
+ * AuthProvider component that wraps the app with authentication context
+ * @param {Object} props - Component props
+ * @param {React.ReactNode} props.children - Child components
+ * @returns {JSX.Element} Provider component with authentication state
+ */
 export const AuthProvider = ({ children }) => {
   const location = useLocation();
   const [user, setUser] = useState(null);
@@ -17,6 +28,10 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [connectionError, setConnectionError] = useState(null);
 
+  /**
+   * Fetch user role from Firestore database
+   * @param {string} uid - User's unique identifier
+   */
   const fetchRoleFromDatabase = async (uid) => {
     try {
       if (!uid) {
@@ -24,7 +39,7 @@ export const AuthProvider = ({ children }) => {
         return;
       }
 
-      // Check cache first
+      // Check cache first to avoid unnecessary API calls
       if (roleCache.has(uid)) {
         setRole(roleCache.get(uid));
         return;
@@ -79,6 +94,7 @@ export const AuthProvider = ({ children }) => {
     return () => unsubscribe();
   }, []);
 
+  // Show loading spinner during auth state determination
   if (loading && location.pathname !== '/login') {
     return (
       <div className="flex justify-center items-center h-screen bg-gray-50">
@@ -113,6 +129,11 @@ export const AuthProvider = ({ children }) => {
   );
 };
 
+/**
+ * Custom hook to use authentication context
+ * @returns {Object} Authentication context value
+ * @throws {Error} If used outside of AuthProvider
+ */
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (!context) {

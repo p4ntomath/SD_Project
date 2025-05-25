@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Firebase configuration and initialization
+ * @description Sets up Firebase app with auth, Firestore, and storage services
+ */
+
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { 
@@ -19,8 +24,12 @@ const firebaseConfig = {
   measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID
 };
 
-
-// Initialize Firebase
+/**
+ * Initialize Firebase app and services
+ * - Auth: User authentication
+ * - Firestore: Database with offline persistence
+ * - Storage: File uploads and downloads
+ */
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 

@@ -1,14 +1,26 @@
+/**
+ * @fileoverview Welcome/Landing page with animated hero section and feature showcase
+ * @description Main public landing page with Vanta.js background effects and Framer Motion animations
+ */
+
 import React, { useEffect, useRef, useState } from "react";
 import NavBar from "../components/navigationBar.jsx";
 import welcomeDisplay from "../assets/welcomeDisplayImage.jpg";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 
+/**
+ * WelcomePage component - Main landing page for the application
+ * @returns {JSX.Element} Animated landing page with hero section and feature showcase
+ */
 export default function WelcomePage() {
   const navigate = useNavigate();
   const [vantaEffect, setVantaEffect] = useState(null);
   const vantaRef = useRef(null);
 
+  /**
+   * Initialize Vanta.js wave animation background effect
+   */
   useEffect(() => {
     if (!vantaEffect && vantaRef.current && window.VANTA) {
       setVantaEffect(
@@ -34,6 +46,7 @@ export default function WelcomePage() {
     };
   }, [vantaEffect]);
 
+  // Framer Motion animation variants
   const fadeInUp = {
     hidden: { opacity: 0, y: 20 },
     visible: { 
@@ -131,7 +144,6 @@ export default function WelcomePage() {
         </section>
 
         {/* Features Section */}
-
         <section id="features" className="py-16">
           <motion.div
             className="container mx-auto px-4"

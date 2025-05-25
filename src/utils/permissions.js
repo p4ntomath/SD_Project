@@ -1,3 +1,8 @@
+/**
+ * @fileoverview User permissions and access control utilities
+ * @description Defines permission levels and functions for project access control
+ */
+
 import { auth } from '../backend/firebase/firebaseConfig';
 
 // Define permission levels and their included permissions
@@ -31,16 +36,31 @@ const accessLevelPermissions = {
   }
 };
 
+/**
+ * Check if current user is the project owner
+ * @param {Object} project - Project object with userId field
+ * @returns {boolean} True if current user owns the project
+ */
 export const isProjectOwner = (project) => {
   if (!project || !auth.currentUser) return false;
   return project.userId === auth.currentUser.uid;
 };
 
+/**
+ * Check if current user is a collaborator on the project
+ * @param {Object} project - Project object with collaborators field
+ * @returns {boolean} True if current user is a collaborator
+ */
 export const isCollaborator = (project) => {
   if (!project || !auth.currentUser || !project.collaborators) return false;
   return project.collaborators.some(collab => collab.id === auth.currentUser.uid);
 };
 
+/**
+ * Get the permissions of the current user for a specific project
+ * @param {Object} project - Project object with collaborators field
+ * @returns {Object|null} Permissions object or null if no permissions found
+ */
 export const getCollaboratorPermissions = (project) => {
   if (!project || !auth.currentUser) return null;
   
@@ -65,6 +85,12 @@ export const getCollaboratorPermissions = (project) => {
   return accessLevelPermissions[collaborator.accessLevel] || accessLevelPermissions.Viewer;
 };
 
+/**
+ * Check if the current user has a specific permission for a project
+ * @param {Object} project - Project object to check permissions against
+ * @param {string} permission - Permission key to check
+ * @returns {boolean} True if the user has the permission, false otherwise
+ */
 export const checkPermission = (project, permission) => {
   const permissions = getCollaboratorPermissions(project);
   if (!permissions) return false;

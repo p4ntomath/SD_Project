@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Login form component with email/password and Google authentication
+ * @description Handles user authentication with form validation and error handling
+ */
+
 import React, { use, useContext, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import googleLogo from '../assets/googleLogo.png';
@@ -6,6 +11,10 @@ import { signIn, googleSignIn ,getUserRole} from "../backend/firebase/authFireba
 import { ClipLoader } from "react-spinners";
 import AuthContext from "../context/AuthContext";
 
+/**
+ * LoginForm component for user authentication
+ * @returns {JSX.Element} Login form with email/password and Google auth options
+ */
 const LoginForm = () => {
   
   const paths = {
@@ -25,6 +34,10 @@ const LoginForm = () => {
   const [errors, setErrors] = useState({});
   const [isLoading, setIsLoading] = useState(false);
 
+  /**
+   * Handle form input changes and clear errors
+   * @param {Event} e - Input change event
+   */
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData(prev => ({
@@ -35,6 +48,10 @@ const LoginForm = () => {
     setErrors(prev => ({ ...prev, [name]: '', form: '' }));
   };
 
+  /**
+   * Validate form fields before submission
+   * @returns {boolean} True if form is valid
+   */
   const validateForm = () => {
     const newErrors = {};
 
@@ -52,6 +69,10 @@ const LoginForm = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  /**
+   * Handle form submission for email/password login
+   * @param {Event} e - Form submit event
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -65,7 +86,6 @@ const LoginForm = () => {
         const role = await getUserRole(user.uid);
         setRole(role);
       }
-      
       
       navigate(role === 'admin' ? paths.admin : paths.home);
     } catch (error) {
@@ -86,6 +106,9 @@ const LoginForm = () => {
     }
   };
 
+  /**
+   * Handle Google OAuth authentication
+   */
   const handleGoogleAuth = async () => {
     try {
       setIsLoading(true);

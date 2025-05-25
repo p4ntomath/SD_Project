@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Role selection page for completing user profiles after registration
+ * @description Page component that handles profile completion after user signup
+ */
+
 import React, { useState, useEffect, useContext } from 'react';
 import { completeProfile } from '../backend/firebase/authFirebase';
 import RoleSelectionForm from '../components/RoleSelctionForm';
@@ -5,6 +10,10 @@ import { ClipLoader } from 'react-spinners';
 import { useNavigate, useLocation } from 'react-router-dom';
 import AuthContext from '../context/AuthContext';
 
+/**
+ * RoleSelectionPage component for profile completion workflow
+ * @returns {JSX.Element} Page with role selection form or loading spinner
+ */
 const RoleSelectionPage = () => {
   const { setRole, role, setLoading } = useContext(AuthContext);
   const [localLoading, setLocalLoading] = useState(false);
@@ -12,6 +21,17 @@ const RoleSelectionPage = () => {
   const navigate = useNavigate();
   const { state } = useLocation();
 
+  /**
+   * Handle profile completion form submission
+   * @param {Object} formData - Form data containing user profile information
+   * @param {string} formData.fullName - User's full name
+   * @param {string} formData.role - Selected user role (researcher/reviewer)
+   * @param {string} formData.institution - User's institution
+   * @param {string} formData.department - User's department
+   * @param {string} formData.fieldOfResearch - User's field of research
+   * @param {Array<string>} formData.tags - Research tags/interests
+   * @param {string} formData.bio - User's bio (optional)
+   */
   const handleSubmit = async (formData) => {
     setLocalLoading(true);
     setLoading(true);
@@ -39,6 +59,9 @@ const RoleSelectionPage = () => {
     }
   };
 
+  /**
+   * Navigate to home page when profile is completed or user already has a role
+   */
   useEffect(() => {
     if (profileCompleted) {
       navigate('/home');

@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Role selection form for completing user profiles after registration
+ * @description Comprehensive form for users to select their role and complete profile information
+ */
+
 import { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import Select from 'react-select';
@@ -5,6 +10,12 @@ import { getAllTags, getFaculties, getTagsByFaculty } from '../utils/tagSuggesti
 import { fetchUniversities } from '../utils/universityOptions';
 import { ClipLoader } from 'react-spinners';
 
+/**
+ * RoleSelectionForm component for profile completion
+ * @param {Object} props - Component props
+ * @param {Function} props.onSubmit - Function to handle form submission
+ * @returns {JSX.Element} Profile completion form with role selection and research tags
+ */
 const RoleSelectionForm = ({ onSubmit }) => {
   const location = useLocation();
   const { state } = location;

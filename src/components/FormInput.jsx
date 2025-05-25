@@ -1,5 +1,21 @@
+/**
+ * @fileoverview Reusable form input component with password visibility toggle
+ * @description Provides consistent form input styling with validation error display
+ */
+
 import { useState } from 'react';
 
+/**
+ * FormInput component for consistent form field styling and validation
+ * @param {Object} props - Component props
+ * @param {string} props.label - Input field label text
+ * @param {string} [props.type='text'] - Input type (text, password, email, etc.)
+ * @param {string} props.name - Input name attribute for form handling
+ * @param {string} props.value - Current input value
+ * @param {Function} props.onChange - Change handler function
+ * @param {string} [props.error] - Error message to display
+ * @returns {JSX.Element} Styled input field with optional error display
+ */
 const FormInput = ({ 
   label, 
   type = 'text', 

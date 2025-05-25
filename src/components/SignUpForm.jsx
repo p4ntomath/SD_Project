@@ -1,3 +1,8 @@
+/**
+ * @fileoverview User registration form component with email/password and Google authentication
+ * @description Handles new user registration with comprehensive form validation
+ */
+
 import { useState, useContext } from "react";
 import { useNavigate } from "react-router-dom";
 import FormInput from "./FormInput";
@@ -6,6 +11,10 @@ import { signUp, googleSignIn } from "../backend/firebase/authFirebase.jsx";
 import { ClipLoader } from "react-spinners";
 import AuthContext from "../context/AuthContext";
 
+/**
+ * SignUpForm component for user registration
+ * @returns {JSX.Element} Registration form with validation and Google auth option
+ */
 const SignUpForm = () => {
   const paths = {
     success: "/complete-profile",
@@ -23,12 +32,20 @@ const SignUpForm = () => {
   const [isLoading, setIsLoading] = useState(false);
   const { setLoading } = useContext(AuthContext);
 
+  /**
+   * Handle form input changes and clear field errors
+   * @param {Event} e - Input change event
+   */
   const handleChange = (e) => {
     const { name, value } = e.target;
     setErrors((prev) => ({ ...prev, [name]: "" }));
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
+  /**
+   * Validate all form fields with comprehensive password requirements
+   * @returns {boolean} True if all validations pass
+   */
   const validateForm = () => {
     const newErrors = {};
 
@@ -62,6 +79,10 @@ const SignUpForm = () => {
     return Object.keys(newErrors).length === 0;
   };
 
+  /**
+   * Handle form submission for email/password registration
+   * @param {Event} e - Form submit event
+   */
   const handleSubmit = async (e) => {
     e.preventDefault();
     if (!validateForm()) return;
@@ -102,6 +123,9 @@ const SignUpForm = () => {
     }
   };
 
+  /**
+   * Handle Google OAuth registration/login
+   */
   const handleGoogleAuth = async () => {
     setIsLoading(true);
     setLoading(true);

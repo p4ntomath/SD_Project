@@ -1,3 +1,8 @@
+/**
+ * @fileoverview Project funding database operations for Firestore
+ * @description Handles funding opportunities, project funds management, and funding history tracking
+ */
+
 import { db, auth } from "./firebaseConfig";
 import {
   doc,
@@ -10,8 +15,9 @@ import {
 } from "firebase/firestore";
 
 /**
- * The function `fetchFunding` retrieves all active funding opportunities from the Funding collection in Firestore.
- * @returns {Promise<Array>} An array of funding opportunities with their IDs and data.
+ * Fetch all funding opportunities from Firestore
+ * @returns {Promise<Array>} Array of funding opportunities sorted by status and deadline
+ * @throws {Error} If fetching funding data fails
  */
 export const fetchFunding = async () => {
   try {
@@ -47,13 +53,13 @@ export const fetchFunding = async () => {
   }
 };
 
-
-
 /**
- * Adds new funds to the existing project funds and logs the update in fundingHistory.
- * @param {string} projectId - ID of the project
- * @param {number} additionalFunds - The amount to add to current funds
- * @param {string} source - The source of the funds
+ * Add funds to a project and log the transaction in funding history
+ * @param {string} projectId - Project document ID
+ * @param {number} additionalFunds - Amount to add (must be positive)
+ * @param {string} source - Source of the funding
+ * @returns {Promise<Object>} Success response with updated funds amount
+ * @throws {Error} If user not authorized or invalid amount
  */
 export const updateProjectFunds = async (projectId, additionalFunds, source) => {
     try {
@@ -71,7 +77,7 @@ export const updateProjectFunds = async (projectId, additionalFunds, source) => 
   
       const projectData = projectSnap.data();
   
-      // Check if user is owner or collaborator
+      // Check if user is owner or collaborator with funding permissions
       const isOwner = projectData.userId === user.uid;
       const isCollaborator = projectData.collaborators?.some(collab => 
         collab.id === user.uid && collab.permissions?.canAddFunds
@@ -113,11 +119,11 @@ export const updateProjectFunds = async (projectId, additionalFunds, source) => 
     }
 };
 
-
 /**
- * Retrieves all funding history entries for a given project.
- * @param {string} projectId - ID of the project
- * @returns {Promise<Array>} - Array of funding history objects
+ * Get funding history for a project
+ * @param {string} projectId - Project document ID
+ * @returns {Promise<Array>} Array of funding history entries
+ * @throws {Error} If user not authorized or project not found
  */
 export const getFundingHistory = async (projectId) => {
   try {
@@ -158,10 +164,12 @@ export const getFundingHistory = async (projectId) => {
 };
 
 /**
- * Subtracts an amount from the existing project funds and logs the expense in fundingHistory.
- * @param {string} projectId - ID of the project
- * @param {number} expenseAmount - The amount to subtract from current funds
+ * Record project expense and update available funds
+ * @param {string} projectId - Project document ID
+ * @param {number} expenseAmount - Amount to subtract (must be positive)
  * @param {string} description - Description of the expense
+ * @returns {Promise<Object>} Success response with updated funds
+ * @throws {Error} If insufficient funds or user not authorized
  */
 export const updateProjectExpense = async (projectId, expenseAmount, description) => {
   try {
@@ -182,7 +190,7 @@ export const updateProjectExpense = async (projectId, expenseAmount, description
 
     const projectData = projectSnap.data();
 
-    // Check if user is owner or collaborator
+    // Check if user is owner or collaborator with funding permissions
     const isOwner = projectData.userId === user.uid;
     const isCollaborator = projectData.collaborators?.some(collab => 
       collab.id === user.uid && collab.permissions?.canAddFunds

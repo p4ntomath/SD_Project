@@ -1,7 +1,8 @@
 /**
- * The code includes functions to create, fetch, update, and delete projects in a Firestore database
- * for a specific user.
+ * @fileoverview Project database operations for Firestore
+ * @description Handles CRUD operations for research projects including permissions and reviews
  */
+
 import { db, auth } from "./firebaseConfig";
 import { query, where, arrayUnion, serverTimestamp } from "firebase/firestore";
 import {
@@ -15,14 +16,17 @@ import {
   deleteDoc
 } from 'firebase/firestore';
 
-
-//this function creates a new project in the Firestore database
 /**
- * The function `createProject` in JavaScript React creates a new project with specified details after
- * checking user authentication and required fields.
+ * Create a new research project in Firestore
+ * @param {Object} newProject - Project data object
+ * @param {string} newProject.title - Project title
+ * @param {string} newProject.description - Project description
+ * @param {string} newProject.researchField - Research field/area
+ * @param {string} newProject.deadline - Project deadline
+ * @returns {Promise<string>} The created project's document ID
+ * @throws {Error} If user not authenticated or required fields missing
  */
 export async function createProject(newProject) {
-  
   const { title, description, researchField, deadline } = newProject;
   const user = auth.currentUser;
   if (!user) {
@@ -45,6 +49,7 @@ export async function createProject(newProject) {
     const durationDays = Math.ceil(durationMs / (1000 * 60 * 60 * 24));
     let duration;
     
+    // Format duration in human-readable format
     if (durationDays >= 365) {
       const years = Math.floor(durationDays / 365);
       duration = `${years} year${years > 1 ? 's' : ''}`;
@@ -55,7 +60,7 @@ export async function createProject(newProject) {
       duration = `${durationDays} day${durationDays > 1 ? 's' : ''}`;
     }
 
-    // Create a clean project object with properly formatted data
+    // Create project object with proper formatting
     const projectWithId = {
       ...newProject,
       createdAt: creationDate,
@@ -81,33 +86,28 @@ export async function createProject(newProject) {
   }
 }
 
-// fetxhProjects function to get all projects for a specific user
 /**
- * The function `fetchProjects` retrieves projects associated with a specific user ID from a Firestore
- * collection.
- * @returns The `fetchProjects` function returns an array of projects that belong to a specific user
- * identified by their `uid`. Each project object in the array contains an `id` field representing the
- * document ID in the database, along with other data retrieved from the document.
+ * Fetch all projects for a specific user (owned + collaborated)
+ * @param {string} uid - User's unique identifier
+ * @returns {Promise<Array>} Array of project objects with IDs
+ * @throws {Error} If fetching projects fails
  */
 export const fetchProjects = async (uid) => {
   try {
     const projectsCollection = collection(db, "projects");
     
-    // First get projects where user is owner
+    // Get projects where user is owner
     const ownedProjectsQuery = query(projectsCollection, where("userId", "==", uid));
     const ownedProjectsSnapshot = await getDocs(ownedProjectsQuery);
   
-
-    // Get all projects and filter for collaborations
+    // Get projects where user is collaborator
     const allProjectsSnapshot = await getDocs(projectsCollection);
     const collabProjects = allProjectsSnapshot.docs.filter(doc => {
       const data = doc.data();
       return data.collaborators?.some(collab => collab.id === uid);
     });
     
-
-
-    // Combine both sets of projects
+    // Combine and deduplicate projects
     const projects = [...ownedProjectsSnapshot.docs, ...collabProjects]
       .reduce((acc, doc) => {
         if (!acc.some(p => p.id === doc.id)) {
@@ -119,26 +119,24 @@ export const fetchProjects = async (uid) => {
         return acc;
       }, []);
 
-    
     return projects;
   } catch (error) {
-    
     throw new Error("Failed to fetch projects");
   }
 };
 
 /**
- * Fetches a single project by its ID from Firestore
- * @param {string} projectId - The ID of the project to fetch
- * @returns {Promise<Object>} The project data with its ID
- * @throws {Error} If the project is not found or user is not authenticated
+ * Fetch a single project by ID with permission checks
+ * @param {string} projectId - Project document ID
+ * @returns {Promise<Object>} Project data with user role and permissions
+ * @throws {Error} If project not found or user lacks permission
  */
 export const fetchProject = async (projectId) => {
   try {
     const user = auth.currentUser;
     if (!user) throw new Error('User not authenticated');
 
-    // Get user's role from firestore first
+    // Get user's role
     const userRef = doc(db, "users", user.uid);
     const userSnap = await getDoc(userRef);
     const userRole = userSnap.exists() ? userSnap.data().role : null;
@@ -152,13 +150,13 @@ export const fetchProject = async (projectId) => {
 
     const projectData = projectSnap.data();
     
-    // Check if user has access through various roles
+    // Check access permissions
     const isAdmin = userRole === 'admin';
     const isOwner = projectData.userId === user.uid;
     const isInReviewersArray = projectData.reviewers?.some(rev => rev.id === user.uid);
     const isCollaborator = projectData.collaborators?.some(collab => collab.id === user.uid);
 
-    // Check reviewRequests collection for an accepted request
+    // Check for accepted review requests
     const requestQuery = query(
       collection(db, "reviewRequests"),
       where("projectId", "==", projectId),
@@ -168,12 +166,11 @@ export const fetchProject = async (projectId) => {
     const requestSnap = await getDocs(requestQuery);
     const isAcceptedReviewer = !requestSnap.empty;
 
-    // Allow access if user is admin, owner, reviewer or has an accepted review request
     if (!isAdmin && !isOwner && !isInReviewersArray && !isAcceptedReviewer && !isCollaborator) {
       throw new Error('You do not have permission to access this project');
     }
 
-    // Handle timestamp conversions if needed
+    // Handle timestamp conversions for compatibility
     if (typeof projectData.createdAt === 'string') {
       projectData.createdAt = {
         seconds: Math.floor(new Date(projectData.createdAt).getTime() / 1000),
@@ -195,7 +192,7 @@ export const fetchProject = async (projectId) => {
       };
     }
 
-    // Add review request info if applicable
+    // Add review request info for reviewers
     if (!isOwner && (isInReviewersArray || isAcceptedReviewer)) {
       if (!requestSnap.empty) {
         projectData.reviewRequest = {
@@ -208,20 +205,20 @@ export const fetchProject = async (projectId) => {
     return {
       id: projectSnap.id,
       ...projectData,
-      userRole // Include user's role in the response
+      userRole
     };
   } catch (error) {
-   
     throw error;
   }
 };
 
 /**
- * The `updateProject` function updates a project in a Firestore database using the provided `id` and
- * `updatedData`.
+ * Update project data with permission checks
+ * @param {string} id - Project document ID
+ * @param {Object} updatedData - Data to update
+ * @returns {Promise<Object>} Success response
+ * @throws {Error} If user lacks permission or project not found
  */
-
-
 export const updateProject = async (id, updatedData) => {
   try {
     const user = auth.currentUser;
@@ -240,21 +237,18 @@ export const updateProject = async (id, updatedData) => {
     const projectUserId = projectData.userId;
     const isOwner = user.uid === projectUserId;
     
-    // Check if user is a collaborator
+    // Check collaborator permissions
     const collaborator = projectData.collaborators?.find(c => c.id === user.uid);
     
-    // If not owner and not collaborator, reject update
     if (!isOwner && !collaborator) {
       throw new Error('You are not authorized to update this project');
     }
 
-    // If collaborator, verify they have permission for the updates they're trying to make
+    // Enforce collaborator permissions
     if (!isOwner && collaborator) {
       const { permissions } = collaborator;
       
-      // Check permissions based on what's being updated
       if (updatedData.goals) {
-        // Allow goal completion updates if they have canCompleteGoals permission
         if (permissions.canCompleteGoals) {
           // Only allow updating goal completion status
           const existingGoals = projectData.goals || [];
@@ -268,7 +262,7 @@ export const updateProject = async (id, updatedData) => {
         }
       }
       
-      // Remove any other fields that collaborators shouldn't be able to update
+      // Remove restricted fields for collaborators
       const restrictedFields = ['id', 'userId', 'createdAt', 'projectId'];
       Object.keys(updatedData).forEach(key => {
         if (restrictedFields.includes(key) || 
@@ -278,29 +272,21 @@ export const updateProject = async (id, updatedData) => {
       });
     }
 
-    // Add update timestamp
     updatedData.updatedAt = new Date();
-
     await updateDoc(projectRef, updatedData);
     return { success: true, message: 'Project updated successfully' };
   } catch (error) {
-   
     throw error;
   }
 };
 
-
 /**
- * The function `deleteProject` deletes a project document from a Firestore database using its ID.
+ * Delete a project and its associated data
+ * @param {string} projectId - Project document ID
+ * @returns {Promise<Object>} Success response
+ * @throws {Error} If user not authorized or project not found
  */
-/*export const deleteProject = async (id) => {
-  
-/**
- * The function `deleteProject` deletes a project document from a Firestore database using its ID.
- */
-
 export const deleteProject = async (projectId) => {
-  // eslint-disable-next-line no-useless-catch
   try {
     const user = auth.currentUser;
     if (!user) throw new Error('You must be logged in to delete projects');
@@ -317,15 +303,14 @@ export const deleteProject = async (projectId) => {
       throw new Error('You are not authorized to delete this project');
     }
 
-    // First delete all funding history documents
+    // Delete funding history subcollection
     const historyRef = collection(db, "projects", projectId, "fundingHistory");
     const historySnapshot = await getDocs(historyRef);
     
-    // Delete each history document
     const deletePromises = historySnapshot.docs.map(doc => deleteDoc(doc.ref));
     await Promise.all(deletePromises);
 
-    // Then delete the project document
+    // Delete the project document
     await deleteDoc(projectRef);
     
     return { success: true, message: 'Project and funding history deleted successfully' };
@@ -334,8 +319,13 @@ export const deleteProject = async (projectId) => {
   }
 };
 
-//Please add update methods for all the fields in the project excluding the userId
-
+/**
+ * Assign reviewers to a project
+ * @param {string} projectId - Project document ID
+ * @param {Array} reviewerRequests - Array of reviewer request objects
+ * @returns {Promise<Array>} Array of requests with generated IDs
+ * @throws {Error} If project not found
+ */
 export const assignReviewers = async (projectId, reviewerRequests) => {
   try {
     const projectRef = doc(db, 'projects', projectId);
@@ -351,7 +341,6 @@ export const assignReviewers = async (projectId, reviewerRequests) => {
       id: crypto.randomUUID()
     }));
 
-    // Update project with reviewer requests
     await updateDoc(projectRef, {
       reviewerRequests: arrayUnion(...requestsWithIds),
       updatedAt: serverTimestamp()
@@ -359,15 +348,17 @@ export const assignReviewers = async (projectId, reviewerRequests) => {
 
     return requestsWithIds;
   } catch (error) {
-    
     throw error;
   }
 };
 
-// Function to get review requests for a reviewer
+/**
+ * Get review requests for a specific reviewer
+ * @param {string} reviewerId - Reviewer's user ID
+ * @returns {Promise<Array>} Array of review requests
+ */
 export const getReviewRequests = async (reviewerId) => {
   try {
-    // Query all projects that have review requests for this reviewer
     const projectsRef = collection(db, 'projects');
     const q = query(projectsRef);
     const querySnapshot = await getDocs(q);
@@ -394,7 +385,12 @@ export const getReviewRequests = async (reviewerId) => {
   }
 };
 
-// Function to update a reviewer request status
+/**
+ * Update the status of a reviewer request
+ * @param {string} projectId - Project document ID
+ * @param {string} requestId - Review request ID
+ * @param {string} status - New status (accepted/rejected)
+ */
 export const updateReviewerRequest = async (projectId, requestId, status) => {
   try {
     const projectRef = doc(db, 'projects', projectId);
@@ -409,7 +405,7 @@ export const updateReviewerRequest = async (projectId, requestId, status) => {
       req.id === requestId ? { ...req, status } : req
     );
 
-    // If request was accepted, also add reviewer to the project's reviewers array
+    // Add reviewer to project if request accepted
     if (status === 'accepted') {
       const acceptedRequest = project.reviewerRequests.find(req => req.id === requestId);
       const reviewer = {
@@ -429,12 +425,16 @@ export const updateReviewerRequest = async (projectId, requestId, status) => {
       });
     }
   } catch (error) {
- 
     throw error;
   }
 };
 
-// Get project details
+/**
+ * Get detailed project information including owner details
+ * @param {string} projectId - Project document ID
+ * @returns {Promise<Object>} Project data with researcher name
+ * @throws {Error} If project not found
+ */
 export const getProjectDetails = async (projectId) => {
   try {
     const projectRef = doc(db, 'projects', projectId);
@@ -459,7 +459,6 @@ export const getProjectDetails = async (projectId) => {
       ...projectData
     };
   } catch (error) {
-
     throw error;
   }
 };
