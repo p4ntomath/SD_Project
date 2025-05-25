@@ -27,7 +27,9 @@ export const generateFundingCSV = (projectsWithFunding) => {
         (entry.source?.replace(/,/g, " ") ?? "");
       const type = entry.type ?? "";
       const addedBy = entry.updatedByName?.replace(/,/g, " ") ?? "Unknown";
-      const updatedAt = entry.updatedAt?.toDate?.().toISOString?.() ?? entry.date ?? "";
+      const updatedAt = entry.updatedAt instanceof Date ? 
+        entry.updatedAt.toISOString() : 
+        (entry.date ?? "");
 
       csv += `${name},${amount},${source},${type},${addedBy},${updatedAt}\n`;
     });
@@ -46,23 +48,20 @@ export const generateFolderCSV = (projectsWithFolders) => {
         folder.files.forEach(file => {
           const fileName = file.fileName?.replace(/,/g, " ") ?? "";
           const uploadedBy = file.uploadedBy ?? "";
-          const uploadedAt = file.uploadedAt instanceof Date
-            ? file.uploadedAt.toISOString()
-            : (file.uploadedAt ?? "");
+          const uploadedAt = file.uploadedAt instanceof Date ?
+            file.uploadedAt.toISOString() :
+            (file.uploadedAt ?? "");
 
           csv += `${project.projectName},${folderName},${fileName},${uploadedBy},${uploadedAt}\n`;
         });
       } else {
-        // If no files, still include the folder info
-        csv += `${project.projectName},${folderName},,,,\n`;
+        // If no files, just add a single row for the folder
+        csv += `${project.projectName},${folderName},,,\n`;
       }
     });
   });
-
   return csv;
 };
-//done with files
-
 
 // File download utility
 const downloadCSVFile = (csvContent, filename) => {
@@ -98,7 +97,6 @@ export const handleResearcherCSVExport = async (uid, { includeFunding = false, i
       downloadCSVFile(folderCSV, "project_folders.csv");
     }
   } catch (error) {
-    console.error("Error exporting researcher data:", error.message);
     throw new Error("CSV Export failed");
   }
 };
@@ -121,7 +119,7 @@ export const generateReviewedProjectsCSV = (reviewedProjects) => {
 };
 
 const sanitize = (text) =>
-  text?.replace(/[\r\n]+/g, " ").replace(/,/g, " ") ?? "";
+  text?.replace(/[\r\n]+/g, " ").replace(/,/g, " ").replace(/\s+/g, " ").trim() ?? "";
 
 // New project overview CSV generation
 export const generateProjectOverviewCSV = (projects) => {
@@ -177,7 +175,9 @@ export const generateProjectsCSV = (projects) => {
 export const handleDashboardExport = async (uid, type, { startDate = null, endDate = null, projectIds = null } = {}) => {
   try {
     const userSnap = await getDoc(doc(db, "users", uid));
-    if (!userSnap.exists()) throw new Error("User not found");
+    if (!userSnap.exists()) {
+      throw new Error("User not found");
+    }
 
     let data;
     let filename;
@@ -240,7 +240,7 @@ export const handleDashboardExport = async (uid, type, { startDate = null, endDa
         filename = 'team_report';
         break;
       default:
-        throw new Error('Invalid report type');
+        throw new Error("Invalid report type");
     }
 
     // Add date range to filename if specified
@@ -253,10 +253,10 @@ export const handleDashboardExport = async (uid, type, { startDate = null, endDa
 
     downloadCSVFile(data, `${filename}.csv`);
   } catch (error) {
-    console.error("Error exporting data:", error);
-    throw new Error("Export failed");
+    
+    throw error; // Throw the original error instead of creating a new one
   }
-}
+};
 
 export const generateProgressCSV = (projects) => {
   let csv = "Project Name,Overall Progress,Total Goals,Completed Goals,Status,Last Updated\n";

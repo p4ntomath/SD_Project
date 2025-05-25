@@ -22,7 +22,7 @@ import {
  * checking user authentication and required fields.
  */
 export async function createProject(newProject) {
-  console.log("Creating project:", newProject);
+  
   const { title, description, researchField, deadline } = newProject;
   const user = auth.currentUser;
   if (!user) {
@@ -122,7 +122,7 @@ export const fetchProjects = async (uid) => {
     
     return projects;
   } catch (error) {
-    console.error("Error fetching projects:", error);
+    
     throw new Error("Failed to fetch projects");
   }
 };
@@ -211,7 +211,7 @@ export const fetchProject = async (projectId) => {
       userRole // Include user's role in the response
     };
   } catch (error) {
-    console.error("Error fetching project:", error);
+   
     throw error;
   }
 };
@@ -284,7 +284,7 @@ export const updateProject = async (id, updatedData) => {
     await updateDoc(projectRef, updatedData);
     return { success: true, message: 'Project updated successfully' };
   } catch (error) {
-    console.error("Error updating project:", error);
+   
     throw error;
   }
 };
@@ -359,7 +359,7 @@ export const assignReviewers = async (projectId, reviewerRequests) => {
 
     return requestsWithIds;
   } catch (error) {
-    console.error('Error assigning reviewers:', error);
+    
     throw error;
   }
 };
@@ -429,7 +429,7 @@ export const updateReviewerRequest = async (projectId, requestId, status) => {
       });
     }
   } catch (error) {
-    console.error('Error updating reviewer request:', error);
+ 
     throw error;
   }
 };
@@ -459,7 +459,7 @@ export const getProjectDetails = async (projectId) => {
       ...projectData
     };
   } catch (error) {
-    console.error('Error fetching project:', error);
+
     throw error;
   }
 };

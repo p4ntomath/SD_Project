@@ -29,9 +29,8 @@ import { getFundingHistory } from "./fundingDB";
  * @throws {Error} If user is not found or data retrieval fails
  */
 export const getProjectFunding = async (uid, startDate) => {
+  if (!uid) throw new Error("User ID is required");
   try {
-    if (!uid) throw new Error("User ID is required");
-
     const userProjects = await fetchProjects(uid);
     if (!userProjects?.length) return [];
 
@@ -64,7 +63,7 @@ export const getProjectFunding = async (uid, startDate) => {
 
     return projectsWithFunding.filter(p => p.fundingHistory.length > 0);
   } catch (error) {
-    console.error("Error loading projects and funding history:", error);
+    
     throw new Error("Failed to get project funding data");
   }
 };
@@ -78,9 +77,8 @@ export const getProjectFunding = async (uid, startDate) => {
  * @throws {Error} If user is not found or data retrieval fails
  */
 export const getAllProjectFoldersWithFiles = async (uid) => {
+  if (!uid) throw new Error("User ID is required");
   try {
-    if (!uid) throw new Error("User ID is required");
-
     const projects = await fetchProjects(uid);
     if (!projects?.length) return [];
 
@@ -192,9 +190,8 @@ export const getAllProjectFoldersWithFiles = async (uid) => {
  * @throws {Error} If reviewer is not found or data retrieval fails
  */
 export const getReviewedProjects = async (uid) => {
+  if (!uid) throw new Error("Reviewer ID is required");
   try {
-    if (!uid) throw new Error("Reviewer ID is required");
-
     const reviewsRef = collection(db, "reviews");
     const q = query(reviewsRef, where("reviewerId", "==", uid));
     const reviewsSnapshot = await getDocs(q);

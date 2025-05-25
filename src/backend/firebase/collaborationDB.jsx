@@ -52,9 +52,9 @@ export const addCollaboratorToProject = async (projectId, collaboratorId) => {
             updatedAt: serverTimestamp()
         });
 
-        console.log("Collaborator with permissions added successfully");
+        
     } catch (error) {
-        console.error("Error adding collaborator:", error.message, error.stack);
+        
         throw new Error("Failed to add collaborator");
     }
 };
@@ -122,9 +122,9 @@ export const updateCollaboratorAccessLevel = async (projectId, collaboratorId, n
             updatedAt: serverTimestamp()
         });
 
-        console.log("Collaborator access level and permissions updated successfully");
+        
     } catch (error) {
-        console.error("Error updating collaborator access level:", error.message, error.stack);
+        
         throw new Error("Failed to update collaborator access level");
     }
 };
@@ -158,9 +158,9 @@ export const removeCollaboratorFromProject = async (projectId, collaboratorId) =
             collaborators: arrayRemove(collaboratorToRemove),
         });
 
-        console.log("Collaborator removed successfully");
+        
     } catch (error) {
-        console.error("Error removing collaborator:", error.message, error.stack);
+        
         throw new Error("Failed to remove collaborator");
     }
 };
@@ -375,7 +375,7 @@ export const sendResearcherInvitation = async (projectId, researcherId, senderId
 
         return { success: true, message: "Invitation sent successfully" };
     } catch (error) {
-        console.error("Error sending researcher invitation:", error.message, error.stack);
+       
         throw error; // Throw the original error to preserve the message
     }
 };
