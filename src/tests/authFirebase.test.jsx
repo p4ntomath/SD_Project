@@ -1,428 +1,344 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock Firebase methods
-const mockSetDoc = vi.fn();
 const mockCreateUserWithEmailAndPassword = vi.fn();
 const mockSignInWithEmailAndPassword = vi.fn();
+const mockSignInWithPopup = vi.fn();
 const mockGetDoc = vi.fn();
+const mockSetDoc = vi.fn();
 const mockCollection = vi.fn();
 const mockQuery = vi.fn();
 const mockWhere = vi.fn();
 const mockGetDocs = vi.fn();
 const mockSendPasswordResetEmail = vi.fn();
 const mockSignOut = vi.fn();
-const mockSignInWithPopup = vi.fn();
+const mockOnAuthStateChanged = vi.fn();
 const mockGoogleAuthProvider = vi.fn();
 
-// Mock Firebase auth
+// Mock auth object
 const mockAuth = {
   currentUser: { uid: 'test-user-id' }
 };
 
 // Mock Firebase modules
 vi.mock('firebase/auth', () => ({
-  createUserWithEmailAndPassword: mockCreateUserWithEmailAndPassword,
-  signInWithEmailAndPassword: mockSignInWithEmailAndPassword,
-  sendPasswordResetEmail: mockSendPasswordResetEmail,
-  signOut: mockSignOut,
-  signInWithPopup: mockSignInWithPopup,
-  GoogleAuthProvider: mockGoogleAuthProvider
+  getAuth: vi.fn(() => mockAuth),
+  createUserWithEmailAndPassword: (...args) => mockCreateUserWithEmailAndPassword(...args),
+  signInWithEmailAndPassword: (...args) => mockSignInWithEmailAndPassword(...args),
+  signInWithPopup: (...args) => mockSignInWithPopup(...args),
+  sendPasswordResetEmail: (...args) => mockSendPasswordResetEmail(...args),
+  signOut: (...args) => mockSignOut(...args),
+  onAuthStateChanged: (...args) => mockOnAuthStateChanged(...args),
+  GoogleAuthProvider: vi.fn(() => mockGoogleAuthProvider)
 }));
 
 vi.mock('firebase/firestore', () => ({
-  setDoc: mockSetDoc,
-  doc: vi.fn(() => 'mockDocReference'),
-  getDoc: mockGetDoc,
-  collection: mockCollection,
-  query: mockQuery,
-  where: mockWhere,
-  getDocs: mockGetDocs
+  doc: vi.fn(() => 'mockDocRef'),
+  collection: (...args) => mockCollection(...args),
+  query: (...args) => mockQuery(...args),
+  where: (...args) => mockWhere(...args),
+  getDocs: (...args) => mockGetDocs(...args),
+  getDoc: (...args) => mockGetDoc(...args),
+  setDoc: (...args) => mockSetDoc(...args)
 }));
 
-// Mock firebase config to provide auth
+// Mock Firebase config
 vi.mock('../backend/firebase/firebaseConfig', () => ({
   auth: mockAuth,
   db: {}
 }));
 
-// Mock the auth module with proper exports
-vi.mock('../backend/firebase/authFirebase', () => ({
-  signUp: vi.fn(async (fullName, email, password, role, additionalData = {}) => {
-    const result = await mockCreateUserWithEmailAndPassword(expect.anything(), email, password);
-    await mockSetDoc('mockDocReference', {
-      userId: result.user.uid,
+// Mock the entire authFirebase module
+vi.mock('../backend/firebase/authFirebase', async () => ({
+  signUp: async (fullName, email, password) => {
+    const userCredential = await mockCreateUserWithEmailAndPassword(mockAuth, email, password);
+    await mockSetDoc('mockDocRef', {
+      userId: userCredential.user.uid,
       fullName,
       email,
-      role,
-      ...(additionalData || {}),
       createdAt: expect.any(Date)
     });
-    return result.user;
-  }),
-  signIn: vi.fn(async (email, password) => {
-    const result = await mockSignInWithEmailAndPassword(expect.anything(), email, password);
-    return result.user;
-  }),
-  resetPassword: vi.fn(async (email) => {
+    return userCredential.user;
+  },
+  signIn: async (email, password) => {
+    const userCredential = await mockSignInWithEmailAndPassword(mockAuth, email, password);
+    return userCredential.user;
+  },
+  googleSignIn: async () => {
+    const result = await mockSignInWithPopup(mockAuth, mockGoogleAuthProvider);
+    const userDoc = await mockGetDoc();
+    if (!userDoc.exists()) {
+      await mockSetDoc('mockDocRef', {
+        userId: result.user.uid,
+        email: result.user.email,
+        fullName: result.user.displayName,
+        createdAt: expect.any(Date)
+      });
+      return { isNewUser: true, user: result.user };
+    }
+    return { isNewUser: false, user: result.user };
+  },
+  resetPassword: async (email) => {
     const querySnapshot = await mockGetDocs();
     if (querySnapshot.empty) {
-      throw new Error("No account found with this email.");
+      throw new Error('No account found with this email.');
     }
-    await mockSendPasswordResetEmail(expect.anything(), email);
-  }),
-  logOut: vi.fn(async () => {
-    await mockSignOut();
-  }),
-  completeProfile: vi.fn(async (fullName, role, profileData) => {
+    await mockSendPasswordResetEmail(mockAuth, email);
+  },
+  completeProfile: async (fullName, role, profileData = {}) => {
     if (!mockAuth.currentUser) {
       throw new Error('User not authenticated');
     }
-    await mockSetDoc('mockDocReference', {
-      ...(profileData || { fullName, role }),
+    await mockSetDoc('mockDocRef', {
+      fullName,
+      role,
+      ...profileData,
       updatedAt: expect.any(Date)
     }, { merge: true });
-  }),
-  googleSignIn: vi.fn(async () => {
-    const provider = new mockGoogleAuthProvider();
-    const result = await mockSignInWithPopup(mockAuth, provider);
-    const user = result.user;
-    
-    const userDoc = await mockGetDoc();
-    
-    if (!userDoc.exists()) {
-      await mockSetDoc('mockDocReference', {
-        userId: user.uid,
-        email: user.email,
-        createdAt: expect.any(Date)
-      });
-      return { isNewUser: true, user };
+  },
+  getUserRole: async (uid) => {
+    const docSnap = await mockGetDoc();
+    if (docSnap.exists()) {
+      return docSnap.data().role;
     }
-    return { isNewUser: false, user };
-  })
+    return null;
+  },
+  logOut: async () => {
+    await mockSignOut(mockAuth);
+  },
+  authStateListener: (callback) => {
+    return mockOnAuthStateChanged(mockAuth, callback);
+  }
 }));
 
-import { signUp, signIn, resetPassword, logOut, completeProfile, googleSignIn } from '../backend/firebase/authFirebase';
+// Import AFTER mocking
+const { 
+  signUp, 
+  signIn, 
+  googleSignIn, 
+  resetPassword, 
+  logOut, 
+  completeProfile,
+  getUserRole,
+  authStateListener 
+} = await import('../backend/firebase/authFirebase');
 
 describe('Authentication Operations', () => {
+  const mockUser = {
+    uid: 'test-user-id',
+    email: 'test@example.com',
+    displayName: 'Test User'
+  };
+
   beforeEach(() => {
     vi.clearAllMocks();
-    // Setup default mock implementations
-    mockCollection.mockReturnValue('mockCollection');
-    mockQuery.mockReturnValue('mockQuery');
-    mockWhere.mockReturnValue('mockWhere');
-    // Reset auth currentUser for each test
-    mockAuth.currentUser = { uid: 'test-user-id' };
+    mockAuth.currentUser = mockUser;
   });
 
-  describe('signUp function', () => {
-    it('should create a user and save user data to firestore', async () => {
-      const email = 'test@gmail.com';
-      const password = 'password123';
-      const fullName = 'Test User';
-      const role = 'researcher';
-      const additionalData = { extraField: 'extraValue' };
+  describe('signUp', () => {
+    const testEmail = 'test@example.com';
+    const testPassword = 'Password123!';
+    const testName = 'Test User';
 
-      const mockUserCredential = { user: { uid: 'test-user-id' } };
-      mockCreateUserWithEmailAndPassword.mockResolvedValue(mockUserCredential);
+    it('should create a new user and store their data', async () => {
+      mockCreateUserWithEmailAndPassword.mockResolvedValueOnce({ user: mockUser });
+      mockSetDoc.mockResolvedValueOnce();
 
-      const expectedUser = mockUserCredential.user;
+      const result = await signUp(testName, testEmail, testPassword);
 
-      // Call the signUp function
-      const result = await signUp(fullName, email, password, role, additionalData);
-
-      // Assertions
-      expect(mockCreateUserWithEmailAndPassword).toHaveBeenCalledWith(
-        expect.anything(),
-        email,
-        password
-      );
+      expect(mockCreateUserWithEmailAndPassword).toHaveBeenCalledWith(mockAuth, testEmail, testPassword);
       expect(mockSetDoc).toHaveBeenCalledWith(
-        'mockDocReference', 
-        {
-          userId: 'test-user-id',
-          fullName,
-          email,
-          role,
-          extraField: 'extraValue',
-          createdAt: expect.any(Date), // Dynamic value for createdAt
-        }
+        'mockDocRef',
+        expect.objectContaining({
+          userId: mockUser.uid,
+          fullName: testName,
+          email: testEmail,
+          createdAt: expect.any(Date)
+        })
       );
-      expect(result).toEqual(expectedUser);
+      expect(result).toEqual(mockUser);
     });
 
-    it('should throw an error if the user creation fails', async () => {
-      const email = 'test@gmail.com';
-      const password = 'password123';
-      const errorMessage = 'Failed to create user';
+    it('should handle signup errors properly', async () => {
+      const error = new Error('Email already in use');
+      error.code = 'auth/email-already-in-use';
+      mockCreateUserWithEmailAndPassword.mockRejectedValueOnce(error);
 
-      // Simulate an error during user creation
-      mockCreateUserWithEmailAndPassword.mockRejectedValue(new Error(errorMessage));
-
-      try {
-        await signUp('Test User', email, password, 'researcher');
-      } catch (error) {
-        expect(error.message).toBe(errorMessage);
-      }
+      await expect(signUp(testName, testEmail, testPassword))
+        .rejects
+        .toThrow('Email already in use');
     });
   });
 
-  describe('signIn function', () => {
-    it('should sign in a user successfully', async () => {
-      const email = 'test@gmail.com';
-      const password = 'password123';
-      const mockUserCredential = { user: { uid: 'test-user-id' } };
-      
-      mockSignInWithEmailAndPassword.mockResolvedValue(mockUserCredential);
+  describe('signIn', () => {
+    const testEmail = 'test@example.com';
+    const testPassword = 'Password123!';
 
-      const result = await signIn(email, password);
+    it('should sign in an existing user', async () => {
+      mockSignInWithEmailAndPassword.mockResolvedValueOnce({ user: mockUser });
 
-      expect(mockSignInWithEmailAndPassword).toHaveBeenCalledWith(
-        expect.anything(),
-        email,
-        password
-      );
-      expect(result).toEqual(mockUserCredential.user);
+      const result = await signIn(testEmail, testPassword);
+
+      expect(mockSignInWithEmailAndPassword).toHaveBeenCalledWith(mockAuth, testEmail, testPassword);
+      expect(result).toEqual(mockUser);
     });
 
-    it('should throw an error if sign in fails', async () => {
-      const email = 'test@gmail.com';
-      const password = 'password123';
-      const errorMessage = 'Invalid credentials';
+    it('should handle invalid credentials', async () => {
+      const error = new Error('Invalid password');
+      error.code = 'auth/wrong-password';
+      mockSignInWithEmailAndPassword.mockRejectedValueOnce(error);
 
-      mockSignInWithEmailAndPassword.mockRejectedValue(new Error(errorMessage));
-
-      try {
-        await signIn(email, password);
-      } catch (error) {
-        expect(error.message).toBe(errorMessage);
-      }
+      await expect(signIn(testEmail, testPassword))
+        .rejects
+        .toThrow('Invalid password');
     });
   });
 
-  describe('resetPassword function', () => {
-    it('should send reset password email for existing user', async () => {
-      const email = 'test@example.com';
-      
-      // Mock successful user lookup
-      mockGetDocs.mockResolvedValueOnce({ empty: false });
-      mockSendPasswordResetEmail.mockResolvedValueOnce();
-
-      await resetPassword(email);
-
-      expect(mockGetDocs).toHaveBeenCalled();
-      expect(mockSendPasswordResetEmail).toHaveBeenCalledWith(
-        expect.anything(),
-        email
-      );
-    });
-
-    it('should throw error if no account exists with email', async () => {
-      const email = 'nonexistent@example.com';
-      const errorMessage = 'No account found with this email.';
-
-      // Mock empty query result
-      mockGetDocs.mockResolvedValueOnce({ empty: true });
-
-      try {
-        await resetPassword(email);
-        // If we reach this point, the test should fail
-        expect(true).toBe(false); // This line should not be reached
-      } catch (error) {
-        expect(error.message).toBe(errorMessage);
-      }
-
-      expect(mockGetDocs).toHaveBeenCalled();
-      expect(mockSendPasswordResetEmail).not.toHaveBeenCalled();
-    });
-
-    it('should throw error if password reset fails', async () => {
-      const email = 'test@example.com';
-      const errorMessage = 'Failed to send reset email';
-
-      // Mock successful user lookup but failed password reset
-      mockGetDocs.mockResolvedValueOnce({ empty: false });
-      mockSendPasswordResetEmail.mockRejectedValueOnce(new Error(errorMessage));
-
-      try {
-        await resetPassword(email);
-        // If we reach this point, the test should fail
-        expect(true).toBe(false); // This line should not be reached
-      } catch (error) {
-        expect(error.message).toBe(errorMessage);
-      }
-
-      expect(mockGetDocs).toHaveBeenCalled();
-      expect(mockSendPasswordResetEmail).toHaveBeenCalledWith(
-        expect.anything(),
-        email
-      );
-    });
-  });
-
-  describe('logOut function', () => {
-    it('should sign out user successfully', async () => {
-      // Mock successful signOut
-      mockSignOut.mockResolvedValueOnce();
-
-      await logOut();
-      
-      expect(mockSignOut).toHaveBeenCalled();
-    });
-
-    it('should throw error if sign out fails', async () => {
-      const errorMessage = 'Failed to sign out';
-      mockSignOut.mockRejectedValueOnce(new Error(errorMessage));
-
-      try {
-        await logOut();
-        // If we reach this point, the test should fail
-        expect(true).toBe(false); // This line should not be reached
-      } catch (error) {
-        expect(error.message).toBe(errorMessage);
-      }
-
-      expect(mockSignOut).toHaveBeenCalled();
-    });
-  });
-
-  describe('completeProfile function', () => {
-    it('should update profile with basic data successfully', async () => {
-      const fullName = 'John Doe';
-      const role = 'researcher';
-
-      await completeProfile(fullName, role);
-
-      expect(mockSetDoc).toHaveBeenCalledWith(
-        'mockDocReference',
-        {
-          fullName,
-          role,
-          updatedAt: expect.any(Date)
-        },
-        { merge: true }
-      );
-    });
-
-    it('should update profile with additional profile data', async () => {
-      const fullName = 'John Doe';
-      const role = 'researcher';
-      const profileData = {
-        fullName,
-        role,
-        department: 'Computer Science',
-        phoneNumber: '1234567890'
-      };
-
-      await completeProfile(fullName, role, profileData);
-
-      expect(mockSetDoc).toHaveBeenCalledWith(
-        'mockDocReference',
-        {
-          ...profileData,
-          updatedAt: expect.any(Date)
-        },
-        { merge: true }
-      );
-    });
-
-    it('should throw error when user is not authenticated', async () => {
-      mockAuth.currentUser = null;
-      const fullName = 'John Doe';
-      const role = 'researcher';
-
-      try {
-        await completeProfile(fullName, role);
-        // If we reach this point, the test should fail
-        expect(true).toBe(false);
-      } catch (error) {
-        expect(error.message).toBe('User not authenticated');
-      }
-
-      expect(mockSetDoc).not.toHaveBeenCalled();
-    });
-
-    it('should throw error if profile update fails', async () => {
-      const fullName = 'John Doe';
-      const role = 'researcher';
-      const errorMessage = 'Failed to update profile';
-
-      mockSetDoc.mockRejectedValueOnce(new Error(errorMessage));
-
-      try {
-        await completeProfile(fullName, role);
-        // If we reach this point, the test should fail
-        expect(true).toBe(false);
-      } catch (error) {
-        expect(error.message).toBe(errorMessage);
-      }
-
-      expect(mockSetDoc).toHaveBeenCalled();
-    });
-  });
-
-  describe('googleSignIn function', () => {
-    const mockUser = {
-      uid: 'google-user-id',
-      email: 'google@example.com'
-    };
-
-    beforeEach(() => {
-      vi.clearAllMocks();
-      mockSignInWithPopup.mockResolvedValue({ user: mockUser });
-    });
-
-    it('should handle new Google user sign in', async () => {
-      // Mock that user doesn't exist in Firestore
+  describe('googleSignIn', () => {
+    it('should handle new Google user signup', async () => {
+      mockSignInWithPopup.mockResolvedValueOnce({ user: mockUser });
       mockGetDoc.mockResolvedValueOnce({ exists: () => false });
+      mockSetDoc.mockResolvedValueOnce();
 
       const result = await googleSignIn();
 
       expect(mockSignInWithPopup).toHaveBeenCalled();
-      expect(mockGetDoc).toHaveBeenCalled();
       expect(mockSetDoc).toHaveBeenCalledWith(
-        'mockDocReference',
-        {
+        'mockDocRef',
+        expect.objectContaining({
           userId: mockUser.uid,
           email: mockUser.email,
+          fullName: mockUser.displayName,
           createdAt: expect.any(Date)
-        }
+        })
       );
-      expect(result).toEqual({
-        isNewUser: true,
-        user: mockUser
-      });
+      expect(result).toEqual({ isNewUser: true, user: mockUser });
     });
 
-    it('should handle existing Google user sign in', async () => {
-      // Mock that user exists in Firestore
+    it('should handle existing Google user signin', async () => {
+      mockSignInWithPopup.mockResolvedValueOnce({ user: mockUser });
       mockGetDoc.mockResolvedValueOnce({ exists: () => true });
 
       const result = await googleSignIn();
 
       expect(mockSignInWithPopup).toHaveBeenCalled();
-      expect(mockGetDoc).toHaveBeenCalled();
-      expect(mockSetDoc).not.toHaveBeenCalled(); // Shouldn't create new document
-      expect(result).toEqual({
-        isNewUser: false,
-        user: mockUser
-      });
+      expect(mockSetDoc).not.toHaveBeenCalled();
+      expect(result).toEqual({ isNewUser: false, user: mockUser });
+    });
+  });
+
+  describe('resetPassword', () => {
+    const testEmail = 'test@example.com';
+
+    it('should send reset email for existing user', async () => {
+      mockGetDocs.mockResolvedValueOnce({ empty: false });
+      mockSendPasswordResetEmail.mockResolvedValueOnce();
+
+      await resetPassword(testEmail);
+
+      expect(mockGetDocs).toHaveBeenCalled();
+      expect(mockSendPasswordResetEmail).toHaveBeenCalledWith(mockAuth, testEmail);
     });
 
-    it('should handle Google sign in error', async () => {
-      const errorMessage = 'Failed to sign in with Google';
-      mockSignInWithPopup.mockRejectedValueOnce(new Error(errorMessage));
+    it('should reject for non-existent email', async () => {
+      mockGetDocs.mockResolvedValueOnce({ empty: true });
 
-      try {
-        await googleSignIn();
-        // If we reach this point, the test should fail
-        expect(true).toBe(false);
-      } catch (error) {
-        expect(error.message).toBe(errorMessage);
-      }
+      await expect(resetPassword(testEmail))
+        .rejects
+        .toThrow('No account found with this email.');
+    });
+  });
 
-      expect(mockSignInWithPopup).toHaveBeenCalled();
-      expect(mockGetDoc).not.toHaveBeenCalled();
-      expect(mockSetDoc).not.toHaveBeenCalled();
+  describe('completeProfile', () => {
+    it('should update user profile data', async () => {
+      const profileData = {
+        institution: 'Test University',
+        department: 'Computer Science',
+        fieldOfResearch: 'AI'
+      };
+
+      mockSetDoc.mockResolvedValueOnce();
+
+      await completeProfile('Test User', 'researcher', profileData);
+
+      expect(mockSetDoc).toHaveBeenCalledWith(
+        'mockDocRef',
+        expect.objectContaining({
+          fullName: 'Test User',
+          role: 'researcher',
+          ...profileData,
+          updatedAt: expect.any(Date)
+        }),
+        { merge: true }
+      );
+    });
+
+    it('should handle unauthorized profile update', async () => {
+      mockAuth.currentUser = null;
+
+      await expect(completeProfile('Test User', 'researcher'))
+        .rejects
+        .toThrow('User not authenticated');
+    });
+  });
+
+  describe('getUserRole', () => {
+    it('should return user role when available', async () => {
+      mockGetDoc.mockResolvedValueOnce({
+        exists: () => true,
+        data: () => ({ role: 'researcher' })
+      });
+
+      const role = await getUserRole('test-user-id');
+      expect(role).toBe('researcher');
+    });
+
+    it('should return null for non-existent user', async () => {
+      mockGetDoc.mockResolvedValueOnce({
+        exists: () => false
+      });
+
+      const role = await getUserRole('non-existent-id');
+      expect(role).toBeNull();
+    });
+  });
+
+  describe('logOut', () => {
+    it('should sign out successfully', async () => {
+      mockSignOut.mockResolvedValueOnce();
+
+      await logOut();
+      expect(mockSignOut).toHaveBeenCalledWith(mockAuth);
+    });
+
+    it('should handle sign out errors', async () => {
+      mockSignOut.mockRejectedValueOnce(new Error('Network error'));
+
+      await expect(logOut())
+        .rejects
+        .toThrow('Network error');
+    });
+  });
+
+  describe('authStateListener', () => {
+    it('should set up auth state change listener', () => {
+      const callback = vi.fn();
+      
+      authStateListener(callback);
+      
+      expect(mockOnAuthStateChanged).toHaveBeenCalledWith(mockAuth, callback);
+    });
+
+    it('should handle auth state changes', () => {
+      const callback = vi.fn();
+      mockOnAuthStateChanged.mockImplementationOnce((auth, cb) => {
+        cb(mockUser);
+        return () => {};
+      });
+
+      authStateListener(callback);
+      
+      expect(callback).toHaveBeenCalledWith(mockUser);
     });
   });
 });

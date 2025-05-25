@@ -28,10 +28,10 @@ export default function UserDetailsPage() {
         if (userDoc.exists()) {
           setUser({ id: userDoc.id, ...userDoc.data() });
         } else {
-          console.error('User not found');
+         
         }
       } catch (error) {
-        console.error('Error fetching user details:', error);
+        
       } finally {
         setLoading(false);
       }

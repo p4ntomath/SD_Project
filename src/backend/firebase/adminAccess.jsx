@@ -1,5 +1,7 @@
 import { collection, doc, getDocs, addDoc, updateDoc, deleteDoc, getDoc, query, where, Timestamp } from 'firebase/firestore';
 import { db } from './firebaseConfig';
+import { getAuth } from 'firebase/auth';
+import { notify, notifyAdminAction } from './notificationsUtil';
 
 /**
  * Fetches all projects with user fullNames
@@ -88,22 +90,59 @@ export const fetchAllUsers = async () => {
 /*
   CRUD methods for the funding opportunities
 */ 
-  const fundingCollection = 'funding'; // Your collection name
+  const fundingCollection = "funding"; // Your collection name
 
 // CREATE
 export const createFunding = async (fundingData) => {
   try {
     const docRef = await addDoc(collection(db, fundingCollection), {
-      funding_name: fundingData.name,
-      expected_funds: Number(fundingData.expectedFunds),
-      external_link: fundingData.externalLink,
-      deadline: fundingData.deadline,
-      category: fundingData.category,
-      eligibility: fundingData.eligibility,
-      description: fundingData.description,
+      funding_name: fundingData.funding_name,
+      expected_funds: Number(fundingData.expected_funds),
+      external_link: fundingData.external_link,
+      deadline: fundingData.deadline || '',
+      category: fundingData.category || '',
+      eligibility: fundingData.eligibility || '',
+      description: fundingData.description || '',
       status: fundingData.status || 'active',
       createdAt: Timestamp.now()
     });
+
+    // Get current admin user ID
+    const auth = getAuth();
+    const adminId = auth.currentUser?.uid;
+
+    // Fetch all users
+    const users = await fetchAllUsers();
+
+    // Get all researcher userIds
+    const researcherIds = users
+      .filter(user => user.role === 'researcher')
+      .map(user => user.id);
+
+    // Send notification to each researcher
+    await Promise.all(
+      researcherIds.map(userId => {
+        
+        return notifyAdminAction({
+          type: 'Funding Opportunity Added',
+          FundingName: fundingData.funding_name,
+          targetUserId: userId,
+          senderUserId: adminId
+        });
+      })
+    );
+
+    // Send notification to admin (self)
+    if (adminId) {
+      
+      await notifyAdminAction({
+        type: 'Funding Opportunity Added',
+        FundingName: fundingData.funding_name,
+        targetUserId: adminId,
+        senderUserId: adminId
+      });
+    }
+
     return { id: docRef.id, ...fundingData };
   } catch (error) {
     throw new Error(`Error creating funding: ${error.message}`);
@@ -136,9 +175,9 @@ export const updateFunding = async (id, fundingData) => {
   try {
     const fundingRef = doc(db, fundingCollection, id);
     await updateDoc(fundingRef, {
-      funding_name: fundingData.name,
-      expected_funds: Number(fundingData.expectedFunds),
-      external_link: fundingData.externalLink,
+      funding_name: fundingData.funding_name,
+      expected_funds: Number(fundingData.expected_funds),
+      external_link: fundingData.external_link,
       deadline: fundingData.deadline,
       category: fundingData.category,
       eligibility: fundingData.eligibility,
@@ -146,6 +185,42 @@ export const updateFunding = async (id, fundingData) => {
       status: fundingData.status,
       updatedAt: Timestamp.now()
     });
+
+      // Get current admin user ID
+    const auth = getAuth();
+    const adminId = auth.currentUser?.uid;
+
+    // Fetch all users
+    const users = await fetchAllUsers();
+
+    // Get all researcher userIds
+    const researcherIds = users
+      .filter(user => user.role === 'researcher')
+      .map(user => user.id);
+
+    // Send notification to each researcher
+    await Promise.all(
+      researcherIds.map(userId => {
+        
+        return notifyAdminAction({
+          type: 'Funding Opportunity Updated',
+          FundingName: fundingData.funding_name,
+          targetUserId: userId,
+          senderUserId: adminId
+        });
+      })
+    );
+
+    // Send notification to admin (self)
+    if (adminId) {
+      
+      await notifyAdminAction({
+        type: 'Funding Opportunity Updated',
+        FundingName: fundingData.funding_name,
+        targetUserId: adminId,
+        senderUserId: adminId
+      });
+    }
     return { id, ...fundingData };
   } catch (error) {
     throw new Error(`Error updating funding: ${error.message}`);
@@ -156,7 +231,19 @@ export const updateFunding = async (id, fundingData) => {
 export const deleteFunding = async (id) => {
   try {
     const fundingRef = doc(db, fundingCollection, id);
+    // Fetch the funding document to get its name
+    const fundingSnap = await getDoc(fundingRef);
+    const fundingData = fundingSnap.exists() ? fundingSnap.data() : {};
+
     await deleteDoc(fundingRef);
+
+    await notifyAdminAction({
+      type: 'Funding Opportunity Deleted',
+      FundingName: fundingData.funding_name || 'Unknown Funding',
+      targetUserId: getAuth().currentUser?.uid,
+      senderUserId: getAuth().currentUser?.uid
+    });
+
     return id;
   } catch (error) {
     throw new Error(`Error deleting funding: ${error.message}`);

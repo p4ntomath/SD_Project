@@ -75,11 +75,19 @@ const NotificationsPage = () => {
                     !notification.readStatus
                       ? 'bg-blue-50 border-blue-400'
                       : 'bg-white border-gray-200'
-                  } cursor-pointer`}
+                  } ${
+                    notification.type === 'Collaboration Request Received' ||
+                     notification.type === 'Funding Opportunity Added' ||
+                       notification.type === 'Funding Opportunity Updated' || !notification.projectId
+                      ? 'cursor-default'
+                      : 'cursor-pointer'
+                  }`}
                   onClick={() => {
                     // Block navigation for "Collaboration Request Received" notifications
                     if (
                       notification.type === 'Collaboration Request Received' ||
+                       notification.type === 'Funding Opportunity Added' ||
+                       notification.type === 'Funding Opportunity Updated' ||
                       !notification.projectId
                     ) {
                       return;

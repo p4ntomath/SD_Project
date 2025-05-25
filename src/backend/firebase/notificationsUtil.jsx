@@ -194,6 +194,16 @@ const notificationTemplates = {
   "Collaboration Request Declined": ({ projectTitle, researcherName }) =>
     `Your collaboration request for the project "${projectTitle}" has been Declined by ${researcherName}.`,
 
+  //Admin adds Funding opportunity
+  "Funding Opportunity Added": ({ FundingName }) =>
+    `The admin has added a new funding opportunity: "${FundingName}". Please check it out for more details.`,
+
+  "Funding Opportunity Updated": ({ FundingName }) =>
+    `The admin has updated the funding opportunity: "${FundingName}". Please check it out for more details.`,
+  
+  "Funding Opportunity Deleted": ({ FundingName }) => 
+    `You have deleted the funding opportunity: "${FundingName}". Please check it out for more details.`,
+
 
 };
 
@@ -209,8 +219,10 @@ export const notify = async ({
   description,
   reviewerName,
   researcherName,
+  FundingName,
   targetUserId, // recipient
   senderUserId, // actor
+
 }) => {
   const target = targetUserId || auth.currentUser?.uid;
   const sender = senderUserId || auth.currentUser?.uid;
@@ -229,13 +241,47 @@ export const notify = async ({
     return;
   }
 
-  const message = template({ goalText, projectTitle, documentName, amount, description, folderName,newFolderName , reviewerName, researcherName });
+  const message = template({ goalText, projectTitle, documentName, amount, description, folderName,newFolderName , reviewerName, researcherName, FundingName });
 
   const notificationsRef = collection(db, "notifications");
   await addDoc(notificationsRef, {
     targetUserId: target,
     senderUserId: sender,
     projectId,
+    message,
+    type,
+    timestamp: new Date().toISOString(),
+    readStatus: false,
+  });
+};
+
+export const notifyAdminAction = async ({
+  type,
+  FundingName,
+  targetUserId,
+  senderUserId,
+}) => {
+  const target = targetUserId || auth.currentUser?.uid;
+  const sender = senderUserId || auth.currentUser?.uid;
+
+  if (!target) {
+    console.error("Target user ID not provided and user not authenticated");
+    return;
+  }
+
+  const template = notificationTemplates[type];
+  if (!template) {
+    console.error("Unknown notification type:", type);
+    return;
+  }
+
+  const message = template({ FundingName });
+
+  
+  const notificationsRef = collection(db, "notifications");
+  await addDoc(notificationsRef, {
+    targetUserId: target,
+    senderUserId: sender,
     message,
     type,
     timestamp: new Date().toISOString(),

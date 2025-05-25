@@ -185,4 +185,49 @@ describe('AdminProjectsPage', () => {
     expect(screen.getByText('In Progress')).toBeInTheDocument();
     expect(screen.getByText('Completed')).toBeInTheDocument();
   });
+
+  it('shows spinner while loading', () => {
+    // pending promise
+    fetchProjectsWithUsers.mockReturnValue(new Promise(() => {}));
+    render(
+      <BrowserRouter>
+        <AdminProjectsPage />
+      </BrowserRouter>
+    );
+    expect(screen.getByLabelText('loading')).toBeInTheDocument();
+    expect(screen.getByTestId('mock-main-nav')).toBeInTheDocument();
+    expect(screen.getByTestId('mock-bottom-nav')).toBeInTheDocument();
+  });
+
+  it('renders empty state when no projects', async () => {
+    fetchProjectsWithUsers.mockResolvedValue([]);
+    render(
+      <BrowserRouter>
+        <AdminProjectsPage />
+      </BrowserRouter>
+    );
+    await waitFor(() => {
+      expect(screen.getByText('No projects found')).toBeInTheDocument();
+    });
+  });
+
+  it('renders table rows and View Details buttons', async () => {
+    const projects = [
+      { id: '1', title: 'Proj1', userFullName: 'Alice', status: 'Active', researchField: 'Bio' },
+      { id: '2', title: 'Proj2', userFullName: 'Bob', status: 'In Progress', researchField: 'Chem' }
+    ];
+    fetchProjectsWithUsers.mockResolvedValue(projects);
+    render(
+      <BrowserRouter>
+        <AdminProjectsPage />
+      </BrowserRouter>
+    );
+    // Wait until loading is finished
+    await waitFor(() => expect(screen.queryByLabelText('loading')).not.toBeInTheDocument());
+    const buttons = screen.getAllByText('View Details');
+    expect(buttons).toHaveLength(2);
+    // click first button
+    fireEvent.click(buttons[0]);
+    expect(mockNavigate).toHaveBeenCalledWith('/admin/projects/1');
+  });
 });

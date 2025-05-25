@@ -68,7 +68,7 @@ export default function PublicProfilePage() {
             setOwnedProjects(owned);
             setCollaboratedProjects(collaboratedProjects);
           } else {
-            console.log('User not found:', userId);
+            
           }
         }
       } catch (error) {

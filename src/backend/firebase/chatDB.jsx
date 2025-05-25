@@ -662,7 +662,7 @@ const ChatRealTimeService = {
         }
       );
     } catch (error) {
-      console.error('Error setting up messages subscription:', error);
+      
       return () => {};
     }
   },

@@ -19,7 +19,7 @@ import { fetchProjects } from "./projectDB";
 /**
  * Base PDF generator that converts CSV data into a styled PDF table
  */
-const generateBasePdf = (csvData, title = "Report") => {
+export const generateBasePdf = (csvData, title = "Report") => {
   try {
     // Parse CSV string into rows
     const { data } = Papa.parse(csvData.trim(), {
@@ -67,7 +67,7 @@ const generateBasePdf = (csvData, title = "Report") => {
 
     return doc;
   } catch (error) {
-    console.error("Error in PDF generation:", error);
+    
     throw error;
   }
 };

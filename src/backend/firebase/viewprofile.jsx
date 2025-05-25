@@ -137,7 +137,7 @@ export const searchUsers = async (searchTerm, page = 1, limit = 10) => {
     const end = start + limit;
     return results.slice(start, end);
   } catch (error) {
-    console.error("Error searching users:", error);
+  
     throw new Error("Failed to search users");
   }
 };

@@ -33,6 +33,7 @@ import MessagesLayout from './pages/MessagesLayout.jsx';
 import UserDetailsPage from './pages/UserDetailsPage.jsx';
 import UserSearchPage from './pages/UserSearchPage.jsx';
 import PublicProfilePage from './pages/PublicProfilePage.jsx';
+import AdminNotificationsPage from './pages/AdminNotificationsPage.jsx';
 
 function App() {
   return (
@@ -98,6 +99,11 @@ function App() {
           <Route path="/admin/documents" element={
             <ProtectedRoute allowedRoles={['admin']}>
               <AdminDocumentsPage />
+            </ProtectedRoute>
+          } />
+          <Route path="/admin/notifications" element={
+            <ProtectedRoute allowedRoles={['admin']}>
+              <AdminNotificationsPage />
             </ProtectedRoute>
           } />
           <Route path="/funding" element={

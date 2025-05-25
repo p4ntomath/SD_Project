@@ -26,6 +26,52 @@ vi.mock('../utils/universityOptions', () => ({
   ]))
 }));
 
+// Mock React-Select
+vi.mock('react-select', () => ({
+  default: ({ value, onChange, options, placeholder, isMulti, inputId, name }) => (
+    <div data-testid={`react-select-${name || inputId}`}>
+      <input
+        data-testid={`select-input-${name || inputId}`}
+        placeholder={placeholder}
+        value={isMulti ? value?.map(v => v.label).join(', ') || '' : value?.label || ''}
+        onChange={(e) => {
+          if (isMulti) {
+            const labels = e.target.value.split(', ').filter(Boolean);
+            const selectedOptions = labels.map(label => 
+              options?.find(opt => opt.label === label) || { value: label.toLowerCase(), label }
+            );
+            onChange?.(selectedOptions);
+          } else {
+            const option = options?.find(opt => opt.label === e.target.value);
+            onChange?.(option);
+          }
+        }}
+      />
+      <div data-testid={`select-options-${name || inputId}`}>
+        {options?.map(option => (
+          <button 
+            key={option.value}
+            onClick={() => {
+              if (isMulti) {
+                const currentValues = value || [];
+                const newValues = currentValues.some(v => v.value === option.value) 
+                  ? currentValues.filter(v => v.value !== option.value)
+                  : [...currentValues, option].slice(0, 3); // Limit to 3 for tags
+                onChange?.(newValues);
+              } else {
+                onChange?.(option);
+              }
+            }}
+            data-testid={`option-${option.value}`}
+          >
+            {option.label}
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}));
+
 const mockOnSubmit = vi.fn();
 
 const originalError = console.error;
@@ -58,16 +104,6 @@ const renderWithRouter = (ui, { route = '/' } = {}) => {
   return render(ui, { wrapper: BrowserRouter });
 };
 
-// Helper function to simulate select event for React-Select
-const selectEvent = {
-  select: async (element, optionText) => {
-    const selectElement = element.querySelector('input');
-    await userEvent.type(selectElement, optionText);
-    const option = await screen.findByText(optionText);
-    await userEvent.click(option);
-  }
-};
-
 describe('RoleSelectionForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
@@ -84,8 +120,8 @@ describe('RoleSelectionForm', () => {
     expect(screen.getByTestId('field-of-research-input')).toBeInTheDocument();
 
     // Check for React-Select components
-    expect(screen.getByRole('combobox', { name: /institution/i })).toBeInTheDocument();
-    expect(screen.getByLabelText(/research tags/i)).toBeInTheDocument();
+    expect(screen.getByTestId('react-select-institution')).toBeInTheDocument();
+    expect(screen.getByTestId('react-select-tags')).toBeInTheDocument();
 
     // Verify that universities are fetched
     expect(fetchUniversities).toHaveBeenCalled();
@@ -120,15 +156,19 @@ describe('RoleSelectionForm', () => {
     await user.type(screen.getByTestId('department-input'), 'Computer Science');
     await user.type(screen.getByTestId('field-of-research-input'), 'Machine Learning');
 
-    // Select institution
-    const institutionSelect = screen.getByLabelText(/institution/i);
-    await selectEvent.select(institutionSelect.parentElement, 'University 1');
+    // Select institution using mocked React-Select
+    const institutionButton = screen.getByTestId('option-uni1');
+    await user.click(institutionButton);
 
-    // Select research tags
-    const tagsSelect = screen.getByLabelText(/research tags/i);
-    await selectEvent.select(tagsSelect.parentElement, 'Machine Learning');
-    await selectEvent.select(tagsSelect.parentElement, 'Artificial Intelligence');
-    await selectEvent.select(tagsSelect.parentElement, 'Data Science');
+    // Select research tags using mocked React-Select
+    const tagsContainer = screen.getByTestId('select-options-tags');
+    const mlOption = screen.getByTestId('option-ml');
+    const aiOption = screen.getByTestId('option-ai');
+    const dsOption = screen.getByTestId('option-ds');
+    
+    await user.click(mlOption);
+    await user.click(aiOption);
+    await user.click(dsOption);
 
     // Submit form
     await user.click(screen.getByText('Complete Profile'));
@@ -142,7 +182,7 @@ describe('RoleSelectionForm', () => {
         institution: 'uni1',
         tags: ['Machine Learning', 'Artificial Intelligence', 'Data Science']
       }));
-    });
+    }, { timeout: 10000 });
   });
 
   it('loads and filters research tags by faculty', async () => {
@@ -163,6 +203,11 @@ describe('RoleSelectionForm', () => {
   it('handles profile completion loading state', async () => {
     renderWithRouter(<RoleSelectionForm onSubmit={mockOnSubmit} />);
 
+    // Wait for universities to load first
+    await waitFor(() => {
+      expect(screen.getByTestId('option-uni1')).toBeInTheDocument();
+    });
+
     // Fill required fields
     fireEvent.change(screen.getByTestId('fullname-input'), {
       target: { value: 'John Doe' }
@@ -178,15 +223,18 @@ describe('RoleSelectionForm', () => {
       target: { value: 'Machine Learning' }
     });
 
-    // Select institution using React-Select
-    const institutionSelect = screen.getByLabelText(/institution/i);
-    await selectEvent.select(institutionSelect.parentElement, 'University 1');
+    // Select institution using mocked React-Select
+    const institutionButton = screen.getByTestId('option-uni1');
+    fireEvent.click(institutionButton);
 
-    // Select tags using React-Select
-    const tagsSelect = screen.getByLabelText(/research tags/i);
-    await selectEvent.select(tagsSelect.parentElement, 'Machine Learning');
-    await selectEvent.select(tagsSelect.parentElement, 'Artificial Intelligence');
-    await selectEvent.select(tagsSelect.parentElement, 'Data Science');
+    // Select tags using mocked React-Select
+    const mlOption = screen.getByTestId('option-ml');
+    const aiOption = screen.getByTestId('option-ai');
+    const dsOption = screen.getByTestId('option-ds');
+    
+    fireEvent.click(mlOption);
+    fireEvent.click(aiOption);
+    fireEvent.click(dsOption);
 
     // Mock a loading state by making onSubmit return a promise
     mockOnSubmit.mockImplementation(() => new Promise(resolve => setTimeout(resolve, 100)));

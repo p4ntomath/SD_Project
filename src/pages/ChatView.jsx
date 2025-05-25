@@ -412,7 +412,7 @@ export default function ChatView() {
       const filteredResults = results.filter(user => !chat.participants.includes(user.id));
       setUserSearchResults(filteredResults);
     } catch (error) {
-      console.error('Error searching users:', error);
+      
     } finally {
       setSearching(false);
     }
