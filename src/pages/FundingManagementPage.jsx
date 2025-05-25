@@ -233,7 +233,11 @@ export default function FundingManagementPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
                           <div className="text-sm text-gray-900" data-testid="funding-amount">
-                            R{Number(funding.expected_funds).toLocaleString()}
+                            R {Number(funding.expected_funds).toLocaleString('en-US', {
+                              minimumFractionDigits: 0,
+                              maximumFractionDigits: 0,
+                              useGrouping: true
+                            })}
                           </div>
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap">
