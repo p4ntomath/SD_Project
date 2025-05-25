@@ -23,30 +23,30 @@
         <div class='clearfix'>
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">40.76% </span>
+                <span class="strong">47.69% </span>
                 <span class="quiet">Statements</span>
-                <span class='fraction'>53/130</span>
+                <span class='fraction'>62/130</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">80% </span>
+                <span class="strong">72.22% </span>
                 <span class="quiet">Branches</span>
-                <span class='fraction'>12/15</span>
+                <span class='fraction'>13/18</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">44.44% </span>
+                <span class="strong">55.55% </span>
                 <span class="quiet">Functions</span>
-                <span class='fraction'>4/9</span>
+                <span class='fraction'>5/9</span>
             </div>
         
             
             <div class='fl pad1y space-right2'>
-                <span class="strong">40.76% </span>
+                <span class="strong">47.69% </span>
                 <span class="quiet">Lines</span>
-                <span class='fraction'>53/130</span>
+                <span class='fraction'>62/130</span>
             </div>
         
             
@@ -332,24 +332,17 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-no">&nbsp;</span>
-<span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -368,10 +361,17 @@
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
 <span class="cline-any cline-no">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-neutral">&nbsp;</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
+<span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-neutral">&nbsp;</span>
 <span class="cline-any cline-yes">1x</span>
 <span class="cline-any cline-no">&nbsp;</span>
@@ -497,13 +497,13 @@ export const deleteUserProfileFields = <span class="fstat-no" title="function no
 <span class="cstat-no" title="statement not covered" >  return true;</span>
 <span class="cstat-no" title="statement not covered" >};</span>
 &nbsp;
-export const searchUsers = <span class="fstat-no" title="function not covered" >async (searchTerm, page = 1, limit = 10) =&gt; {</span>
-<span class="cstat-no" title="statement not covered" >  try {</span>
-<span class="cstat-no" title="statement not covered" >    if (!searchTerm) return [];</span>
+export const searchUsers = async (searchTerm, page = 1, limit = 10) =&gt; {
+  try {
+    if (!searchTerm) <span class="branch-0 cbranch-no" title="branch not covered" >return [];</span>
     
-<span class="cstat-no" title="statement not covered" >    const usersRef = collection(db, "users");</span>
-<span class="cstat-no" title="statement not covered" >    const searchLower = searchTerm.toLowerCase();</span>
-<span class="cstat-no" title="statement not covered" >    const querySnapshot = await getDocs(usersRef);</span>
+    const usersRef = collection(db, "users");
+    const searchLower = searchTerm.toLowerCase();
+    const querySnapshot = await getDocs(usersRef<span class="branch-0 cbranch-no" title="branch not covered" >);</span>
     
 <span class="cstat-no" title="statement not covered" >    const results = querySnapshot.docs</span>
 <span class="cstat-no" title="statement not covered" >      .map(doc =&gt; ({</span>
@@ -533,11 +533,11 @@ export const searchUsers = <span class="fstat-no" title="function not covered" >
 <span class="cstat-no" title="statement not covered" >    const start = (page - 1) * limit;</span>
 <span class="cstat-no" title="statement not covered" >    const end = start + limit;</span>
 <span class="cstat-no" title="statement not covered" >    return results.slice(start, end);</span>
-<span class="cstat-no" title="statement not covered" >  } catch (error) {</span>
+  } catch (error) {
   
-<span class="cstat-no" title="statement not covered" >    throw new Error("Failed to search users");</span>
-<span class="cstat-no" title="statement not covered" >  }</span>
-<span class="cstat-no" title="statement not covered" >};</span>
+    throw new Error("Failed to search users");
+  }
+};
 &nbsp;
 export const getPublicProfile = <span class="fstat-no" title="function not covered" >async (userId) =&gt; {</span>
 <span class="cstat-no" title="statement not covered" >  if (!userId) throw new Error("User ID is required");</span>
@@ -568,7 +568,7 @@ export const getPublicProfile = <span class="fstat-no" title="function not cover
             <div class='footer quiet pad2 space-top1 center small'>
                 Code coverage generated by
                 <a href="https://istanbul.js.org/" target="_blank" rel="noopener noreferrer">istanbul</a>
-                at 2025-05-25T14:28:50.578Z
+                at 2025-05-25T19:50:43.048Z
             </div>
         <script src="../../../../prettify.js"></script>
         <script>
