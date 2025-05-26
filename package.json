@@ -1,8 +1,9 @@
 {
-  "name": "my-app",
+  "name": "research",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
+  "description": "A comprehensive University Research Collaboration Platform that facilitates seamless collaboration between researchers, reviewers, and administrators. Features include project management, document sharing, real-time messaging, funding tracking, peer review workflows, and administrative oversight tools.",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

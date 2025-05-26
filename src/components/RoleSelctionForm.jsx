@@ -71,7 +71,13 @@ const RoleSelectionForm = ({ onSubmit }) => {
   };
 
   const handleInstitutionChange = (selectedOption) => {
-    setErrors(prev => ({ ...prev, institution: '' }));
+    // Clear institution error immediately
+    setErrors(prev => {
+      const newErrors = { ...prev };
+      delete newErrors.institution;
+      return newErrors;
+    });
+    
     setSelectedInstitution(selectedOption);
     setFormData(prev => ({
       ...prev,
@@ -102,7 +108,17 @@ const RoleSelectionForm = ({ onSubmit }) => {
       // Clear the custom input and hide it
       setCustomUniversity('');
       setShowCustomUniversity(false);
-      setErrors(prev => ({ ...prev, institution: '' }));
+      
+      // Clear any existing institution error and general errors
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors.institution;
+        // If this was the only error, clear the general error state
+        if (Object.keys(newErrors).length === 0) {
+          return {};
+        }
+        return newErrors;
+      });
     }
   };
 
