@@ -1,7 +1,7 @@
 // Function to fetch South African universities
 export const fetchUniversities = async () => {
   try {
-    const response = await fetch('http://universities.hipolabs.com/search?country=south+africa');
+    const response = await fetch('https://universities.hipolabs.com/search?country=south+africa');
     const data = await response.json();
     
     // Map to format needed for react-select
