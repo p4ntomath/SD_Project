@@ -1,6 +1,6 @@
 # Sprint 4 UML Diagrams
 
-This document contains the UML diagrams for Sprint 4. Each diagram is included below with a brief description.
+This document contains the UML diagrams for Sprint 4 only. Each diagram is included below with a brief description.
 
 ## Activity Diagram
 
