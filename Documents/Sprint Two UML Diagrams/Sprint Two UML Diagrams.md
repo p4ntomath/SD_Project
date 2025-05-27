@@ -3,7 +3,7 @@
 This document contains all the UML diagrams created for Sprint 2 along with their detailed explanations.
 
 ## 1. Components Diagram
-![Components Diagram](./Sprint%20Two%20UML%20Diagrams/Components%20diagram.drawio.png)
+![Components Diagram](./Components%20diagram.drawio.png)
 
 The Components diagram illustrates the architectural structure of our system for Sprint 2. It shows:
 - The different components of the system
@@ -12,7 +12,7 @@ The Components diagram illustrates the architectural structure of our system for
 - The overall system architecture
 
 ## 2. Deployment Diagram
-![Deployment Diagram](./Sprint%20Two%20UML%20Diagrams/DeploymentDiagram%20(1).png)
+![Deployment Diagram](./DeploymentDiagram%20(1).png)
 
 The Deployment diagram demonstrates:
 - The physical deployment of software components
@@ -22,7 +22,7 @@ The Deployment diagram demonstrates:
 - Communication paths between different parts of the system
 
 ## 3. Use Case Diagram
-![Use Case Diagram](./Sprint%20Two%20UML%20Diagrams/Sprint%202%20Use%20Cases.drawio.png)
+![Use Case Diagram](./Sprint%202%20Use%20Cases.drawio.png)
 
 The Use Case diagram outlines:
 - All user interactions with the system in Sprint 2
@@ -31,7 +31,7 @@ The Use Case diagram outlines:
 - The relationships between different use cases
 
 ## 4. Track All Funding State Diagram
-![Track Funding Diagram](./Sprint%20Two%20UML%20Diagrams/Track%20All%20funding.drawio.png)
+![Track Funding Diagram](./Track%20All%20funding.drawio.png)
 
 This state diagram shows:
 - The different states of the funding tracking system
@@ -40,7 +40,7 @@ This state diagram shows:
 - The complete lifecycle of funding tracking
 
 ## 5. Update Project Activity Diagram
-![Update Project Diagram](./Sprint%20Two%20UML%20Diagrams/UpdateProject(Story%206).drawio.png)
+![Update Project Diagram](./UpdateProject(Story%206).drawio.png)
 
 The Update Project activity diagram illustrates:
 - The step-by-step flow for updating project details
