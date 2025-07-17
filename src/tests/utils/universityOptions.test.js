@@ -23,7 +23,7 @@ describe('universityOptions', () => {
     const result = await fetchUniversities();
 
     expect(fetch).toHaveBeenCalledWith(
-      'https://universities.hipolabs.com/search?country=south+africa'
+      'http://universities.hipolabs.com/search?country=south+africa'
     );
 
     expect(result).toEqual([
@@ -39,7 +39,7 @@ describe('universityOptions', () => {
     const result = await fetchUniversities();
 
     expect(fetch).toHaveBeenCalledWith(
-      'https://universities.hipolabs.com/search?country=south+africa'
+      'http://universities.hipolabs.com/search?country=south+africa'
     );
     expect(result).toEqual([]);
   });
