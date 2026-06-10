@@ -28,16 +28,16 @@ import {
 
 // Mock dependencies
 vi.mock('jspdf', () => ({
-    jsPDF: vi.fn().mockImplementation(() => ({
-        setFontSize: vi.fn(),
-        text: vi.fn(),
-        save: vi.fn(),
-        setTextColor: vi.fn(),
-        internal: {
+    jsPDF: vi.fn(function () {
+        this.setFontSize = vi.fn();
+        this.text = vi.fn();
+        this.save = vi.fn();
+        this.setTextColor = vi.fn();
+        this.internal = {
             pageSize: { height: 800 }
-        },
-        getNumberOfPages: vi.fn().mockReturnValue(1)
-    }))
+        };
+        this.getNumberOfPages = vi.fn().mockReturnValue(1);
+    })
 }));
 
 vi.mock('jspdf-autotable', () => ({
@@ -171,7 +171,7 @@ describe('PDF Report Generation', () => {
     // Error handling tests
     describe('Error Handling', () => {
         it('should handle PDF generation errors', async () => {
-            vi.mocked(jsPDF).mockImplementation(() => {
+            vi.mocked(jsPDF).mockImplementation(function () {
                 throw new Error('PDF generation failed');
             });
 

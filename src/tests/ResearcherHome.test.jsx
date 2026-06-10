@@ -268,6 +268,9 @@ describe('ResearcherHome', () => {
 describe('CreateProjectForm', () => {
     it('submits valid form and calls onCreate with correct data', async () => {
       const mockOnCreate = vi.fn();
+      const futureDeadline = new Date();
+      futureDeadline.setDate(futureDeadline.getDate() + 30);
+      const futureDeadlineString = futureDeadline.toISOString().split('T')[0];
       
       render(
         <CreateProjectForm 
@@ -293,7 +296,7 @@ describe('CreateProjectForm', () => {
   
       // Set deadline
       fireEvent.change(screen.getByLabelText(/deadline/i), {
-        target: { value: '2025-12-31' }
+        target: { value: futureDeadlineString }
       });
   
       const goalInput = screen.getByLabelText(/^Goals/);
@@ -308,7 +311,9 @@ describe('CreateProjectForm', () => {
       fireEvent.click(screen.getByRole('button', { name: /create project/i }));
   
       // Expect onCreate to have been called once
-      expect(mockOnCreate).toHaveBeenCalledTimes(1);
+      await waitFor(() => {
+        expect(mockOnCreate).toHaveBeenCalledTimes(1);
+      });
   
       const createdProject = mockOnCreate.mock.calls[0][0];
       expect(createdProject.title).toBe('Test Research Project');
@@ -317,6 +322,6 @@ describe('CreateProjectForm', () => {
       // Check that the date is in ISO format
       expect(createdProject.deadline instanceof Date || typeof createdProject.deadline === 'string').toBeTruthy();
       const deadlineDate = new Date(createdProject.deadline);
-      expect(deadlineDate.toISOString().split('T')[0]).toBe('2025-12-31');
+      expect(deadlineDate.toISOString().split('T')[0]).toBe(futureDeadlineString);
     });
   });
